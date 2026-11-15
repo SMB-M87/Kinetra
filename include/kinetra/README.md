@@ -15,7 +15,7 @@ Consumers include these headers as `<kinetra/name.h>`. This is the engine's firs
 | --- | --- | --- |
 | [math.h](math.h) | Vectors, geometry and numeric helpers | Header-only |
 | [physics.h](physics.h), [spatial_grid.h](spatial_grid.h), [collision_grid.h](collision_grid.h) | Bodies, contacts and spatial queries | `Kinetra::Simulation` |
-| [navigation.h](navigation.h), [steering.h](steering.h) | Paths, routes and local steering | `Kinetra::Simulation` |
+| [navigation.h](navigation.h), [weighted_grid.h](weighted_grid.h), [steering.h](steering.h) | Paths, routes and local steering | `Kinetra::Simulation` |
 | [engine.h](engine.h), [session.h](session.h) | Runtime, input, drawing and direct sessions | `Kinetra::Runtime` |
 | [launcher.h](launcher.h) | Generic menu, session host and launcher loop | `Kinetra::Launcher` |
 | [camera.h](camera.h), [timing.h](timing.h) | Coordinate transforms and fixed clock | Header-only |

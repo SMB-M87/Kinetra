@@ -26,3 +26,5 @@ Applications supply names, configuration labels and session factories. Hosts own
 [DebugMenu](../../include/kinetra/debug_view.h) accepts labels, borrowed values, actions and observational getters. Applications keep referenced state alive through update/draw and suppress gameplay pointer input when the menu captures it. Backquote is the default toggle. Actionable rows turn blue while the pointer is inside their click region; section labels and read-only values retain their normal color.
 
 [HelpOverlay](../../include/kinetra/help_view.h) and `draw_help` accept application-owned content and style. Help does not capture gameplay input. [Bitmap text](../../include/kinetra/bitmap_text.h) uses embedded glyphs and runtime primitives.
+
+`LaunchMenu` optionally accepts a heading at construction and a status message when drawing. Defaults preserve the standard launcher. Applications can reuse its pagination for local resource selection without exposing their resource types to Core.

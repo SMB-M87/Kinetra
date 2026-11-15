@@ -76,3 +76,5 @@ Applications and the bundled launcher executable are built in [Kinetra-Lab](http
 No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
 
 Sessions can override `close_on_escape()` and `exit_requested()` to provide an application-owned exit action. `run_session` honors both policies.
+
+Input exposes independent `right_clicked` and `right_mouse_down` fields. The click edge clears on each poll; held buttons clear on release or focus loss.

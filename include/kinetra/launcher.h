@@ -32,7 +32,7 @@ struct MenuLayout {
 /// Value-owned registration metadata; configuration names have no engine semantics.
 class LaunchMenu {
   public:
-    explicit LaunchMenu(std::vector<LaunchChoice> choices);
+    explicit LaunchMenu(std::vector<LaunchChoice> choices, std::string heading = "KINETRA LAUNCHER");
     std::optional<LaunchSelection> update(const Input &input, Vec2 viewport);
     std::size_t selected() const;
     bool exit_requested() const { return exit_requested_; }
@@ -41,10 +41,11 @@ class LaunchMenu {
     std::size_t row_count() const;
     std::string_view row_name(std::size_t row) const;
     std::string_view description() const;
-    void draw(Runtime &runtime) const;
+    void draw(Runtime &runtime, std::string_view status = {}) const;
 
   private:
     std::vector<LaunchChoice> choices_;
+    std::string heading_;
     std::vector<std::size_t> configurations_;
     std::size_t application_{};
     bool configuring_{}, exit_requested_{};

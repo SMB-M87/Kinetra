@@ -25,7 +25,8 @@ bool MenuLayout::contains(std::size_t index, Vec2 point) const {
     const auto offset = point - row_center(index);
     return std::abs(offset.x) <= 140 * scale && std::abs(offset.y) <= 16 * scale;
 }
-LaunchMenu::LaunchMenu(std::vector<LaunchChoice> choices) : choices_(std::move(choices)) {
+LaunchMenu::LaunchMenu(std::vector<LaunchChoice> choices, std::string heading)
+    : choices_(std::move(choices)), heading_(std::move(heading)) {
     if (choices_.empty())
         throw std::invalid_argument("Launcher requires at least one application");
     for (const auto &choice : choices_) {
@@ -105,14 +106,14 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewp
     configuring_ = false;
     return LaunchSelection{application_, configuration()};
 }
-void LaunchMenu::draw(Runtime &runtime) const {
+void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
     const MenuLayout layout(runtime.camera.viewport, row_count());
     runtime.begin();
-    draw_text(runtime, "KINETRA LAUNCHER", layout.origin + Vec2{10, 10} * layout.scale, layout.scale * 3,
+    draw_text(runtime, heading_, layout.origin + Vec2{10, 10} * layout.scale, layout.scale * 3,
               {0.55f, 1, 0.35f});
     if (configuring_)
-        draw_text(runtime, "SELECT CONFIGURATION", layout.origin + Vec2{10, 44} * layout.scale,
-                  layout.scale, {0.8f, 0.85f, 1});
+        draw_text(runtime, "SELECT CONFIGURATION", layout.origin + Vec2{10, 44} * layout.scale, layout.scale,
+                  {0.8f, 0.85f, 1});
     const auto first = selected() / MenuLayout::page_size * MenuLayout::page_size;
     for (std::size_t i = 0; i < layout.visible_rows && first + i < row_count(); ++i) {
         runtime.box(runtime.camera.screen_to_world(layout.row_center(i)),
@@ -124,14 +125,17 @@ void LaunchMenu::draw(Runtime &runtime) const {
     auto button = [&](std::string_view label, float x) {
         draw_text(runtime, label,
                   layout.footer_center(x) - Vec2{(label.size() * 6.f - 1) / 2, 4} * layout.scale,
-                  layout.scale, layout.footer_contains(pointer_, x) ? Color{0.25f, 0.65f, 1.f}
-                                                                 : Color{0.8f, 0.85f, 1});
+                  layout.scale,
+                  layout.footer_contains(pointer_, x) ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.85f, 1});
     };
     button("EXIT", 150);
     if (row_count() > MenuLayout::page_size) {
         button("PREVIOUS", 50);
         button("NEXT", 250);
     }
+    if (!status.empty())
+        draw_text(runtime, status.substr(0, 80), {8, runtime.camera.viewport.y - 16},
+                  std::min(1.f, runtime.camera.viewport.x / 490), {1, 0.5f, 0.35f});
     runtime.end();
 }
 SessionHost::SessionHost(std::vector<ApplicationRegistration> applications)

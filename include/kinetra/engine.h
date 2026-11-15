@@ -46,6 +46,7 @@ struct Input {
     std::array<bool, static_cast<std::size_t>(Key::count)> held{}, pressed{};
     Vec2 mouse{};
     bool clicked{}, mouse_down{};
+    bool right_clicked{}, right_mouse_down{};
     float wheel{};
     bool down(Key key) const { return held.at(static_cast<std::size_t>(key)); }
     bool hit(Key key) const { return pressed.at(static_cast<std::size_t>(key)); }

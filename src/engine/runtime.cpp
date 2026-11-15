@@ -220,6 +220,7 @@ bool Runtime::poll(bool close_on_escape) {
     in.pressed.fill(false);
     in.wheel = 0;
     in.clicked = false;
+    in.right_clicked = false;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT)
@@ -227,6 +228,7 @@ bool Runtime::poll(bool close_on_escape) {
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
             in.held.fill(false);
             in.mouse_down = false;
+            in.right_mouse_down = false;
         }
         if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
             if (const auto k = key(event.key.keysym.sym)) {
@@ -240,6 +242,12 @@ bool Runtime::poll(bool close_on_escape) {
             in.clicked = true;
             in.mouse_down = true;
         }
+        if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_RIGHT) {
+            in.right_clicked = true;
+            in.right_mouse_down = true;
+        }
+        if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_RIGHT)
+            in.right_mouse_down = false;
         if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT)
             in.mouse_down = false;
         if (event.type == SDL_MOUSEWHEEL)

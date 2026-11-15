@@ -14,6 +14,8 @@ add_library(kinetra_simulation
     src/simulation/navigation.cpp
     src/simulation/physics.cpp
     src/simulation/spatial_grid.cpp
+    src/simulation/priority_steering.cpp
+    src/simulation/weighted_grid.cpp
     src/simulation/steering.cpp
 )
 add_library(Kinetra::Simulation ALIAS kinetra_simulation)
@@ -41,6 +43,9 @@ if(KINETRA_BUILD_RUNTIME)
     endif()
 endif()
 if(BUILD_TESTING)
+    add_executable(kinetra_weighted_navigation_tests tests/weighted_navigation_tests.cpp)
+    target_link_libraries(kinetra_weighted_navigation_tests PRIVATE Kinetra::Simulation)
+    add_test(NAME kinetra_weighted_navigation COMMAND kinetra_weighted_navigation_tests)
     add_executable(kinetra_tests tests/simulation_tests.cpp)
     target_link_libraries(kinetra_tests PRIVATE Kinetra::Simulation)
     add_test(NAME kinetra_behavior COMMAND kinetra_tests)

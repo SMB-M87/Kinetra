@@ -16,7 +16,7 @@ Directory guides: [KHR](KHR/README.md), [glad](glad/README.md), [kinetra](kinetr
 | Headers in `kinetra/` | Purpose | Contract |
 | --- | --- | --- |
 | `math.h`, `physics.h`, `spatial_grid.h`, `collision_grid.h` | Geometry, bodies, contacts and spatial queries | [Math and physics](../docs/engine/math-physics.md) |
-| `navigation.h`, `steering.h` | Obstacle-aware paths and local steering | [Navigation](../docs/engine/navigation.md) |
+| `navigation.h`, `weighted_grid.h`, `steering.h` | Obstacle-aware paths and local steering | [Navigation](../docs/engine/navigation.md) |
 | `engine.h`, `session.h` | Runtime, input, drawing and direct sessions | [Runtime](../docs/engine/runtime.md) |
 | `launcher.h` | Generic menu, session host and launcher loop (`Kinetra::Launcher`) | [Launcher](../docs/engine/launcher-overlays.md) |
 | `camera.h`, `timing.h` | Header-only coordinate transforms and fixed clock | [Runtime](../docs/engine/runtime.md) |
