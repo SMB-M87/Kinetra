@@ -4,16 +4,12 @@
 
 ## Table of contents
 
-**Navigation:**
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
 - [Planning and following](#planning-and-following)
 - [Contracts](#contracts)
 - [Application policies](#application-policies)
 - [Verification](#verification)
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Planning and following
 

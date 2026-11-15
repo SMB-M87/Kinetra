@@ -4,16 +4,12 @@ Headless mechanisms use world units, seconds and radians. Positive rotation is c
 
 ## Table of contents
 
-**Navigation:**
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
 - [Public contracts](#public-contracts)
 - [Physics update flow](#physics-update-flow)
 - [Collision and queries](#collision-and-queries)
 - [Limits and verification](#limits-and-verification)
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Public contracts
 

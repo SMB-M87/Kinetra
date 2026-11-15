@@ -4,16 +4,12 @@ Core builds need no Kinetra-Lab checkout. Application builds and tests belong to
 
 ## Table of contents
 
-**Navigation:**
-
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)
-
-**On this page:**
-
 - [Dependencies and options](#dependencies-and-options)
 - [Checks](#checks)
 - [Graphics execution](#graphics-execution)
 - [External consumers](#external-consumers)
+
+[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)
 
 ## Dependencies and options
 

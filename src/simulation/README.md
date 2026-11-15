@@ -4,14 +4,10 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
-
-**On this page:**
-
 - [Source map](#source-map)
 - [Relationships](#relationships)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
 ## Source map
 

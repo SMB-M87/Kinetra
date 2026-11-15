@@ -4,14 +4,10 @@ These pages document implemented subsystem behavior and ownership. Public declar
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
 - [Contract map](#contract-map)
 - [Related guides](#related-guides)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Contract map
 

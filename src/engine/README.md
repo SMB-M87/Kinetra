@@ -4,14 +4,10 @@ This directory implements the optional SDL2/OpenGL runtime and the generic launc
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
-
-**On this page:**
-
 - [Source map](#source-map)
 - [Relationships](#relationships)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
 ## Source map
 

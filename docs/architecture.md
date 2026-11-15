@@ -4,17 +4,13 @@ The public API is under `include/kinetra/`. Three core CMake targets express lin
 
 ## Table of contents
 
-**Navigation:**
-
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)
-
-**On this page:**
-
 - [System context](#system-context)
 - [Components and build dependencies](#components-and-build-dependencies)
 - [Object ownership](#object-ownership)
 - [Frame interaction](#frame-interaction)
 - [Responsibility map](#responsibility-map)
+
+[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)
 
 ## System context
 

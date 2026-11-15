@@ -4,14 +4,10 @@ This directory contains the generated GLAD header used by the optional SDL2/Open
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
-
-**On this page:**
-
 - [Contents](#contents)
 - [Integration and maintenance](#integration-and-maintenance)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
 ## Contents
 

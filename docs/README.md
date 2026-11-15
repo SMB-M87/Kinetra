@@ -4,17 +4,13 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 
 ## Table of contents
 
-**Navigation:**
+- [Design and workflows](#design-and-workflows)
+- [Applications](#applications)
+- [Decisions](#decisions)
 
 [Parent guide](../README.md)
 
 Directory guides: [decisions](decisions/README.md), [engine](engine/README.md).
-
-**On this page:**
-
-- [Design and workflows](#design-and-workflows)
-- [Applications](#applications)
-- [Decisions](#decisions)
 
 ## Design and workflows
 

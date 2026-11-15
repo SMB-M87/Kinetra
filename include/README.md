@@ -4,16 +4,12 @@ Consumer-facing interfaces live in [kinetra/](kinetra/README.md). Include them a
 
 ## Table of contents
 
-**Navigation:**
+- [API map](#api-map)
+- [Dependencies and ownership](#dependencies-and-ownership)
 
 [Parent guide](../README.md) · [Documentation index](../docs/README.md)
 
 Directory guides: [KHR](KHR/README.md), [glad](glad/README.md), [kinetra](kinetra/README.md).
-
-**On this page:**
-
-- [API map](#api-map)
-- [Dependencies and ownership](#dependencies-and-ownership)
 
 ## API map
 

@@ -4,13 +4,9 @@ Header-only core UI helpers provide shared layout, capture and primitive drawing
 
 ## Table of contents
 
-**Navigation:**
+- [Contracts](#contracts)
 
 [Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
-- [Contracts](#contracts)
 
 ## Contracts
 

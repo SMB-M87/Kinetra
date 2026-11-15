@@ -4,14 +4,10 @@ Consumers include these headers as `<kinetra/name.h>`. This is the engine's firs
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
-
-**On this page:**
-
 - [Header map](#header-map)
 - [Implementation and contracts](#implementation-and-contracts)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
 ## Header map
 

@@ -4,16 +4,12 @@ Compiled engine mechanisms are split into three public linking boundaries. The r
 
 ## Table of contents
 
-**Navigation:**
+- [Source map](#source-map)
+- [Boundaries and verification](#boundaries-and-verification)
 
 [Parent guide](../README.md) · [Documentation index](../docs/README.md)
 
 Directory guides: [engine](engine/README.md), [simulation](simulation/README.md).
-
-**On this page:**
-
-- [Source map](#source-map)
-- [Boundaries and verification](#boundaries-and-verification)
 
 ## Source map
 

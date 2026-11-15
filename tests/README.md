@@ -4,16 +4,12 @@ These executables verify reusable engine behavior. Application tests belong to K
 
 ## Table of contents
 
-**Navigation:**
+- [Test map](#test-map)
+- [Execution](#execution)
 
 [Parent guide](../README.md) · [Documentation index](../docs/README.md)
 
 Directory guides: [consumer](consumer/README.md).
-
-**On this page:**
-
-- [Test map](#test-map)
-- [Execution](#execution)
 
 ## Test map
 

@@ -4,14 +4,10 @@ ADRs preserve the context and trade-offs behind architectural choices. Historica
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
 - [Decision index](#decision-index)
 - [Reading and maintenance](#reading-and-maintenance)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Decision index
 

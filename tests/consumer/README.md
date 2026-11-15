@@ -4,14 +4,10 @@ This standalone CMake project verifies that applications can consume Kinetra thr
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
-
-**On this page:**
-
 - [File map](#file-map)
 - [Build boundary](#build-boundary)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
 ## File map
 

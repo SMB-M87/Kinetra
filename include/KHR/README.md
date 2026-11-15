@@ -4,14 +4,10 @@ This directory contains the bundled Khronos platform header required by GLAD.
 
 ## Table of contents
 
-**Navigation:**
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
-
-**On this page:**
-
 - [Contents](#contents)
 - [Integration and maintenance](#integration-and-maintenance)
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
 ## Contents
 

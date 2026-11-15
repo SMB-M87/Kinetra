@@ -4,17 +4,13 @@
 
 ## Table of contents
 
-**Navigation:**
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
 - [Lifecycle](#lifecycle)
 - [Input and drawing](#input-and-drawing)
 - [Sessions and timing](#sessions-and-timing)
 - [External consumers](#external-consumers)
 - [Verification and limits](#verification-and-limits)
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Lifecycle
 

@@ -7,15 +7,11 @@ Ownership status: superseded in part by [0008](0008-public-engine-and-consumers.
 
 ## Table of contents
 
-**Navigation:**
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
 - [Context](#context)
 - [Decision](#decision)
 - [Consequences](#consequences)
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Context
 

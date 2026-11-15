@@ -5,16 +5,12 @@ Historical decision. The current repository boundary is defined by [0009](0009-c
 
 ## Table of contents
 
-**Navigation:**
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
-
-**On this page:**
-
 - [Context and preservation contract](#context-and-preservation-contract)
 - [Decision](#decision)
 - [Alternatives and limits](#alternatives-and-limits)
 - [Verification](#verification)
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Context and preservation contract
 
