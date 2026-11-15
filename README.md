@@ -8,6 +8,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 - [Features](#features)
 - [Quick start](#quick-start)
 - [Using Kinetra](#using-kinetra)
+- [Working with Kinetra-Lab](#working-with-kinetra-lab)
 - [Documentation](#documentation)
 - [Platform support](#platform-support)
 - [License](#license)
@@ -53,6 +54,22 @@ int main() {
 ```
 
 Runtime consumers enable `KINETRA_BUILD_RUNTIME` and link `Kinetra::Runtime`. Lab supplies `Kinetra::Launcher`. Integration uses source targets; there is no installed CMake package.
+
+## Working with Kinetra-Lab
+
+Kinetra-Lab includes Kinetra as a Git submodule at `external/Kinetra` and builds it from source. Lab records an exact engine commit. The standalone Kinetra checkout and Lab's submodule are independent Git checkouts; changes do not synchronize automatically.
+
+You can develop engine changes either here or inside Lab's submodule. Build and test the engine with the commands above, then verify the applications in Lab. Publish the Kinetra change first; next select that published commit in Lab's submodule, rebuild/test Lab, and commit and publish Lab's updated submodule pointer. Application-only changes belong in Lab.
+
+For unpublished work in sibling directories, run from Kinetra-Lab:
+
+```sh
+cmake -S . -B build-local-core -DCMAKE_BUILD_TYPE=Release -DKINETRA_SOURCE_DIR=../Kinetra
+cmake --build build-local-core -j2
+ctest --test-dir build-local-core --output-on-failure
+```
+
+This local source override does not change Lab's recorded dependency. Before publishing Lab, test against the published commit in `external/Kinetra` using its normal build directory. See the [complete Lab workflow](https://github.com/SMB-M87/Kinetra-Lab#kinetra-development-workflow) for branch handling, engine and Lab publishing order, receiving updates, and build commands.
 
 ## Documentation
 
