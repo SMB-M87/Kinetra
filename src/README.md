@@ -27,6 +27,17 @@ Directory guides: [engine](engine/README.md), [simulation](simulation/README.md)
 | `glad.c` | `Kinetra::Runtime` | Generated OpenGL loader; preserve generated contents |
 
 ## Boundaries and verification
+```mermaid
+flowchart LR
+    Consumer[Application] -->|links| Simulation[Kinetra::Simulation]
+    Consumer -->|optional link| Launcher[Kinetra::Launcher]
+    Consumer -->|optional direct link| Runtime[Kinetra::Runtime]
+    Launcher -->|public dependency| Runtime
+    Runtime -->|private backend dependencies| Backend[SDL2 / OpenGL]
+```
+
+Arrows show linking dependencies. Simulation and Runtime are independent targets; the launcher reuses Runtime.
+
 
 Simulation depends only on the standard library and remains headless. Runtime uses SDL2/OpenGL and does not link Simulation. Public contracts live in [include/kinetra](../include/README.md); backend details stay private to the implementation. The generic launcher links Runtime. Application registration and the bundled launcher executable belong to Kinetra-Lab.
 

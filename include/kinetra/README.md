@@ -22,6 +22,32 @@ Consumers include these headers as `<kinetra/name.h>`. This is the engine's firs
 | [bitmap_text.h](bitmap_text.h), [debug_view.h](debug_view.h), [help_view.h](help_view.h) | Text rendering and shared overlays | Header-only; drawing uses Runtime |
 
 ## Implementation and contracts
+```mermaid
+classDiagram
+    class World {
+        +add(Body) size_t
+        +body(size_t) Body
+        +step(float)
+    }
+    class Body {
+        +Shape shape
+        +Motion motion
+        +Vec2 position
+        +Vec2 velocity
+    }
+    class SpatialGrid
+    class Contact {
+        +Vec2 normal
+        +Vec2 point
+        +float penetration
+    }
+    World "1" *-- "0..*" Body : stores by value
+    World "1" *-- "1" SpatialGrid : broad phase
+    World ..> Contact : resolves detected contacts
+```
+
+This UML-style excerpt describes `physics.h`, rather than the entire API. Bodies and the grid are owned values; contacts are collision results, not base classes. `body()` returns a reference to a stored body.
+
 
 Compiled implementations live in [simulation](../../src/simulation/README.md) and [engine](../../src/engine/README.md). Runtime and Launcher are optional; simulation APIs remain headless.
 

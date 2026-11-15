@@ -22,6 +22,18 @@ Directory guides: [consumer](consumer/README.md).
 | [consumer/](consumer/README.md) | Separate executable | Public headers and CMake source integration |
 
 ## Execution
+```mermaid
+flowchart LR
+    Configure[Configure with BUILD_TESTING] --> Build[Build test executables]
+    Build --> CTest[Run CTest]
+    CTest --> Simulation[Simulation and navigation checks]
+    CTest --> Launcher[Launcher checks when runtime enabled]
+    CTest --> Graphics[Graphics checks when runtime and graphics tests enabled]
+    Consumer[Separately configure consumer fixture] --> Public[Build and run public API consumer]
+```
+
+CTest coverage follows the configured options. The separate consumer checks source integration; graphics tests require an actual OpenGL context.
+
 
 The root [CMakeLists.txt](../CMakeLists.txt) registers tests when `BUILD_TESTING` is enabled. Graphics tests also require `KINETRA_BUILD_RUNTIME` and `KINETRA_TEST_GRAPHICS`. The consumer is configured separately.
 

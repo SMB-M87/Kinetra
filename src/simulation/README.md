@@ -22,6 +22,21 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 | [steering.cpp](steering.cpp) | Local steering and obstacle avoidance |
 
 ## Relationships
+```mermaid
+flowchart TD
+    Validate[Validate timestep, gravity and bodies] --> Integrate[Integrate moving bodies for half a timestep]
+    Integrate --> Grid[Rebuild spatial grid from body bounds]
+    Grid --> Query[Query candidate pairs from movers]
+    Query --> Contact[Detect and resolve contacts]
+    Contact --> Pass{Six correction passes completed?}
+    Pass -->|no| Grid
+    Pass -->|yes| Substep{Two substeps completed?}
+    Substep -->|no| Integrate
+    Substep -->|yes| Done[Return from World.step]
+```
+
+`physics.cpp` rebuilds the broad phase after each correction pass because corrections can create new contacts. Fixed bodies remain indexed but do not initiate queries. See the physics contract for timestep and collision limitations.
+
 
 Navigation and steering build on geometry and spatial queries without depending on SDL/OpenGL. Applications own world generation and AI policy.
 

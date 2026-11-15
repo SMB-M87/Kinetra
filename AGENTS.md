@@ -66,7 +66,9 @@ Permanent project rules for this repository. Explicit user instructions and high
 - Use [docs/README.md](docs/README.md) to find each concept's authoritative page; link instead of duplicating explanations.
 - Place the table of contents below each maintained Markdown title/introduction, with the local heading links directly under `## Table of contents`. Immediately below that list, place compact parent, project overview, documentation index and child-guide links, following the layout in Artix/docs/networking.md. Do not add separate Navigation or On this page labels, or a navigation section at the end.
 - Use `[TOC]` for local heading links only when the target Markdown renderer supports it. Otherwise maintain an explicit list of heading links so the guide remains navigable without a TOC extension. Verify relative links and heading anchors after documentation changes.
-- Prefer Mermaid for architecture, ownership, interactions and lifecycle explanations.
+- Include diagrams in directory README files alongside first-party code (source, public headers and tests) when they clarify nontrivial structure or behavior; this guidance also applies to nested code directories, not only docs/ pages.
+- Prefer Mermaid component/dependency diagrams for module boundaries, UML-style class diagrams for types and ownership, sequence diagrams for interactions, and flowcharts or state diagrams for execution and lifecycle flows. Choose the form that best explains the local code.
+- Keep local diagrams focused on the directory and link authoritative subsystem guides for details; do not duplicate full architecture diagrams in every README. Simple directory indexes and third-party wrappers need no decorative diagrams.
 - Every diagram must reflect implemented components, label relationships and explain its takeaway.
 - Do not create diagrams for trivial functions or one page per class.
 - Keep diagrams synchronized with code; never imply inheritance for enums or plain composition.

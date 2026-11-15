@@ -18,6 +18,22 @@ This directory implements the optional SDL2/OpenGL runtime and the generic launc
 | [launcher.cpp](launcher.cpp) | Menu selection/layout, session hosting and launcher event loop | `Kinetra::Launcher` |
 
 ## Relationships
+```mermaid
+flowchart TD
+    Poll[Runtime.poll] --> Open{Continue?}
+    Open -->|yes| Advance[Session.advance]
+    Open -->|no| Return[Return frame count]
+    Advance --> Exit{Session.exit_requested?}
+    Exit -->|yes| Return
+    Exit -->|no| Render[Session.render]
+    Render --> Title[Update window title and count frame]
+    Title --> Limit{Frame limit reached?}
+    Limit -->|yes| Return
+    Limit -->|no| Poll
+```
+
+This is the direct `run_session` loop in `session.cpp`. The application owns session behavior; Runtime supplies input, camera and drawing. A zero frame limit runs until polling or the session requests exit.
+
 
 Launcher links Runtime; Runtime does not link Simulation. SDL/OpenGL implementation details stay behind public engine interfaces. Application registration and the executable belong to Kinetra-Lab.
 
