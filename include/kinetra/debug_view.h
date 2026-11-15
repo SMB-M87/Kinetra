@@ -19,9 +19,11 @@ struct DebugOption {
 /// all pointer input inside the panel is consumed, including held fire.
 struct DebugMenu {
     bool visible{};
+    Vec2 pointer{-1, -1};
     static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 260.f}); }
     bool update(const Input &input, Vec2 viewport, std::span<DebugOption> options,
                 Key toggle = Key::backquote) {
+        pointer = input.mouse;
         if (input.hit(toggle))
             visible = !visible;
         const float size = scale(viewport);
@@ -46,6 +48,7 @@ struct DebugMenu {
         runtime.box(runtime.camera.screen_to_world(origin + half), half / runtime.camera.pixels_per_unit, 0,
                     {0.04f, 0.07f, 0.12f});
         draw_text(runtime, "DEBUG MENU", origin + Vec2{4, 6} * size, size, {1, 1, 1});
+        const Vec2 point = (pointer - origin) / size;
         for (std::size_t row = 0; row < options.size(); ++row) {
             const auto &option = options[row];
             std::string text = std::string(option.enabled ? (*option.enabled ? "[X] " : "[ ] ") : "") +
@@ -54,7 +57,10 @@ struct DebugMenu {
                 text += " " + option.text();
             if (option.number)
                 text += " " + std::to_string(option.number());
-            draw_text(runtime, text, origin + Vec2{4, 26 + row * 16.f} * size, size, {0.8f, 0.9f, 1});
+            const bool hovered = (option.enabled || option.action) && point.x >= 0 && point.x <= 182 &&
+                                 point.y >= 22 + row * 16.f && point.y < 38 + row * 16.f;
+            draw_text(runtime, text, origin + Vec2{4, 26 + row * 16.f} * size, size,
+                      hovered ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.9f, 1});
             if (option.visualization)
                 option.visualization(runtime, origin + Vec2{4, 26 + row * 16.f} * size, size);
         }

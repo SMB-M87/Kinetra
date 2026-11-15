@@ -5,10 +5,18 @@
 
 namespace kinetra {
 MenuLayout::MenuLayout(Vec2 viewport, std::size_t rows)
-    : scale(std::min({2.f, viewport.x / 320, viewport.y / std::max(270.f, 150.f + rows * 40)})) {
+    : scale(std::min({2.f, viewport.x / 320, viewport.y / (150.f + std::min(rows, page_size) * 40)})),
+      visible_rows(std::min(rows, page_size)) {
     if (!finite(viewport) || viewport.x <= 0 || viewport.y <= 0)
         throw std::invalid_argument("Invalid menu viewport");
-    origin = (viewport - Vec2{300, std::max(240.f, 120.f + rows * 40)} * scale) / 2;
+    origin = (viewport - Vec2{300, 130.f + visible_rows * 40} * scale) / 2;
+}
+Vec2 MenuLayout::footer_center(float x) const {
+    return origin + Vec2{x, 110.f + visible_rows * 40} * scale;
+}
+bool MenuLayout::footer_contains(Vec2 point, float x) const {
+    const auto offset = point - footer_center(x);
+    return std::abs(offset.x) <= 40 * scale && std::abs(offset.y) <= 14 * scale;
 }
 Vec2 MenuLayout::row_center(std::size_t index) const {
     return origin + Vec2{150, 80.f + index * 40} * scale;
@@ -41,6 +49,8 @@ std::string_view LaunchMenu::description() const {
     return choices_[application_].description;
 }
 std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewport) {
+    const bool pointer_moved = input.mouse.x != pointer_.x || input.mouse.y != pointer_.y;
+    pointer_ = input.mouse;
     if (configuring_ && input.hit(Key::m)) {
         configuring_ = false;
         return std::nullopt;
@@ -50,12 +60,38 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewp
         selection = (selection + 1) % row_count();
     if (input.hit(Key::up))
         selection = (selection + row_count() - 1) % row_count();
+    // A resting pointer must not undo keyboard navigation on the next frame.
+    if (pointer_moved && !input.hit(Key::down) && !input.hit(Key::up)) {
+        const MenuLayout layout(viewport, row_count());
+        const auto first = selection / MenuLayout::page_size * MenuLayout::page_size;
+        for (std::size_t i = 0; i < layout.visible_rows && first + i < row_count(); ++i)
+            if (layout.contains(i, input.mouse)) {
+                selection = first + i;
+                break;
+            }
+    }
     bool confirm = input.hit(Key::enter) || input.hit(Key::space);
     if (input.clicked) {
         const MenuLayout layout(viewport, row_count());
-        for (std::size_t i = 0; i < row_count(); ++i)
+        const auto first = selection / MenuLayout::page_size * MenuLayout::page_size;
+        if (layout.footer_contains(input.mouse, 150)) {
+            exit_requested_ = true;
+            return std::nullopt;
+        }
+        if (row_count() > MenuLayout::page_size) {
+            if (layout.footer_contains(input.mouse, 50)) {
+                selection = first == 0 ? (row_count() - 1) / MenuLayout::page_size * MenuLayout::page_size
+                                       : first - MenuLayout::page_size;
+                return std::nullopt;
+            }
+            if (layout.footer_contains(input.mouse, 250)) {
+                selection = first + MenuLayout::page_size < row_count() ? first + MenuLayout::page_size : 0;
+                return std::nullopt;
+            }
+        }
+        for (std::size_t i = 0; i < layout.visible_rows && first + i < row_count(); ++i)
             if (layout.contains(i, input.mouse)) {
-                selection = i;
+                selection = first + i;
                 confirm = true;
                 break;
             }
@@ -72,22 +108,30 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewp
 void LaunchMenu::draw(Runtime &runtime) const {
     const MenuLayout layout(runtime.camera.viewport, row_count());
     runtime.begin();
-    draw_text(runtime, "KINETRA", layout.origin + Vec2{10, 10} * layout.scale, layout.scale * 3,
+    draw_text(runtime, "KINETRA LAUNCHER", layout.origin + Vec2{10, 10} * layout.scale, layout.scale * 3,
               {0.55f, 1, 0.35f});
-    draw_text(runtime, configuring_ ? "SELECT CONFIGURATION" : "SELECT APPLICATION",
-              layout.origin + Vec2{10, 44} * layout.scale, layout.scale, {0.8f, 0.85f, 1});
-    for (std::size_t i = 0; i < row_count(); ++i) {
+    if (configuring_)
+        draw_text(runtime, "SELECT CONFIGURATION", layout.origin + Vec2{10, 44} * layout.scale,
+                  layout.scale, {0.8f, 0.85f, 1});
+    const auto first = selected() / MenuLayout::page_size * MenuLayout::page_size;
+    for (std::size_t i = 0; i < layout.visible_rows && first + i < row_count(); ++i) {
         runtime.box(runtime.camera.screen_to_world(layout.row_center(i)),
                     Vec2{140, 16} * (layout.scale / runtime.camera.pixels_per_unit), 0,
-                    i == selected() ? Color{0.15f, 0.3f, 0.4f} : Color{0.06f, 0.1f, 0.16f});
-        draw_text(runtime, row_name(i), layout.row_center(i) - Vec2{130, 4} * layout.scale, layout.scale,
-                  {0.95f, 0.95f, 1});
+                    first + i == selected() ? Color{0.15f, 0.3f, 0.4f} : Color{0.06f, 0.1f, 0.16f});
+        draw_text(runtime, row_name(first + i), layout.row_center(i) - Vec2{130, 4} * layout.scale,
+                  layout.scale, {0.95f, 0.95f, 1});
     }
-    const float footer = 102.f + row_count() * 40;
-    draw_text(runtime, "ARROWS / CLICK: SELECT   ENTER: START",
-              layout.origin + Vec2{10, footer} * layout.scale, layout.scale, {0.8f, 0.85f, 1});
-    draw_text(runtime, configuring_ ? "M: BACK   ESC: EXIT" : "ESC: EXIT",
-              layout.origin + Vec2{10, footer + 18} * layout.scale, layout.scale, {0.8f, 0.85f, 1});
+    auto button = [&](std::string_view label, float x) {
+        draw_text(runtime, label,
+                  layout.footer_center(x) - Vec2{(label.size() * 6.f - 1) / 2, 4} * layout.scale,
+                  layout.scale, layout.footer_contains(pointer_, x) ? Color{0.25f, 0.65f, 1.f}
+                                                                 : Color{0.8f, 0.85f, 1});
+    };
+    button("EXIT", 150);
+    if (row_count() > MenuLayout::page_size) {
+        button("PREVIOUS", 50);
+        button("NEXT", 250);
+    }
     runtime.end();
 }
 SessionHost::SessionHost(std::vector<ApplicationRegistration> applications)
@@ -154,6 +198,8 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
                 switched = true;
             }
         }
+        if (menu.exit_requested())
+            break;
         // World construction must not accrue catch-up simulation time.
         if (switched)
             previous = Clock::now();

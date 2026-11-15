@@ -24,6 +24,10 @@ struct MenuLayout {
     explicit MenuLayout(Vec2 viewport, std::size_t rows = 3);
     Vec2 row_center(std::size_t index) const;
     bool contains(std::size_t index, Vec2 point) const;
+    static constexpr std::size_t page_size = 6;
+    std::size_t visible_rows;
+    Vec2 footer_center(float x = 150) const;
+    bool footer_contains(Vec2 point, float x) const;
 };
 /// Value-owned registration metadata; configuration names have no engine semantics.
 class LaunchMenu {
@@ -31,6 +35,7 @@ class LaunchMenu {
     explicit LaunchMenu(std::vector<LaunchChoice> choices);
     std::optional<LaunchSelection> update(const Input &input, Vec2 viewport);
     std::size_t selected() const;
+    bool exit_requested() const { return exit_requested_; }
     bool configuring() const { return configuring_; }
     std::size_t configuration() const { return configurations_[application_]; }
     std::size_t row_count() const;
@@ -42,7 +47,8 @@ class LaunchMenu {
     std::vector<LaunchChoice> choices_;
     std::vector<std::size_t> configurations_;
     std::size_t application_{};
-    bool configuring_{};
+    bool configuring_{}, exit_requested_{};
+    Vec2 pointer_{-1, -1};
 };
 struct ApplicationRegistration {
     LaunchChoice choice;

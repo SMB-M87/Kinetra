@@ -31,6 +31,34 @@ int main() {
         require(!menu.update(confirm, {800, 600}) && menu.configuring(), "Configuration skipped");
         const auto selection = menu.update(confirm, {800, 600});
         require(selection && selection->configuration == 1, "Default configuration lost");
+        for (auto viewport : {Vec2{1280, 800}, Vec2{160, 120}}) {
+            std::vector<LaunchChoice> entries;
+            for (int i = 0; i < 14; ++i)
+                entries.push_back({"LAB " + std::to_string(i), "", {}, 0});
+            LaunchMenu pages(entries);
+            MenuLayout layout(viewport, entries.size());
+            Input pointer;
+            pointer.clicked = true;
+            pointer.mouse = layout.footer_center(250);
+            require(!pages.update(pointer, viewport) && pages.selected() == 6,
+                    "Next page launched an application or lost selection");
+            pages.update(pointer, viewport);
+            require(pages.selected() == 12, "Partial last page unreachable");
+            pointer.mouse = layout.row_center(1);
+            auto last = pages.update(pointer, viewport);
+            require(last && last->application == 13, "Last page picking failed");
+            Input down;
+            down.pressed[std::size_t(Key::down)] = true;
+            pages.update(down, viewport);
+            require(pages.selected() == 0, "Keyboard wrap failed");
+            pointer.mouse = layout.footer_center(50);
+            pages.update(pointer, viewport);
+            require(pages.selected() == 12, "Previous page wrap failed");
+            pointer.mouse = layout.footer_center();
+            require(!pages.update(pointer, viewport) && pages.exit_requested(), "Exit button failed");
+            require(layout.origin.x > 0 && layout.origin.y > 0 && layout.footer_center().y < viewport.y,
+                    "Menu does not fit resized viewport");
+        }
         int destroyed = 0;
         bool fail = false;
         SessionHost host({{{"EXTERNAL", "CUSTOM APP", {}, 0},

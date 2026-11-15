@@ -9,6 +9,8 @@ class Session {
     virtual void advance(double elapsed, const Input &input, Camera2D &camera) = 0;
     virtual void render(Runtime &runtime) = 0;
     virtual std::string title() = 0;
+    virtual bool exit_requested() const { return false; }
+    virtual bool close_on_escape() const { return true; }
 };
 
 /// Run a directly launched session; returns frames presented. Zero means no frame limit.

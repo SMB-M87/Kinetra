@@ -49,7 +49,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 - Keep world generation, AI decisions, combat, difficulty, spawning and bindings application-owned.
 - Application fixed rates are policy: do not hardcode Demo or Dotio timing into the engine.
 - Preserve headless and runtime-only builds, independently of examples and launcher.
-- Generic launcher API, menu, host and event loop belong to Kinetra; application registration and executable composition belong to Kinetra-Lab.
+- Reusable launcher menu and session hosting belong to the optional `Kinetra::Launcher` target; application registration and policy belong to Kinetra-Lab. Core retains the direct Session contract.
 - Overlays own shared layout/rendering/input capture; applications provide content and actions.
 - Do not add a library for each directory. Targets must represent useful linking boundaries.
 - Record meaningful boundary changes in an ADR and update the external-consumer test.

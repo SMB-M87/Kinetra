@@ -39,7 +39,7 @@ Only one Runtime can exist at a time. Construction, calls and destruction belong
 
 | Contract | Behavior |
 | --- | --- |
-| `poll()` | Updates held/pressed keys, mouse, held/clicked button and wheel; returns false on close/Escape |
+| `poll(close_on_escape = true)` | Updates held/pressed keys (including left/right Ctrl), mouse, held/clicked button and wheel; returns false on close or optionally Escape |
 | Focus loss | Clears held keyboard state |
 | Camera viewport | Logical window pixels for picking; resize preserves center and zoom |
 | OpenGL viewport | Drawable pixels, refreshed by `begin()` for high-DPI rendering |
@@ -74,3 +74,5 @@ Applications and the bundled launcher executable are built in [Kinetra-Lab](http
 [Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [External consumer fixture](../../tests/consumer/CMakeLists.txt) compile public simulation/runtime interfaces without any Lab source.
 
 No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
+
+Sessions can override `close_on_escape()` and `exit_requested()` to provide an application-owned exit action. `run_session` honors both policies.

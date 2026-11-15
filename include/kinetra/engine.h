@@ -39,6 +39,7 @@ enum class Key {
     four,
     five,
     six,
+    control,
     count
 };
 struct Input {
@@ -62,7 +63,8 @@ class Runtime {
     ~Runtime();
     Runtime(const Runtime &) = delete;
     Runtime &operator=(const Runtime &) = delete;
-    bool poll();
+    /// Disable Escape shutdown when the application supplies its own exit action.
+    bool poll(bool close_on_escape = true);
     const Input &input() const;
     void title(const std::string &text);
     void begin(Color background = {0.035f, 0.045f, 0.07f, 1});

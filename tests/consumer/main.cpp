@@ -3,6 +3,7 @@
 #include <kinetra/timing.h>
 
 #ifdef CONSUMER_GRAPHICS
+#include <kinetra/session.h>
 #include <kinetra/launcher.h>
 auto consumer_run_launcher = &kinetra::run_launcher;
 // Retain a relocation to a compiled Runtime entry point without opening a window.

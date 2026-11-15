@@ -1,7 +1,7 @@
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
-#include <optional>
 #include <kinetra/engine.h>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -57,6 +57,9 @@ std::optional<Key> key(SDL_Keycode code) {
     case SDLK_LSHIFT:
     case SDLK_RSHIFT:
         return Key::shift;
+    case SDLK_LCTRL:
+    case SDLK_RCTRL:
+        return Key::control;
     case SDLK_v:
         return Key::v;
     case SDLK_BACKQUOTE:
@@ -204,7 +207,7 @@ void Runtime::title(const std::string &text) {
     SDL_SetWindowTitle(impl_->window, text.c_str());
 }
 
-bool Runtime::poll() {
+bool Runtime::poll(bool close_on_escape) {
     auto &in = impl_->input;
     in.pressed.fill(false);
     in.wheel = 0;
@@ -239,7 +242,7 @@ bool Runtime::poll() {
     SDL_GetWindowSize(impl_->window, &w, &h);
     in.mouse = {float(x), float(y)};
     camera.viewport = {float(std::max(w, 1)), float(std::max(h, 1))};
-    return impl_->running && !in.hit(Key::escape);
+    return impl_->running && !(close_on_escape && in.hit(Key::escape));
 }
 
 void Runtime::begin(Color background) {

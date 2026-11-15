@@ -21,7 +21,8 @@ Directory guides: [docs](docs/README.md), [include](include/README.md), [src](sr
 
 - Headless geometry, collisions, physics, spatial queries, navigation and steering.
 - Optional window, input, camera, colored primitives, bitmap text and direct sessions.
-- Public C++ headers under `include/kinetra/`; CMake targets `Kinetra::Simulation` and optional `Kinetra::Runtime`.
+- Public C++ headers under `include/kinetra/`; CMake targets `Kinetra::Simulation`, optional `Kinetra::Runtime` and `Kinetra::Launcher`.
+- Optional reusable launcher menu and session host in `<kinetra/launcher.h>`; application registration and gameplay remain in Lab.
 
 ## Quick start
 
