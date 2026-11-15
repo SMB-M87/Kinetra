@@ -1,0 +1,40 @@
+# Documentation
+
+Start with the architecture map, then follow the subsystem contract relevant to your change. Source and behavioral tests define the detailed API.
+
+## Table of contents
+
+- [Design and workflows](#design-and-workflows)
+- [Applications](#applications)
+- [Decisions](#decisions)
+
+## Design and workflows
+
+| Question | Authoritative page |
+| --- | --- |
+| What depends on what? Who owns objects? | [Architecture](architecture.md) |
+| How do I build, test and validate a change? | [Development](development.md) |
+| What are the geometry and physics contracts? | [Math and physics](engine/math-physics.md) |
+| How do pathfinding and steering cooperate? | [Navigation](engine/navigation.md) |
+| How do window/input/rendering and sessions work? | [Runtime](engine/runtime.md) |
+| How do I register applications and overlays? | [Launcher and overlays](engine/launcher-overlays.md) |
+| What rules must agents follow? | [AGENTS](../AGENTS.md) |
+
+## Applications
+
+- [Demo](demo/README.md): controls, streamed terrain, agents and navigation policy.
+- [Dotio](dotio/README.md): controls, coordinates, AI, balance, streaming and extraction.
+- [Composition root](../examples/app/README.md): bundled CLI and application registration.
+
+## Decisions
+
+| ADR | Decision |
+| --- | --- |
+| [0001](decisions/0001-independent-2d-foundation.md) | Independent 2D foundation |
+| [0002](decisions/0002-camera-driven-terrain.md) | Seeded terrain residency |
+| [0003](decisions/0003-sandbox-navigation-and-population.md) | Original application-owned planner; ownership superseded by 0008 |
+| [0004](decisions/0004-sandbox-application-boundaries.md) | Sandbox policy/input/presentation boundaries |
+| [0005](decisions/0005-sandbox-agent-lifecycle.md) | Cohesive agent lifecycle |
+| [0006](decisions/0006-variants-and-dotio-port.md) | Original variant/port boundary; session ownership amended by 0008 |
+| [0007](decisions/0007-module-tests-and-streamed-dotio.md) | Streamed Dotio window and module tests |
+| [0008](decisions/0008-public-engine-and-consumers.md) | Public navigation, optional launcher and external consumers |
