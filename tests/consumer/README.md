@@ -4,9 +4,14 @@ This standalone CMake project verifies that applications can consume Kinetra thr
 
 ## Table of contents
 
+**Navigation:**
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
+
+**On this page:**
+
 - [File map](#file-map)
 - [Build boundary](#build-boundary)
-- [Navigation](#navigation)
 
 ## File map
 
@@ -20,7 +25,3 @@ This standalone CMake project verifies that applications can consume Kinetra thr
 The default fixture links `Kinetra::Simulation`. `CONSUMER_GRAPHICS=ON` enables the runtime build and links `Kinetra::Launcher`, which exposes its Runtime dependency. The fixture does not open a window and does not replace graphics tests.
 
 See [external consumer commands](../../docs/development.md#external-consumers), the [public API map](../../include/kinetra/README.md) and the [test guide](../README.md).
-
-## Navigation
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)

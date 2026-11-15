@@ -4,9 +4,14 @@ This directory contains the bundled Khronos platform header required by GLAD.
 
 ## Table of contents
 
+**Navigation:**
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
+
+**On this page:**
+
 - [Contents](#contents)
 - [Integration and maintenance](#integration-and-maintenance)
-- [Navigation](#navigation)
 
 ## Contents
 
@@ -17,7 +22,3 @@ This directory contains the bundled Khronos platform header required by GLAD.
 The generated [GLAD header](../glad/README.md) includes this file. It supports the optional runtime backend rather than defining an application-facing Kinetra API.
 
 Preserve the upstream header and its license. This README explains its role without modifying third-party source. Return to the [header map](../README.md).
-
-## Navigation
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)

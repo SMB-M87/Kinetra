@@ -4,11 +4,16 @@ Headless mechanisms use world units, seconds and radians. Positive rotation is c
 
 ## Table of contents
 
+**Navigation:**
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+
+**On this page:**
+
 - [Public contracts](#public-contracts)
 - [Physics update flow](#physics-update-flow)
 - [Collision and queries](#collision-and-queries)
 - [Limits and verification](#limits-and-verification)
-- [Navigation](#navigation)
 
 ## Public contracts
 
@@ -66,7 +71,3 @@ Application-specific math adapters and pixel/world coordinate conversions remain
 The solver uses discrete contacts and a representative contact point, without continuous rigid-body collision detection, joints, robust stacking manifolds or cross-machine bitwise determinism. Segment queries are not a complete scene raycasting API.
 
 [Simulation tests](../../tests/simulation_tests.cpp) cover shape boundaries, containment, momentum, rotation, material response, mixed modes, invalid inputs, grid queries and a 400-body workload. [Navigation tests](../../tests/navigation_tests.cpp) also exercise zero vectors, degenerate segments, finite-value checks and exact endpoints. Test commands are in [development](../development.md).
-
-## Navigation
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

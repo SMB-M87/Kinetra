@@ -4,9 +4,16 @@ Consumer-facing interfaces live in [kinetra/](kinetra/README.md). Include them a
 
 ## Table of contents
 
+**Navigation:**
+
+[Parent guide](../README.md) · [Documentation index](../docs/README.md)
+
+Directory guides: [KHR](KHR/README.md), [glad](glad/README.md), [kinetra](kinetra/README.md).
+
+**On this page:**
+
 - [API map](#api-map)
 - [Dependencies and ownership](#dependencies-and-ownership)
-- [Navigation](#navigation)
 
 ## API map
 
@@ -26,9 +33,3 @@ Link compiled simulation APIs through `Kinetra::Simulation`; runtime and drawing
 [glad/](glad/README.md) and [KHR/](KHR/README.md) contain generated or third-party backend headers. Preserve their licenses and generated contents; application code should use `kinetra/` interfaces.
 
 See the [implementation map](../src/README.md), [architecture](../docs/architecture.md) and [build instructions](../docs/development.md).
-
-## Navigation
-
-[Parent guide](../README.md) · [Documentation index](../docs/README.md)
-
-Directory guides: [KHR](KHR/README.md), [glad](glad/README.md), [kinetra](kinetra/README.md).

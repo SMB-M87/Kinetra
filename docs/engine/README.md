@@ -4,9 +4,14 @@ These pages document implemented subsystem behavior and ownership. Public declar
 
 ## Table of contents
 
+**Navigation:**
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+
+**On this page:**
+
 - [Contract map](#contract-map)
 - [Related guides](#related-guides)
-- [Navigation](#navigation)
 
 ## Contract map
 
@@ -20,7 +25,3 @@ These pages document implemented subsystem behavior and ownership. Public declar
 ## Related guides
 
 The [architecture](../architecture.md) explains cross-module ownership. [Development](../development.md) describes verification. Historical rationale belongs in [decisions](../decisions/README.md). Return to the [documentation index](../README.md).
-
-## Navigation
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

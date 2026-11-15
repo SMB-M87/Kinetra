@@ -7,10 +7,15 @@ Ownership status: superseded in part by [0008](0008-public-engine-and-consumers.
 
 ## Table of contents
 
+**Navigation:**
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+
+**On this page:**
+
 - [Context](#context)
 - [Decision](#decision)
 - [Consequences](#consequences)
-- [Navigation](#navigation)
 
 ## Context
 
@@ -23,7 +28,3 @@ Application-owned eight-neighbor A* uses a one-unit grid, cached swept links and
 ## Consequences
 
 Moving-body avoidance stays local. Commands expire after 20 active simulated seconds, and agents resume wandering on arrival. Agents freeze outside 1.75× maximum normal player view, clear paths and ignore goals. Beyond 1.25× maximum debug player view, their bodies are evicted and handles compacted. Current zoom and Ghost pan do not affect these bounds. Population is capped at 1,200; navigation at 262,144 cells. Conservative clearance can reject physically passable gaps; moving crowds can still prevent arrival.
-
-## Navigation
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

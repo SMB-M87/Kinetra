@@ -4,11 +4,16 @@ Core builds need no Kinetra-Lab checkout. Application builds and tests belong to
 
 ## Table of contents
 
+**Navigation:**
+
+[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)
+
+**On this page:**
+
 - [Dependencies and options](#dependencies-and-options)
 - [Checks](#checks)
 - [Graphics execution](#graphics-execution)
 - [External consumers](#external-consumers)
-- [Navigation](#navigation)
 
 ## Dependencies and options
 
@@ -53,7 +58,3 @@ cmake --build build-consumer --parallel
 ```
 
 For runtime linking, add `-DCONSUMER_GRAPHICS=ON` and provide the SDL2/OpenGL dependencies. Kinetra is integrated from source with `add_subdirectory`; installed CMake packages are not provided.
-
-## Navigation
-
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)

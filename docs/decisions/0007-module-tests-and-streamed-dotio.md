@@ -5,10 +5,15 @@ Historical decision. The current repository boundary is defined by [0009](0009-c
 
 ## Table of contents
 
+**Navigation:**
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+
+**On this page:**
+
 - [Context](#context)
 - [Decision](#decision)
 - [Consequences](#consequences)
-- [Navigation](#navigation)
 
 ## Context
 
@@ -21,7 +26,3 @@ A 155-cell local window rebases in 16-cell steps. Actors, camera, projectiles an
 ## Consequences
 
 The pool has 666 enemy slots. Retirement clears paths and partitions; reused enemies regain full durability. Death resets survival progression and retires live enemies, preserving difficulty. Props retain displacement while loaded and regenerate at their seeded spawn after eviction. Shared engine operations implement contacts, impulses and sweeps; combat and rewards stay local. Actor/prop contacts are discrete. Projectile hits use linear relative target motion and are ordered against walls and props. There is no disk persistence.
-
-## Navigation
-
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

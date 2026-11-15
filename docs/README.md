@@ -4,10 +4,17 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 
 ## Table of contents
 
+**Navigation:**
+
+[Parent guide](../README.md)
+
+Directory guides: [decisions](decisions/README.md), [engine](engine/README.md).
+
+**On this page:**
+
 - [Design and workflows](#design-and-workflows)
 - [Applications](#applications)
 - [Decisions](#decisions)
-- [Navigation](#navigation)
 
 ## Design and workflows
 
@@ -45,9 +52,3 @@ ADRs record historical context, including applications formerly in this reposito
 | [0009](decisions/0009-core-and-lab.md) | Core/Lab split and source integration |
 | [0010](decisions/0010-generic-launcher-in-core.md) | Generic launcher ownership in Kinetra |
 | [0008](decisions/0008-public-engine-and-consumers.md) | Public navigation, optional launcher and external consumers |
-
-## Navigation
-
-[Parent guide](../README.md)
-
-Directory guides: [decisions](decisions/README.md), [engine](engine/README.md).

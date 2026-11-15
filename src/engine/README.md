@@ -4,9 +4,14 @@ This directory implements the optional SDL2/OpenGL runtime and the generic launc
 
 ## Table of contents
 
+**Navigation:**
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
+
+**On this page:**
+
 - [Source map](#source-map)
 - [Relationships](#relationships)
-- [Navigation](#navigation)
 
 ## Source map
 
@@ -21,7 +26,3 @@ This directory implements the optional SDL2/OpenGL runtime and the generic launc
 Launcher links Runtime; Runtime does not link Simulation. SDL/OpenGL implementation details stay behind public engine interfaces. Application registration and the executable belong to Kinetra-Lab.
 
 See the [runtime contract](../../docs/engine/runtime.md), [launcher contract](../../docs/engine/launcher-overlays.md) and [test guide](../../tests/README.md). Return to the [source map](../README.md).
-
-## Navigation
-
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)

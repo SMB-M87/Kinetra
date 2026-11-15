@@ -5,6 +5,14 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 
 ## Table of contents
 
+**Navigation:**
+
+[Documentation index](docs/README.md)
+
+Directory guides: [docs](docs/README.md), [include](include/README.md), [src](src/README.md), [tests](tests/README.md).
+
+**On this page:**
+
 - [Features](#features)
 - [Quick start](#quick-start)
 - [Using Kinetra](#using-kinetra)
@@ -12,7 +20,6 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 - [Documentation](#documentation)
 - [Platform support](#platform-support)
 - [License](#license)
-- [Navigation](#navigation)
 
 ## Features
 
@@ -87,9 +94,3 @@ Rendering has no texture system or pose interpolation. Cross-machine bitwise det
 ## License
 
 MIT; see [LICENSE](LICENSE). Generated GLAD retains embedded licenses.
-
-## Navigation
-
-[Documentation index](docs/README.md)
-
-Directory guides: [docs](docs/README.md), [include](include/README.md), [src](src/README.md), [tests](tests/README.md).
