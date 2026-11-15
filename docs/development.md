@@ -11,12 +11,12 @@ Core builds need no Kinetra-Lab checkout. Application builds and tests belong to
 
 ## Dependencies and options
 
-C++20, CMake 3.16+ and a build tool are required. Python 3 runs repository checks. Runtime additionally requires SDL2/OpenGL development files and an OpenGL 3.3 context.
+C++20, CMake 3.16+ and a build tool are required. Runtime additionally requires SDL2/OpenGL development files and an OpenGL 3.3 context.
 
 | Option | Default | Effect |
 | --- | --- | --- |
 | `KINETRA_BUILD_RUNTIME` | OFF | Build optional SDL2/OpenGL Runtime |
-| `BUILD_TESTING` | ON | Build core tests and external consumer checks |
+| `BUILD_TESTING` | ON | Build core tests |
 | `KINETRA_TEST_GRAPHICS` | OFF | Add runtime tests requiring an OpenGL context |
 
 The former Demo, Dotio and Launcher switches have been removed. The root build contains no application executable. Use fresh build directories after migration to avoid stale binaries/options.
@@ -27,10 +27,9 @@ The former Demo, Dotio and Launcher switches have been removed. The root build c
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
-python3 tools/check_repository.py
 ```
 
-`kinetra_behavior` and `kinetra_navigation` cover core contracts. Repository checks cover first-party extensions, Markdown TOCs, local links and checker regressions. They do not render Mermaid. Format changed authored C++ using `.clang-format`; leave generated GLAD/KHR unchanged.
+`kinetra_behavior` and `kinetra_navigation` cover core contracts. Check changed documentation links and paths when editing docs. Format changed authored C++ using `.clang-format`; leave generated GLAD/KHR unchanged.
 
 ## Graphics execution
 
@@ -44,10 +43,12 @@ Use a desktop or Xvfb if SDL lacks offscreen support. Software rendering does no
 
 ## External consumers
 
-[check_consumer.cmake](../tools/check_consumer.cmake) configures, builds and runs the separate [consumer](../tests/consumer/). It checks public simulation interfaces and, in runtime builds, public runtime headers/linking. Neither fixture reads application sources or requires a window.
+The separate [consumer fixture](../tests/consumer/) checks public simulation interfaces and, with `CONSUMER_GRAPHICS=ON`, runtime headers/linking without opening a window. Run it explicitly when changing the public build boundary:
 
 ```sh
-ctest --test-dir build -R kinetra_external --output-on-failure
+cmake -S tests/consumer -B build-consumer -DKINETRA_SOURCE="$PWD"
+cmake --build build-consumer --parallel
+./build-consumer/consumer
 ```
 
-[Installation](../README.md#using-kinetra) exports Simulation and optional Runtime. Lab can consume that package or a sibling source checkout. Binary ABI compatibility is not promised.
+For runtime linking, add `-DCONSUMER_GRAPHICS=ON` and provide the SDL2/OpenGL dependencies. Kinetra is integrated from source with `add_subdirectory`; installed CMake packages are not provided.

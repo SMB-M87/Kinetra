@@ -25,7 +25,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 - First-party C++ headers MUST use `.h` and implementations MUST use `.cpp`.
 - Never introduce `.hpp`, `.hxx`, `.hh`, `.cc` or `.cxx` in first-party code.
 - Third-party/generated source is exempt: leave `src/glad.c`, `include/glad/` and `include/KHR/` unchanged.
-- Update includes, CMake, tests, scripts and documentation when moving files. Run the repository checker.
+- Update includes, CMake, tests, scripts and documentation when moving files.
 - Follow the root `.clang-format`; avoid unrelated formatting churn.
 - Prefer RAII, const-correctness, explicit ownership, predictable lifetimes and standard C++20.
 - Use small cohesive interfaces. Add abstraction only when it hides a concrete source of complexity.
@@ -75,7 +75,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 - Build headless simulation/tests and the optional SDL2/OpenGL runtime. Reconfigure after CMake changes.
 - Run relevant behavioral tests; add regression coverage for changed behavior and important boundaries.
 - Do not remove tests to hide regressions or describe untested behavior as verified.
-- Run formatting and repository checks. Documentation-only changes need link/path/claim validation.
+- Check formatting and documentation links. Documentation-only changes need link/path/claim validation.
 - Test public API/CMake boundaries with the external consumers when changing ownership or build configuration.
 - Run graphics checks with an actual context (desktop, Xvfb or SDL offscreen); report the backend used.
 - Smoke-test menu, Demo and Dotio after runtime changes. Preserve session input isolation and cleanup.
@@ -100,4 +100,4 @@ Permanent project rules for this repository. Explicit user instructions and high
 | Window, input, rendering and direct sessions | [runtime](src/engine/), [session API](include/kinetra/session.h) | [runtime tests](tests/runtime_tests.cpp), [runtime guide](docs/engine/runtime.md) |
 | Shared overlays | [debug](include/kinetra/debug_view.h), [help](include/kinetra/help_view.h) | [design](docs/engine/launcher-overlays.md) |
 | Applications and launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned sources and tests |
-| Build and repository validation | [CMake](CMakeLists.txt), [tools](tools/), [consumer](tests/consumer/) | [development](docs/development.md) |
+| Build and repository validation | [CMake](CMakeLists.txt), [consumer](tests/consumer/) | [development](docs/development.md) |

@@ -37,5 +37,5 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 | [0005](decisions/0005-sandbox-agent-lifecycle.md) | Cohesive agent lifecycle |
 | [0006](decisions/0006-variants-and-dotio-port.md) | Original variant/port boundary; session ownership amended by 0008 |
 | [0007](decisions/0007-module-tests-and-streamed-dotio.md) | Streamed Dotio window and module tests |
-| [0009](decisions/0009-core-and-lab.md) | Core/Lab split and installed package support |
+| [0009](decisions/0009-core-and-lab.md) | Core/Lab split and source integration |
 | [0008](decisions/0008-public-engine-and-consumers.md) | Public navigation, optional launcher and external consumers |

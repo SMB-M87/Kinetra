@@ -20,7 +20,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 
 ## Quick start
 
-Requires C++20, CMake 3.16+, a build tool and Python 3 for tests. The default build is headless.
+Requires C++20, CMake 3.16+, a build tool. The default build is headless.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -52,18 +52,7 @@ int main() {
 }
 ```
 
-Installed integration:
-
-```sh
-cmake --install build --prefix /your/local/prefix
-```
-
-```cmake
-find_package(Kinetra 0.1 CONFIG REQUIRED)
-target_link_libraries(my_simulation PRIVATE Kinetra::Simulation)
-```
-
-Pass the installation prefix through `CMAKE_PREFIX_PATH`. Runtime consumers link `Kinetra::Runtime` from a runtime-enabled build. Lab supplies `Kinetra::Launcher`; it is no longer exported by core.
+Runtime consumers enable `KINETRA_BUILD_RUNTIME` and link `Kinetra::Runtime`. Lab supplies `Kinetra::Launcher`. Integration uses source targets; there is no installed CMake package.
 
 ## Documentation
 

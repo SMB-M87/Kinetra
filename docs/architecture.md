@@ -23,7 +23,7 @@ flowchart LR
     Runtime --> Backend[SDL2 / OpenGL 3.3 / GLAD]
 ```
 
-Launcher, Demo and Dotio live in Kinetra-Lab. Core builds and tests need no sibling repository. Lab consumes source targets or an installed Kinetra package.
+Launcher, Demo and Dotio live in Kinetra-Lab. Core builds and tests need no sibling repository. Lab consumes the public source targets through `add_subdirectory`.
 
 ## Components and build dependencies
 

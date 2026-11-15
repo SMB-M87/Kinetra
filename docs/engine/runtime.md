@@ -63,12 +63,12 @@ add_subdirectory(external/Kinetra)
 target_link_libraries(my_app PRIVATE Kinetra::Simulation Kinetra::Runtime)
 ```
 
-Installed consumers use `find_package(Kinetra 0.1 CONFIG REQUIRED)` and the same public targets; see the [README](../../README.md#using-kinetra). A runtime-enabled installation requires SDL2/OpenGL development packages on the consuming machine.
+Source consumers use `add_subdirectory` and link the public targets; see the [README](../../README.md#using-kinetra).
 
-Launcher, Demo and Dotio are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which supports sibling and installed-package integration. The core has no dependency on Lab.
+Launcher, Demo and Dotio are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which consumes a Kinetra source checkout. The core has no dependency on Lab.
 
 ## Verification and limits
 
-[Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [Presentation](https://github.com/SMB-M87/Kinetra-Lab/blob/main/demo/tests/presentation_tests.cpp) and [launcher integration](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/tests/runtime_tests.cpp) exercise complete frames and session behavior. [External consumer tests](../../tools/check_consumer.cmake) compile public simulation/runtime interfaces without any Lab source.
+[Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [Presentation](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/demo/tests/presentation_tests.cpp) and [launcher integration](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/tests/runtime_tests.cpp) exercise complete frames and session behavior. [External consumer fixture](../../tests/consumer/CMakeLists.txt) compile public simulation/runtime interfaces without any Lab source.
 
 No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
