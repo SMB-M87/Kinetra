@@ -10,11 +10,15 @@ struct Steering {
     float lookahead{1}, clearance{0.3f};
     // Optional personal space; zero keeps separation disabled.
     float separation_radius{}, separation_weight{1};
+    // Use the exact Minkowski box for pairs of axis-aligned boxes.
+    bool rectangular_clearance{};
 };
 
 /// Returns bounded acceleration, not a position change. Arrival reduces desired speed
 /// inside slow_radius; avoidance predicts a swept circle against nearby obstacle bounds.
 /// Supply neighbors from a SpatialGrid query; boxes use expanded local-space bounds.
+/// rectangular_clearance uses summed half extents for axis-aligned box pairs only;
+/// rotated boxes and all other shape pairs retain the conservative circular envelope.
 /// This is local steering, not path planning; concave traps can require waypoints.
 Vec2 steer(const Body &agent, Vec2 target, std::span<const Body> obstacles, const Steering &settings = {});
 

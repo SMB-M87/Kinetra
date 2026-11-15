@@ -15,7 +15,7 @@ Directory guides: [consumer](consumer/README.md).
 
 | Source or directory | CTest name | Responsibility |
 | --- | --- | --- |
-| [simulation_tests.cpp](simulation_tests.cpp) | `kinetra_behavior` | Geometry, physics and spatial contracts |
+| [simulation_tests.cpp](simulation_tests.cpp) | `kinetra_behavior` | Geometry, physics, rectangular steering clearance and spatial contracts |
 | [navigation_tests.cpp](navigation_tests.cpp) | `kinetra_navigation` | Planning, routes and steering |
 | [launcher_tests.cpp](launcher_tests.cpp) | `kinetra_launcher` | Window-free launcher behavior; requires runtime build |
 | [runtime_tests.cpp](runtime_tests.cpp) | `kinetra_engine_graphics` | Runtime checks with a real OpenGL context |

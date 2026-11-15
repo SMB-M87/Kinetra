@@ -77,9 +77,12 @@ Vec2 steer(const Body &a, Vec2 target, std::span<const Body> obstacles, const St
     for (const Body &obstacle : obstacles) {
         validate(obstacle);
         const float radius = agent_radius + s.clearance;
-        const Vec2 extent = obstacle.shape == Shape::circle
-                                ? Vec2{obstacle.radius + radius, obstacle.radius + radius}
-                                : obstacle.half_extents + Vec2{radius, radius};
+        Vec2 extent = obstacle.shape == Shape::circle
+                          ? Vec2{obstacle.radius + radius, obstacle.radius + radius}
+                          : obstacle.half_extents + Vec2{radius, radius};
+        if (s.rectangular_clearance && a.shape == Shape::box && obstacle.shape == Shape::box &&
+            a.angle == 0 && obstacle.angle == 0)
+            extent = a.half_extents + obstacle.half_extents + Vec2{s.clearance, s.clearance};
         float hit;
         Vec2 normal;
         const Vec2 relative_velocity =

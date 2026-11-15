@@ -235,6 +235,30 @@ void steering_arrives_and_avoids() {
         require(!c || c->penetration < 0.01f, "Steering ran into obstacle");
     }
     require(length(agent.position - target) < 0.3f, "Steering did not get around obstacle");
+    // A long rectangular mover can pass a box beside its path even when
+    // its circumscribed circle would report a blocked corridor.
+    agent = box({0, 0}, {2, 1});
+    agent.velocity = {1, 0};
+    const std::array<Body, 1> beside{box({4, 2.5f}, {1, 1})};
+    settings.clearance = 0;
+    settings.lookahead = 10;
+    settings.rectangular_clearance = true;
+    const auto clear = steer(agent, {10, 0}, beside, settings);
+    require(std::abs(clear.y) < 0.00001f && clear.x > 0,
+            "Rectangular clearance rejected a physically clear passage");
+    auto ahead = beside;
+    ahead[0].position.y = 0;
+    require(std::abs(steer(agent, {10, 0}, ahead, settings).y) > 0,
+            "Rectangular clearance failed to avoid a blocking box");
+    settings.rectangular_clearance = false;
+    require(std::abs(steer(agent, {10, 0}, beside, settings).y) > 0,
+            "Default circumscribed-circle steering behavior changed");
+    ahead[0].angle = 0.2f;
+    const auto conservative = steer(agent, {10, 0}, ahead, settings);
+    settings.rectangular_clearance = true;
+    require(length(steer(agent, {10, 0}, ahead, settings) - conservative) < 0.00001f,
+            "Rotated boxes must retain conservative clearance");
+    settings = Steering{};
     // At rest, personal space still pushes away; it vanishes beyond the radius.
     agent = circle({0, 0}, 0.2f);
     const std::array<Body, 1> neighbor{circle({0, 1}, 0.2f)};

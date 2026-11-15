@@ -55,6 +55,11 @@ The raster is limited to 262,144 cells. The default resolution is one world unit
 
 Pathfinding uses Euclidean heuristic and orthogonal/diagonal travel costs. Smoothing tests actual circle/rotated-box geometry, including corners. Moving obstacles are not continuously replanned automatically. Finite grids and conservative envelopes can reject physically passable gaps.
 
+`Steering::rectangular_clearance` is an opt-in for axis-aligned box pairs: avoidance
+uses summed half extents plus clearance instead of a circumscribed agent circle.
+This permits physically clear rectangular passages. Rotated boxes and other shape
+pairs retain the conservative envelope; the default remains unchanged.
+
 ## Weighted grids and priority steering
 
 `WeightedGrid` accepts positive finite rectangular cells and a bounded world, up to one million cells. `cell()` returns -1 outside the truncated full-cell envelope. `block()` changes topology; `weights()` atomically validates a full nonnegative finite cost array. Its eight-neighbor A* prevents blocked diagonal corner cuts and retains exact free endpoints. Unreachable or blocked endpoints return an empty path. Costs multiply physical edge length by one plus destination-cell weight; heuristic uses Euclidean distance. The caller supplies occupancy and retry policy. `borders()` returns axis-aligned edges of the free-cell union.
