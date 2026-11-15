@@ -24,7 +24,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 
 - First-party C++ headers MUST use `.h` and implementations MUST use `.cpp`.
 - Never introduce `.hpp`, `.hxx`, `.hh`, `.cc` or `.cxx` in first-party code.
-- Third-party/generated source is exempt: leave `src/glad.c`, `include/glad/` and `include/KHR/` unchanged.
+- Third-party/generated source is exempt: leave `src/glad.c`, `include/glad/glad.h` and `include/KHR/khrplatform.h` unchanged. Maintain directory README files alongside them.
 - Update includes, CMake, tests, scripts and documentation when moving files.
 - Follow the root `.clang-format`; avoid unrelated formatting churn.
 - Prefer RAII, const-correctness, explicit ownership, predictable lifetimes and standard C++20.
@@ -58,8 +58,8 @@ Permanent project rules for this repository. Explicit user instructions and high
 - Update relevant documentation whenever behavior, APIs, build configuration or architecture changes.
 - Use concise technical English for code and documentation; communicate with the user in Dutch by default.
 - The root README is the short introduction, quick start and navigation entry point.
-- Always add and maintain a `README.md` in every first-party project directory, including every nested directory under `src/`, `include/`, `tests/` and `docs/`. Each directory guide must explain its purpose, code or document structure, responsibilities and relevant relationships, with links to child guides and authoritative contracts. Update the guides whenever that structure changes.
-- Exclude Git metadata, local tooling/account state, build outputs, dependencies and generated or third-party code directories from this README requirement; document their role from the nearest first-party parent guide instead.
+- Always add and maintain a `README.md` in every repository content directory, including directories containing bundled dependencies or generated/third-party code such as `include/glad/` and `include/KHR/`, including every nested directory under `src/`, `include/`, `tests/` and `docs/`. Each directory guide must explain its purpose, code or document structure, responsibilities and relevant relationships, with links to child guides and authoritative contracts. Update the guides whenever that structure changes.
+- Exclude only Git metadata, local tooling/account state, build outputs and locally downloaded dependency trees from this README requirement. Bundled generated or third-party code directories still require a README; document their purpose and integration without modifying upstream source files.
 - Use [docs/README.md](docs/README.md) to find each concept's authoritative page; link instead of duplicating explanations.
 - Keep a useful explicit TOC below each maintained Markdown title/introduction and synchronize its links.
 - Prefer Mermaid for architecture, ownership, interactions and lifecycle explanations.

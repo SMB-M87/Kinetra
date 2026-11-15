@@ -22,6 +22,6 @@ Consumer-facing interfaces live in [kinetra/](kinetra/README.md). Include them a
 
 Link compiled simulation APIs through `Kinetra::Simulation`; runtime and drawing consumers use the optional `Kinetra::Runtime`. Camera, timing and math utilities are header-only and do not require SDL/OpenGL. Public engine interfaces keep backend implementation types private.
 
-`glad/` and `KHR/` contain generated or third-party backend headers. Preserve their licenses and generated contents; application code should use `kinetra/` interfaces.
+[glad/](glad/README.md) and [KHR/](KHR/README.md) contain generated or third-party backend headers. Preserve their licenses and generated contents; application code should use `kinetra/` interfaces.
 
 See the [implementation map](../src/README.md), [architecture](../docs/architecture.md) and [build instructions](../docs/development.md).
