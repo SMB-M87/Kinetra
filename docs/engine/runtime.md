@@ -9,6 +9,7 @@
 - [Sessions and timing](#sessions-and-timing)
 - [External consumers](#external-consumers)
 - [Verification and limits](#verification-and-limits)
+- [Navigation](#navigation)
 
 ## Lifecycle
 
@@ -72,3 +73,7 @@ Applications and the bundled launcher executable are built in [Kinetra-Lab](http
 [Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [External consumer fixture](../../tests/consumer/CMakeLists.txt) compile public simulation/runtime interfaces without any Lab source.
 
 No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

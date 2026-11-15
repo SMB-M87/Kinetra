@@ -8,6 +8,7 @@
 - [Contracts](#contracts)
 - [Application policies](#application-policies)
 - [Verification](#verification)
+- [Navigation](#navigation)
 
 ## Planning and following
 
@@ -59,3 +60,7 @@ Applications own goal selection, replanning schedules, streamed obstacle residen
 ## Verification
 
 [Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

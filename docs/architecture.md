@@ -9,6 +9,7 @@ The public API is under `include/kinetra/`. Three core CMake targets express lin
 - [Object ownership](#object-ownership)
 - [Frame interaction](#frame-interaction)
 - [Responsibility map](#responsibility-map)
+- [Navigation](#navigation)
 
 ## System context
 
@@ -90,3 +91,7 @@ sequenceDiagram
 | Primitive drawing and bitmap text | Terrain appearance, health bars and AI visualizations |
 
 [Decision 0008](decisions/0008-public-engine-and-consumers.md) records the public-boundary migration and compatibility costs.
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)

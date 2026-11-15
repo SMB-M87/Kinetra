@@ -8,6 +8,7 @@ Historical decision. The current repository boundary is defined by [0009](0009-c
 - [Context](#context)
 - [Decision](#decision)
 - [Consequences](#consequences)
+- [Navigation](#navigation)
 
 ## Context
 
@@ -20,3 +21,7 @@ Each 32-unit terrain chunk derives its geometry independently from the seed and 
 ## Consequences
 
 Eviction forgets terrain and agent state. Terrain geometry regenerates identically on return, while population can be newly generated. On resident terrain/population changes, the scene restores compacted movers before appending fixed obstacles and remaps body handles. Storage is bounded by the view and population caps, without world saves. See [population policy](0003-sandbox-navigation-and-population.md).
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

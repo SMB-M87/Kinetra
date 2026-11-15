@@ -9,6 +9,7 @@ Historical decision. The current repository boundary is defined by [0009](0009-c
 - [Decision](#decision)
 - [Alternatives and limits](#alternatives-and-limits)
 - [Verification](#verification)
+- [Navigation](#navigation)
 
 ## Context and preservation contract
 
@@ -43,3 +44,7 @@ Add lifecycle characterization to [terrain tests](https://github.com/SMB-M87/Kin
 A local before/after diagnostic compared complete body fields and agent goals, homes, visibility, route timers and waypoints for seeds 42 and 777, initial populations 0, 12 and 240, five view visits per scenario and five fixed ticks per visit. Its outputs matched exactly on this build environment. This is a refactoring check, not a promise of cross-platform bitwise simulation determinism. Durable semantic regression coverage remains in the test suites.
 
 Run headless and runtime builds, both CTest suites and the bounded graphical sandbox smoke run described in the [README](../development.md#checks). Update the [architecture diagrams](../architecture.md) with the agent ownership relationship.
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

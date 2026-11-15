@@ -6,6 +6,7 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 
 - [Source map](#source-map)
 - [Relationships](#relationships)
+- [Navigation](#navigation)
 
 ## Source map
 
@@ -22,3 +23,7 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 Navigation and steering build on geometry and spatial queries without depending on SDL/OpenGL. Applications own world generation and AI policy.
 
 See [math and physics](../../docs/engine/math-physics.md), [navigation](../../docs/engine/navigation.md) and the [test guide](../../tests/README.md). Return to the [source map](../README.md).
+
+## Navigation
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)

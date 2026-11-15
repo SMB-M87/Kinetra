@@ -5,6 +5,7 @@
 - [Decision](#decision)
 - [Consequences](#consequences)
 - [Verification](#verification)
+- [Navigation](#navigation)
 
 ## Decision
 
@@ -26,3 +27,7 @@ Source integration provides `Kinetra::Simulation` and optional `Kinetra::Runtime
 ## Verification
 
 Core is configured/built/tested independently. Lab is checked using source integration, including headless logic, graphical builds and bounded application runs when dependencies/context are available. See [development](../development.md) and the [Lab guide](https://github.com/SMB-M87/Kinetra-Lab).
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

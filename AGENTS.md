@@ -11,6 +11,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 - [Verification](#verification)
 - [Git and safety](#git-and-safety)
 - [Functionality index](#functionality-index)
+- [Navigation](#navigation)
 
 ## Identity and scope
 
@@ -58,8 +59,9 @@ Permanent project rules for this repository. Explicit user instructions and high
 - Update relevant documentation whenever behavior, APIs, build configuration or architecture changes.
 - Use concise technical English for code and documentation; communicate with the user in Dutch by default.
 - The root README is the short introduction, quick start and navigation entry point.
-- Always add and maintain a `README.md` in every repository content directory, including directories containing bundled dependencies or generated/third-party code such as `include/glad/` and `include/KHR/`, including every nested directory under `src/`, `include/`, `tests/` and `docs/`. Each directory guide must explain its purpose, code or document structure, responsibilities and relevant relationships, with links to child guides and authoritative contracts. Update the guides whenever that structure changes.
-- Exclude only Git metadata, local tooling/account state, build outputs and locally downloaded dependency trees from this README requirement. Bundled generated or third-party code directories still require a README; document their purpose and integration without modifying upstream source files.
+- Every repository content directory must always contain a `README.md`, including nested source, header, test, documentation and bundled dependency directories. Add missing guides when creating or changing directories; describe purpose, contents, responsibilities and relevant usage.
+- Exclude only Git metadata, local tooling/account state, generated build outputs and locally downloaded dependency trees. Maintain checked-in dependency wrapper guides; a Git submodule is a separate repository whose own directory guides are maintained there, without copying or rewriting upstream documentation.
+- Keep documentation navigable in both directions: each directory README links to its parent guide, immediate child guides and the documentation index; each documentation page links back to its directory guide and the project overview. Link related source, test and authoritative contract guides to one another, and keep these links synchronized when files move. Use concise overview/related-guide navigation like Artix rather than duplicating content.
 - Use [docs/README.md](docs/README.md) to find each concept's authoritative page; link instead of duplicating explanations.
 - Keep a useful explicit TOC below each maintained Markdown title/introduction and synchronize its links.
 - Prefer Mermaid for architecture, ownership, interactions and lifecycle explanations.
@@ -104,3 +106,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 | Generic launcher | [launcher API](include/kinetra/launcher.h) | [tests](tests/launcher_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
 | Applications and bundled launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned registration, executables and tests |
 | Build and repository validation | [CMake](CMakeLists.txt), [consumer](tests/consumer/) | [development](docs/development.md) |
+
+## Navigation
+
+[Project overview](README.md) · [Documentation index](docs/README.md)

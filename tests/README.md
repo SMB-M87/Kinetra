@@ -6,6 +6,7 @@ These executables verify reusable engine behavior. Application tests belong to K
 
 - [Test map](#test-map)
 - [Execution](#execution)
+- [Navigation](#navigation)
 
 ## Test map
 
@@ -22,3 +23,9 @@ These executables verify reusable engine behavior. Application tests belong to K
 The root [CMakeLists.txt](../CMakeLists.txt) registers tests when `BUILD_TESTING` is enabled. Graphics tests also require `KINETRA_BUILD_RUNTIME` and `KINETRA_TEST_GRAPHICS`. The consumer is configured separately.
 
 See [development](../docs/development.md) for commands, dependencies and graphics backend requirements; see the [implementation map](../src/README.md) for tested modules.
+
+## Navigation
+
+[Parent guide](../README.md) · [Documentation index](../docs/README.md)
+
+Directory guides: [consumer](consumer/README.md).

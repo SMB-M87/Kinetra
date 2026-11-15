@@ -6,6 +6,7 @@ Consumers include these headers as `<kinetra/name.h>`. This is the engine's firs
 
 - [Header map](#header-map)
 - [Implementation and contracts](#implementation-and-contracts)
+- [Navigation](#navigation)
 
 ## Header map
 
@@ -24,3 +25,7 @@ Consumers include these headers as `<kinetra/name.h>`. This is the engine's firs
 Compiled implementations live in [simulation](../../src/simulation/README.md) and [engine](../../src/engine/README.md). Runtime and Launcher are optional; simulation APIs remain headless.
 
 Use the [subsystem contracts](../../docs/engine/README.md) for behavior and ownership, and the [external consumer](../../tests/consumer/README.md) for linking examples. Return to the [header guide](../README.md).
+
+## Navigation
+
+[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)

@@ -9,6 +9,7 @@ Historical decision. The current repository boundary is defined by [0009](0009-c
 - [Decision](#decision)
 - [Alternatives and consequences](#alternatives-and-consequences)
 - [Verification](#verification)
+- [Navigation](#navigation)
 
 ## Context
 
@@ -39,3 +40,7 @@ No public simulation/runtime API, input binding, CLI option, world format or per
 ## Verification
 
 [Application tests](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/demo/tests/sandbox_application_tests.cpp) exercise pause/resume, camera/pointer ordering, failed actions, reset, presentation settings and player intent without a window. Existing [terrain tests](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/demo/tests/terrain_tests.cpp) continue to cover scene rules. [Runtime tests](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/tests/runtime_tests.cpp) cover input adaptation, click modifier precedence and complete renderer initialization/drawing alongside graphics and overlay checks. Run both headless and graphics CTest suites and the bounded sandbox smoke run described in the [README](../development.md#checks).
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

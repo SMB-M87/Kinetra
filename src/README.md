@@ -6,6 +6,7 @@ Compiled engine mechanisms are split into three public linking boundaries. The r
 
 - [Source map](#source-map)
 - [Boundaries and verification](#boundaries-and-verification)
+- [Navigation](#navigation)
 
 ## Source map
 
@@ -27,3 +28,9 @@ Compiled engine mechanisms are split into three public linking boundaries. The r
 Simulation depends only on the standard library and remains headless. Runtime uses SDL2/OpenGL and does not link Simulation. Public contracts live in [include/kinetra](../include/README.md); backend details stay private to the implementation. The generic launcher links Runtime. Application registration and the bundled launcher executable belong to Kinetra-Lab.
 
 Core behavior is covered by [simulation tests](../tests/simulation_tests.cpp), [navigation tests](../tests/navigation_tests.cpp) and optional context-backed [runtime tests](../tests/runtime_tests.cpp). See [development](../docs/development.md) for build and test commands, and [architecture](../docs/architecture.md) for ownership and interactions.
+
+## Navigation
+
+[Parent guide](../README.md) · [Documentation index](../docs/README.md)
+
+Directory guides: [engine](engine/README.md), [simulation](simulation/README.md).

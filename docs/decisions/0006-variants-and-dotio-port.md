@@ -10,6 +10,7 @@ Ownership status: superseded in part by [0008](0008-public-engine-and-consumers.
 - [Context](#context)
 - [Decision](#decision)
 - [Consequences](#consequences)
+- [Navigation](#navigation)
 
 ## Context
 
@@ -22,3 +23,7 @@ A small Session interface owns concrete application adapters. Each adapter consu
 ## Consequences
 
 The port retains source author attribution and does not depend on the upstream checkout. Updates and rendering run sequentially on the owning thread. M discards the current session. Dotio static raster storage permits one active world at a time; there are no resume slots. See the [Dotio guide](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/dotio/README.md).
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

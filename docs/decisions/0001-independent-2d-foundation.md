@@ -8,6 +8,7 @@ Historical decision. The current repository boundary is defined by [0009](0009-c
 - [Context](#context)
 - [Decision](#decision)
 - [Consequences](#consequences)
+- [Navigation](#navigation)
 
 ## Context
 
@@ -20,3 +21,7 @@ Circles and oriented rectangles use a uniform-grid broad phase, discrete linear/
 ## Consequences
 
 The self-developed solver supports the tested 2D contracts and simple contacts. It has discrete collision and single-contact manifold limits. Linux is the supported platform; no Windows/macOS or 3D support is claimed. Consumers link checkout CMake targets.
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)

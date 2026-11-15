@@ -9,6 +9,7 @@ Historical decision. The current repository boundary is defined by [0009](0009-c
 - [Decision](#decision)
 - [Alternatives and consequences](#alternatives-and-consequences)
 - [Verification](#verification)
+- [Navigation](#navigation)
 
 ## Status and context
 
@@ -39,3 +40,7 @@ Dotio remains in-tree, but a test copies it outside the engine source tree and b
 Existing application/physics/rendering regressions remain. New public navigation/math, generic launcher transition/failure and external-consumer tests cover the new boundaries. [Development](../development.md) owns reproducible commands and environment limitations. [Architecture](../architecture.md) owns the current dependency/ownership views.
 
 Unused legacy Angle, Vec3 and Rect definitions were removed after checking all callers; live pixel/grid compatibility types remain application-local.
+
+## Navigation
+
+[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
