@@ -46,7 +46,7 @@ Only one Runtime can exist at a time. Construction, calls and destruction belong
 | `circle`, `box`, `line` | Colored batched primitives between `begin` and `end` |
 | Text / overlays | Header-only public helpers use primitive drawing and logical-pixel camera conversion |
 
-Application renderers cull scene content before submitting primitives. Runtime triangulates circles and quads, uploads one dynamic vertex batch and draws/presents it. Primitive arguments must be finite with positive dimensions. GLAD and backend implementation remain in [runtime.cpp](../../src/engine/runtime.cpp) and generated `src/glad.c`.
+Application renderers cull scene content before submitting primitives. Runtime triangulates circles and quads, uploads one dynamic vertex batch and draws/presents it. Circles adapt their segment count to drawable size (24–256 segments) and fade alpha across a one-pixel edge for antialiasing without multisample buffers. Adaptive VSync is requested, with standard VSync as fallback; unavailable synchronization is logged. Repeated identical window titles are cached to avoid redundant window-manager requests. Primitive arguments must be finite with positive dimensions. GLAD and backend implementation remain in [runtime.cpp](../../src/engine/runtime.cpp) and generated `src/glad.c`.
 
 ## Sessions and timing
 

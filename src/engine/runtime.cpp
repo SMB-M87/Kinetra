@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <cmath>
 #include <glad/glad.h>
 #include <kinetra/engine.h>
 #include <optional>
@@ -105,6 +106,8 @@ struct Runtime::Impl {
     SDL_GLContext context{};
     GLuint program{}, vao{}, vbo{};
     Input input;
+    std::string title;
+    float drawable_scale{1};
     bool running{true}, owns_sdl{}, gl_ready{};
     struct Vertex {
         float x, y, r, g, b, a;
@@ -153,7 +156,8 @@ Runtime::Runtime(const std::string &text, int width, int height) : impl_(std::ma
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress)))
         throw std::runtime_error("OpenGL 3.3 functions could not be loaded");
     impl_->gl_ready = true;
-    if (SDL_GL_SetSwapInterval(1) != 0)
+    // Adaptive synchronization avoids halving the presentation rate on a missed refresh.
+    if (SDL_GL_SetSwapInterval(-1) != 0 && SDL_GL_SetSwapInterval(1) != 0)
         SDL_Log("VSync unavailable: %s", SDL_GetError());
     const GLuint vs = shader(GL_VERTEX_SHADER, R"(#version 330 core
 layout(location=0) in vec2 point;
@@ -196,6 +200,7 @@ void main() { pixel=color; }
     glEnableVertexAttribArray(1);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    impl_->title = text;
     camera.viewport = {float(width), float(height)};
 }
 
@@ -204,7 +209,10 @@ const Input &Runtime::input() const {
     return impl_->input;
 }
 void Runtime::title(const std::string &text) {
-    SDL_SetWindowTitle(impl_->window, text.c_str());
+    if (impl_->title != text) {
+        SDL_SetWindowTitle(impl_->window, text.c_str());
+        impl_->title = text;
+    }
 }
 
 bool Runtime::poll(bool close_on_escape) {
@@ -249,6 +257,8 @@ void Runtime::begin(Color background) {
     camera.validate();
     int w, h;
     SDL_GL_GetDrawableSize(impl_->window, &w, &h);
+    impl_->drawable_scale =
+        std::min(float(std::max(w, 1)) / camera.viewport.x, float(std::max(h, 1)) / camera.viewport.y);
     glViewport(0, 0, w, h);
     glClearColor(background.r, background.g, background.b, background.a);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -256,18 +266,40 @@ void Runtime::begin(Color background) {
 }
 
 void Runtime::triangle(Vec2 a, Vec2 b, Vec2 c, Color color) {
-    for (const auto point : {a, b, c}) {
-        const Vec2 screen = camera.world_to_screen(point);
+    triangle(a, b, c, color, color, color);
+}
+
+void Runtime::triangle(Vec2 a, Vec2 b, Vec2 c, Color ca, Color cb, Color cc) {
+    const Vec2 points[]{a, b, c};
+    const Color colors[]{ca, cb, cc};
+    for (int i = 0; i < 3; ++i) {
+        const Vec2 screen = camera.world_to_screen(points[i]);
+        const auto color = colors[i];
         impl_->vertices.push_back({screen.x * 2 / camera.viewport.x - 1, 1 - screen.y * 2 / camera.viewport.y,
                                    color.r, color.g, color.b, color.a});
     }
 }
 
 void Runtime::circle(Vec2 center, float radius, Color color) {
-    constexpr int segments = 24;
-    for (int i = 0; i < segments; ++i)
-        triangle(center, center + rotated({radius, 0}, i * 6.28318530718f / segments),
-                 center + rotated({radius, 0}, (i + 1) * 6.28318530718f / segments), color);
+    const float scale = camera.pixels_per_unit * impl_->drawable_scale;
+    const float pixel_radius = radius * scale;
+    // Bound the polygon's radial error to roughly a quarter drawable pixel.
+    const int segments = int(
+        std::clamp(std::ceil(3.14159265359f * std::sqrt(std::max(pixel_radius, 1.f) * 2.f)), 24.f, 256.f));
+    const float inner = std::max(0.f, radius - 0.5f / scale);
+    const float outer = radius + 0.5f / scale;
+    Color transparent = color;
+    transparent.a = 0;
+    Vec2 previous{1, 0};
+    for (int i = 1; i <= segments; ++i) {
+        const Vec2 next = i == segments ? Vec2{1, 0} : rotated({1, 0}, i * 6.28318530718f / segments);
+        const Vec2 a = center + previous * inner, b = center + next * inner;
+        const Vec2 c = center + previous * outer, d = center + next * outer;
+        triangle(center, a, b, color);
+        triangle(a, c, d, color, transparent, transparent);
+        triangle(a, d, b, color, transparent, color);
+        previous = next;
+    }
 }
 
 void Runtime::box(Vec2 center, Vec2 extent, float angle, Color color) {

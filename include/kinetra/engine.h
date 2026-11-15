@@ -78,6 +78,7 @@ class Runtime {
     struct Impl;
     std::unique_ptr<Impl> impl_;
     void triangle(Vec2 a, Vec2 b, Vec2 c, Color color);
+    void triangle(Vec2 a, Vec2 b, Vec2 c, Color ca, Color cb, Color cc);
 };
 
 } // namespace kinetra

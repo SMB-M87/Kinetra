@@ -1,10 +1,12 @@
 #include <SDL2/SDL.h>
+#include <cmath>
 #include <glad/glad.h>
 #include <iostream>
 #include <kinetra/debug_view.h>
 #include <kinetra/engine.h>
 #include <kinetra/session.h>
 #include <stdexcept>
+#include <vector>
 using namespace kinetra;
 namespace {
 void require(bool value, const char *message) {
@@ -114,6 +116,32 @@ int main() {
                 }
                 require(pixels[1] > 200, "Small debug vector vanished at camera zoom");
             }
+            // Read a full circle back to verify both coverage and a fractional-alpha edge.
+            runtime.camera.pixels_per_unit = 50;
+            runtime.begin({0, 0, 0, 1});
+            runtime.circle({}, 1.73f, {0, 1, 0, 1});
+            runtime.end();
+            glFinish();
+            std::vector<unsigned char> image(320 * 240 * 4);
+            auto read_circle = [&] { glReadPixels(0, 0, 320, 240, GL_RGBA, GL_UNSIGNED_BYTE, image.data()); };
+            glReadBuffer(GL_FRONT);
+            read_circle();
+            if (image[(120 * 320 + 160) * 4 + 1] < 200) {
+                glReadBuffer(GL_BACK);
+                read_circle();
+            }
+            int softened = 0;
+            for (int y = 30; y < 210; ++y)
+                for (int x = 70; x < 250; ++x) {
+                    const float dx = x + 0.5f - 160, dy = y + 0.5f - 120;
+                    const float distance = std::sqrt(dx * dx + dy * dy);
+                    const auto green = image[(y * 320 + x) * 4 + 1];
+                    if (distance < 85.5f)
+                        require(green > 240, "Circle polygon left an interior gap");
+                    if (green > 10 && green < 240)
+                        ++softened;
+                }
+            require(softened > 100, "Circle edge has no antialiasing coverage");
             runtime.camera.pixels_per_unit = 20;
             SDL_Window *window = SDL_GL_GetCurrentWindow();
             require(window && (SDL_GetWindowFlags(window) & SDL_WINDOW_RESIZABLE),
