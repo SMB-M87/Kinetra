@@ -61,8 +61,8 @@ Pathfinding uses Euclidean heuristic and orthogonal/diagonal travel costs. Smoot
 | Scene/Agent choose wander/command goals and replan timers | AI states choose chase, wander and fear-biased shelter paths |
 | Moving-body steering handles local crowd avoidance | Legacy path interpretation stays in pixel/Y-down coordinates |
 
-Dotio's shelter search includes game-specific fear/visibility decisions and is intentionally not an engine AI framework. See [Demo policy](../demo/README.md#navigation-and-agents) and [Dotio policy](../dotio/README.md#ai-and-combat).
+Dotio's shelter search includes game-specific fear/visibility decisions and is intentionally not an engine AI framework. See [Demo policy](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/demo/README.md#navigation-and-agents) and [Dotio policy](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/dotio/README.md#ai-and-combat).
 
 ## Verification
 
-[Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. [Demo terrain tests](../../examples/demo/tests/terrain_tests.cpp) retain detour, rotated-corner, recovery, arrival, retry and population regressions. [Dotio tests](../../examples/dotio/tests/dotio_tests.cpp) retain A*/HideStar and movement cases. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
+[Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. [Demo terrain tests](https://github.com/SMB-M87/Kinetra-Lab/blob/main/demo/tests/terrain_tests.cpp) retain detour, rotated-corner, recovery, arrival, retry and population regressions. [Dotio tests](https://github.com/SMB-M87/Kinetra-Lab/blob/main/dotio/tests/dotio_tests.cpp) retain A*/HideStar and movement cases. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).

@@ -3,15 +3,16 @@
 #include <kinetra/timing.h>
 
 #ifdef CONSUMER_GRAPHICS
-#include <kinetra/launcher.h>
+#include <kinetra/session.h>
+// Retain a relocation to a compiled Runtime entry point without opening a window.
+auto consumer_run_session = &kinetra::run_session;
 #endif
 
 int main() {
 #ifdef CONSUMER_GRAPHICS
-    kinetra::LaunchMenu menu({{"EXTERNAL", "PUBLIC API", {}, 0}});
+    // Public session and input types remain independent of Lab.
     kinetra::Input input;
-    input.pressed[std::size_t(kinetra::Key::enter)] = true;
-    if (!menu.update(input, {800, 600}))
+    if (input.held[std::size_t(kinetra::Key::enter)])
         return 2;
 #endif
     kinetra::World world;

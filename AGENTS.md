@@ -15,11 +15,10 @@ Permanent project rules for this repository. Explicit user instructions and high
 ## Identity and scope
 
 - Kinetra is a C++20 2D engine with a headless simulation library and optional SDL2/OpenGL 3.3 runtime.
-- Demo stays in-tree as a public-API reference application.
-- Dotio stays in-tree during migration and must remain buildable as an external consumer.
-- Kinetra-Lab is planned; do not create it or change sibling repositories without authorization.
+- Kinetra contains only reusable core, core tests and development infrastructure.
+- Launcher, Demo, Dotio and application tests live in Kinetra-Lab.
 - Linux is supported; Artix/Linux is the desktop target. Do not imply untested platform support.
-- Application behavior is specified in the [Demo](docs/demo/README.md) and [Dotio](docs/dotio/README.md) guides, not here.
+- Application behavior is documented in Kinetra-Lab.
 
 ## Engineering rules
 
@@ -48,7 +47,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 - Keep world generation, AI decisions, combat, difficulty, spawning and bindings application-owned.
 - Application fixed rates are policy: do not hardcode Demo or Dotio timing into the engine.
 - Preserve headless and runtime-only builds, independently of examples and launcher.
-- Keep the launcher optional and application-agnostic; register factories and configuration values.
+- Launcher implementation belongs to Kinetra-Lab; core retains the direct Session contract.
 - Overlays own shared layout/rendering/input capture; applications provide content and actions.
 - Do not add a library for each directory. Targets must represent useful linking boundaries.
 - Record meaningful boundary changes in an ADR and update the external-consumer test.
@@ -72,8 +71,8 @@ Permanent project rules for this repository. Explicit user instructions and high
 ## Verification
 
 - Build after every task changing Kinetra, including documentation/configuration tasks.
-- Deliver the runnable sandbox at `build/kinetra_sandbox`; a verification-only build is insufficient.
-- Build both headless simulation/tests and the SDL2/OpenGL runtime/sandbox. Reconfigure after CMake changes.
+- Runnable applications are built and verified in Kinetra-Lab.
+- Build headless simulation/tests and the optional SDL2/OpenGL runtime. Reconfigure after CMake changes.
 - Run relevant behavioral tests; add regression coverage for changed behavior and important boundaries.
 - Do not remove tests to hide regressions or describe untested behavior as verified.
 - Run formatting and repository checks. Documentation-only changes need link/path/claim validation.
@@ -99,6 +98,6 @@ Permanent project rules for this repository. Explicit user instructions and high
 | Math, collision, physics, spatial search | [public API](include/kinetra/), [simulation](src/simulation/) | [simulation tests](tests/simulation_tests.cpp), [contracts](docs/engine/math-physics.md) |
 | Navigation and steering | [navigation](include/kinetra/navigation.h), [steering](include/kinetra/steering.h) | [navigation tests](tests/navigation_tests.cpp), [design](docs/engine/navigation.md) |
 | Window, input, rendering and direct sessions | [runtime](src/engine/), [session API](include/kinetra/session.h) | [runtime tests](tests/runtime_tests.cpp), [runtime guide](docs/engine/runtime.md) |
-| Registered launcher and overlays | [launcher](include/kinetra/launcher.h), [debug](include/kinetra/debug_view.h), [help](include/kinetra/help_view.h) | [launcher tests](tests/launcher_tests.cpp), [design](docs/engine/launcher-overlays.md) |
-| Demo, Dotio and composition root | [examples](examples/) | [Demo](docs/demo/README.md), [Dotio](docs/dotio/README.md), [launcher](examples/app/README.md) |
+| Shared overlays | [debug](include/kinetra/debug_view.h), [help](include/kinetra/help_view.h) | [design](docs/engine/launcher-overlays.md) |
+| Applications and launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned sources and tests |
 | Build and repository validation | [CMake](CMakeLists.txt), [tools](tools/), [consumer](tests/consumer/) | [development](docs/development.md) |

@@ -50,37 +50,25 @@ Application renderers cull scene content before submitting primitives. Runtime t
 
 [Session](../../include/kinetra/session.h) provides `advance`, `render` and `title`. `run_session(runtime, session, frame_limit)` handles wall-clock elapsed time, event polling, updates, rendering and shutdown for a directly launched application. Zero frame limit means unlimited; negative limits throw.
 
-The optional [SessionHost](launcher-overlays.md) manages registered factories and transitions. `run_launcher` owns the standard menu/session event loop; a custom launcher can drive the same host directly. Applications own pause/resume and `FixedClock` instances. FixedClock validates its step and caps backlog; excess stall time is dropped. Demo consumes 120 Hz; Dotio consumes 60 Hz movement and 20 Hz decisions. No engine assumption selects either rate.
+Kinetra-Lab’s optional [SessionHost](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/launcher-overlays.md) manages registered factories and transitions. `run_launcher` owns the standard menu/session event loop; a custom launcher can drive the same host directly. Applications own pause/resume and `FixedClock` instances. FixedClock validates its step and caps backlog; excess stall time is dropped. Demo consumes 120 Hz; Dotio consumes 60 Hz movement and 20 Hz decisions. No engine assumption selects either rate.
 
 ## External consumers
 
 Headless integration is shown once in the [root README](../../README.md#using-kinetra). For runtime-only consumers, before adding Kinetra:
 
 ```cmake
-set(KINETRA_BUILD_DEMO OFF CACHE BOOL "" FORCE)
 set(KINETRA_BUILD_RUNTIME ON CACHE BOOL "" FORCE)
-set(KINETRA_BUILD_LAUNCHER OFF CACHE BOOL "" FORCE)
-set(KINETRA_BUILD_DOTIO OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/Kinetra)
 target_link_libraries(my_app PRIVATE Kinetra::Simulation Kinetra::Runtime)
 ```
 
-A registered menu additionally links `Kinetra::Launcher`. A custom launcher can call SessionHost directly, or own a Session and call `run_session`, without linking Launcher.
+Installed consumers use `find_package(Kinetra 0.1 CONFIG REQUIRED)` and the same public targets; see the [README](../../README.md#using-kinetra). A runtime-enabled installation requires SDL2/OpenGL development packages on the consuming machine.
 
-### External Dotio
-
-The [consumer fixture](../../tests/consumer/CMakeLists.txt) copies `examples/dotio/` outside the engine tree, then builds it using only public Kinetra targets:
-
-```cmake
-# After adding Kinetra with Runtime enabled and examples/testing disabled:
-add_subdirectory(apps/dotio)
-```
-
-Dotio's CMake supplies `kinetra_dotio_logic`, `kinetra_dotio_presentation` and direct `kinetra_dotio`. Its local include paths are application-owned; no engine-private include path or Demo/app source is needed. Checkout `add_subdirectory` integration is supported; install/export packages and binary ABI compatibility are outside the current contract.
+Launcher, Demo and Dotio are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which supports sibling and installed-package integration. The core has no dependency on Lab.
 
 ## Verification and limits
 
-[Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [Presentation](../../examples/demo/tests/presentation_tests.cpp) and [launcher integration](../../examples/app/tests/runtime_tests.cpp) exercise complete frames and session behavior. [External consumer tests](../../tools/check_consumer.cmake) compile public interfaces and relocated Dotio.
+[Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [Presentation](https://github.com/SMB-M87/Kinetra-Lab/blob/main/demo/tests/presentation_tests.cpp) and [launcher integration](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/tests/runtime_tests.cpp) exercise complete frames and session behavior. [External consumer tests](../../tools/check_consumer.cmake) compile public simulation/runtime interfaces without any Lab source.
 
 No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.

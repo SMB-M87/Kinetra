@@ -1,6 +1,6 @@
 # Architecture
 
-The public API is under `include/kinetra/`. Three CMake targets express linking boundaries; directories are not separate libraries.
+The public API is under `include/kinetra/`. Two core CMake targets express linking boundaries; directories are not separate libraries.
 
 ## Table of contents
 
@@ -17,21 +17,21 @@ flowchart LR
     Demo[Demo reference application] --> K[Kinetra public API]
     Dotio[Dotio migration application] --> K
     Consumer[External CMake consumer] -->|add_subdirectory| K
-    Lab[Future Kinetra-Lab: Dotio / i4sim] -. planned consumer .-> K
+    Lab[Kinetra-Lab: Launcher / Demo / Dotio] --> K
     K --> Sim[Headless simulation]
     K --> Runtime[Optional runtime]
     Runtime --> Backend[SDL2 / OpenGL 3.3 / GLAD]
 ```
 
-Demo and Dotio are current applications. Kinetra-Lab is a future repository, not a current dependency. No sibling repository is needed.
+Launcher, Demo and Dotio live in Kinetra-Lab. Core builds and tests need no sibling repository. Lab consumes source targets or an installed Kinetra package.
 
 ## Components and build dependencies
 
 ```mermaid
 flowchart TD
-    App[examples/app: registration and CLI] --> Demo[Demo presentation and session]
+    App[Kinetra-Lab launcher: registration and CLI] --> Demo[Demo presentation and session]
     App --> Dotio[Dotio presentation and session]
-    App --> Launcher[Kinetra::Launcher]
+    App --> Launcher[Lab: Kinetra::Launcher]
     Launcher --> Runtime[Kinetra::Runtime]
     Demo --> Runtime
     Dotio --> Runtime
@@ -100,7 +100,7 @@ sequenceDiagram
     R->>R: batch upload, draw, swap buffers
 ```
 
-The standard engine launcher loop supplies wall-clock time; direct consumers can use `run_session`. Applications own pause and fixed-update policies. Demo runs at 120 Hz; Dotio consumes 60 Hz movement ticks with 20 Hz AI. Paused time is consumed without replay on resume. Detailed flows: [runtime](engine/runtime.md), [physics](engine/math-physics.md), [navigation](engine/navigation.md).
+The Lab launcher loop supplies wall-clock time; direct consumers can use `run_session`. Applications own pause and fixed-update policies. Demo runs at 120 Hz; Dotio consumes 60 Hz movement ticks with 20 Hz AI. Paused time is consumed without replay on resume. Detailed flows: [runtime](engine/runtime.md), [physics](engine/math-physics.md), [navigation](engine/navigation.md).
 
 ## Responsibility map
 
@@ -109,7 +109,7 @@ The standard engine launcher loop supplies wall-clock time; direct consumers can
 | Vector, shape, contact, impulse and grid query | Pixel/world conversion and damage/rewards |
 | A*, swept clearance, path shortening and steering | Wander targets, combat paths, retries and timeouts |
 | Runtime, input values, camera and fixed clock | Bindings, zoom bounds, pause and update frequencies |
-| Registered menu, session ownership and shared overlay layout | Application factories, difficulty choices and debug values |
+| Direct session contract and shared overlay layout | Lab launcher/menu ownership, factories, difficulty and debug values |
 | Primitive drawing and bitmap text | Terrain appearance, health bars and AI visualizations |
 
 [Decision 0008](decisions/0008-public-engine-and-consumers.md) records the public-boundary migration and compatibility costs.

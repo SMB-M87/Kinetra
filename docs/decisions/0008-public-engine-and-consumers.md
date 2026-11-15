@@ -9,6 +9,8 @@
 
 ## Status and context
 
+Repository placement and package support superseded by [0009](0009-core-and-lab.md). Historical decision follows.
+
 Accepted. Supersedes the application ownership of generic navigation in [0003](0003-sandbox-navigation-and-population.md) and amends session ownership in [0006](0006-variants-and-dotio-port.md). Gameplay policies in those decisions remain application-owned.
 
 The checkout already had independent Simulation and Runtime targets. Demo still owned reusable geometric A*/route following; the launcher hardcoded application sessions and menu behavior. Runtime could only be enabled together with bundled applications. Documentation repeated build, controls and architecture across several entry points.

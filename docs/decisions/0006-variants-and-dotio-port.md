@@ -18,4 +18,4 @@ A small Session interface owns concrete application adapters. Each adapter consu
 
 ## Consequences
 
-The port retains source author attribution and does not depend on the upstream checkout. Updates and rendering run sequentially on the owning thread. M discards the current session. Dotio static raster storage permits one active world at a time; there are no resume slots. See the [Dotio guide](../../examples/dotio/README.md).
+The port retains source author attribution and does not depend on the upstream checkout. Updates and rendering run sequentially on the owning thread. M discards the current session. Dotio static raster storage permits one active world at a time; there are no resume slots. See the [Dotio guide](https://github.com/SMB-M87/Kinetra-Lab/blob/main/dotio/README.md).
