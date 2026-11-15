@@ -52,18 +52,16 @@ flowchart TD
 ## Collision and queries
 
 - `collide` returns a normal from the first body toward the second, contact point and penetration, including touching contacts.
-- `resolve_contact`, `apply_body_impulse` and `integrate` are independently callable. Dotio uses these without storing its population in `kinetra::World`.
+- `resolve_contact`, `apply_body_impulse` and `integrate` are independently callable. Consumers can use these without storing bodies in `kinetra::World`.
 - `segment_circle` returns the earliest fraction, including starts inside. Double intermediates protect grazing/small relative-motion hits.
 - `segment_grid` blocks solid cells and outside-view travel. `collide_grid` resolves overlapping cells using engine contacts.
 - Navigation sweeps a circular envelope against circles and oriented boxes. Steering uses conservative expanded bounds for local prediction.
 - Callers select which bodies enter their queries; no general collision-layer/mask API is implemented.
 
-Dotio's legacy math type retains field names and pixel conventions; shared dot/cross, length, normalization and rotation calculations delegate to this API. Its coordinate conversions remain application-owned.
+Application-specific math adapters and pixel/world coordinate conversions remain consumer-owned.
 
 ## Limits and verification
 
 The solver uses discrete contacts and a representative contact point, without continuous rigid-body collision detection, joints, robust stacking manifolds or cross-machine bitwise determinism. Segment queries are not a complete scene raycasting API.
 
 [Simulation tests](../../tests/simulation_tests.cpp) cover shape boundaries, containment, momentum, rotation, material response, mixed modes, invalid inputs, grid queries and a 400-body workload. [Navigation tests](../../tests/navigation_tests.cpp) also exercise zero vectors, degenerate segments, finite-value checks and exact endpoints. Test commands are in [development](../development.md).
-
-Unused legacy Angle, Vec3 and Rect definitions were removed after checking all callers; live pixel/grid compatibility types remain application-local.

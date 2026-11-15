@@ -13,7 +13,7 @@ Accepted; revised to remove package installation and repository scripts. Superse
 Kinetra owns Simulation, Runtime, public core headers, core tests and development tools.
 Kinetra-Lab owns Launcher (including its generic host/menu implementation), Demo, Dotio, application tests and behavior guides. Shared debug/help overlays and the direct Session runner remain reusable core features.
 
-Lab consumes public Kinetra source targets with `add_subdirectory`. Its build defaults to `external/Kinetra`, the intended submodule location, and accepts `KINETRA_SOURCE_DIR` for an explicit checkout. Git submodule registration is pending. Lab documentation lives under `docs/`; Demo and Dotio source lives under `launcher/demo/` and `launcher/dotio/`. No package discovery or automatic downloads are used.
+Lab consumes public Kinetra source targets with `add_subdirectory`. Its build defaults to `external/Kinetra`, the intended submodule location, and accepts `KINETRA_SOURCE_DIR` for an explicit checkout. Lab records the engine revision through that Git submodule. Lab documentation lives under `docs/`; Demo and Dotio source lives under `launcher/demo/` and `launcher/dotio/`. No package discovery or automatic downloads are used.
 
 ## Consequences
 

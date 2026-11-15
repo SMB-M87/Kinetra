@@ -1,5 +1,8 @@
 # 0008: Public engine mechanisms and independent consumers
 
+Historical decision. The current repository boundary is defined by [0009](0009-core-and-lab.md); application sources, tests and behavior guides now belong to Kinetra-Lab.
+
+
 ## Table of contents
 
 - [Status and context](#status-and-context)

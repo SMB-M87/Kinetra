@@ -1,5 +1,8 @@
 # Variants and Dotio boundaries
 
+Historical decision. The current repository boundary is defined by [0009](0009-core-and-lab.md); application sources, tests and behavior guides now belong to Kinetra-Lab.
+
+
 Ownership status: superseded in part by [0008](0008-public-engine-and-consumers.md). The original decision below remains historical; application behavior is maintained in the guides.
 
 ## Table of contents

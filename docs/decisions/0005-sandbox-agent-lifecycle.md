@@ -1,5 +1,8 @@
 # 0005: Keep sandbox agent lifecycle state together
 
+Historical decision. The current repository boundary is defined by [0009](0009-core-and-lab.md); application sources, tests and behavior guides now belong to Kinetra-Lab.
+
+
 ## Table of contents
 
 - [Context and preservation contract](#context-and-preservation-contract)

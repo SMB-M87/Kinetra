@@ -19,7 +19,7 @@ C++20, CMake 3.16+ and a build tool are required. Runtime additionally requires 
 | `BUILD_TESTING` | ON | Build core tests |
 | `KINETRA_TEST_GRAPHICS` | OFF | Add runtime tests requiring an OpenGL context |
 
-The former Demo, Dotio and Launcher switches have been removed. The root build contains no application executable. Use fresh build directories after migration to avoid stale binaries/options.
+Application and launcher build switches belong to Kinetra-Lab. The root build contains no application executable. Use fresh build directories after migration to avoid stale binaries/options.
 
 ## Checks
 

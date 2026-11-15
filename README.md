@@ -1,7 +1,7 @@
 # Kinetra
 
 Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
-[ Kinetra-Lab ](https://github.com/SMB-M87/Kinetra-Lab) owns Launcher, Demo, Dotio and future experiments. Kinetra builds independently of Lab.
+[Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) owns applications, the launcher and experiments. Kinetra builds independently of Lab.
 
 ## Table of contents
 
@@ -72,6 +72,8 @@ ctest --test-dir build-local-core --output-on-failure
 This local source override does not change Lab's recorded dependency. Before publishing Lab, test against the published commit in `external/Kinetra` using its normal build directory. See the [complete Lab workflow](https://github.com/SMB-M87/Kinetra-Lab#kinetra-development-workflow) for branch handling, engine and Lab publishing order, receiving updates, and build commands.
 
 ## Documentation
+
+Directory guides: [public headers](include/README.md) and [implementation](src/README.md).
 
 Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), or [runtime contract](docs/engine/runtime.md). [AGENTS.md](AGENTS.md) records engineering rules.
 

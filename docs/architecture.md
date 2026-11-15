@@ -14,35 +14,25 @@ The public API is under `include/kinetra/`. Two core CMake targets express linki
 
 ```mermaid
 flowchart LR
-    Demo[Demo reference application] --> K[Kinetra public API]
-    Dotio[Dotio migration application] --> K
+    K[Kinetra public API]
     Consumer[External CMake consumer] -->|add_subdirectory| K
-    Lab[Kinetra-Lab: Launcher / Demo / Dotio] --> K
+    Lab[Kinetra-Lab applications and launcher] --> K
     K --> Sim[Headless simulation]
     K --> Runtime[Optional runtime]
     Runtime --> Backend[SDL2 / OpenGL 3.3 / GLAD]
 ```
 
-Launcher, Demo and Dotio live in Kinetra-Lab. Core builds and tests need no sibling repository. Lab consumes the public source targets through `add_subdirectory`.
+Applications and the launcher live in Kinetra-Lab. Core builds and tests need no sibling repository. Lab consumes the public source targets through `add_subdirectory`.
 
 ## Components and build dependencies
 
 ```mermaid
 flowchart TD
-    App[Kinetra-Lab launcher: registration and CLI] --> Demo[Demo presentation and session]
-    App --> Dotio[Dotio presentation and session]
-    App --> Launcher[Lab: Kinetra::Launcher]
-    Launcher --> Runtime[Kinetra::Runtime]
-    Demo --> Runtime
-    Dotio --> Runtime
-    Demo --> DemoPolicy[Demo scene / terrain / agents]
-    Dotio --> DotioPolicy[Dotio world / AI / combat / legacy adapters]
-    DemoPolicy --> Sim[Kinetra::Simulation]
-    DotioPolicy --> Sim
-    Sim --> Headless[Math / collision / spatial grid / navigation / steering]
-    Demo --> UI[Header-only debug / help / bitmap text]
-    Dotio --> UI
+    App[External application] --> Runtime[Kinetra::Runtime]
+    App --> Sim[Kinetra::Simulation]
+    App --> UI[Header-only debug / help / bitmap text]
     UI --> Runtime
+    Sim --> Headless[Math / collision / spatial grid / navigation / steering]
     Runtime --> Platform[SDL input / window and OpenGL batches]
 ```
 
@@ -56,41 +46,26 @@ classDiagram
     Runtime "1" *-- "1" Camera2D : value
     RuntimeImpl "1" *-- "1" SDL_Window : destroy on cleanup
     RuntimeImpl : owns SDL_GLContext
-    SessionHost "1" *-- "0..1" Session : unique_ptr
-    SessionHost "1" *-- "1..*" ApplicationRegistration : values
-    Session <|-- DemoSession
-    Session <|-- DotioSession
-    DemoSession *-- SandboxApplication
-    SandboxApplication *-- Sandbox
-    Sandbox *-- World
-    Sandbox *-- Navigation
-    Sandbox *-- Terrain
-    Sandbox "1" *-- "0..*" Agent : values
+    Session <|-- ApplicationSession
     World "1" *-- "0..*" Body : values
-    Agent ..> Body : index until scene compaction
-    DotioSession *-- DotioApplication
-    DotioApplication *-- LogicWorld : unique_ptr stable address
-    class LogicWorld["logic::World"]
+    Navigation "1" *-- "0..*" Body : obstacle snapshot
     DebugOption ..> ApplicationState : borrowed pointer / callback
 ```
 
-Runtime outlives sessions; application factories receive a camera value to configure. Scene compaction remaps Demo body indices. Only `Session` uses inheritance here; body shape and motion are enums. Dotio's static raster limits it to one active world, despite the generic host supporting arbitrary factories.
+The caller owns Runtime and the concrete Session and keeps both alive throughout `run_session`. World owns body values; Navigation copies obstacle geometry. Overlay callbacks and pointers borrow application state. Only Session uses inheritance here; body shape and motion are enums.
 
 ## Frame interaction
 
 ```mermaid
 sequenceDiagram
-    participant Main as run_launcher / run_session
+    participant Main as run_session
     participant R as Runtime
-    participant H as SessionHost (optional)
     participant S as Application session
     participant C as FixedClock
     Main->>R: poll events and update Input
-    Main->>H: menu selection / return / advance
-    H->>S: advance(elapsed, input, camera)
-    Note over H,S: New sessions receive zero time and empty input
+    Main->>S: advance(elapsed, input, camera)
     S->>S: debug input capture before game mapping
-    S->>S: commands, camera and streaming
+    S->>S: commands and camera
     S->>C: advance(elapsed)
     loop consumed ticks while unpaused
         S->>S: application update and physics
@@ -100,7 +75,7 @@ sequenceDiagram
     R->>R: batch upload, draw, swap buffers
 ```
 
-The Lab launcher loop supplies wall-clock time; direct consumers can use `run_session`. Applications own pause and fixed-update policies. Demo runs at 120 Hz; Dotio consumes 60 Hz movement ticks with 20 Hz AI. Paused time is consumed without replay on resume. Detailed flows: [runtime](engine/runtime.md), [physics](engine/math-physics.md), [navigation](engine/navigation.md).
+`run_session` supplies wall-clock elapsed time, polls input and updates the window title after rendering. Applications own pause behavior and fixed-update policies, including rates and backlog consumption. Detailed contracts: [runtime](engine/runtime.md), [physics](engine/math-physics.md), [navigation](engine/navigation.md).
 
 ## Responsibility map
 

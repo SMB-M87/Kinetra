@@ -12,6 +12,7 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 
 | Question | Authoritative page |
 | --- | --- |
+| Where are public interfaces and implementations? | [Headers](../include/README.md) and [sources](../src/README.md) |
 | What depends on what? Who owns objects? | [Architecture](architecture.md) |
 | How do I build, test and validate a change? | [Development](development.md) |
 | What are the geometry and physics contracts? | [Math and physics](engine/math-physics.md) |
@@ -22,11 +23,11 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 
 ## Applications
 
-- [Demo](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/demo/README.md): controls, streamed terrain, agents and navigation policy.
-- [Dotio](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/dotio/README.md): controls, coordinates, AI, balance, streaming and extraction.
-- [Composition root](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/README.md): bundled CLI and application registration.
+Application behavior, launcher registration and application tests are documented in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab).
 
 ## Decisions
+
+ADRs record historical context, including applications formerly in this repository. [0009](decisions/0009-core-and-lab.md) defines the current Core/Lab boundary; earlier application decisions do not describe the current core layout.
 
 | ADR | Decision |
 | --- | --- |

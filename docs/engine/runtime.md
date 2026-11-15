@@ -50,7 +50,7 @@ Application renderers cull scene content before submitting primitives. Runtime t
 
 [Session](../../include/kinetra/session.h) provides `advance`, `render` and `title`. `run_session(runtime, session, frame_limit)` handles wall-clock elapsed time, event polling, updates, rendering and shutdown for a directly launched application. Zero frame limit means unlimited; negative limits throw.
 
-Kinetra-Lab’s optional [SessionHost](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/launcher-overlays.md) manages registered factories and transitions. `run_launcher` owns the standard menu/session event loop; a custom launcher can drive the same host directly. Applications own pause/resume and `FixedClock` instances. FixedClock validates its step and caps backlog; excess stall time is dropped. Demo consumes 120 Hz; Dotio consumes 60 Hz movement and 20 Hz decisions. No engine assumption selects either rate.
+Kinetra-Lab’s optional [SessionHost](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/launcher-overlays.md) manages registered factories and transitions. `run_launcher` owns the standard menu/session event loop; a custom launcher can drive the same host directly. Applications own pause/resume and `FixedClock` instances. FixedClock validates its step and caps backlog; excess stall time is dropped. Applications select their own update rates.
 
 ## External consumers
 
@@ -65,10 +65,10 @@ target_link_libraries(my_app PRIVATE Kinetra::Simulation Kinetra::Runtime)
 
 Source consumers use `add_subdirectory` and link the public targets; see the [README](../../README.md#using-kinetra).
 
-Launcher, Demo and Dotio are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which consumes a Kinetra source checkout. The core has no dependency on Lab.
+Applications and the launcher are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which consumes a Kinetra source checkout. The core has no dependency on Lab.
 
 ## Verification and limits
 
-[Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [Presentation](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/demo/tests/presentation_tests.cpp) and [launcher integration](https://github.com/SMB-M87/Kinetra-Lab/blob/main/launcher/tests/runtime_tests.cpp) exercise complete frames and session behavior. [External consumer fixture](../../tests/consumer/CMakeLists.txt) compile public simulation/runtime interfaces without any Lab source.
+[Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [External consumer fixture](../../tests/consumer/CMakeLists.txt) compile public simulation/runtime interfaces without any Lab source.
 
 No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
