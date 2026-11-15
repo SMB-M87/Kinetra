@@ -39,4 +39,4 @@ The root [CMakeLists.txt](../CMakeLists.txt) registers tests when `BUILD_TESTING
 
 See [development](../docs/development.md) for commands, dependencies and graphics backend requirements; see the [implementation map](../src/README.md) for tested modules.
 
-`kinetra_weighted_navigation` covers weighted detours, blocked diagonal corners, invalid cost rollback, arrival braking, safety priority, acceleration limits and coincident bodies.
+`kinetra_weighted_navigation` covers weighted detours, blocked diagonal corners, invalid cost rollback, arrival braking, safety priority, acceleration limits and coincident bodies. It also covers swept rectangular grid clearance, merged wall segments, continuous bounded reactions at contact, tangential steering, close-wall convergence and discrete braking without wall penetration.

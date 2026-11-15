@@ -36,7 +36,13 @@ struct PrioritySteering {
 struct SteeringForces {
     Vec2 border{}, collision{}, predictive{}, seek{}, acceleration{};
 };
-/// Priority: borders and existing overlaps, then predicted collisions, then arrival.
+/// Constrain next-step normal velocity near borders while retaining tangential steering.
+/// Uses caller-selected time units with one integration step per call. Overlaps receive
+/// bounded recovery; borders have no passive repulsion at rest outside their surface.
+Vec2 constrain_borders(const Body &agent, Vec2 acceleration, std::span<const Segment> borders,
+                       const PrioritySteering &settings = {});
+/// Priority: existing overlaps, then predicted collisions, then arrival; borders
+/// constrain the result. border reports the applied acceleration correction.
 /// Neighbors exclude the agent. Borders must be horizontal or vertical segments.
 SteeringForces priority_steer(const Body &agent, Vec2 target, std::span<const Body> neighbors,
                               std::span<const Segment> borders, const PrioritySteering &settings = {},

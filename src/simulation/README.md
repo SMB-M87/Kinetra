@@ -17,8 +17,8 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 | [spatial_grid.cpp](spatial_grid.cpp) | AABB indexing and overlap queries |
 | [collision_grid.cpp](collision_grid.cpp) | Occupancy and segment collision queries |
 | [navigation.cpp](navigation.cpp) | Path planning and route following |
-| [weighted_grid.cpp](weighted_grid.cpp) | Rectangular-cell congestion A* and free-space borders |
-| [priority_steering.cpp](priority_steering.cpp) | Prioritized rectangular mover safety and arrival forces |
+| [weighted_grid.cpp](weighted_grid.cpp) | Footprint-aware congestion A*, swept clearance and merged free-space borders |
+| [priority_steering.cpp](priority_steering.cpp) | Prioritized mover steering and bounded wall-normal velocity constraints |
 | [steering.cpp](steering.cpp) | Local steering and obstacle avoidance |
 
 ## Relationships

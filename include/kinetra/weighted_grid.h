@@ -18,8 +18,10 @@ class WeightedGrid {
     void block(int cell, bool blocked = true);
     void weights(std::span<const float> values);
     float weight(int cell) const;
-    std::vector<Vec2> path(Vec2 start, Vec2 goal) const;
-    /// Boundary edges of the free-cell union, including outer boundaries.
+    /// Exact swept axis-aligned footprint; touching a surface is permitted.
+    bool clear(Vec2 start, Vec2 goal, Vec2 half_extents = {}) const;
+    std::vector<Vec2> path(Vec2 start, Vec2 goal, Vec2 half_extents = {}) const;
+    /// Merged boundary edges of the free-cell union, including outer boundaries.
     std::vector<Segment> borders() const;
 
   private:

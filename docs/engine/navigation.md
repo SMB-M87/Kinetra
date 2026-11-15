@@ -62,9 +62,26 @@ pairs retain the conservative envelope; the default remains unchanged.
 
 ## Weighted grids and priority steering
 
-`WeightedGrid` accepts positive finite rectangular cells and a bounded world, up to one million cells. `cell()` returns -1 outside the truncated full-cell envelope. `block()` changes topology; `weights()` atomically validates a full nonnegative finite cost array. Its eight-neighbor A* prevents blocked diagonal corner cuts and retains exact free endpoints. Unreachable or blocked endpoints return an empty path. Costs multiply physical edge length by one plus destination-cell weight; heuristic uses Euclidean distance. The caller supplies occupancy and retry policy. `borders()` returns axis-aligned edges of the free-cell union.
+`WeightedGrid` accepts positive finite rectangular cells and a bounded world, up to one million cells. `cell()` returns -1 outside the truncated full-cell envelope. `block()` changes topology; `weights()` atomically validates a full nonnegative finite cost array. Its eight-neighbor A* prevents blocked diagonal corner cuts and retains exact free endpoints. Unreachable or blocked endpoints return an empty path. Costs multiply physical edge length by one plus destination-cell weight; heuristic uses Euclidean distance. The caller supplies occupancy and retry policy. `path(start, goal, half_extents)` optionally checks every endpoint and swept link
+against an axis-aligned rectangular footprint; the default zero footprint retains
+point planning. `clear(start, goal, half_extents)` exposes the same predicate.
+Touching a surface is permitted; penetrating blocked cells or extending outside
+the world fails. Exact endpoints are used when checking the first and last link.
+`borders()` merges contiguous collinear edges of the free-cell union, removing
+raster seams from steering and contact geometry.
 
-`priority_steer` accepts axis-aligned boxes and axis-aligned border segments. It returns border, overlap, predictive and seek forces plus capped acceleration. Border and immediate overlap forces take precedence, predictive avoidance is next, and seek/arrival is last. Arrival can be disabled at intermediate waypoints. Settings are explicit in caller-selected time units: defaults use 2 units/time and 0.6 units/time squared, eight prediction steps and a 1.025 safety multiplier. Caller-owned integration and clock must use consistent units. Neighbor spans exclude the agent. Coincident bodies receive a finite separating force. Unsupported rotated/circular bodies and invalid settings throw.
+`priority_steer` accepts axis-aligned boxes and axis-aligned border segments. It returns overlap, predictive and seek forces plus capped acceleration. Immediate
+overlap recovery precedes prediction and arrival. `constrain_borders` then limits
+normal velocity toward expanded wall segments while preserving feasible tangential
+steering and braking. This function can also constrain another steering profile.
+It assumes one semi-implicit integration step per call. Its stopping bound includes
+the next step's travel; lookahead provides additional damping. Only penetration
+requests a smooth bounded outward recovery, so a stationary body touching a wall
+is not repelled. `border_distance` and `border_strength` tune penetration recovery;
+`border_lookahead` tunes inward approach speed. Conflicting constraints in overlaps
+receive bounded recovery, not a collision-free guarantee. `SteeringForces::border`
+reports the applied acceleration correction (at most twice the acceleration cap),
+not an unbounded inverse-square diagnostic force. Arrival can be disabled at intermediate waypoints. Settings are explicit in caller-selected time units: defaults use 2 units/time and 0.6 units/time squared, eight prediction steps and a 1.025 safety multiplier. Caller-owned integration and clock must use consistent units. Neighbor spans exclude the agent. Coincident bodies receive a finite separating force. Unsupported rotated/circular bodies and invalid settings throw.
 
 These supplement the existing APIs; `steer` and `Navigation` behavior remains compatible. See [ADR 0011](../decisions/0011-weighted-navigation-and-priority-steering.md) and [weighted navigation tests](../../tests/weighted_navigation_tests.cpp).
 

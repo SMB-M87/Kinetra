@@ -2,6 +2,69 @@
 #include <stdexcept>
 
 namespace kinetra {
+Vec2 constrain_borders(const Body &a, Vec2 acceleration, std::span<const Segment> borders,
+                       const PrioritySteering &s) {
+    validate(a);
+    if (a.shape != Shape::box || a.angle != 0 || !finite(acceleration))
+        throw std::invalid_argument("Border steering requires an axis-aligned box and finite acceleration");
+    for (float v : {s.max_speed, s.max_acceleration, s.border_distance, s.border_strength, s.border_lookahead})
+        if (!std::isfinite(v) || v <= 0)
+            throw std::invalid_argument("Border steering settings must be finite and positive");
+    acceleration = limited(acceleration, s.max_acceleration);
+    Vec2 lower{-s.max_acceleration, -s.max_acceleration};
+    Vec2 upper{s.max_acceleration, s.max_acceleration};
+    for (const auto &edge : borders) {
+        if (!finite(edge.start) || !finite(edge.end) ||
+            (edge.start.x != edge.end.x && edge.start.y != edge.end.y))
+            throw std::invalid_argument("Border steering requires finite axis-aligned segments");
+        // Minkowski expansion includes the rectangular footprint and finite end caps.
+        const Vec2 center = (edge.start + edge.end) / 2;
+        const Vec2 extent{std::abs(edge.end.x - edge.start.x) / 2 + a.half_extents.x,
+                          std::abs(edge.end.y - edge.start.y) / 2 + a.half_extents.y};
+        const Vec2 offset = a.position - center;
+        const Vec2 gap{std::abs(offset.x) - extent.x, std::abs(offset.y) - extent.y};
+        const bool x_axis = gap.x >= gap.y;
+        const float d = x_axis ? gap.x : gap.y;
+        const float sign = (x_axis ? offset.x : offset.y) >= 0 ? 1.f : -1.f;
+        const float velocity = (x_axis ? a.velocity.x : a.velocity.y) * sign;
+        // Brake before contact. At rest a touching parking goal stays valid; only
+        // actual penetration requests an outward velocity, continuously at d=0.
+        const float clearance = std::max(0.f, d);
+        const float stopping_speed = std::sqrt(s.max_acceleration * s.max_acceleration +
+                                               2 * s.max_acceleration * clearance) - s.max_acceleration;
+        const float inward = std::min(clearance / std::max(1.f, s.border_lookahead), stopping_speed);
+        const float t = std::clamp(-d / s.border_distance, 0.f, 1.f);
+        const float outward = std::min(s.max_speed, s.border_strength * t * t * (3 - 2 * t));
+        const float correction =
+            std::clamp(outward - inward - velocity, -s.max_acceleration, s.max_acceleration);
+        float &lo = x_axis ? lower.x : lower.y;
+        float &hi = x_axis ? upper.x : upper.y;
+        if (sign > 0)
+            lo = std::max(lo, correction);
+        else
+            hi = std::min(hi, -correction);
+    }
+    // Opposing constraints can be infeasible in an overlap; choose their midpoint
+    // rather than depending on segment order or summing unbounded reactions.
+    auto constrain = [](float value, float lo, float hi) {
+        return lo <= hi ? std::clamp(value, lo, hi) : (lo + hi) / 2;
+    };
+    const Vec2 constrained{constrain(acceleration.x, lower.x, upper.x),
+                           constrain(acceleration.y, lower.y, upper.y)};
+    if (length(constrained) <= s.max_acceleration)
+        return constrained;
+    const Vec2 required{constrain(0, lower.x, upper.x), constrain(0, lower.y, upper.y)};
+    if (length(required) >= s.max_acceleration)
+        return limited(required, s.max_acceleration);
+    // Spend the remaining acceleration budget on tangent/goal steering without
+    // scaling away a feasible normal braking constraint.
+    const Vec2 extra = constrained - required;
+    const float b = dot(required, extra);
+    const float c = dot(required, required) - s.max_acceleration * s.max_acceleration;
+    const float t = (-b + std::sqrt(std::max(0.f, b * b - dot(extra, extra) * c))) / dot(extra, extra);
+    return required + extra * std::clamp(t, 0.f, 1.f);
+}
+
 SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> neighbors,
                               std::span<const Segment> borders, const PrioritySteering &s, bool arrival) {
     validate(a);
@@ -13,34 +76,6 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
         s.prediction_steps > 64)
         throw std::invalid_argument("Priority steering requires an axis-aligned box and bounded prediction");
     SteeringForces result;
-    const Vec2 p = a.position + a.velocity * s.border_lookahead;
-    auto repel = [&](Vec2 normal, float d) {
-        if (d < s.border_distance) {
-            const float strength =
-                d <= 0 ? s.border_strength * 3
-                       : s.border_strength * (1 / (d * d) - 1 / (s.border_distance * s.border_distance));
-            result.border += normal * strength;
-        }
-    };
-    for (const auto &edge : borders) {
-        if (!finite(edge.start) || !finite(edge.end) ||
-            (edge.start.x != edge.end.x && edge.start.y != edge.end.y))
-            throw std::invalid_argument("Priority steering borders must be finite and axis-aligned");
-        if (edge.start.x == edge.end.x && p.y >= std::min(edge.start.y, edge.end.y) &&
-            p.y <= std::max(edge.start.y, edge.end.y)) {
-            const float dx = p.x - edge.start.x;
-            repel({dx >= 0 ? 1.f : -1.f, 0}, std::abs(dx) - a.half_extents.x);
-        } else if (edge.start.y == edge.end.y && p.x >= std::min(edge.start.x, edge.end.x) &&
-                   p.x <= std::max(edge.start.x, edge.end.x)) {
-            const float dy = p.y - edge.start.y;
-            repel({0, dy >= 0 ? 1.f : -1.f}, std::abs(dy) - a.half_extents.y);
-        }
-        for (Vec2 corner : {edge.start, edge.end}) {
-            const Vec2 d = p - corner;
-            repel(normalized(d), length({std::max(std::abs(d.x) - a.half_extents.x, 0.f),
-                                         std::max(std::abs(d.y) - a.half_extents.y, 0.f)}));
-        }
-    }
     int predicted = 0;
     for (const auto &other : neighbors) {
         validate(other);
@@ -74,10 +109,11 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
     const Vec2 offset = target - a.position;
     const float speed = s.max_speed * (arrival ? std::min(1.f, length(offset) / s.arrival_radius) : 1.f);
     result.seek = limited(normalized(offset) * speed - a.velocity, s.max_acceleration);
-    Vec2 force = result.border + result.collision;
-    if (length(result.border) == 0 && length(result.collision) == 0)
-        force = length(result.predictive) > 0 ? result.predictive : result.seek;
-    result.acceleration = limited(force, s.max_acceleration);
+    const Vec2 force = length(result.collision) > 0 ? result.collision
+                       : length(result.predictive) > 0 ? result.predictive : result.seek;
+    const Vec2 acceleration = limited(force, s.max_acceleration);
+    result.acceleration = constrain_borders(a, acceleration, borders, s);
+    result.border = result.acceleration - acceleration;
     return result;
 }
 } // namespace kinetra
