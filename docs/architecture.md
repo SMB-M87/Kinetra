@@ -1,6 +1,6 @@
 # Architecture
 
-The public API is under `include/kinetra/`. Two core CMake targets express linking boundaries; directories are not separate libraries.
+The public API is under `include/kinetra/`. Three core CMake targets express linking boundaries; directories are not separate libraries.
 
 ## Table of contents
 
@@ -22,13 +22,15 @@ flowchart LR
     Runtime --> Backend[SDL2 / OpenGL 3.3 / GLAD]
 ```
 
-Applications and the launcher live in Kinetra-Lab. Core builds and tests need no sibling repository. Lab consumes the public source targets through `add_subdirectory`.
+Applications and the bundled launcher executable live in Kinetra-Lab. Kinetra owns the generic `Kinetra::Launcher` menu, host and event loop. Core builds and tests need no sibling repository. Lab consumes the public source targets through `add_subdirectory`.
 
 ## Components and build dependencies
 
 ```mermaid
 flowchart TD
     App[External application] --> Runtime[Kinetra::Runtime]
+    App --> Launcher[Kinetra::Launcher]
+    Launcher --> Runtime
     App --> Sim[Kinetra::Simulation]
     App --> UI[Header-only debug / help / bitmap text]
     UI --> Runtime
@@ -84,7 +86,7 @@ sequenceDiagram
 | Vector, shape, contact, impulse and grid query | Pixel/world conversion and damage/rewards |
 | A*, swept clearance, path shortening and steering | Wander targets, combat paths, retries and timeouts |
 | Runtime, input values, camera and fixed clock | Bindings, zoom bounds, pause and update frequencies |
-| Direct session contract and shared overlay layout | Lab launcher/menu ownership, factories, difficulty and debug values |
+| Direct sessions, generic launcher and shared overlay layout | Lab application registration, factories, difficulty and debug values |
 | Primitive drawing and bitmap text | Terrain appearance, health bars and AI visualizations |
 
 [Decision 0008](decisions/0008-public-engine-and-consumers.md) records the public-boundary migration and compatibility costs.

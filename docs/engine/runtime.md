@@ -50,7 +50,7 @@ Application renderers cull scene content before submitting primitives. Runtime t
 
 [Session](../../include/kinetra/session.h) provides `advance`, `render` and `title`. `run_session(runtime, session, frame_limit)` handles wall-clock elapsed time, event polling, updates, rendering and shutdown for a directly launched application. Zero frame limit means unlimited; negative limits throw.
 
-Kinetra-Lab’s optional [SessionHost](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/launcher-overlays.md) manages registered factories and transitions. `run_launcher` owns the standard menu/session event loop; a custom launcher can drive the same host directly. Applications own pause/resume and `FixedClock` instances. FixedClock validates its step and caps backlog; excess stall time is dropped. Applications select their own update rates.
+Kinetra’s optional [SessionHost](launcher-overlays.md) manages registered factories and transitions. `run_launcher` owns the standard menu/session event loop; a custom launcher can drive the same host directly. Applications own pause/resume and `FixedClock` instances. FixedClock validates its step and caps backlog; excess stall time is dropped. Applications select their own update rates.
 
 ## External consumers
 
@@ -65,7 +65,7 @@ target_link_libraries(my_app PRIVATE Kinetra::Simulation Kinetra::Runtime)
 
 Source consumers use `add_subdirectory` and link the public targets; see the [README](../../README.md#using-kinetra).
 
-Applications and the launcher are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which consumes a Kinetra source checkout. The core has no dependency on Lab.
+Applications and the bundled launcher executable are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which consumes a Kinetra source checkout. The core has no dependency on Lab.
 
 ## Verification and limits
 

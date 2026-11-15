@@ -1,7 +1,7 @@
 # Kinetra
 
 Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
-[Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) owns applications, the launcher and experiments. Kinetra builds independently of Lab.
+[Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) owns applications, the bundled launcher executable and experiments. Kinetra builds independently of Lab.
 
 ## Table of contents
 
@@ -53,7 +53,7 @@ int main() {
 }
 ```
 
-Runtime consumers enable `KINETRA_BUILD_RUNTIME` and link `Kinetra::Runtime`. Lab supplies `Kinetra::Launcher`. Integration uses source targets; there is no installed CMake package.
+Runtime consumers enable `KINETRA_BUILD_RUNTIME` and link `Kinetra::Runtime`. Kinetra also supplies `Kinetra::Launcher` for the generic menu, session host and launcher loop. Integration uses source targets; there is no installed CMake package.
 
 ## Working with Kinetra-Lab
 
@@ -73,7 +73,7 @@ This local source override does not change Lab's recorded dependency. Before pub
 
 ## Documentation
 
-Directory guides: [public headers](include/README.md) and [implementation](src/README.md).
+Directory guides: [public headers](include/README.md), [implementation](src/README.md) and [tests](tests/README.md).
 
 Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), or [runtime contract](docs/engine/runtime.md). [AGENTS.md](AGENTS.md) records engineering rules.
 

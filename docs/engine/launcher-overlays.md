@@ -1,6 +1,6 @@
 # Debug and help overlays
 
-Header-only core UI helpers provide shared layout, capture and primitive drawing. Registered menus and session hosts live in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/launcher-overlays.md).
+Header-only core UI helpers provide shared layout, capture and primitive drawing. [launcher.h](../../include/kinetra/launcher.h) provides `LaunchMenu`, `SessionHost` and `run_launcher` through `Kinetra::Launcher`. Applications supply value-owned choices and session factories; Kinetra owns selection, session lifetime and the standard event loop. Failed factories preserve the previous session/camera. Successful transitions suppress input and elapsed time on the first update. The bundled registration and usage examples live in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/launcher-overlays.md).
 
 ## Table of contents
 

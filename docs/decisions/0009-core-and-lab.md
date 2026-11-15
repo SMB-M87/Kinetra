@@ -8,6 +8,8 @@
 
 ## Decision
 
+The generic launcher ownership below is superseded by [0010](0010-generic-launcher-in-core.md).
+
 Accepted; revised to remove package installation and repository scripts. Supersedes the repository placement and deferred installed-package support in [0008](0008-public-engine-and-consumers.md).
 
 Kinetra owns Simulation, Runtime, public core headers, core tests and development tools.

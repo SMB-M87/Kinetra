@@ -16,7 +16,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 
 - Kinetra is a C++20 2D engine with a headless simulation library and optional SDL2/OpenGL 3.3 runtime.
 - Kinetra contains only reusable core, core tests and development infrastructure.
-- Launcher, Demo, Dotio and application tests live in Kinetra-Lab.
+- Demo, Dotio, the bundled launcher executable and application tests live in Kinetra-Lab.
 - Linux is supported; Artix/Linux is the desktop target. Do not imply untested platform support.
 - Application behavior is documented in Kinetra-Lab.
 
@@ -47,7 +47,7 @@ Permanent project rules for this repository. Explicit user instructions and high
 - Keep world generation, AI decisions, combat, difficulty, spawning and bindings application-owned.
 - Application fixed rates are policy: do not hardcode Demo or Dotio timing into the engine.
 - Preserve headless and runtime-only builds, independently of examples and launcher.
-- Launcher implementation belongs to Kinetra-Lab; core retains the direct Session contract.
+- Generic launcher API, menu, host and event loop belong to Kinetra; application registration and executable composition belong to Kinetra-Lab.
 - Overlays own shared layout/rendering/input capture; applications provide content and actions.
 - Do not add a library for each directory. Targets must represent useful linking boundaries.
 - Record meaningful boundary changes in an ADR and update the external-consumer test.
@@ -57,7 +57,9 @@ Permanent project rules for this repository. Explicit user instructions and high
 
 - Update relevant documentation whenever behavior, APIs, build configuration or architecture changes.
 - Use concise technical English for code and documentation; communicate with the user in Dutch by default.
-- README is the short introduction, quick start and navigation entry point.
+- The root README is the short introduction, quick start and navigation entry point.
+- Always add and maintain a `README.md` in every first-party project directory, including every nested directory under `src/`, `include/`, `tests/` and `docs/`. Each directory guide must explain its purpose, code or document structure, responsibilities and relevant relationships, with links to child guides and authoritative contracts. Update the guides whenever that structure changes.
+- Exclude Git metadata, local tooling/account state, build outputs, dependencies and generated or third-party code directories from this README requirement; document their role from the nearest first-party parent guide instead.
 - Use [docs/README.md](docs/README.md) to find each concept's authoritative page; link instead of duplicating explanations.
 - Keep a useful explicit TOC below each maintained Markdown title/introduction and synchronize its links.
 - Prefer Mermaid for architecture, ownership, interactions and lifecycle explanations.
@@ -99,5 +101,6 @@ Permanent project rules for this repository. Explicit user instructions and high
 | Navigation and steering | [navigation](include/kinetra/navigation.h), [steering](include/kinetra/steering.h) | [navigation tests](tests/navigation_tests.cpp), [design](docs/engine/navigation.md) |
 | Window, input, rendering and direct sessions | [runtime](src/engine/), [session API](include/kinetra/session.h) | [runtime tests](tests/runtime_tests.cpp), [runtime guide](docs/engine/runtime.md) |
 | Shared overlays | [debug](include/kinetra/debug_view.h), [help](include/kinetra/help_view.h) | [design](docs/engine/launcher-overlays.md) |
-| Applications and launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned sources and tests |
+| Generic launcher | [launcher API](include/kinetra/launcher.h) | [tests](tests/launcher_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
+| Applications and bundled launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned registration, executables and tests |
 | Build and repository validation | [CMake](CMakeLists.txt), [consumer](tests/consumer/) | [development](docs/development.md) |

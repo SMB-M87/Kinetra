@@ -13,6 +13,9 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 | Question | Authoritative page |
 | --- | --- |
 | Where are public interfaces and implementations? | [Headers](../include/README.md) and [sources](../src/README.md) |
+| How are tests organized? | [Tests](../tests/README.md) and [consumer fixture](../tests/consumer/README.md) |
+| Where are subsystem contracts indexed? | [Engine contracts](engine/README.md) |
+| How are historical decisions organized? | [Decision guide](decisions/README.md) |
 | What depends on what? Who owns objects? | [Architecture](architecture.md) |
 | How do I build, test and validate a change? | [Development](development.md) |
 | What are the geometry and physics contracts? | [Math and physics](engine/math-physics.md) |
@@ -23,7 +26,7 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 
 ## Applications
 
-Application behavior, launcher registration and application tests are documented in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab).
+Application behavior, concrete launcher registration and application tests are documented in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab).
 
 ## Decisions
 
@@ -39,4 +42,5 @@ ADRs record historical context, including applications formerly in this reposito
 | [0006](decisions/0006-variants-and-dotio-port.md) | Original variant/port boundary; session ownership amended by 0008 |
 | [0007](decisions/0007-module-tests-and-streamed-dotio.md) | Streamed Dotio window and module tests |
 | [0009](decisions/0009-core-and-lab.md) | Core/Lab split and source integration |
+| [0010](decisions/0010-generic-launcher-in-core.md) | Generic launcher ownership in Kinetra |
 | [0008](decisions/0008-public-engine-and-consumers.md) | Public navigation, optional launcher and external consumers |

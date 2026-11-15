@@ -1,6 +1,6 @@
 # Public headers
 
-Consumer-facing interfaces live in `kinetra/`. Include them as `<kinetra/physics.h>`, for example, using the public CMake targets.
+Consumer-facing interfaces live in [kinetra/](kinetra/README.md). Include them as `<kinetra/physics.h>`, for example, using the public CMake targets.
 
 ## Table of contents
 
@@ -14,6 +14,7 @@ Consumer-facing interfaces live in `kinetra/`. Include them as `<kinetra/physics
 | `math.h`, `physics.h`, `spatial_grid.h`, `collision_grid.h` | Geometry, bodies, contacts and spatial queries | [Math and physics](../docs/engine/math-physics.md) |
 | `navigation.h`, `steering.h` | Obstacle-aware paths and local steering | [Navigation](../docs/engine/navigation.md) |
 | `engine.h`, `session.h` | Runtime, input, drawing and direct sessions | [Runtime](../docs/engine/runtime.md) |
+| `launcher.h` | Generic menu, session host and launcher loop (`Kinetra::Launcher`) | [Launcher](../docs/engine/launcher-overlays.md) |
 | `camera.h`, `timing.h` | Header-only coordinate transforms and fixed clock | [Runtime](../docs/engine/runtime.md) |
 | `bitmap_text.h`, `debug_view.h`, `help_view.h` | Header-only text and shared overlays | [Overlays](../docs/engine/launcher-overlays.md) |
 
