@@ -13,7 +13,9 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 
 | File | Responsibility |
 | --- | --- |
-| [physics.cpp](physics.cpp) | Body integration, contacts, impulses and world stepping |
+| [traffic.cpp](traffic.cpp) | Stable FIFO admission, request cancellation and physical occupancy protection |
+| [avoidance.cpp](avoidance.cpp) | Reciprocal circular velocity constraints, reachable velocity selection and bounded relaxation |
+| [physics.cpp](physics.cpp) | Body integration, circle/OBB/convex polygon contacts, area inertia, relative convex translation sweeps, shared collision timeline, impulses and world stepping |
 | [spatial_grid.cpp](spatial_grid.cpp) | AABB indexing and overlap queries |
 | [collision_grid.cpp](collision_grid.cpp) | Occupancy and segment collision queries |
 | [navigation.cpp](navigation.cpp) | Path planning and route following |
@@ -24,8 +26,9 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 ## Relationships
 ```mermaid
 flowchart TD
-    Validate[Validate timestep, gravity and bodies] --> Integrate[Integrate moving bodies for half a timestep]
-    Integrate --> Grid[Rebuild spatial grid from body bounds]
+    Validate[Validate timestep, gravity and bodies] --> Integrate[Apply gravity and acceleration for half a timestep]
+    Integrate --> Sweep[Advance all bodies on a shared earliest-contact timeline]
+    Sweep --> Grid[Rebuild spatial grid from body bounds]
     Grid --> Query[Query candidate pairs from movers]
     Query --> Contact[Detect and resolve contacts]
     Contact --> Pass{Six correction passes completed?}
@@ -37,6 +40,10 @@ flowchart TD
 
 `physics.cpp` rebuilds the broad phase after each correction pass because corrections can create new contacts. Fixed bodies remain indexed but do not initiate queries. See the physics contract for timestep and collision limitations.
 
+
+`avoidance.cpp` constructs circular or fixed axis-aligned rectangular velocity
+obstacles and selects velocities subject to speed and acceleration limits. Mixed
+shape pairs use enclosing circles; see the navigation contract for feasibility limits.
 
 Navigation and steering build on geometry and spatial queries without depending on SDL/OpenGL. Applications own world generation and AI policy.
 

@@ -196,7 +196,7 @@ bool Navigation::clear_body(const kinetra::Body &body, kinetra::Vec2 a, kinetra:
         return distance_to_segment(body.position, a, b) > body.radius + clearance;
     const auto p = kinetra::rotated(a - body.position, -body.angle);
     const auto q = kinetra::rotated(b - body.position, -body.angle);
-    const auto e = body.half_extents;
+    const auto e = kinetra::local_extents(body);
     if ((std::abs(p.x) <= e.x && std::abs(p.y) <= e.y) || (std::abs(q.x) <= e.x && std::abs(q.y) <= e.y))
         return false;
     const kinetra::Vec2 corners[]{{-e.x, -e.y}, {e.x, -e.y}, {e.x, e.y}, {-e.x, e.y}};
@@ -230,7 +230,7 @@ bool Navigation::can_depart(kinetra::Vec2 start, kinetra::Vec2 end) const {
             outward = a;
             gap = kinetra::length(a) - body.radius;
         } else {
-            const auto e = body.half_extents;
+            const auto e = kinetra::local_extents(body);
             outward = a - kinetra::Vec2{std::clamp(a.x, -e.x, e.x), std::clamp(a.y, -e.y, e.y)};
             gap = kinetra::length(outward);
         }

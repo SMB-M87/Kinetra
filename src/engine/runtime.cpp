@@ -310,6 +310,16 @@ void Runtime::circle(Vec2 center, float radius, Color color) {
     }
 }
 
+void Runtime::polygon(std::span<const Vec2> vertices, Color color) {
+    if (vertices.size() < 3)
+        throw std::invalid_argument("Polygon drawing requires at least three vertices");
+    for (auto vertex : vertices)
+        if (!finite(vertex))
+            throw std::invalid_argument("Polygon drawing requires finite vertices");
+    for (std::size_t i = 1; i + 1 < vertices.size(); ++i)
+        triangle(vertices[0], vertices[i], vertices[i + 1], color);
+}
+
 void Runtime::box(Vec2 center, Vec2 extent, float angle, Color color) {
     const Vec2 a = center + rotated({-extent.x, -extent.y}, angle);
     const Vec2 b = center + rotated({extent.x, -extent.y}, angle);

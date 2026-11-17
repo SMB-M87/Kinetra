@@ -102,6 +102,18 @@ int main() {
             }
             require(pixels[1] > 200 && pixels[0] < 20 && pixels[2] < 20, "Rendered center pixel missing");
             require(glGetError() == GL_NO_ERROR, "OpenGL reported an error");
+            runtime.begin({0, 0, 0, 1});
+            const Vec2 polygon[]{{-2, -2}, {2, -2}, {0, 2}};
+            runtime.polygon(polygon, {0, 1, 0});
+            runtime.end();
+            glFinish();
+            glReadBuffer(GL_FRONT);
+            glReadPixels(160, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            if (pixels[1] < 200) {
+                glReadBuffer(GL_BACK);
+                glReadPixels(160, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            }
+            require(pixels[1] > 200 && pixels[0] < 20, "Filled polygon missing from rendered batch");
             for (const float zoom : {2.5f, 50.f}) {
                 runtime.camera.pixels_per_unit = zoom;
                 runtime.begin({0, 0, 0, 1});

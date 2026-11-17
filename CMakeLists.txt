@@ -10,6 +10,8 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 add_library(kinetra_simulation
+    src/simulation/traffic.cpp
+    src/simulation/avoidance.cpp
     src/simulation/collision_grid.cpp
     src/simulation/navigation.cpp
     src/simulation/physics.cpp
@@ -43,6 +45,24 @@ if(KINETRA_BUILD_RUNTIME)
     endif()
 endif()
 if(BUILD_TESTING)
+    add_executable(kinetra_traffic_tests tests/traffic_tests.cpp)
+    target_link_libraries(kinetra_traffic_tests PRIVATE Kinetra::Simulation)
+    add_test(NAME kinetra_traffic COMMAND kinetra_traffic_tests)
+    add_executable(kinetra_avoidance_tests tests/avoidance_tests.cpp)
+    target_link_libraries(kinetra_avoidance_tests PRIVATE Kinetra::Simulation)
+    add_test(NAME kinetra_avoidance COMMAND kinetra_avoidance_tests)
+    add_executable(kinetra_moving_contact_tests tests/moving_contact_tests.cpp)
+    target_link_libraries(kinetra_moving_contact_tests PRIVATE Kinetra::Simulation)
+    add_test(NAME kinetra_moving_contacts COMMAND kinetra_moving_contact_tests)
+    add_executable(kinetra_translation_sweep_tests tests/translation_sweep_tests.cpp)
+    target_link_libraries(kinetra_translation_sweep_tests PRIVATE Kinetra::Simulation)
+    add_test(NAME kinetra_translation_sweeps COMMAND kinetra_translation_sweep_tests)
+    add_executable(kinetra_sweep_tests tests/sweep_tests.cpp)
+    target_link_libraries(kinetra_sweep_tests PRIVATE Kinetra::Simulation)
+    add_test(NAME kinetra_sweeps COMMAND kinetra_sweep_tests)
+    add_executable(kinetra_polygon_tests tests/polygon_tests.cpp)
+    target_link_libraries(kinetra_polygon_tests PRIVATE Kinetra::Simulation)
+    add_test(NAME kinetra_polygons COMMAND kinetra_polygon_tests)
     add_executable(kinetra_weighted_navigation_tests tests/weighted_navigation_tests.cpp)
     target_link_libraries(kinetra_weighted_navigation_tests PRIVATE Kinetra::Simulation)
     add_test(NAME kinetra_weighted_navigation COMMAND kinetra_weighted_navigation_tests)

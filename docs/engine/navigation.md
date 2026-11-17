@@ -6,6 +6,8 @@
 
 - [Planning and following](#planning-and-following)
 - [Contracts](#contracts)
+- [Reciprocal local avoidance](#reciprocal-local-avoidance)
+- [Traffic admission](#traffic-admission)
 - [Weighted grids and priority steering](#weighted-grids-and-priority-steering)
 - [Application policies](#application-policies)
 - [Verification](#verification)
@@ -59,6 +61,39 @@ Pathfinding uses Euclidean heuristic and orthogonal/diagonal travel costs. Smoot
 uses summed half extents plus clearance instead of a circumscribed agent circle.
 This permits physically clear rectangular passages. Rotated boxes and other shape
 pairs retain the conservative envelope; the default remains unchanged.
+
+## Reciprocal local avoidance
+
+[avoidance.h](../../include/kinetra/avoidance.h) provides `avoid_collisions(agent, preferred_velocity, neighbors, dt, settings)` in `Kinetra::Simulation`. Its circular velocity-obstacle construction follows [Optimal Reciprocal Collision Avoidance](https://gamma-web.iacs.umd.edu/ORCA/), with a speed disc and a reachable-velocity disc for the caller's acceleration bound.
+
+- Supply one immutable snapshot per update, unique stable agent IDs, positive circular radii and consistent time units. Cooperative neighbors share pairwise corrections equally; noncooperative neighbors retain their supplied velocity and assign full avoidance responsibility to the caller. Convex body consumers can use `bounding_radius` for conservative envelopes.
+- Set `half_extents` to positive components for a fixed axis-aligned rectangle, or leave both zero for a circle. Box/box pairs use the summed rectangular footprint, expanded by `clearance` on each axis. Their finite-horizon velocity obstacle is projected onto its visible cutoff edges and two tangent rays. Overlap recovery uses the timestep cutoff. Mixed circle/box pairs retain enclosing circles; `radius` must therefore enclose any supplied rectangle. Rotating rectangles require conservative circular envelopes.
+- All supplied neighbors contribute constraints. Stable ID ordering makes input order irrelevant. The selected velocity stays closest to the passing-adjusted preferred velocity within the discs and half-planes. A small right-hand passing preference starts near forward neighbors before a symmetric crowd reaches a packed standstill; its magnitude scales down with preferred speed to permit arrival. Set `passing_bias=0` for an unmodified preference.
+- `velocity` and `acceleration` describe the next bounded control update. Existing overspeed may persist while decelerating, but selection cannot increase it. `dt` and `horizon` use the caller's time units, permitting consistent second/tick conversions.
+- If constraints cannot be met within the motion bounds, a bounded minimax relaxation reduces the largest violation. `feasible=false` and `violation` expose this condition. Approximate feasibility uses a 0.00001 velocity-unit tolerance; it is not a certificate for acceleration tracking, unseen obstacles or subsequent noncooperative decisions.
+
+This is holonomic local avoidance. Applications still own route planning, static geometry selection, traffic scheduling, starvation prevention, deadlock recovery and vehicle steering limits. Circular envelopes can reject passages that actual polygons could traverse. No general collision-free or globally live behavior is promised for arbitrary crowds.
+
+## Traffic admission
+
+[traffic.h](../../include/kinetra/traffic.h) provides `TrafficGate` in
+`Kinetra::Simulation`, independently of geometry and steering. Call `update` once
+per control step with complete unique-ID request and physical-occupancy snapshots
+for one exclusive conflict zone. New requests join in stable ID order; existing
+requests keep their FIFO turn. The admitted request persists until cancelled.
+Physical occupancy takes precedence over the queue, even if an occupant cancels
+its request, stops, or is absent from the request set. Multiple occupants report
+`occupied_conflict` and admit nobody; applications must still permit occupants to
+leave. `waiting` counts requesting agents other than the admitted agent.
+
+No timer revokes an approaching grant. Cancel only when the agent can safely stop
+outside the zone. Fair progress depends on admitted agents eventually clearing it.
+Applications own zone discovery, safe stopping lines, exit availability, stalled
+occupants, multi-zone dependencies and deadlock recovery. `clear` resets logical
+state when the caller deliberately disables or replaces the policy; it does not
+move bodies. Duplicate IDs throw before changing queue state. See
+[ADR 0012](../decisions/0012-traffic-admission.md) and the
+[traffic tests](../../tests/traffic_tests.cpp).
 
 ## Weighted grids and priority steering
 

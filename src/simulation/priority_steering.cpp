@@ -127,10 +127,10 @@ Vec2 tangent_steer(const Body &a, Vec2 target, std::span<const Body> neighbors,
         throw std::invalid_argument("Invalid tangent steering settings");
     const Vec2 desired = normalized(target - a.position);
     Vec2 repulsion{};
-    const float radius = a.shape == Shape::circle ? a.radius : length(a.half_extents);
+    const float radius = bounding_radius(a);
     for (const auto &other : neighbors) {
         validate(other);
-        const float other_radius = other.shape == Shape::circle ? other.radius : length(other.half_extents);
+        const float other_radius = bounding_radius(other);
         const float safety = radius + other_radius;
         const Vec2 offset = a.position - other.position;
         const float d = length(offset);

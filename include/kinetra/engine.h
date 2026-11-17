@@ -4,6 +4,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <span>
 
 namespace kinetra {
 
@@ -71,6 +72,8 @@ class Runtime {
     void begin(Color background = {0.035f, 0.045f, 0.07f, 1});
     void circle(Vec2 center, float radius, Color color);
     void box(Vec2 center, Vec2 half_extents, float angle, Color color);
+    /// Filled convex polygon in world coordinates; caller supplies convex ordered vertices.
+    void polygon(std::span<const Vec2> vertices, Color color);
     void line(Vec2 from, Vec2 to, float width, Color color);
     void end();
     Camera2D camera;

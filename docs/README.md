@@ -50,3 +50,5 @@ ADRs record historical context, including applications formerly in this reposito
 | [0008](decisions/0008-public-engine-and-consumers.md) | Public navigation, optional launcher and external consumers |
 
 Weighted navigation and priority steering ownership: [ADR 0011](decisions/0011-weighted-navigation-and-priority-steering.md).
+
+Occupancy-aware traffic admission ownership: [ADR 0012](decisions/0012-traffic-admission.md).

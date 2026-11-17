@@ -71,7 +71,7 @@ Vec2 steer(const Body &a, Vec2 target, std::span<const Body> obstacles, const St
     const Vec2 travel = length(a.velocity) > 0.2f ? a.velocity : desired;
     if (length(travel) < 0.00001f)
         return acceleration;
-    const float agent_radius = a.shape == Shape::circle ? a.radius : length(a.half_extents);
+    const float agent_radius = bounding_radius(a);
     float nearest = std::numeric_limits<float>::max();
     Vec2 avoidance_normal{};
     for (const Body &obstacle : obstacles) {
@@ -79,7 +79,7 @@ Vec2 steer(const Body &a, Vec2 target, std::span<const Body> obstacles, const St
         const float radius = agent_radius + s.clearance;
         Vec2 extent = obstacle.shape == Shape::circle
                           ? Vec2{obstacle.radius + radius, obstacle.radius + radius}
-                          : obstacle.half_extents + Vec2{radius, radius};
+                          : local_extents(obstacle) + Vec2{radius, radius};
         if (s.rectangular_clearance && a.shape == Shape::box && obstacle.shape == Shape::box &&
             a.angle == 0 && obstacle.angle == 0)
             extent = a.half_extents + obstacle.half_extents + Vec2{s.clearance, s.clearance};
