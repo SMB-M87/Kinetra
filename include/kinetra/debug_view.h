@@ -20,6 +20,12 @@ struct DebugOption {
 struct DebugMenu {
     bool visible{};
     Vec2 pointer{-1, -1};
+    // Negative x preserves the default right-aligned layout. Otherwise use fixed screen pixels.
+    Vec2 screen_origin{-1, -1};
+    Vec2 origin(Vec2 viewport) const {
+        const float size = scale(viewport);
+        return screen_origin.x < 0 ? Vec2{viewport.x - 190 * size, 8 * size} : screen_origin;
+    }
     static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 260.f}); }
     bool update(const Input &input, Vec2 viewport, std::span<DebugOption> options,
                 Key toggle = Key::backquote) {
@@ -27,7 +33,7 @@ struct DebugMenu {
         if (input.hit(toggle))
             visible = !visible;
         const float size = scale(viewport);
-        const Vec2 point = (input.mouse - Vec2{viewport.x - 190 * size, 8 * size}) / size;
+        const Vec2 point = (input.mouse - origin(viewport)) / size;
         const bool captured =
             visible && point.x >= 0 && point.x <= 182 && point.y >= 0 && point.y < 22 + options.size() * 16;
         if (captured && input.clicked && point.y >= 22) {
@@ -43,7 +49,7 @@ struct DebugMenu {
         if (!visible)
             return;
         const float size = scale(runtime.camera.viewport);
-        const Vec2 origin{runtime.camera.viewport.x - 190 * size, 8 * size};
+        const Vec2 origin = this->origin(runtime.camera.viewport);
         const Vec2 half{91 * size, (22 + options.size() * 16) * size / 2};
         runtime.box(runtime.camera.screen_to_world(origin + half), half / runtime.camera.pixels_per_unit, 0,
                     {0.04f, 0.07f, 0.12f});

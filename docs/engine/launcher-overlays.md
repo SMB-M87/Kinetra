@@ -28,3 +28,5 @@ Applications supply names, configuration labels and session factories. Hosts own
 [HelpOverlay](../../include/kinetra/help_view.h) and `draw_help` accept application-owned content and style. Help does not capture gameplay input. [Bitmap text](../../include/kinetra/bitmap_text.h) uses embedded glyphs and runtime primitives.
 
 `LaunchMenu` optionally accepts a heading at construction and a status message when drawing. Defaults preserve the standard launcher. Applications can reuse its pagination for local resource selection without exposing their resource types to Core.
+
+`DebugMenu::screen_origin` optionally fixes the panel origin in screen pixels; a negative x retains right alignment.
