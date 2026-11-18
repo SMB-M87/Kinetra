@@ -65,9 +65,10 @@ if(BUILD_TESTING)
         SOURCES tests/translation_sweep_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_sweep_tests PREFIX kinetra_sweeps
         SOURCES tests/sweep_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_polygon_tests PREFIX kinetra_polygons
+        SOURCES tests/polygon_tests.cpp LIBRARIES Kinetra::Simulation)
     # Plain main()-style suites; converted to doctest in roadmap phase 3.
     foreach(suite IN ITEMS
-            "kinetra_polygon_tests:kinetra_polygons:polygon_tests"
             "kinetra_weighted_navigation_tests:kinetra_weighted_navigation:weighted_navigation_tests"
             "kinetra_tests:kinetra_behavior:simulation_tests"
             "kinetra_navigation_tests:kinetra_navigation:navigation_tests")
