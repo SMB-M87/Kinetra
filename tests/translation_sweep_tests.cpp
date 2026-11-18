@@ -1,5 +1,5 @@
-#include <kinetra/physics.h>
 #include <iostream>
+#include <kinetra/physics.h>
 #include <limits>
 #include <stdexcept>
 
@@ -41,7 +41,8 @@ void query_contracts() {
                     std::abs(hit->contact.point.x + 0.05f) < 0.0001f,
                 "Convex thin-wall sweep has incorrect time/normal/point");
         require(!sweep_translation(body, {-3, 0}, obstacle), "Separating convex sweep hit wall");
-        require(!sweep_translation(body, body.position, obstacle), "Separated stationary convex sweep hit wall");
+        require(!sweep_translation(body, body.position, obstacle),
+                "Separated stationary convex sweep hit wall");
         auto touching = body;
         touching.position.x = -0.2f;
         const auto initial = sweep_translation(touching, {2, 0}, obstacle);
@@ -52,10 +53,12 @@ void query_contracts() {
         rotated_body.position = rotated(body.position, angle) + offset;
         rotated_body.angle = rotated_wall.angle = angle;
         rotated_wall.position = offset;
-        const auto transformed = sweep_translation(rotated_body, rotated(Vec2{2, 0}, angle) + offset, rotated_wall);
+        const auto transformed =
+            sweep_translation(rotated_body, rotated(Vec2{2, 0}, angle) + offset, rotated_wall);
         require(transformed && std::abs(transformed->fraction - hit->fraction) < 0.00001f &&
                     length(transformed->contact.normal - rotated(hit->contact.normal, angle)) < 0.0001f &&
-                    length(transformed->contact.point - (rotated(hit->contact.point, angle) + offset)) < 0.0001f,
+                    length(transformed->contact.point - (rotated(hit->contact.point, angle) + offset)) <
+                        0.0001f,
                 "Convex sweep is not rigid-transform invariant");
         for (const bool round : {false, true}) {
             auto target = round ? Body{} : regular_polygon(3, 1);
@@ -81,8 +84,11 @@ void query_contracts() {
     box.position = {-2, -2};
     require(!sweep_translation(box, {2, 2}, small), "Disjoint sweep intervals became contact");
     bool rejected = false;
-    try { sweep_translation(box, {std::numeric_limits<float>::infinity(), 0}, small); }
-    catch (const std::invalid_argument &) { rejected = true; }
+    try {
+        sweep_translation(box, {std::numeric_limits<float>::infinity(), 0}, small);
+    } catch (const std::invalid_argument &) {
+        rejected = true;
+    }
     require(rejected, "Translation sweep accepted nonfinite endpoint");
 }
 void world_contracts() {
@@ -102,8 +108,10 @@ void world_contracts() {
         }
     World world;
     auto left = wall(), right = wall();
-    left.position = {-1, 0}; right.position = {1, 0};
-    world.add(left); world.add(right);
+    left.position = {-1, 0};
+    right.position = {1, 0};
+    world.add(left);
+    world.add(right);
     auto body = mover(1);
     body.position = {};
     body.velocity = {600, 0};

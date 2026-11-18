@@ -145,7 +145,8 @@ int main() {
             int softened = 0;
             for (int y = 30; y < 210; ++y)
                 for (int x = 70; x < 250; ++x) {
-                    const float dx = static_cast<float>(x) + 0.5f - 160, dy = static_cast<float>(y) + 0.5f - 120;
+                    const float dx = static_cast<float>(x) + 0.5f - 160,
+                                dy = static_cast<float>(y) + 0.5f - 120;
                     const float distance = std::sqrt(dx * dx + dy * dy);
                     const auto green = image[(y * 320 + x) * 4 + 1];
                     if (distance < 85.5f)

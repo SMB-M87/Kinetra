@@ -1,5 +1,5 @@
-#include <limits>
 #include <kinetra/steering.h>
+#include <limits>
 #include <stdexcept>
 
 namespace kinetra {

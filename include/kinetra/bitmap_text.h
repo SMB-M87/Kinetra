@@ -49,7 +49,8 @@ inline void draw_text(Runtime &runtime, std::string_view text, Vec2 origin, floa
         for (int y = 0; y < 7; ++y)
             for (int x = 0; x < 5; ++x)
                 if (glyph[y] & (1 << (4 - x))) {
-                    const Vec2 center = origin + Vec2{(static_cast<float>(column * 6 + x) + 0.5f) * scale, (static_cast<float>(y) + 0.5f) * scale};
+                    const Vec2 center = origin + Vec2{(static_cast<float>(column * 6 + x) + 0.5f) * scale,
+                                                      (static_cast<float>(y) + 0.5f) * scale};
                     runtime.box(runtime.camera.screen_to_world(center),
                                 Vec2{scale / 2, scale / 2} / runtime.camera.pixels_per_unit, 0, color);
                 }

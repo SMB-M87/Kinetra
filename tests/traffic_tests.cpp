@@ -27,13 +27,13 @@ struct Step {
 /// and occupancy and cancellation interact. Cases replay a prefix of it, so each case
 /// checks one step in isolation while starting from the same state as the original sequence.
 const std::array<Step, 7> history{{
-    {{9, 3, 7}, {}},     // simultaneous requests
-    {{1, 7, 9, 3}, {}},  // newcomer 1 arrives
-    {{1, 7, 9}, {3}},    // 3 cancels its request but still occupies the zone
-    {{1, 7, 9}, {}},     // 3 has left
-    {{1, 9}, {}},        // 7 cancels while admitted
-    {{1, 9}, {9, 7}},    // two occupants at once
-    {{1, 9}, {7}},       // 9 has left, 7 remains inside
+    {{9, 3, 7}, {}},    // simultaneous requests
+    {{1, 7, 9, 3}, {}}, // newcomer 1 arrives
+    {{1, 7, 9}, {3}},   // 3 cancels its request but still occupies the zone
+    {{1, 7, 9}, {}},    // 3 has left
+    {{1, 9}, {}},       // 7 cancels while admitted
+    {{1, 9}, {9, 7}},   // two occupants at once
+    {{1, 9}, {7}},      // 9 has left, 7 remains inside
 }};
 
 /// Feeds the first `count` history steps to `gate` and returns the last admission.

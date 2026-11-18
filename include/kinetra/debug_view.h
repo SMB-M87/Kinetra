@@ -34,8 +34,8 @@ struct DebugMenu {
             visible = !visible;
         const float size = scale(viewport);
         const Vec2 point = (input.mouse - origin(viewport)) / size;
-        const bool captured =
-            visible && point.x >= 0 && point.x <= 182 && point.y >= 0 && point.y < static_cast<float>(22 + options.size() * 16);
+        const bool captured = visible && point.x >= 0 && point.x <= 182 && point.y >= 0 &&
+                              point.y < static_cast<float>(22 + options.size() * 16);
         if (captured && input.clicked && point.y >= 22) {
             const auto row = std::size_t((point.y - 22) / 16);
             if (options[row].enabled)
@@ -64,11 +64,13 @@ struct DebugMenu {
             if (option.number)
                 text += " " + std::to_string(option.number());
             const bool hovered = (option.enabled || option.action) && point.x >= 0 && point.x <= 182 &&
-                                 point.y >= 22 + static_cast<float>(row) * 16.f && point.y < 38 + static_cast<float>(row) * 16.f;
+                                 point.y >= 22 + static_cast<float>(row) * 16.f &&
+                                 point.y < 38 + static_cast<float>(row) * 16.f;
             draw_text(runtime, text, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size, size,
                       hovered ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.9f, 1});
             if (option.visualization)
-                option.visualization(runtime, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size, size);
+                option.visualization(runtime, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size,
+                                     size);
         }
     }
 };

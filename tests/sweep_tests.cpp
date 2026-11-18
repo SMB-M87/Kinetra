@@ -1,5 +1,5 @@
-#include <kinetra/physics.h>
 #include <iostream>
+#include <kinetra/physics.h>
 #include <stdexcept>
 
 using namespace kinetra;
@@ -63,8 +63,11 @@ void query_contracts() {
     require(vertex && std::abs(vertex->fraction - 0.225f) < 0.00001f,
             "Triangle vertex sweep missed rounded corner");
     bool rejected = false;
-    try { sweep_circle(target, {}, obstacle); }
-    catch (const std::invalid_argument &) { rejected = true; }
+    try {
+        sweep_circle(target, {}, obstacle);
+    } catch (const std::invalid_argument &) {
+        rejected = true;
+    }
     require(rejected, "Noncircle sweep mover accepted");
 }
 void world_impacts() {
@@ -115,12 +118,15 @@ void world_impacts() {
     }
     World corridor;
     auto left = wall(), right = wall();
-    left.position = {-1, 0}; right.position = {1, 0};
-    corridor.add(left); corridor.add(right);
+    left.position = {-1, 0};
+    right.position = {1, 0};
+    corridor.add(left);
+    corridor.add(right);
     Body ball;
     ball.radius = 0.1f;
     ball.velocity = {600, 0};
-    ball.restitution = 1; ball.friction = 0;
+    ball.restitution = 1;
+    ball.friction = 0;
     corridor.add(ball);
     corridor.step(1.f / 60);
     require(std::abs(corridor.body(2).position.x) <= 0.851f &&

@@ -1,5 +1,5 @@
-#include <kinetra/camera.h>
 #include <kinetra/avoidance.h>
+#include <kinetra/camera.h>
 #include <kinetra/navigation.h>
 #include <kinetra/steering.h>
 #include <kinetra/timing.h>
@@ -17,18 +17,23 @@ auto consumer_run_session = &kinetra::run_session;
 int main() {
     kinetra::TrafficGate crossing;
     const std::uint64_t requester = 4;
-    if (crossing.update({&requester, 1}, {}).agent != requester) return 17;
+    if (crossing.update({&requester, 1}, {}).agent != requester)
+        return 17;
     crossing.clear();
-    if (crossing.update({&requester, 1}, {}, {&requester, 1}).agent) return 18;
+    if (crossing.update({&requester, 1}, {}, {&requester, 1}).agent)
+        return 18;
     kinetra::AvoidanceAgent agent;
     const auto avoidance = kinetra::avoid_collisions(agent, {1, 0}, {}, 1.f / 60);
-    if (!avoidance.feasible || !kinetra::finite(avoidance.acceleration)) return 15;
+    if (!avoidance.feasible || !kinetra::finite(avoidance.acceleration))
+        return 15;
     agent.half_extents = {0.3f, 0.2f};
     kinetra::AvoidanceAgent parked{1, {0, 0.5f}, {}, 0.5f, false, {0.3f, 0.2f}};
     const auto rectangle_avoidance = kinetra::avoid_collisions(agent, {1, 0}, {&parked, 1}, 1.f / 60);
-    if (!rectangle_avoidance.feasible) return 16;
+    if (!rectangle_avoidance.feasible)
+        return 16;
     auto polygon = kinetra::regular_polygon(5, 1);
-    if (kinetra::bounding_radius(polygon) < 0.99f) return 10;
+    if (kinetra::bounding_radius(polygon) < 0.99f)
+        return 10;
 #ifdef CONSUMER_GRAPHICS
     // Public session and input types remain independent of Lab.
     kinetra::LaunchMenu menu({{"CONSUMER", "External application", {}, 0}});
@@ -41,8 +46,7 @@ int main() {
     kinetra::WeightedGrid grid({30, 30}, {10, 10});
     if (grid.path({5, 5}, {25, 25}).empty())
         return 4;
-    if (grid.path({5, 5}, {25, 25}, {1, 1}).empty() ||
-        !grid.clear({5, 5}, {25, 25}, {1, 1}))
+    if (grid.path({5, 5}, {25, 25}, {1, 1}).empty() || !grid.clear({5, 5}, {25, 25}, {1, 1}))
         return 6;
     kinetra::Body rectangle;
     rectangle.shape = kinetra::Shape::box;
@@ -63,7 +67,8 @@ int main() {
     kinetra::World world;
     world.add({});
     world.step(1.f / 120);
-    if (world.sweep_budget_exhausted()) return 14;
+    if (world.sweep_budget_exhausted())
+        return 14;
     kinetra::Navigation navigation;
     navigation.rebuild({{-2, -2}, {2, 2}}, {});
     return navigation.path({}, {1, 1}).empty() ? 1 : 0;

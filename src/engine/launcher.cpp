@@ -5,7 +5,8 @@
 
 namespace kinetra {
 MenuLayout::MenuLayout(Vec2 viewport, std::size_t rows)
-    : scale(std::min({2.f, viewport.x / 320, viewport.y / (150.f + static_cast<float>(std::min(rows, page_size) * 40))})),
+    : scale(std::min({2.f, viewport.x / 320,
+                      viewport.y / (150.f + static_cast<float>(std::min(rows, page_size) * 40))})),
       visible_rows(std::min(rows, page_size)) {
     if (!finite(viewport) || viewport.x <= 0 || viewport.y <= 0)
         throw std::invalid_argument("Invalid menu viewport");
@@ -124,7 +125,8 @@ void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
     }
     auto button = [&](std::string_view label, float x) {
         draw_text(runtime, label,
-                  layout.footer_center(x) - Vec2{(static_cast<float>(label.size()) * 6.f - 1) / 2, 4} * layout.scale,
+                  layout.footer_center(x) -
+                      Vec2{(static_cast<float>(label.size()) * 6.f - 1) / 2, 4} * layout.scale,
                   layout.scale,
                   layout.footer_contains(pointer_, x) ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.85f, 1});
     };

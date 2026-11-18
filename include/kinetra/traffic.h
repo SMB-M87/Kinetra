@@ -28,8 +28,7 @@ class TrafficGate {
     /// Temporarily ineligible requests retain their FIFO tickets. New admission
     /// selects the oldest eligible request; an existing grant is never revoked.
     /// ineligible must contain unique IDs from requests. Invalid input leaves state intact.
-    TrafficAdmission update(std::span<const std::uint64_t> requests,
-                            std::span<const std::uint64_t> occupants,
+    TrafficAdmission update(std::span<const std::uint64_t> requests, std::span<const std::uint64_t> occupants,
                             std::span<const std::uint64_t> ineligible);
     void clear();
 

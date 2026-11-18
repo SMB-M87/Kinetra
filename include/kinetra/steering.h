@@ -52,7 +52,6 @@ SteeringForces priority_steer(const Body &agent, Vec2 target, std::span<const Bo
 namespace kinetra {
 /// Experimental tangent/spring avoidance translated from i4sim RVODeadlock.
 /// Returns acceleration only; this is not a collision-free velocity solver.
-Vec2 tangent_steer(const Body &agent, Vec2 target, std::span<const Body> neighbors,
-                   float max_speed = 2, float max_force = 0.6f, float horizon = 8,
-                   bool arrival = true);
-}
+Vec2 tangent_steer(const Body &agent, Vec2 target, std::span<const Body> neighbors, float max_speed = 2,
+                   float max_force = 0.6f, float horizon = 8, bool arrival = true);
+} // namespace kinetra

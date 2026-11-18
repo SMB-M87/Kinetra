@@ -190,7 +190,8 @@ std::optional<Contact> circle_polygon(const Body &circle, const Body &polygon) {
         }
     }
     if (largest_gap <= 0)
-        return Contact{-face_normal, circle.position - face_normal * largest_gap, circle.radius - largest_gap};
+        return Contact{-face_normal, circle.position - face_normal * largest_gap,
+                       circle.radius - largest_gap};
     if (nearest > circle.radius)
         return {};
     return Contact{normalized(closest - circle.position), closest, circle.radius - nearest};
@@ -250,8 +251,10 @@ std::optional<Contact> polygon_contact(const Body &a, const Body &b, float toler
             const double fraction = pd / (pd - qd);
             const Vec2 intersection{float(double(p.x) + (double(q.x) - p.x) * fraction),
                                     float(double(p.y) + (double(q.y) - p.y) * fraction)};
-            if (pd > 0) p = intersection;
-            else q = intersection;
+            if (pd > 0)
+                p = intersection;
+            else
+                q = intersection;
         }
     }
     Vec2 sum{};
@@ -330,8 +333,7 @@ void validate(const Body &b) {
             if (!finite(a) || length(c - a) < 0.0001f)
                 throw std::invalid_argument("Polygon vertices must be finite and edges nondegenerate");
             for (std::size_t j = 0; j < b.vertices.size(); ++j)
-                if (j != i && j != (i + 1) % b.vertices.size() &&
-                    cross(c - a, b.vertices[j] - a) <= 0)
+                if (j != i && j != (i + 1) % b.vertices.size() && cross(c - a, b.vertices[j] - a) <= 0)
                     throw std::invalid_argument("Polygon must be strictly convex and counterclockwise");
             const float weight = cross(a, c);
             area += weight;
@@ -344,8 +346,10 @@ void validate(const Body &b) {
 }
 
 Vec2 local_extents(const Body &b) {
-    if (b.shape == Shape::circle) return {b.radius, b.radius};
-    if (b.shape == Shape::box) return b.half_extents;
+    if (b.shape == Shape::circle)
+        return {b.radius, b.radius};
+    if (b.shape == Shape::box)
+        return b.half_extents;
     Vec2 extent{};
     for (auto p : b.vertices) {
         extent.x = std::max(extent.x, std::abs(p.x));
@@ -355,10 +359,13 @@ Vec2 local_extents(const Body &b) {
 }
 
 float bounding_radius(const Body &b) {
-    if (b.shape == Shape::circle) return b.radius;
-    if (b.shape == Shape::box) return length(b.half_extents);
+    if (b.shape == Shape::circle)
+        return b.radius;
+    if (b.shape == Shape::box)
+        return length(b.half_extents);
     float radius = 0;
-    for (auto p : b.vertices) radius = std::max(radius, length(p));
+    for (auto p : b.vertices)
+        radius = std::max(radius, length(p));
     return radius;
 }
 
@@ -395,10 +402,12 @@ std::optional<Contact> collide(const Body &a, const Body &b) {
     validate(a);
     validate(b);
     if (a.shape == Shape::polygon || b.shape == Shape::polygon) {
-        if (a.shape == Shape::circle) return circle_polygon(a, b);
+        if (a.shape == Shape::circle)
+            return circle_polygon(a, b);
         if (b.shape == Shape::circle) {
             auto contact = circle_polygon(b, a);
-            if (contact) contact->normal = -contact->normal;
+            if (contact)
+                contact->normal = -contact->normal;
             return contact;
         }
         return polygon_contact(a, b);
@@ -469,8 +478,8 @@ std::optional<SweepContact> sweep_circle(const Body &circle, Vec2 end, const Bod
     if (auto contact = collide(circle, obstacle))
         return SweepContact{0, *contact};
     if (obstacle.shape == Shape::circle) {
-        const auto fraction = segment_circle(circle.position, end, obstacle.position,
-                                             circle.radius + obstacle.radius);
+        const auto fraction =
+            segment_circle(circle.position, end, obstacle.position, circle.radius + obstacle.radius);
         if (!fraction)
             return {};
         const Vec2 center = circle.position + (end - circle.position) * *fraction;
@@ -566,9 +575,11 @@ std::optional<SweepContact> sweep_translation(const Body &body, Vec2 end, const 
     const float scale = std::max({1.f, bounding_radius(body), bounding_radius(obstacle),
                                   std::abs(at_impact.position.x), std::abs(at_impact.position.y),
                                   std::abs(obstacle.position.x), std::abs(obstacle.position.y)});
-    const auto contact = polygon_contact(at_impact, obstacle, 32 * std::numeric_limits<float>::epsilon() * scale);
+    const auto contact =
+        polygon_contact(at_impact, obstacle, 32 * std::numeric_limits<float>::epsilon() * scale);
     if (!contact)
-        throw std::runtime_error("Unable to reconstruct translation sweep contact at floating-point precision");
+        throw std::runtime_error(
+            "Unable to reconstruct translation sweep contact at floating-point precision");
     auto impact_contact = *contact;
     impact_contact.penetration = 0;
     return SweepContact{fraction, impact_contact};
@@ -598,7 +609,7 @@ void World::step(float dt) {
     candidate_pairs_ = 0;
     sweep_budget_exhausted_ = false;
     const auto moving_count = std::count_if(bodies_.begin(), bodies_.end(),
-                                          [](const Body &b) { return b.motion != Motion::fixed; });
+                                            [](const Body &b) { return b.motion != Motion::fixed; });
     const std::size_t event_budget = 8 * std::max<std::size_t>(1, moving_count);
     auto velocity = [](const Body &b) { return b.motion == Motion::fixed ? Vec2{} : b.velocity; };
     auto sweep_supported = [](const Body &b) {
@@ -644,8 +655,8 @@ void World::step(float dt) {
                         (a.motion == Motion::fixed && b.motion == Motion::fixed))
                         continue;
                     ++candidate_pairs_;
-                    const auto hit = sweep_translation(a, a.position + velocity(a) * remaining,
-                                                       b, b.position + velocity(b) * remaining);
+                    const auto hit = sweep_translation(a, a.position + velocity(a) * remaining, b,
+                                                       b.position + velocity(b) * remaining);
                     if (!hit)
                         continue;
                     // Match resolve(): a spinning circle can have a tiny apparent
@@ -657,21 +668,20 @@ void World::step(float dt) {
                     const Vec2 position_b = b.position + velocity(b) * elapsed;
                     const Vec2 va = point_velocity(a, hit->contact.point - position_a);
                     const Vec2 vb = point_velocity(b, hit->contact.point - position_b);
-                    const float tolerance = 8 * std::numeric_limits<float>::epsilon() *
-                                            std::max({1.f, length(va), length(vb)});
+                    const float tolerance =
+                        8 * std::numeric_limits<float>::epsilon() * std::max({1.f, length(va), length(vb)});
                     const float closing = dot(va - vb, hit->contact.normal);
                     // Persistent corner contacts can alternately reintroduce tiny
                     // approach velocities. Let the bounded discrete passes handle
                     // motion within positional slop instead of chasing convergence
                     // through thousands of zero-time CCD events. Scale down for tiny
                     // shapes so the tolerance cannot swallow their full thickness.
-                    const float resting_slop = std::min(contact_slop, 0.01f *
-                                                       std::min(inner_radius(a), inner_radius(b)));
+                    const float resting_slop =
+                        std::min(contact_slop, 0.01f * std::min(inner_radius(a), inner_radius(b)));
                     if (hit->fraction == 0 && closing * remaining <= resting_slop)
                         continue;
                     // Stable pair order breaks ties.
-                    if (closing > tolerance &&
-                        (!earliest || hit->fraction < earliest->fraction)) {
+                    if (closing > tolerance && (!earliest || hit->fraction < earliest->fraction)) {
                         earliest = hit;
                         first = i;
                         second = j;
