@@ -1,56 +1,80 @@
-#include <iostream>
+// Contract tests for kinetra::Navigation (include/kinetra/navigation.h) and the public math
+// boundaries it relies on: invalid settings, swept clearance, exact and projected goals.
 #include <kinetra/navigation.h>
+
+#include <doctest/doctest.h>
+
 #include <limits>
 #include <stdexcept>
 
 using namespace kinetra;
+
 namespace {
-void require(bool value, const char *message) {
-    if (!value)
-        throw std::runtime_error(message);
-}
-template <class F> void rejects(F operation) {
-    try {
-        operation();
-    } catch (const std::invalid_argument &) {
-        return;
-    }
-    throw std::runtime_error("Invalid navigation settings accepted");
+/// Navigation with resolution 0.5 and radius 0.2 over [-5, 5]^2, around a 1 by 4 box at the origin.
+Navigation around_box() {
+    Navigation navigation(0.5f, 0.2f);
+    Body obstacle;
+    obstacle.shape = Shape::box;
+    obstacle.position = {0, 0};
+    obstacle.half_extents = {0.5f, 2};
+    navigation.rebuild({{-5, -5}, {5, 5}}, {obstacle});
+    return navigation;
 }
 } // namespace
-int main() {
-    try {
-        rejects([] { Navigation invalid(0, 1); });
-        rejects([] { Navigation invalid(1, -1); });
-        rejects([] { Navigation invalid(std::numeric_limits<float>::infinity(), 1); });
-        Navigation navigation(0.5f, 0.2f);
-        Body obstacle;
-        obstacle.shape = Shape::box;
-        obstacle.position = {0, 0};
-        obstacle.half_extents = {0.5f, 2};
-        navigation.rebuild({{-5, -5}, {5, 5}}, {obstacle});
-        require(!navigation.clear({-2, 0}, {2, 0}), "Sweep crossed obstacle");
-        auto path = navigation.path({-2, 0}, {2.123f, 0.123f});
-        require(!path.empty() && distance(path.back(), {2.123f, 0.123f}) < 0.00001f,
-                "Free goal lost precision");
-        Vec2 previous{-2, 0};
-        for (auto point : path) {
-            require(navigation.clear(previous, point), "Path contains obstructed segment");
-            previous = point;
-        }
-        auto projected = navigation.path({-2, 0}, {});
-        require(!projected.empty() && navigation.clear(projected.back(), projected.back()),
-                "Occupied endpoint not projected");
-        require(navigation.path({-2, 0}, {std::numeric_limits<float>::quiet_NaN(), 0}).empty(),
-                "NaN goal accepted");
-        require(distance_to_segment({1, 0}, {}, {}) == 1, "Degenerate segment distance");
-        require(length(normalized({})) == 0, "Zero normalization");
-        require(!finite({std::numeric_limits<float>::infinity(), 0}), "Infinite vector accepted as finite");
-        require(distance(lerp({}, {2, 4}, 0.5f), {1, 2}) == 0, "Interpolation");
-        require(Aabb{{0, 0}, {1, 1}}.overlaps({{1, 1}, {2, 2}}), "Touching AABBs missed");
-        std::cout << "PASS public navigation and math boundaries\n";
-    } catch (const std::exception &error) {
-        std::cerr << error.what() << '\n';
-        return 1;
+
+TEST_CASE("invalid navigation settings are rejected") {
+    CHECK_THROWS_AS(Navigation(0, 1), std::invalid_argument);
+    CHECK_THROWS_AS(Navigation(1, -1), std::invalid_argument);
+    CHECK_THROWS_AS(Navigation(std::numeric_limits<float>::infinity(), 1), std::invalid_argument);
+}
+
+TEST_CASE("a navigation sweep does not cross an obstacle") {
+    CHECK_FALSE(around_box().clear({-2, 0}, {2, 0}));
+}
+
+TEST_CASE("a free goal keeps its exact position at the end of the path") {
+    const auto path = around_box().path({-2, 0}, {2.123f, 0.123f});
+    REQUIRE_FALSE(path.empty());
+    CHECK(distance(path.back(), {2.123f, 0.123f}) < 0.00001f);
+}
+
+TEST_CASE("every segment of a planned path is clear") {
+    const auto navigation = around_box();
+    const auto path = navigation.path({-2, 0}, {2.123f, 0.123f});
+    Vec2 previous{-2, 0};
+    for (auto point : path) {
+        CHECK(navigation.clear(previous, point));
+        previous = point;
     }
+}
+
+TEST_CASE("an occupied goal is projected to a clear endpoint") {
+    const auto navigation = around_box();
+    const auto projected = navigation.path({-2, 0}, {});
+    REQUIRE_FALSE(projected.empty());
+    CHECK(navigation.clear(projected.back(), projected.back()));
+}
+
+TEST_CASE("a NaN goal yields no path") {
+    CHECK(around_box().path({-2, 0}, {std::numeric_limits<float>::quiet_NaN(), 0}).empty());
+}
+
+TEST_CASE("the distance to a degenerate segment is the distance to its point") {
+    CHECK(distance_to_segment({1, 0}, {}, {}) == 1);
+}
+
+TEST_CASE("normalizing a zero vector gives a zero vector") {
+    CHECK(length(normalized({})) == 0);
+}
+
+TEST_CASE("an infinite vector is not finite") {
+    CHECK_FALSE(finite({std::numeric_limits<float>::infinity(), 0}));
+}
+
+TEST_CASE("lerp interpolates halfway between its endpoints") {
+    CHECK(distance(lerp({}, {2, 4}, 0.5f), {1, 2}) == 0);
+}
+
+TEST_CASE("touching AABBs overlap") {
+    CHECK(Aabb{{0, 0}, {1, 1}}.overlaps({{1, 1}, {2, 2}}));
 }

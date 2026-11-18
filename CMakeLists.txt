@@ -68,23 +68,22 @@ if(BUILD_TESTING)
     # runtime; the Simulation target only supplies the include directory here.
     kinetra_add_doctest(kinetra_presentation_tests PREFIX kinetra_presentation
         SOURCES tests/presentation_tests.cpp LIBRARIES Kinetra::Simulation)
-    # Plain main()-style suites; converted to doctest in roadmap phase 3.
-    foreach(suite IN ITEMS
-            "kinetra_avoidance_tests:kinetra_avoidance:avoidance_tests"
-            "kinetra_moving_contact_tests:kinetra_moving_contacts:moving_contact_tests"
-            "kinetra_translation_sweep_tests:kinetra_translation_sweeps:translation_sweep_tests"
-            "kinetra_sweep_tests:kinetra_sweeps:sweep_tests"
-            "kinetra_polygon_tests:kinetra_polygons:polygon_tests"
-            "kinetra_weighted_navigation_tests:kinetra_weighted_navigation:weighted_navigation_tests"
-            "kinetra_tests:kinetra_behavior:simulation_tests"
-            "kinetra_navigation_tests:kinetra_navigation:navigation_tests")
-        string(REPLACE ":" ";" parts "${suite}")
-        list(GET parts 0 executable)
-        list(GET parts 1 test_name)
-        list(GET parts 2 source)
-        kinetra_add_test(${executable} NAME ${test_name}
-            SOURCES tests/${source}.cpp LIBRARIES Kinetra::Simulation LABELS unit)
-    endforeach()
+    kinetra_add_doctest(kinetra_avoidance_tests PREFIX kinetra_avoidance
+        SOURCES tests/avoidance_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_moving_contact_tests PREFIX kinetra_moving_contacts
+        SOURCES tests/moving_contact_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_translation_sweep_tests PREFIX kinetra_translation_sweeps
+        SOURCES tests/translation_sweep_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_sweep_tests PREFIX kinetra_sweeps
+        SOURCES tests/sweep_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_polygon_tests PREFIX kinetra_polygons
+        SOURCES tests/polygon_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_weighted_navigation_tests PREFIX kinetra_weighted_navigation
+        SOURCES tests/weighted_navigation_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_navigation_tests PREFIX kinetra_navigation
+        SOURCES tests/navigation_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_tests PREFIX kinetra_behavior
+        SOURCES tests/simulation_tests.cpp LIBRARIES Kinetra::Simulation)
 endif()
 if(BUILD_TESTING AND KINETRA_BUILD_RUNTIME AND KINETRA_TEST_GRAPHICS)
     kinetra_add_doctest(kinetra_engine_runtime_tests PREFIX kinetra_engine_graphics

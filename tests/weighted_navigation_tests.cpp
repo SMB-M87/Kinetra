@@ -1,147 +1,260 @@
-#include <iostream>
+// Contract tests for weighted grid planning and priority steering
+// (include/kinetra/weighted_grid.h, include/kinetra/steering.h): weighted detours, blocked
+// corners, footprint clearance, merged borders, safety priority and wall braking.
 #include <kinetra/steering.h>
 #include <kinetra/weighted_grid.h>
+
+#include <doctest/doctest.h>
+
+#include <cmath>
+#include <span>
 #include <stdexcept>
+#include <vector>
+
+using namespace kinetra;
 
 namespace {
-void require(bool condition, const char *message) {
-    if (!condition)
-        throw std::runtime_error(message);
+/// Five by three grid of 10 by 10 cells, numbered row by row.
+WeightedGrid corridor_grid() {
+    return WeightedGrid({50, 30}, {10, 10});
 }
+
+/// Weights for corridor_grid() that make the middle cell 7 expensive.
+std::vector<float> congestion() {
+    std::vector<float> weights(15);
+    weights[7] = 100;
+    return weights;
+}
+
+/// corridor_grid() with congestion() weights and cells 1 and 5 blocked, so the corner
+/// between cells 0 and 6 is closed.
+WeightedGrid blocked_corridor() {
+    auto grid = corridor_grid();
+    grid.weights(congestion());
+    grid.block(1);
+    grid.block(5);
+    return grid;
+}
+
+/// Five by five grid of 10 by 10 cells with the center cell 12 blocked.
+WeightedGrid footprint_grid() {
+    WeightedGrid grid({50, 50}, {10, 10});
+    grid.block(12);
+    return grid;
+}
+
+/// Half extents of the parking footprint planned through footprint_grid().
+constexpr Vec2 footprint{2, 2};
+
+/// A 10 by 10 box at (20, 20) moving right at speed 2.
+Body cruiser() {
+    Body body;
+    body.shape = Shape::box;
+    body.half_extents = {5, 5};
+    body.position = {20, 20};
+    body.velocity = {2, 0};
+    return body;
+}
+
+/// Default priority steering with a 10-unit arrival radius.
+PrioritySteering steering_settings() {
+    PrioritySteering settings;
+    settings.arrival_radius = 10;
+    return settings;
+}
+
+/// cruiser() placed at `position` with `velocity`.
+Body cruiser_at(Vec2 position, Vec2 velocity) {
+    auto body = cruiser();
+    body.position = position;
+    body.velocity = velocity;
+    return body;
+}
+
+/// Vertical wall along x = 0.
+constexpr Segment wall{{0, -100}, {0, 100}};
 } // namespace
-int main() {
-    try {
-        using namespace kinetra;
-        WeightedGrid grid({50, 30}, {10, 10});
-        auto route = grid.path({5, 15}, {45, 15});
-        require(route.size() == 4 && distance(route.back(), {45, 15}) == 0, "Free path endpoint lost");
-        std::vector<float> weights(15);
-        weights[7] = 100;
-        grid.weights(weights);
-        route = grid.path({5, 15}, {45, 15});
-        for (auto point : route)
-            require(grid.cell(point) != 7, "Congestion cost ignored");
-        grid.block(1);
-        grid.block(5);
-        require(grid.path({5, 5}, {15, 15}).empty(), "Diagonal cut a blocked corner");
-        require(grid.path({-1, 5}, {15, 15}).empty(), "Outside start accepted");
-        require(!grid.borders().empty(), "Missing free-space borders");
-        bool rejected = false;
-        try {
-            weights[0] = -1;
-            grid.weights(weights);
-        } catch (const std::invalid_argument &) {
-            rejected = true;
-        }
-        require(rejected && grid.weight(0) == 0, "Invalid weights partially mutated the grid");
-        {
-            WeightedGrid footprint({50, 50}, {10, 10});
-            require(footprint.borders().size() == 4, "Raster seams remain in straight walls");
-            footprint.block(12);
-            require(footprint.path({5, 5}, {19, 25}).size() > 0, "Point route unexpectedly rejected");
-            require(footprint.path({5, 5}, {19, 25}, {2, 2}).empty(),
-                    "Parking footprint overlaps a blocked neighboring cell");
-            require(footprint.path({5, 5}, {1, 35}, {2, 2}).empty(),
-                    "Parking footprint crosses the outer boundary");
-            require(!footprint.clear({15, 15}, {35, 35}, {2, 2}), "Swept footprint cut a blocked corner");
-            require(footprint.clear({18, 15}, {18, 35}, {2, 2}), "Clear wall-tangent footprint rejected");
-            const auto safe = footprint.path({5, 25}, {45, 25}, {2, 2});
-            require(!safe.empty(), "Footprint planner failed to detour");
-            Vec2 previous{5, 25};
-            for (auto point : safe) {
-                require(footprint.clear(previous, point, {2, 2}), "Unsafe footprint waypoint link");
-                previous = point;
-            }
-            footprint.block(7);
-            require(footprint.borders().size() == 8, "Collinear obstacle boundaries were not merged");
-        }
-        Body a;
-        a.shape = Shape::box;
-        a.half_extents = {5, 5};
-        a.position = {20, 20};
-        a.velocity = {2, 0};
-        PrioritySteering settings;
-        settings.arrival_radius = 10;
-        auto forces = priority_steer(a, {100, 20}, {}, {}, settings);
-        require(length(forces.acceleration) == 0, "Cruising speed incorrectly accelerated");
-        forces = priority_steer(a, a.position, {}, {}, settings);
-        require(forces.acceleration.x < 0, "Arrival did not brake");
-        Body neighbor = a;
-        neighbor.position = {28, 20};
-        neighbor.velocity = {};
-        const Segment edge{{25, 0}, {25, 100}};
-        forces = priority_steer(a, {100, 20}, std::span(&neighbor, 1), std::span(&edge, 1), settings);
-        require(forces.border.x <= 0 && forces.collision.x < 0 && forces.acceleration.x < 0,
-                "Safety priority lost to seek");
-        require(length(forces.acceleration) <= settings.max_acceleration + 1e-6f,
-                "Acceleration limit exceeded");
-        {
-            Body sliding = a;
-            const Segment wall{{0, -100}, {0, 100}};
-            sliding.position = {5, 20};
-            sliding.velocity = {0, .2f};
-            const auto along = constrain_borders(sliding, {-.2f, .1f}, std::span(&wall, 1), settings);
-            require(along.x == 0 && std::abs(along.y - .1f) < 1e-6f,
-                    "Wall safety discarded tangential steering");
-            Vec2 previous{};
-            bool first = true;
-            for (float gap : {-.01f, -.001f, 0.f, .001f, .01f}) {
-                sliding.position.x = 5 + gap;
-                const auto value = constrain_borders(sliding, {-.2f, .1f}, std::span(&wall, 1), settings);
-                require(finite(value) && length(value) <= settings.max_acceleration + 1e-6f,
-                        "Wall reaction exceeded acceleration bound");
-                if (!first)
-                    require(distance(previous, value) < .01f, "Wall reaction jumps at contact");
-                first = false;
-                previous = value;
-            }
-            sliding.position.x = 5;
-            sliding.velocity = {};
-            require(length(constrain_borders(sliding, {}, std::span(&wall, 1), settings)) == 0,
-                    "A parked touching body was repelled");
-            sliding.position = {25, 20};
-            sliding.velocity = {-2, 0};
-            for (int tick = 0; tick < 400; ++tick) {
-                const Vec2 desired = limited(Vec2{5.25f - sliding.position.x, .1f} - sliding.velocity,
-                                             settings.max_acceleration);
-                const auto acceleration = constrain_borders(sliding, desired, std::span(&wall, 1), settings);
-                sliding.velocity = limited(sliding.velocity + acceleration, settings.max_speed);
-                sliding.position += sliding.velocity;
-                require(sliding.position.x >= 5 - 1e-5f, "Normal braking crossed the wall");
-                require(length(acceleration) <= settings.max_acceleration + 1e-5f,
-                        "Normal braking exceeded the acceleration budget");
-            }
-            require(std::abs(sliding.position.x - 5.25f) < 1e-3f,
-                    "Wall braking prevented convergence to a close parking goal");
-            const Segment corner[] = {{{0, -100}, {0, 100}}, {{-100, 0}, {100, 0}}};
-            sliding.position = {5.1f, 5.1f};
-            sliding.velocity = {-.05f, -.05f};
-            const auto constrained = constrain_borders(sliding, {-.2f, -.2f}, corner, settings);
-            require(constrained.x >= 0 && constrained.y >= 0, "Corner approach did not brake");
-        }
-        neighbor.position = {40, 20};
-        neighbor.velocity = {-2, 0};
-        forces = priority_steer(a, {100, 20}, std::span(&neighbor, 1), {}, settings);
-        require(forces.predictive.x < 0 && forces.acceleration.x < 0,
-                "Approaching collision was not predicted");
-        neighbor.position = a.position;
-        forces = priority_steer(a, {100, 20}, std::span(&neighbor, 1), {}, settings);
-        require(finite(forces.acceleration) && length(forces.collision) > 0,
-                "Coincident bodies were not handled");
-        const auto tangent = tangent_steer(a, {100, 20}, std::span(&neighbor, 1));
-        require(finite(tangent) && length(tangent) <= .600001f, "Invalid tangent acceleration");
-        require(length(tangent_steer(a, a.position, {})) <= .600001f,
-                "Tangent arrival acceleration exceeded limit");
-        rejected = false;
-        try {
-            tangent_steer(a, {100, 20}, {}, 2, .6f, 65);
-        } catch (const std::invalid_argument &) {
-            rejected = true;
-        }
-        require(rejected, "Tangent steering accepted unbounded horizon");
-        std::cout << "PASS weighted navigation and priority steering\n";
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
-        return 1;
+
+TEST_CASE("a free weighted path ends exactly at the goal") {
+    const auto route = corridor_grid().path({5, 15}, {45, 15});
+    REQUIRE(route.size() == 4u);
+    CHECK(distance(route.back(), {45, 15}) == 0);
+}
+
+TEST_CASE("congestion weights route around an expensive cell") {
+    auto grid = corridor_grid();
+    grid.weights(congestion());
+    for (auto point : grid.path({5, 15}, {45, 15}))
+        CHECK(grid.cell(point) != 7);
+}
+
+TEST_CASE("a diagonal step does not cut a blocked corner") {
+    CHECK(blocked_corridor().path({5, 5}, {15, 15}).empty());
+}
+
+TEST_CASE("a start outside the grid yields no path") {
+    CHECK(blocked_corridor().path({-1, 5}, {15, 15}).empty());
+}
+
+TEST_CASE("blocked cells produce free-space borders") {
+    CHECK_FALSE(blocked_corridor().borders().empty());
+}
+
+TEST_CASE("invalid weights are rejected without partially mutating the grid") {
+    auto grid = blocked_corridor();
+    auto weights = congestion();
+    weights[0] = -1;
+    CHECK_THROWS_AS(grid.weights(weights), std::invalid_argument);
+    CHECK(grid.weight(0) == 0);
+}
+
+TEST_CASE("straight walls have no raster seams") {
+    const WeightedGrid unblocked({50, 50}, {10, 10});
+    CHECK(unblocked.borders().size() == 4u);
+}
+
+TEST_CASE("a point route passes a blocked cell that a footprint cannot") {
+    CHECK(footprint_grid().path({5, 5}, {19, 25}).size() > 0u);
+}
+
+TEST_CASE("a parking footprint may not overlap a blocked neighboring cell") {
+    CHECK(footprint_grid().path({5, 5}, {19, 25}, footprint).empty());
+}
+
+TEST_CASE("a parking footprint may not cross the outer boundary") {
+    CHECK(footprint_grid().path({5, 5}, {1, 35}, footprint).empty());
+}
+
+TEST_CASE("a swept footprint does not cut a blocked corner") {
+    CHECK_FALSE(footprint_grid().clear({15, 15}, {35, 35}, footprint));
+}
+
+TEST_CASE("a wall-tangent footprint sweep is clear") {
+    CHECK(footprint_grid().clear({18, 15}, {18, 35}, footprint));
+}
+
+TEST_CASE("the footprint planner detours along clear links") {
+    const auto grid = footprint_grid();
+    const auto safe = grid.path({5, 25}, {45, 25}, footprint);
+    REQUIRE_FALSE(safe.empty());
+    Vec2 previous{5, 25};
+    for (auto point : safe) {
+        CHECK(grid.clear(previous, point, footprint));
+        previous = point;
     }
+}
+
+TEST_CASE("collinear obstacle boundaries are merged") {
+    auto grid = footprint_grid();
+    grid.block(7);
+    CHECK(grid.borders().size() == 8u);
+}
+
+TEST_CASE("cruising at speed does not accelerate") {
+    const auto forces = priority_steer(cruiser(), {100, 20}, {}, {}, steering_settings());
+    CHECK(length(forces.acceleration) == 0);
+}
+
+TEST_CASE("arrival at the target brakes") {
+    const auto agent = cruiser();
+    CHECK(priority_steer(agent, agent.position, {}, {}, steering_settings()).acceleration.x < 0);
+}
+
+TEST_CASE("safety takes priority over seek within the acceleration limit") {
+    const auto settings = steering_settings();
+    const auto neighbor = cruiser_at({28, 20}, {});
+    const Segment edge{{25, 0}, {25, 100}};
+    const auto forces =
+        priority_steer(cruiser(), {100, 20}, std::span(&neighbor, 1), std::span(&edge, 1), settings);
+    CHECK_MESSAGE(forces.border.x <= 0, "Safety priority lost to seek");
+    CHECK_MESSAGE(forces.collision.x < 0, "Safety priority lost to seek");
+    CHECK_MESSAGE(forces.acceleration.x < 0, "Safety priority lost to seek");
+    CHECK_MESSAGE(length(forces.acceleration) <= settings.max_acceleration + 1e-6f,
+                  "Acceleration limit exceeded");
+}
+
+TEST_CASE("wall safety keeps tangential steering") {
+    const auto along = constrain_borders(cruiser_at({5, 20}, {0, .2f}), {-.2f, .1f}, std::span(&wall, 1),
+                                         steering_settings());
+    CHECK(along.x == 0);
+    CHECK(std::abs(along.y - .1f) < 1e-6f);
+}
+
+TEST_CASE("the wall reaction is bounded and continuous across contact") {
+    const auto settings = steering_settings();
+    auto sliding = cruiser_at({5, 20}, {0, .2f});
+    Vec2 previous{};
+    bool first = true;
+    for (float gap : {-.01f, -.001f, 0.f, .001f, .01f}) {
+        CAPTURE(gap);
+        sliding.position.x = 5 + gap;
+        const auto value = constrain_borders(sliding, {-.2f, .1f}, std::span(&wall, 1), settings);
+        CHECK_MESSAGE(finite(value), "Wall reaction exceeded acceleration bound");
+        CHECK_MESSAGE(length(value) <= settings.max_acceleration + 1e-6f,
+                      "Wall reaction exceeded acceleration bound");
+        if (!first)
+            CHECK_MESSAGE(distance(previous, value) < .01f, "Wall reaction jumps at contact");
+        first = false;
+        previous = value;
+    }
+}
+
+TEST_CASE("a parked touching body is not repelled") {
+    CHECK(length(constrain_borders(cruiser_at({5, 20}, {}), {}, std::span(&wall, 1), steering_settings())) ==
+          0);
+}
+
+TEST_CASE("wall braking converges to a close parking goal without crossing the wall") {
+    const auto settings = steering_settings();
+    auto sliding = cruiser_at({25, 20}, {-2, 0});
+    for (int tick = 0; tick < 400; ++tick) {
+        const Vec2 desired =
+            limited(Vec2{5.25f - sliding.position.x, .1f} - sliding.velocity, settings.max_acceleration);
+        const auto acceleration = constrain_borders(sliding, desired, std::span(&wall, 1), settings);
+        sliding.velocity = limited(sliding.velocity + acceleration, settings.max_speed);
+        sliding.position += sliding.velocity;
+        REQUIRE_MESSAGE(sliding.position.x >= 5 - 1e-5f, "Normal braking crossed the wall");
+        REQUIRE_MESSAGE(length(acceleration) <= settings.max_acceleration + 1e-5f,
+                        "Normal braking exceeded the acceleration budget");
+    }
+    CHECK_MESSAGE(std::abs(sliding.position.x - 5.25f) < 1e-3f,
+                  "Wall braking prevented convergence to a close parking goal");
+}
+
+TEST_CASE("a corner approach brakes on both axes") {
+    const Segment corner[] = {{{0, -100}, {0, 100}}, {{-100, 0}, {100, 0}}};
+    const auto constrained = constrain_borders(cruiser_at({5.1f, 5.1f}, {-.05f, -.05f}), {-.2f, -.2f}, corner,
+                                               steering_settings());
+    CHECK(constrained.x >= 0);
+    CHECK(constrained.y >= 0);
+}
+
+TEST_CASE("an approaching collision is predicted") {
+    const auto neighbor = cruiser_at({40, 20}, {-2, 0});
+    const auto forces =
+        priority_steer(cruiser(), {100, 20}, std::span(&neighbor, 1), {}, steering_settings());
+    CHECK(forces.predictive.x < 0);
+    CHECK(forces.acceleration.x < 0);
+}
+
+TEST_CASE("coincident bodies get a finite collision response") {
+    const auto agent = cruiser();
+    const auto neighbor = cruiser_at(agent.position, {-2, 0});
+    const auto forces = priority_steer(agent, {100, 20}, std::span(&neighbor, 1), {}, steering_settings());
+    CHECK(finite(forces.acceleration));
+    CHECK(length(forces.collision) > 0);
+}
+
+TEST_CASE("tangent steering stays finite and within its acceleration limit") {
+    const auto agent = cruiser();
+    const auto neighbor = cruiser_at(agent.position, {-2, 0});
+    const auto tangent = tangent_steer(agent, {100, 20}, std::span(&neighbor, 1));
+    CHECK_MESSAGE(finite(tangent), "Invalid tangent acceleration");
+    CHECK_MESSAGE(length(tangent) <= .600001f, "Invalid tangent acceleration");
+    CHECK_MESSAGE(length(tangent_steer(agent, agent.position, {})) <= .600001f,
+                  "Tangent arrival acceleration exceeded limit");
+}
+
+TEST_CASE("tangent steering rejects an unbounded horizon") {
+    CHECK_THROWS_AS(tangent_steer(cruiser(), {100, 20}, {}, 2, .6f, 65), std::invalid_argument);
 }

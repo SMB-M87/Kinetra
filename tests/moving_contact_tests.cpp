@@ -1,13 +1,17 @@
-#include <iostream>
+// Contract tests for moving-pair sweeps and swept world contacts (include/kinetra/physics.h):
+// relative queries, fast pairs, crossing and overtaking, chronological chains, captured
+// regression geometry and the observable swept-event budget.
 #include <kinetra/physics.h>
-#include <stdexcept>
+
+#include <doctest/doctest.h>
+
+#include <cmath>
+#include <cstddef>
 
 using namespace kinetra;
+
 namespace {
-void require(bool value, const char *message) {
-    if (!value)
-        throw std::runtime_error(message);
-}
+/// Elastic, frictionless body: shape 0 is a circle, 1 a box and 2 a triangle.
 Body agent(int shape, Vec2 position, Vec2 velocity) {
     Body body;
     if (shape == 2)
@@ -22,26 +26,75 @@ Body agent(int shape, Vec2 position, Vec2 velocity) {
     body.friction = 0;
     return body;
 }
-void pair_query() {
-    const auto a = agent(0, {-2, 0}, {}), b = agent(0, {2, 0}, {});
+
+/// Resting circle at x = -2; the pair queries move it to x = 2.
+Body left_circle() {
+    return agent(0, {-2, 0}, {});
+}
+
+/// Resting circle at x = 2; the pair queries move it to x = -2.
+Body right_circle() {
+    return agent(0, {2, 0}, {});
+}
+
+/// Two fixed elastic walls at x = -1 and x = 1 with a circle fired between them at
+/// 60000 units/s, after one 60 Hz step: far more bounces than the event budget allows.
+World exhausted_corridor() {
+    World world;
+    Body wall;
+    wall.shape = Shape::box;
+    wall.motion = Motion::fixed;
+    wall.half_extents = {0.05f, 3};
+    wall.restitution = 1;
+    wall.friction = 0;
+    wall.position = {-1, 0};
+    world.add(wall);
+    wall.position = {1, 0};
+    world.add(wall);
+    world.add(agent(0, {}, {60000, 0}));
+    world.step(1.f / 60);
+    return world;
+}
+} // namespace
+
+TEST_CASE("a head-on pair sweep reports the exact impact time and contact") {
+    const auto hit = sweep_translation(left_circle(), {2, 0}, right_circle(), {-2, 0});
+    REQUIRE(hit);
+    CHECK(std::abs(hit->fraction - 0.45f) < 0.00001f);
+    CHECK(length(hit->contact.point) < 0.0001f);
+    CHECK(length(hit->contact.normal - Vec2{1, 0}) < 0.0001f);
+}
+
+TEST_CASE("a pair sweep maps the relative contact into world coordinates") {
+    const auto a = left_circle(), b = right_circle();
     const auto hit = sweep_translation(a, {2, 0}, b, {-2, 0});
-    require(hit && std::abs(hit->fraction - 0.45f) < 0.00001f && length(hit->contact.point) < 0.0001f &&
-                length(hit->contact.normal - Vec2{1, 0}) < 0.0001f,
-            "Moving pair sweep has incorrect time/point/normal");
     const Vec2 drift{3, -4};
     const auto drifting = sweep_translation(a, Vec2{2, 0} + drift, b, Vec2{-2, 0} + drift);
-    require(drifting && std::abs(drifting->fraction - hit->fraction) < 0.00001f &&
-                length(drifting->contact.point - (hit->contact.point + drift * hit->fraction)) < 0.0001f,
-            "Pair sweep failed to map relative contact into world coordinates");
-    const auto reversed = sweep_translation(b, {-2, 0}, a, {2, 0});
-    require(reversed && std::abs(reversed->fraction - hit->fraction) < 0.00001f &&
-                length(reversed->contact.normal + hit->contact.normal) < 0.0001f,
-            "Pair sweep changes under reversed argument order");
-    require(!sweep_translation(a, Vec2{2, 0}, b, Vec2{6, 0}), "Co-moving separated pair collided");
+    REQUIRE(hit);
+    REQUIRE(drifting);
+    CHECK(std::abs(drifting->fraction - hit->fraction) < 0.00001f);
+    CHECK(length(drifting->contact.point - (hit->contact.point + drift * hit->fraction)) < 0.0001f);
 }
-void fast_head_on() {
+
+TEST_CASE("a pair sweep in reversed argument order only flips the normal") {
+    const auto a = left_circle(), b = right_circle();
+    const auto hit = sweep_translation(a, {2, 0}, b, {-2, 0});
+    const auto reversed = sweep_translation(b, {-2, 0}, a, {2, 0});
+    REQUIRE(hit);
+    REQUIRE(reversed);
+    CHECK(std::abs(reversed->fraction - hit->fraction) < 0.00001f);
+    CHECK(length(reversed->contact.normal + hit->contact.normal) < 0.0001f);
+}
+
+TEST_CASE("a co-moving separated pair does not collide") {
+    CHECK_FALSE(sweep_translation(left_circle(), Vec2{2, 0}, right_circle(), Vec2{6, 0}));
+}
+
+TEST_CASE("fast controlled pairs of every shape stop at contact without exchanging sides") {
     for (int shape_a = 0; shape_a < 3; ++shape_a)
         for (int shape_b = 0; shape_b < 3; ++shape_b) {
+            CAPTURE(shape_a);
+            CAPTURE(shape_b);
             World world;
             auto a = agent(shape_a, {-2, 0}, {600, 0});
             auto b = agent(shape_b, {2, 0}, {-600, 0});
@@ -49,55 +102,70 @@ void fast_head_on() {
             world.add(a);
             world.add(b);
             world.step(1.f / 60);
-            require(world.body(0).position.x < world.body(1).position.x,
-                    "Fast controlled agents exchanged sides without contact");
+            CHECK_MESSAGE(world.body(0).position.x < world.body(1).position.x,
+                          "Fast controlled agents exchanged sides without contact");
             const auto contact = collide(world.body(0), world.body(1));
-            require(!contact || contact->penetration < 0.001f, "Controlled pair remained deeply overlapped");
-            require(!world.sweep_budget_exhausted(), "Single pair exhausted swept-event budget");
+            CHECK_MESSAGE((!contact || contact->penetration < 0.001f),
+                          "Controlled pair remained deeply overlapped");
+            CHECK_MESSAGE(!world.sweep_budget_exhausted(), "Single pair exhausted swept-event budget");
         }
+}
+
+TEST_CASE("fast elastic pairs exchange velocities and keep their remaining travel") {
     for (int shape = 0; shape < 2; ++shape) {
+        CAPTURE(shape);
         World world;
         world.add(agent(shape, {-2, 0}, {600, 0}));
         world.add(agent(shape, {2, 0}, {-600, 0}));
         world.step(1.f / 60);
         const auto &a = world.body(0), &b = world.body(1);
-        require(std::abs(a.velocity.x + 600) < 0.001f && std::abs(b.velocity.x - 600) < 0.001f,
-                "Elastic moving pair did not exchange velocities");
-        require(std::abs(a.position.x + 8.4f) < 0.001f && std::abs(b.position.x - 8.4f) < 0.001f,
-                "Moving pair lost remaining travel after impact");
-        require(length(a.velocity + b.velocity) < 0.001f, "Moving pair lost momentum");
-        require(!world.sweep_budget_exhausted(), "Elastic pair exhausted swept-event budget");
+        CHECK_MESSAGE(std::abs(a.velocity.x + 600) < 0.001f,
+                      "Elastic moving pair did not exchange velocities");
+        CHECK_MESSAGE(std::abs(b.velocity.x - 600) < 0.001f,
+                      "Elastic moving pair did not exchange velocities");
+        CHECK_MESSAGE(std::abs(a.position.x + 8.4f) < 0.001f,
+                      "Moving pair lost remaining travel after impact");
+        CHECK_MESSAGE(std::abs(b.position.x - 8.4f) < 0.001f,
+                      "Moving pair lost remaining travel after impact");
+        CHECK_MESSAGE(length(a.velocity + b.velocity) < 0.001f, "Moving pair lost momentum");
+        CHECK_MESSAGE(!world.sweep_budget_exhausted(), "Elastic pair exhausted swept-event budget");
     }
 }
-void crossing_and_overtaking() {
+
+TEST_CASE("perpendicular controlled agents react instead of crossing") {
     World crossing;
     auto a = agent(0, {-2, 0}, {600, 0}), b = agent(0, {0, -2}, {0, 600});
     a.motion = b.motion = Motion::controlled;
     crossing.add(a);
     crossing.add(b);
     crossing.step(1.f / 60);
-    require(length(crossing.body(0).velocity - a.velocity) > 1 &&
-                length(crossing.body(0).position - crossing.body(1).position) > 0.399f,
-            "Perpendicular agents crossed without reacting");
-    require(!crossing.sweep_budget_exhausted(), "Crossing pair exhausted swept-event budget");
+    CHECK(length(crossing.body(0).velocity - a.velocity) > 1);
+    CHECK(length(crossing.body(0).position - crossing.body(1).position) > 0.399f);
+    CHECK_MESSAGE(!crossing.sweep_budget_exhausted(), "Crossing pair exhausted swept-event budget");
+}
+
+TEST_CASE("an overtaking contact has the correct timing and remaining travel") {
     World overtaking;
     overtaking.add(agent(0, {-2, 0}, {600, 0}));
     overtaking.add(agent(0, {0, 0}, {300, 0}));
     overtaking.step(1.f / 60);
-    require(std::abs(overtaking.body(0).velocity.x - 300) < 0.001f &&
-                std::abs(overtaking.body(1).velocity.x - 600) < 0.001f &&
-                std::abs(overtaking.body(0).position.x - 4.6f) < 0.001f &&
-                std::abs(overtaking.body(1).position.x - 8.4f) < 0.001f,
-            "Overtaking contact has incorrect timing or remaining travel");
+    CHECK(std::abs(overtaking.body(0).velocity.x - 300) < 0.001f);
+    CHECK(std::abs(overtaking.body(1).velocity.x - 600) < 0.001f);
+    CHECK(std::abs(overtaking.body(0).position.x - 4.6f) < 0.001f);
+    CHECK(std::abs(overtaking.body(1).position.x - 8.4f) < 0.001f);
+}
+
+TEST_CASE("co-moving agents keep their separation") {
     World together;
     together.add(agent(0, {-2, 0}, {600, 0}));
     together.add(agent(0, {2, 0}, {600, 0}));
     together.step(1.f / 60);
-    require(std::abs(together.body(1).position.x - together.body(0).position.x - 4) < 0.001f,
-            "Co-moving agents changed separation");
+    CHECK(std::abs(together.body(1).position.x - together.body(0).position.x - 4) < 0.001f);
 }
-void chronological_chain() {
+
+TEST_CASE("a contact chain is processed in chronological order regardless of insertion order") {
     for (bool reverse : {false, true}) {
+        CAPTURE(reverse);
         World world;
         std::size_t ids[3];
         for (int k = 0; k < 3; ++k) {
@@ -105,15 +173,19 @@ void chronological_chain() {
             ids[i] = world.add(agent(0, {-2.f + static_cast<float>(2 * i), 0}, {i == 0 ? 600.f : 0.f, 0}));
         }
         world.step(1.f / 60);
-        require(std::abs(world.body(ids[0]).position.x + 0.4f) < 0.001f &&
-                    std::abs(world.body(ids[1]).position.x - 1.6f) < 0.001f &&
-                    std::abs(world.body(ids[2]).position.x - 8.8f) < 0.001f,
-                "Contact chain was processed out of chronological order");
-        require(std::abs(world.body(ids[2]).velocity.x - 600) < 0.001f && !world.sweep_budget_exhausted(),
-                "Contact chain lost final impulse or exhausted budget");
+        CHECK_MESSAGE(std::abs(world.body(ids[0]).position.x + 0.4f) < 0.001f,
+                      "Contact chain was processed out of chronological order");
+        CHECK_MESSAGE(std::abs(world.body(ids[1]).position.x - 1.6f) < 0.001f,
+                      "Contact chain was processed out of chronological order");
+        CHECK_MESSAGE(std::abs(world.body(ids[2]).position.x - 8.8f) < 0.001f,
+                      "Contact chain was processed out of chronological order");
+        CHECK_MESSAGE(std::abs(world.body(ids[2]).velocity.x - 600) < 0.001f,
+                      "Contact chain lost final impulse");
+        CHECK_MESSAGE(!world.sweep_budget_exhausted(), "Contact chain exhausted budget");
     }
 }
-void spinning_tangent_contact() {
+
+TEST_CASE("a spinning tangent contact keeps making progress within the event budget") {
     // Captured from the crowded Demo, seed 123, tick 1383. Float contact geometry
     // gives a positive linear approach but a separating contact-point velocity.
     World world;
@@ -135,14 +207,16 @@ void spinning_tangent_contact() {
     world.add(wall);
     for (int tick = 0; tick < 120; ++tick) {
         world.step(1.f / 120);
-        require(!world.sweep_budget_exhausted(), "Tangent spinning contact exhausted the swept-event budget");
-        require(world.candidate_pairs() < 20, "Tangent contact repeatedly rebuilt collision candidates");
+        REQUIRE_MESSAGE(!world.sweep_budget_exhausted(),
+                        "Tangent spinning contact exhausted the swept-event budget");
+        REQUIRE_MESSAGE(world.candidate_pairs() < 20,
+                        "Tangent contact repeatedly rebuilt collision candidates");
     }
-    require(length(world.body(0).position - circle.position) > 0.1f,
-            "Tangent spinning circle stopped making forward progress");
+    CHECK_MESSAGE(length(world.body(0).position - circle.position) > 0.1f,
+                  "Tangent spinning circle stopped making forward progress");
 }
 
-void narrow_resting_gap() {
+TEST_CASE("nearly opposing resting contacts do not starve the swept timeline") {
     // Seed 123, tick 4280: a moving circle touches a sleeping triangular agent
     // and terrain. Nearly opposing normals converged through thousands of
     // zero-time events even though the remaining approach was below solver slop.
@@ -170,12 +244,12 @@ void narrow_resting_gap() {
     world.add(terrain);
     for (int tick = 0; tick < 120; ++tick) {
         world.step(1.f / 120);
-        require(!world.sweep_budget_exhausted(), "Resting gap contacts starved the swept timeline");
-        require(world.candidate_pairs() < 64, "Resting gap repeatedly rebuilt collision candidates");
+        REQUIRE_MESSAGE(!world.sweep_budget_exhausted(), "Resting gap contacts starved the swept timeline");
+        REQUIRE_MESSAGE(world.candidate_pairs() < 64, "Resting gap repeatedly rebuilt collision candidates");
     }
 }
 
-void tiny_touching_contact() {
+TEST_CASE("the resting-contact tolerance does not swallow a tiny mover") {
     World world;
     Body wall;
     wall.shape = Shape::box;
@@ -189,50 +263,30 @@ void tiny_touching_contact() {
     circle.velocity = {0.1f, 0};
     world.add(circle);
     world.step(0.01f);
-    require(world.body(1).position.x < 0 && std::abs(world.body(1).velocity.x) < 0.000001f,
-            "Resting-contact tolerance swallowed a tiny mover's full thickness");
-    require(!world.sweep_budget_exhausted(), "Tiny touching contact exhausted swept-event budget");
+    CHECK(world.body(1).position.x < 0);
+    CHECK(std::abs(world.body(1).velocity.x) < 0.000001f);
+    CHECK_MESSAGE(!world.sweep_budget_exhausted(), "Tiny touching contact exhausted swept-event budget");
 }
 
-void budget_observability() {
-    World world;
-    Body wall;
-    wall.shape = Shape::box;
-    wall.motion = Motion::fixed;
-    wall.half_extents = {0.05f, 3};
-    wall.restitution = 1;
-    wall.friction = 0;
-    wall.position = {-1, 0};
-    world.add(wall);
-    wall.position = {1, 0};
-    world.add(wall);
-    auto ball = agent(0, {}, {60000, 0});
-    world.add(ball);
-    world.step(1.f / 60);
-    require(world.sweep_budget_exhausted() && std::abs(world.body(2).position.x) <= 0.751f,
-            "Swept-event fallback failed to report/discard exhausted travel");
+TEST_CASE("an exhausted event budget is reported and its remaining travel discarded") {
+    const auto world = exhausted_corridor();
+    CHECK(world.sweep_budget_exhausted());
+    CHECK(std::abs(world.body(2).position.x) <= 0.751f);
+}
+
+TEST_CASE("the budget exhaustion flag resets on the next step") {
+    auto world = exhausted_corridor();
     world.body(2).velocity = {};
     world.step(1.f / 60);
-    require(!world.sweep_budget_exhausted(), "Swept budget flag was not reset on next step");
+    CHECK_FALSE(world.sweep_budget_exhausted());
+}
+
+TEST_CASE("clearing the world resets the budget exhaustion flag") {
+    auto world = exhausted_corridor();
+    world.body(2).velocity = {};
+    world.step(1.f / 60);
     world.body(2).velocity = {60000, 0};
     world.step(1.f / 60);
     world.clear();
-    require(!world.sweep_budget_exhausted(), "World clear retained budget exhaustion flag");
-}
-} // namespace
-int main() {
-    try {
-        pair_query();
-        fast_head_on();
-        crossing_and_overtaking();
-        chronological_chain();
-        spinning_tangent_contact();
-        narrow_resting_gap();
-        tiny_touching_contact();
-        budget_observability();
-        std::cout << "Moving contact contracts passed\n";
-    } catch (const std::exception &error) {
-        std::cerr << error.what() << '\n';
-        return 1;
-    }
+    CHECK_FALSE(world.sweep_budget_exhausted());
 }
