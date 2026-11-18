@@ -1,112 +1,156 @@
 # Kinetra Agent Guide
 
-Permanent project rules for this repository. Explicit user instructions and higher-priority platform instructions take precedence. Read the current checkout before changing it.
+Permanent rules for agents and developers working on Kinetra. They add to the user's global engineering instructions; where this file is more specific, it wins. Kinetra-Lab reuses these rules and adds only application-specific rules in its own `AGENTS.md`. Explicit user instructions take precedence over both.
+
+Each rule states *why* it exists. Use the reason to decide edge cases instead of applying the wording mechanically.
 
 ## Table of contents
 
+- [Where to read what](#where-to-read-what)
 - [Identity and scope](#identity-and-scope)
+- [Development cycle](#development-cycle)
+- [Verification by impact](#verification-by-impact)
+- [Git](#git)
 - [Engineering rules](#engineering-rules)
 - [Architecture boundaries](#architecture-boundaries)
-- [Documentation](#documentation)
-- [Verification](#verification)
-- [Git and safety](#git-and-safety)
+- [Code documentation](#code-documentation)
+- [Repository documentation](#repository-documentation)
+- [Skills](#skills)
 - [Functionality index](#functionality-index)
 
 [Project overview](README.md) · [Documentation index](docs/README.md)
 
+## Where to read what
+
+Read only what the task needs; the pages are written to stand on their own.
+
+| Task | Read |
+| --- | --- |
+| Every task | This file |
+| Start, plan, review or hand over a change | [Workflow](docs/workflow.md) |
+| Write or review C++ or CMake | [Conventions](docs/conventions.md) |
+| Add tests or pick a verification level | [Testing](docs/testing.md); build options in [development](docs/development.md) |
+| Write READMEs, diagrams or `///` comments | [Documentation guide](docs/documentation.md) |
+| Understand dependencies and ownership | [Architecture](docs/architecture.md), [engine contracts](docs/engine/README.md) |
+| Find out why a boundary exists | [Decisions](docs/decisions/README.md) |
+| See current and planned work | [Design documents](docs/design/README.md) |
+
 ## Identity and scope
 
-- Kinetra is a C++20 2D engine with a headless simulation library and optional SDL2/OpenGL 3.3 runtime.
-- Kinetra contains only reusable core, core tests and development infrastructure.
-- Demo, Dotio, the bundled launcher executable and application tests live in Kinetra-Lab.
+- Kinetra is a C++20 2D engine: a headless simulation library plus an optional SDL2/OpenGL 3.3 runtime and launcher.
+- Kinetra contains reusable core, core tests and development infrastructure only. Demo, Dotio, i4sim, the bundled launcher executable and application tests live in Kinetra-Lab.
 - Linux is supported; Artix/Linux is the desktop target. Do not imply untested platform support.
-- Application behavior is documented in Kinetra-Lab.
+
+## Development cycle
+
+Every change follows the full cycle in the [workflow](docs/workflow.md): **understand → design → test plan → implement → verify → review → document → commit**. The `feature` skill walks through it.
+
+- Each branch has a design document in [docs/design/](docs/design/README.md), written before code. Small changes get a short document, but they still get one.
+- Settle open, load-bearing decisions with the user before implementing; use the `grilling` skill when there are several.
+- Record hard-to-reverse, surprising trade-offs as an ADR (`adr` skill).
+- Separate refactoring commits from behavior changes.
+
+*Why:* the code grew feature by feature without recorded design or reasons. The cycle leaves a trail, so the next reader understands both what changed and why.
+
+## Verification by impact
+
+Choose the lowest level that covers the change. Commands are listed in [testing](docs/testing.md#verification-levels).
+
+| Level | When | What to run |
+| --- | --- | --- |
+| Docs | Only Markdown, comments, skills or agent rules changed | `python3 tools/check_docs.py`; no build |
+| Targeted | Code inside one module; no public header, CMake or dependency change | Incremental build of the affected targets in the existing build directory, plus their CTest entries |
+| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Full core build and tests, the Lab integration build (`./build.sh` in Lab), and graphics checks for runtime changes |
+
+- Report the exact commands, results and blockers. Never call a check passed that did not run.
+- A failed configure or build means verification is incomplete.
+
+*Why:* a full build takes minutes and proves nothing for a README edit. Skipping compilation after a code change hides errors until much later.
+
+## Git
+
+- Work on a branch named `<type>/<topic>`, using the conventional-commit types (`feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`). Never commit to `main`.
+- Commit freely on that branch, in small logical steps. Use the message format `type(scope): imperative summary` in English, with an optional body explaining why.
+- Stage explicit paths. Never use `git add -A`; preserve unrelated work and inspect `git status` before and after.
+- Never push, open pull requests, merge into `main`, rebase published history, force, tag or change remotes. The user publishes.
+- Kinetra-Lab tracks Kinetra as a submodule. For an engine change used by Lab, commit in Kinetra first, then commit the pointer in Lab. Tell the user that the Kinetra branch must be pushed before the Lab branch.
+
+*Why:* local commits make agent work reviewable and revertible step by step, and publishing stays a human decision.
 
 ## Engineering rules
 
-- First-party C++ headers MUST use `.h` and implementations MUST use `.cpp`.
-- Never introduce `.hpp`, `.hxx`, `.hh`, `.cc` or `.cxx` in first-party code.
-- Third-party/generated source is exempt: leave `src/glad.c`, `include/glad/glad.h` and `include/KHR/khrplatform.h` unchanged. Maintain directory README files alongside them.
-- Update includes, CMake, tests, scripts and documentation when moving files.
-- Follow the root `.clang-format`; avoid unrelated formatting churn.
-- Prefer RAII, const-correctness, explicit ownership, predictable lifetimes and standard C++20.
-- Use small cohesive interfaces. Add abstraction only when it hides a concrete source of complexity.
-- Preserve public contracts, coordinate units, timing and application behavior unless explicitly changing them.
+Details and examples are in the [conventions](docs/conventions.md).
+
+- First-party headers use `.h` and implementations use `.cpp`; never `.hpp`, `.hxx`, `.hh`, `.cc` or `.cxx`. Leave third-party/generated files unchanged (`src/glad.c`, `include/glad/`, `include/KHR/`).
+- Follow `.clang-format`. Format the files you change; put any repository-wide reformatting in a separate commit.
+- Prefer RAII, const-correctness, explicit ownership, value types and standard C++20. Avoid global mutable state.
+- Simulation results must be deterministic for a given seed: inject seeded RNGs; never use `std::rand` or `std::random_device` in simulation logic.
+- Name units and tuning constants (`constexpr`) instead of repeating magic numbers.
+- When a type has more than two related boolean flags, model them as an explicit state (`enum class` plus transitions).
+- Keep functions focused. A function with commented sections, more than about 60 lines, or boolean flag parameters is a candidate for extraction.
+- Use design patterns only when they remove demonstrated duplication or variation. Add abstraction only where it hides real complexity.
 - Validate untrusted input at boundaries and report actionable errors. Do not swallow exceptions.
-- Explain non-obvious algorithms, invariants and workarounds in concise English comments/docstrings.
-- Inspect nearby implementation, tests and documentation before editing.
-- For substantial changes, state the intended boundary and affected areas before implementation.
-- Do not introduce dependencies or new backend/framework choices without a concrete need.
+- Preserve public contracts, coordinate units, timing and application behavior unless the design document changes them.
+- Introduce no dependency or backend without a concrete need recorded in the design document.
 
 ## Architecture boundaries
 
 - Reusable mechanisms belong in Kinetra; game-specific policies belong in applications.
-- Math, physics, collision, spatial queries, navigation and steering must remain headless.
-- Physics/math must not depend on SDL/OpenGL.
-- Engine modules must not depend on Demo, Dotio or their private headers.
-- External consumers use public `include/kinetra/` APIs and public `Kinetra::` CMake targets.
-- Keep GLAD/OpenGL and SDL implementation types out of public engine interfaces.
-- Keep world generation, AI decisions, combat, difficulty, spawning and bindings application-owned.
-- Application fixed rates are policy: do not hardcode Demo or Dotio timing into the engine.
-- Preserve headless and runtime-only builds, independently of examples and launcher.
-- Reusable launcher menu and session hosting belong to the optional `Kinetra::Launcher` target; application registration and policy belong to Kinetra-Lab. Core retains the direct Session contract.
-- Overlays own shared layout/rendering/input capture; applications provide content and actions.
-- Do not add a library for each directory. Targets must represent useful linking boundaries.
-- Record meaningful boundary changes in an ADR and update the external-consumer test.
-- Nested AGENTS files are only appropriate for genuinely different local rules; document their scope.
+- Math, physics, collision, spatial queries, navigation and steering stay headless; they never depend on SDL or OpenGL.
+- Engine modules never depend on Lab applications or their headers.
+- External consumers use the public `include/kinetra/` headers and the `Kinetra::` CMake targets. Keep GLAD/OpenGL and SDL types out of public interfaces.
+- World generation, AI decisions, combat, difficulty, spawning, bindings and fixed rates are application policy.
+- The reusable launcher menu, session hosting and overlays belong to `Kinetra::Launcher` and the runtime. Overlays own shared layout, rendering and input capture; applications supply content and actions.
+- Targets represent useful linking boundaries; do not add a library per directory.
+- Record boundary changes in an ADR and update the external-consumer test.
+- Nested `AGENTS.md` files are only for genuinely different local rules and must state their scope.
 
-## Documentation
+## Code documentation
 
-- Update relevant documentation whenever behavior, APIs, build configuration or architecture changes.
-- Use concise technical English for code and documentation; communicate with the user in Dutch by default.
-- The root README is the short introduction, quick start and navigation entry point.
-- Every repository content directory must always contain a `README.md`, including nested source, header, test, documentation and bundled dependency directories. Add missing guides when creating or changing directories; describe purpose, contents, responsibilities and relevant usage.
-- Exclude only Git metadata, local tooling/account state, generated build outputs and locally downloaded dependency trees. Maintain checked-in dependency wrapper guides; a Git submodule is a separate repository whose own directory guides are maintained there, without copying or rewriting upstream documentation.
-- Keep documentation navigable in both directions: each directory README links to its parent guide, immediate child guides and the documentation index; each documentation page links back to its directory guide and the project overview. Link related source, test and authoritative contract guides to one another, and keep these links synchronized when files move. Use concise overview/related-guide navigation like Artix rather than duplicating content.
-- Use [docs/README.md](docs/README.md) to find each concept's authoritative page; link instead of duplicating explanations.
-- Place the table of contents below each maintained Markdown title/introduction, with the local heading links directly under `## Table of contents`. Immediately below that list, place compact parent, project overview, documentation index and child-guide links, following the layout in Artix/docs/networking.md. Do not add separate Navigation or On this page labels, or a navigation section at the end.
-- Use `[TOC]` for local heading links only when the target Markdown renderer supports it. Otherwise maintain an explicit list of heading links so the guide remains navigable without a TOC extension. Verify relative links and heading anchors after documentation changes.
-- Include diagrams in directory README files alongside first-party code (source, public headers and tests) when they clarify nontrivial structure or behavior; this guidance also applies to nested code directories, not only docs/ pages.
-- Prefer Mermaid component/dependency diagrams for module boundaries, UML-style class diagrams for types and ownership, sequence diagrams for interactions, and flowcharts or state diagrams for execution and lifecycle flows. Choose the form that best explains the local code.
-- Keep local diagrams focused on the directory and link authoritative subsystem guides for details; do not duplicate full architecture diagrams in every README. Simple directory indexes and third-party wrappers need no decorative diagrams.
-- Every diagram must reflect implemented components, label relationships and explain its takeaway.
-- Do not create diagrams for trivial functions or one page per class.
-- Keep diagrams synchronized with code; never imply inheritance for enums or plain composition.
-- Keep historical ADRs traceable. Mark obsolete decisions superseded and link their replacement.
-- Validate relative links, referenced paths, examples and target names. Report Mermaid rendering limits honestly.
-- Keep the capability-level index below concise; detailed navigation belongs in subsystem pages.
+The code must explain itself to a reader who has not seen the design.
 
-## Verification
+- Every public type, function and non-trivial data member in a header gets a `///` summary. Every enum whose values are not self-explanatory gets one too.
+- The summary states the contract: purpose; units and coordinate space; ownership and lifetime of borrowed objects; preconditions; invariants; behavior on invalid input; and thread-safety when relevant.
+- In `.cpp` files, explain *why* at each algorithm, invariant, workaround and tuning constant. Do not narrate what a line does.
+- Update or remove comments in the same commit as the behavior they describe.
+- Format, examples and a before/after sample are in the [documentation guide](docs/documentation.md#code-comments). `TrafficGate` in [traffic.h](include/kinetra/traffic.h) is a good existing example.
 
-- Build after every task changing Kinetra, including documentation/configuration tasks.
-- Runnable applications are built and verified in Kinetra-Lab.
-- Build headless simulation/tests and the optional SDL2/OpenGL runtime. Reconfigure after CMake changes.
-- Run relevant behavioral tests; add regression coverage for changed behavior and important boundaries.
-- Do not remove tests to hide regressions or describe untested behavior as verified.
-- Check formatting and documentation links. Documentation-only changes need link/path/claim validation.
-- Test public API/CMake boundaries with the external consumers when changing ownership or build configuration.
-- Run graphics checks with an actual context (desktop, Xvfb or SDL offscreen); report the backend used.
-- Smoke-test menu, Demo and Dotio after runtime changes. Preserve session input isolation and cleanup.
-- Report exact commands, results, blockers and remaining checks. Software rendering does not verify desktop feel/performance.
-- Authoritative commands and environment notes are in [development](docs/development.md).
+*Why:* the user wants to learn the code from the code. clangd shows `///` on hover, and Doxygen can render it later without rewriting.
 
-## Git and safety
+## Repository documentation
 
-- Inspect `git status` before edits and review the final diff.
-- Preserve unrelated changes. Never reset, clean, force-push or delete user data without authorization.
-- Do not stage, commit or push unless explicitly requested; never infer permission from “finish” or “deliver”.
-- Do not modify sibling repositories without permission. Treat them as read-only references.
-- Keep credentials and private environment values out of output and files.
-- Avoid network access and destructive operations unless necessary and authorized.
+- Each module has one README with real content: purpose, concepts, a diagram, key types, data flow, invariants, how to change it, tests and open points. Modules are engine subsystems, applications, the launcher and test suites. Use the [module template](docs/documentation.md#module-readme-template).
+- A subdirectory gets its own README only when it has content worth reading on its own. Third-party wrappers keep their provenance READMEs.
+- `docs/` holds cross-module material: architecture, contracts, decisions and design documents.
+- Every concept has one authoritative place; link to it for depth. A link never replaces an explanation the local reader needs.
+- Diagrams show implemented code only; each one states its takeaway.
+- Layout, table of contents and navigation follow the [documentation guide](docs/documentation.md#page-layout).
+- End a page with **Open points** when known gaps or questions exist. Replace outdated text instead of appending to it.
+- Write documentation and comments in English; talk to the user in Dutch.
+
+*Why:* the earlier rule requiring a README in every directory produced navigation without insight. Depth now lives where the reader looks for it.
+
+## Skills
+
+Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/skills` links there. The global skill set may add book-based references (refactoring, clean architecture, …), `teach` and `code-review`. Repository skills do not duplicate them.
+
+| Skill | Use |
+| --- | --- |
+| `feature` | Start and run a change through the full cycle |
+| `grilling` | Settle open decisions with the user in rounds of forms (on request or from `feature`) |
+| `verify` | Pick and run the verification level for the current diff |
+| `doc-module` | Write or deepen a module README and its header `///` summaries |
+| `refactor` | Behavior-preserving restructuring in named, tested steps (on request) |
+| `adr` | Record an architecture decision |
 
 ## Functionality index
 
 | Capability | Implementation | Tests / authoritative documentation |
 | --- | --- | --- |
 | Math, collision, physics, spatial search | [public API](include/kinetra/), [simulation](src/simulation/) | [simulation tests](tests/simulation_tests.cpp), [contracts](docs/engine/math-physics.md) |
-| Navigation and steering | [navigation](include/kinetra/navigation.h), [steering](include/kinetra/steering.h) | [navigation tests](tests/navigation_tests.cpp), [design](docs/engine/navigation.md) |
+| Navigation, steering, avoidance, traffic | [navigation](include/kinetra/navigation.h), [steering](include/kinetra/steering.h), [traffic](include/kinetra/traffic.h) | [navigation tests](tests/navigation_tests.cpp), [design](docs/engine/navigation.md) |
 | Window, input, rendering and direct sessions | [runtime](src/engine/), [session API](include/kinetra/session.h) | [runtime tests](tests/runtime_tests.cpp), [runtime guide](docs/engine/runtime.md) |
 | Shared overlays | [debug](include/kinetra/debug_view.h), [help](include/kinetra/help_view.h) | [design](docs/engine/launcher-overlays.md) |
 | Generic launcher | [launcher API](include/kinetra/launcher.h) | [tests](tests/launcher_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
 | Applications and bundled launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned registration, executables and tests |
-| Build and repository validation | [CMake](CMakeLists.txt), [consumer](tests/consumer/) | [development](docs/development.md) |
+| Build, verification and docs checks | [CMake](CMakeLists.txt), [consumer](tests/consumer/), [tools](tools/README.md) | [development](docs/development.md), [testing](docs/testing.md) |
