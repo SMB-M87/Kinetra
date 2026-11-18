@@ -38,7 +38,11 @@ set_target_properties(kinetra_simulation PROPERTIES CXX_EXTENSIONS OFF)
 if(KINETRA_BUILD_RUNTIME)
     find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
-    add_library(kinetra_runtime src/engine/runtime.cpp src/engine/session.cpp src/glad.c)
+    add_library(kinetra_runtime
+        src/engine/runtime.cpp
+        src/engine/session.cpp
+        src/engine/settings_view.cpp
+        src/glad.c)
     add_library(Kinetra::Runtime ALIAS kinetra_runtime)
     target_compile_features(kinetra_runtime PUBLIC cxx_std_20)
     target_include_directories(kinetra_runtime PUBLIC
@@ -51,6 +55,9 @@ if(KINETRA_BUILD_RUNTIME)
     if(BUILD_TESTING)
         kinetra_add_test(kinetra_launcher_tests NAME kinetra_launcher
             SOURCES tests/launcher_tests.cpp LIBRARIES Kinetra::Launcher)
+        # Window-free: links the runtime library but never opens a window.
+        kinetra_add_doctest(kinetra_settings_view_tests PREFIX kinetra_settings_view
+            SOURCES tests/settings_view_tests.cpp LIBRARIES Kinetra::Runtime)
     endif()
 endif()
 
