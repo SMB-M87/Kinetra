@@ -71,16 +71,8 @@ if(BUILD_TESTING)
         SOURCES tests/weighted_navigation_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_navigation_tests PREFIX kinetra_navigation
         SOURCES tests/navigation_tests.cpp LIBRARIES Kinetra::Simulation)
-    # Plain main()-style suites; converted to doctest in roadmap phase 3.
-    foreach(suite IN ITEMS
-            "kinetra_tests:kinetra_behavior:simulation_tests")
-        string(REPLACE ":" ";" parts "${suite}")
-        list(GET parts 0 executable)
-        list(GET parts 1 test_name)
-        list(GET parts 2 source)
-        kinetra_add_test(${executable} NAME ${test_name}
-            SOURCES tests/${source}.cpp LIBRARIES Kinetra::Simulation LABELS unit)
-    endforeach()
+    kinetra_add_doctest(kinetra_tests PREFIX kinetra_behavior
+        SOURCES tests/simulation_tests.cpp LIBRARIES Kinetra::Simulation)
 endif()
 if(BUILD_TESTING AND KINETRA_BUILD_RUNTIME AND KINETRA_TEST_GRAPHICS)
     kinetra_add_test(kinetra_engine_runtime_tests NAME kinetra_engine_graphics
