@@ -21,6 +21,7 @@ Consumers include these headers as `<kinetra/name.h>`. This is the engine's firs
 | [engine.h](engine.h), [session.h](session.h) | Runtime, input, drawing and direct sessions | `Kinetra::Runtime` |
 | [launcher.h](launcher.h) | Generic menu, session host and launcher loop | `Kinetra::Launcher` |
 | [camera.h](camera.h), [timing.h](timing.h) | Coordinate transforms and fixed clock | Header-only |
+| [settings_view.h](settings_view.h) | Settings overlay built from application rows | `Kinetra::Runtime` |
 | [bitmap_text.h](bitmap_text.h), [debug_view.h](debug_view.h), [help_view.h](help_view.h) | Text rendering and shared overlays | Header-only; drawing uses Runtime |
 
 ## Implementation and contracts
