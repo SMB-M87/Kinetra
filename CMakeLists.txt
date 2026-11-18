@@ -57,6 +57,10 @@ endif()
 if(BUILD_TESTING)
     kinetra_add_doctest(kinetra_traffic_tests PREFIX kinetra_traffic
         SOURCES tests/traffic_tests.cpp LIBRARIES Kinetra::Simulation)
+    # The glyph table and the camera and timing helpers are header-only and need no
+    # runtime; the Simulation target only supplies the include directory here.
+    kinetra_add_doctest(kinetra_presentation_tests PREFIX kinetra_presentation
+        SOURCES tests/presentation_tests.cpp LIBRARIES Kinetra::Simulation)
     # Plain main()-style suites; converted to doctest in roadmap phase 3.
     foreach(suite IN ITEMS
             "kinetra_avoidance_tests:kinetra_avoidance:avoidance_tests"
