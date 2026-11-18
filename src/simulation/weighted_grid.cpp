@@ -21,7 +21,7 @@ int WeightedGrid::cell(Vec2 p) const {
     return int(p.y / cell_size_.y) * width_ + int(p.x / cell_size_.x);
 }
 Vec2 WeightedGrid::center(int id) const {
-    blocked_.at(id);
+    static_cast<void>(blocked_.at(id));
     return {(id % width_ + 0.5f) * cell_size_.x, (id / width_ + 0.5f) * cell_size_.y};
 }
 bool WeightedGrid::blocked(int id) const {
