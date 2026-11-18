@@ -9,6 +9,7 @@
 #ifdef CONSUMER_GRAPHICS
 #include <kinetra/launcher.h>
 #include <kinetra/session.h>
+#include <kinetra/settings_view.h>
 auto consumer_run_launcher = &kinetra::run_launcher;
 // Retain a relocation to a compiled Runtime entry point without opening a window.
 auto consumer_run_session = &kinetra::run_session;
@@ -42,6 +43,15 @@ int main() {
     kinetra::Input input;
     if (input.held[std::size_t(kinetra::Key::enter)])
         return 2;
+    // The settings overlay and session requests link without a window.
+    bool statistics = false;
+    kinetra::SettingsOverlay overlay({kinetra::ToggleRow{"STATISTICS", &statistics}});
+    kinetra::Camera2D camera;
+    if (overlay.update(input, camera) || overlay.request() != kinetra::SessionRequest::none)
+        return 8;
+    const kinetra::LauncherBindings bindings{std::nullopt, false};
+    if (bindings.menu_key)
+        return 9;
 #endif
     kinetra::WeightedGrid grid({30, 30}, {10, 10});
     if (grid.path({5, 5}, {25, 25}).empty())

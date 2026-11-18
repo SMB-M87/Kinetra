@@ -23,6 +23,7 @@ Directory guides: [engine](engine/README.md), [simulation](simulation/README.md)
 | `simulation/navigation.cpp`, `simulation/steering.cpp` | `Kinetra::Simulation` | Path planning, route following and local steering |
 | `engine/runtime.cpp` | `Kinetra::Runtime` | SDL window/input lifecycle and OpenGL rendering |
 | `engine/session.cpp` | `Kinetra::Runtime` | Direct session event and rendering loop |
+| `engine/settings_view.cpp` | `Kinetra::Runtime` | Settings overlay layout, picking and drawing |
 | `engine/launcher.cpp` | `Kinetra::Launcher` | Generic menu, session host and launcher loop |
 | `glad.c` | `Kinetra::Runtime` | Generated OpenGL loader; preserve generated contents |
 

@@ -20,6 +20,7 @@ Directory guides: [KHR](KHR/README.md), [glad](glad/README.md), [kinetra](kinetr
 | `engine.h`, `session.h` | Runtime, input, drawing and direct sessions | [Runtime](../docs/engine/runtime.md) |
 | `launcher.h` | Generic menu, session host and launcher loop (`Kinetra::Launcher`) | [Launcher](../docs/engine/launcher-overlays.md) |
 | `camera.h`, `timing.h` | Header-only coordinate transforms and fixed clock | [Runtime](../docs/engine/runtime.md) |
+| `settings_view.h` | Settings overlay built from application rows | [Overlays](../docs/engine/launcher-overlays.md#settings-overlay) |
 | `bitmap_text.h`, `debug_view.h`, `help_view.h` | Header-only text and shared overlays | [Overlays](../docs/engine/launcher-overlays.md) |
 
 ## Dependencies and ownership

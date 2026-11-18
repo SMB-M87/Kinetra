@@ -80,7 +80,7 @@ ctest --preset dev -R 'kinetra_traffic:clear'   # or:
 ```
 
 - **Shared setup.** For setup that several cases need, use a small helper function (as `replay` does in the traffic tests) or doctest `SUBCASE`s. Do not use global mutable state.
-- **Plain suites.** Not yet converted tests still use `kinetra_add_test`. They are converted when their module is next changed, or in roadmap phase 3.
+- **Labels and timeouts.** Every case gets the label `unit`; pass `LABELS graphics` for cases that need a window (the `dev`, `release` and `ci` test presets exclude them) and `TIMEOUT <seconds>` for long cases. `kinetra_add_test` remains for a program that cannot use doctest; no Kinetra suite needs it.
 
 ## Verification levels
 
@@ -155,5 +155,4 @@ Report each check as: command, result (passed / failed / not run), and the reaso
 
 ## Open points
 
-- **Remaining plain suites.** They move to doctest in roadmap phase 3.
-- **`kinetra_engine_graphics` fails under WSL2.** It fails with "Mouse input lost", both with SDL offscreen and with the WSLg display. Unchanged code shows the same result, so injected mouse events probably do not reach SDL (`sdl2-compat`) there. It needs a check on a real Linux desktop.
+- **`kinetra_engine_graphics` fails under WSL2.** Its first case fails at the injected mouse-input check, both with SDL offscreen and with the WSLg display; the other cases, including the session and launcher loops, pass there. Unchanged code shows the same result, so injected mouse events probably do not reach SDL (`sdl2-compat`) there. It needs a check on a real Linux desktop.

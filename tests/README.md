@@ -16,15 +16,18 @@ Directory guides: [consumer](consumer/README.md).
 | Source or directory | CTest name | Responsibility |
 | --- | --- | --- |
 | [traffic_tests.cpp](traffic_tests.cpp) | `kinetra_traffic:<case>` (doctest) | FIFO ordering, eligibility/ticket preservation, non-revoking grants, new arrivals, cancellation, occupied/contested zones, invalid snapshots and reset |
-| [avoidance_tests.cpp](avoidance_tests.cpp) | `kinetra_avoidance` | Acceleration/speed limits, infeasibility, deterministic IDs, time units, noncooperative motion, rectangular gap/cutoff/tangent checks, 2/4/8 rectangular encounters and 2/4/8/16 circular-agent arrival without overlap |
-| [moving_contact_tests.cpp](moving_contact_tests.cpp) | `kinetra_moving_contacts` | Relative queries, fast moving pairs, crossing/overtaking, chronological chains, spinning tangent-contact progress, narrow resting gaps, tiny-body contact tolerance and observable event-budget fallback |
-| [translation_sweep_tests.cpp](translation_sweep_tests.cpp) | `kinetra_translation_sweeps` | All convex translation pairs, timing, orientation, misses, thin walls, repeated impacts and free rotational integration |
-| [sweep_tests.cpp](sweep_tests.cpp) | `kinetra_sweeps` | Circle sweep timing, corners, containment, rotated geometry, thin-wall impacts, remaining travel and bounded repeated bounces |
-| [polygon_tests.cpp](polygon_tests.cpp) | `kinetra_polygons` | Convex shape validation, exact contacts, transformed geometry, inertia, navigation and falling-body settling |
-| [simulation_tests.cpp](simulation_tests.cpp) | `kinetra_behavior` | Geometry, physics, rectangular steering clearance and spatial contracts |
-| [navigation_tests.cpp](navigation_tests.cpp) | `kinetra_navigation` | Planning, routes and steering |
-| [launcher_tests.cpp](launcher_tests.cpp) | `kinetra_launcher` | Window-free launcher behavior; requires runtime build |
-| [runtime_tests.cpp](runtime_tests.cpp) | `kinetra_engine_graphics` | Runtime checks with a real OpenGL context |
+| [avoidance_tests.cpp](avoidance_tests.cpp) | `kinetra_avoidance:<case>` (doctest) | Acceleration/speed limits, infeasibility, deterministic IDs, time units, noncooperative motion, rectangular gap/cutoff/tangent checks, 2/4/8 rectangular encounters and 2/4/8/16 circular-agent arrival without overlap |
+| [moving_contact_tests.cpp](moving_contact_tests.cpp) | `kinetra_moving_contacts:<case>` (doctest) | Relative queries, fast moving pairs, crossing/overtaking, chronological chains, spinning tangent-contact progress, narrow resting gaps, tiny-body contact tolerance and observable event-budget fallback |
+| [translation_sweep_tests.cpp](translation_sweep_tests.cpp) | `kinetra_translation_sweeps:<case>` (doctest) | All convex translation pairs, timing, orientation, misses, thin walls, repeated impacts and free rotational integration |
+| [sweep_tests.cpp](sweep_tests.cpp) | `kinetra_sweeps:<case>` (doctest) | Circle sweep timing, corners, containment, rotated geometry, thin-wall impacts, remaining travel and bounded repeated bounces |
+| [polygon_tests.cpp](polygon_tests.cpp) | `kinetra_polygons:<case>` (doctest) | Convex shape validation, exact contacts, transformed geometry, inertia, navigation and falling-body settling |
+| [simulation_tests.cpp](simulation_tests.cpp) | `kinetra_behavior:<case>` (doctest) | Geometry, physics, steering (including rectangular clearance and separation), spatial and collision grids, fixed clock, camera, invalid input and a 400-body stability run |
+| [navigation_tests.cpp](navigation_tests.cpp) | `kinetra_navigation:<case>` (doctest) | Settings validation, swept clearance, exact and projected goals, and the math boundaries planning relies on |
+| [weighted_navigation_tests.cpp](weighted_navigation_tests.cpp) | `kinetra_weighted_navigation:<case>` (doctest) | Weighted grid planning, footprint clearance and priority steering; see the detail below |
+| [presentation_tests.cpp](presentation_tests.cpp) | `kinetra_presentation:<case>` (doctest) | Glyph table, zoom stepping and the rate counter; header-only, so headless |
+| [launcher_tests.cpp](launcher_tests.cpp) | `kinetra_launcher:<case>` (doctest) | Menu paging and configuration, `SessionHost` transitions and debug actions; window-free, requires the runtime build |
+| [settings_view_tests.cpp](settings_view_tests.cpp) | `kinetra_settings_view:<case>` (doctest) | Settings overlay layout, rows, capture and actions; window-free, requires the runtime build |
+| [runtime_tests.cpp](runtime_tests.cpp) | `kinetra_engine_graphics:<case>` (doctest, label `graphics`) | Input, rendering and resize with a real OpenGL context, and the `run_session` and `run_launcher` request and binding rules |
 | [consumer/](consumer/README.md) | Separate executable | Public headers and CMake source integration |
 
 ## Execution
@@ -41,7 +44,7 @@ flowchart LR
 CTest coverage follows the configured options. The separate consumer checks source integration; graphics tests require an actual OpenGL context.
 
 
-The root [CMakeLists.txt](../CMakeLists.txt) registers tests when `BUILD_TESTING` is enabled: doctest suites with `kinetra_add_doctest` (one CTest entry per case), and the remaining plain `main()` suites with `kinetra_add_test`. The traffic suite is the doctest reference; how to write and run cases is described in [testing](../docs/testing.md#writing-a-doctest-suite). Graphics tests also require `KINETRA_BUILD_RUNTIME` and `KINETRA_TEST_GRAPHICS`. The consumer is configured separately.
+The root [CMakeLists.txt](../CMakeLists.txt) registers tests when `BUILD_TESTING` is enabled: every suite is a doctest suite, registered with `kinetra_add_doctest` (one CTest entry per case, label `unit` plus any `LABELS`); `ctest -R '^<prefix>'` selects a whole suite. The traffic suite is the doctest reference; how to write and run cases is described in [testing](../docs/testing.md#writing-a-doctest-suite). Graphics tests also require `KINETRA_BUILD_RUNTIME` and `KINETRA_TEST_GRAPHICS`. The consumer is configured separately.
 
 See [development](../docs/development.md) for commands, dependencies and graphics backend requirements; see the [implementation map](../src/README.md) for tested modules.
 

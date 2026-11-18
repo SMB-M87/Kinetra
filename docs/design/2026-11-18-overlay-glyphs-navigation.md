@@ -1,6 +1,6 @@
 # Settings overlay, glyphs and session navigation
 
-Status: accepted · Branch: `docs/overlay-glyphs-navigation` (design), implementation on a later branch · Related: [ADR 0013](../decisions/0013-settings-overlay-in-kinetra.md), [ADR 0014](../decisions/0014-session-navigation-requests.md), [Lab phase 3 design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-safety-net-shared-presentation.md), [launcher and overlays](../engine/launcher-overlays.md)
+Status: implemented · Branches: `docs/overlay-glyphs-navigation` (design), `feat/overlay-glyphs-navigation` (implementation) · Related: [ADR 0013](../decisions/0013-settings-overlay-in-kinetra.md), [ADR 0014](../decisions/0014-session-navigation-requests.md), [Lab phase 3 design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-safety-net-shared-presentation.md), [launcher and overlays](../engine/launcher-overlays.md)
 
 This document covers the Kinetra half of Kinetra-Lab's quality roadmap, phase 3, steps 3, 4 and 6:
 - a settings overlay that applications fill with their own rows;
@@ -235,6 +235,16 @@ constexpr Glyph glyph(char c);
 
 `draw_text` draws `glyph(c)` for each character; the cell width stays 6 pixels. Visible effect: decimals, minus signs, underscores, commas, asterisks and lowercase text appear where they are blank today, in Lab's debug menus, statistics, launcher status and i4sim's HUD.
 
+### Implementation notes
+
+The implementation follows the sketches, with these additions and deviations:
+
+- **`ZoomLimits` lives in `camera.h`**, next to a `zoom(camera, steps, limits)` helper and the `zoom_factor` constant, instead of in `settings_view.h`. Lab step 5 needs them without the overlay. `validate(ZoomLimits)` rejects unordered, nonpositive or non-finite limits; `std::clamp` is undefined for them.
+- **Lab step 5 mechanisms.** Besides `zoom`, `RateCounter` in `timing.h` replaces the 0.5 s FPS windows of Demo and Dotio. The key policy (WASD/arrows) and the pause-while-open rule stay in Lab, as application policy.
+- **Overlay layout queries.** `row_y()`, `actions_y()`, `half_extent()`, `expanded()` and `scale()` are public, so the ported tests address rows by index and callers can place things next to the panel. Rows that are not help sections must come before them; the constructor rejects other orders, toggles without a flag and zoom rows without limits.
+- **Doctest everywhere.** The launcher and graphics suites are converted with this branch, and the eight simulation suites on `test/doctest-suites`, merged in. Only the cases that need a window carry the `graphics` label.
+- **Label fix.** `kinetra_add_doctest` lost every label after the first: doctest forwards `PROPERTIES` as a flat list, so `LABELS graphics` became label `unit` plus a bogus property, and graphics cases would have run in the `ci` preset without a display. Properties are now set in a CTest include after discovery; the helper also takes `TIMEOUT`.
+
 ## Affected areas
 
 **This branch:** this document, [ADR 0013](../decisions/0013-settings-overlay-in-kinetra.md), [ADR 0014](../decisions/0014-session-navigation-requests.md), the [design index](README.md#index) and the [decision index](../README.md#decisions).
@@ -269,42 +279,40 @@ The implementing branch ends at the Full level in Kinetra, with the graphics con
 
 ## Review
 
-This branch had a self-review of the diff. Every `path:line` in [Problem](#problem) was checked against the surveyed commits, and the layout table was checked against `labs/settings.h`. Findings:
-- The `factory_text` call-site count was 11; it is 10 calls plus the definition. Corrected.
-- The test plan referred to 11 settings cases, which exist only on Lab's unmerged phase 2 branch. Now stated.
+The design branch had a self-review; see its pull request. Implementation, reviewed with `/code-review` (high) on `origin/main...feat/overlay-glyphs-navigation`:
 
-The implementation branch records its own findings here.
+| Finding | Resolution |
+| --- | --- |
+| Zoom limits from an application reach `std::clamp` unvalidated; minimum > maximum is undefined behavior | Fixed: `validate(ZoomLimits)` in `zoom()` and the overlay, with a test |
+| The overlay's zoom buttons duplicate `zoom()` without saying why | Fixed: a comment explains the bit-identical multiply/divide |
+| The menu is drawn in the frame of a menu request without `menu.update()`, so hover is one frame stale | Kept: it is the designed "menu in the same frame"; the next frame updates it |
+| A case name with `;` would split in the label include | Kept: no name has one; noted here |
+| `layout()` allocates on every query | Kept: a few small allocations per frame |
+
+The self-review also caught the label bug above, by running the graphics preset.
 
 ## Verification
 
-This branch is docs-only:
-- `python3 tools/check_docs.py`: all links resolve in 49 Markdown files.
-- The Mermaid diagrams were reviewed by hand; no Mermaid renderer is installed locally.
+Design branch: `python3 tools/check_docs.py`. Implementation branch, on `d9601f5`:
 
-The implementation branch records its commands and results here.
+| Command | Result |
+| --- | --- |
+| `cmake --workflow --preset ci` (warnings as errors, graphics compiled, not run) | 215/215 passed, no warnings |
+| `cmake --workflow --preset headless` | 196/196 passed |
+| `cmake --build --preset dev` + `ctest --preset dev` | 215/215 passed, no warnings |
+| `cmake --preset graphics`, build, `ctest --preset graphics -L graphics` (SDL offscreen, software Mesa, WSL2) | 7/8 passed. `kinetra_engine_graphics:input drawing and resizing reach SDL and OpenGL` fails at the injected mouse-input check, the known WSL2 failure in [testing](../testing.md#open-points). All session and launcher cases pass |
+| External consumer with `CONSUMER_GRAPHICS=ON` | Builds and returns 0 |
+| `clang-format --dry-run --Werror` on first-party sources | Clean |
+| `python3 tools/check_docs.py` | All links resolve |
+| Lab Full level against this commit | On the Lab phase 3 branch; see its pull request |
+
+Not run: a desktop graphics run outside WSL2.
 
 ## Pull request
 
-**Title:** `docs(design): plan the settings overlay, glyphs and session navigation`
+Design branch: `docs(design): plan the settings overlay, glyphs and session navigation` (merged).
 
-**Summary.** The Kinetra design for Kinetra-Lab's quality roadmap phase 3, steps 3, 4 and 6, with two ADRs. No code changes. The decisions were settled with the user, so the code can start as soon as phase 2 is merged.
-
-**Changes.**
-- **Design document:** `docs/design/2026-11-18-overlay-glyphs-navigation.md`. It covers the problem with evidence, the decisions, the API sketches, the layout rules, the affected areas and the test plan.
-- **ADR 0013:** the settings overlay moves into Kinetra as a row model.
-- **ADR 0014:** `SessionRequest` replaces `exit_requested()`, and the launcher bindings become configurable.
-- **Indexes:** the design and decision indexes.
-
-**Verification.** `python3 tools/check_docs.py`.
-
-**Review notes.**
-- `SessionRequest` breaks the API: `exit_requested()` is removed.
-- `run_launcher` will honor `close_on_escape()` during a run. Today it ignores that flag.
-- The overlay layout table must reproduce today's Lab coordinates.
-
-**Dependencies and merge order.** Independent of phase 2 (Kinetra `build/tooling-ci`). Both branches add a row to the design index, at different positions, so they merge cleanly in either order. The implementation follows after phase 2.
-
-**Follow-up.** The Kinetra implementation branch, then Lab phase 3 steps 2–7.
+Implementation: `feat: settings overlay, session requests and glyphs for Lab phase 3`. The description is in the pull request; it follows the sections of this document.
 
 ## Open points
 

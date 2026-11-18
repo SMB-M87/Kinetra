@@ -115,7 +115,7 @@ Avoid Singleton, global registries and deep inheritance; prefer composition and 
 - Target-based only: `target_include_directories`, `target_link_libraries` and `target_compile_features(<t> PUBLIC cxx_std_20)` per target. No global `include_directories` or flags; option combinations belong in [CMakePresets.json](../CMakePresets.json).
 - `PRIVATE` by default; `PUBLIC` only when consumers need it.
 - A target is a linking boundary: headless logic, presentation, executable. Do not create one per directory.
-- Tests register through `kinetra_add_doctest` (new tests) or `kinetra_add_test` (plain suites) from [KinetraTesting.cmake](../cmake/KinetraTesting.cmake), under a name that starts with the module (`kinetra_<module>…`), so `ctest -R` can select them.
+- Tests register through `kinetra_add_doctest` from [KinetraTesting.cmake](../cmake/KinetraTesting.cmake), under a name that starts with the module (`kinetra_<module>…`), so `ctest -R` can select them.
 
 ## Open points
 

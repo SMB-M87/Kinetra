@@ -16,7 +16,7 @@
 
 ```mermaid
 flowchart TD
-    Construct[Runtime constructor on owning thread] --> SDL[Initialize SDL and resizable window]
+    Construct[Runtime constructor on the main thread] --> SDL[Initialize SDL and resizable window]
     SDL --> GL[Create OpenGL 3.3 context and load GLAD]
     GL --> GPU[Compile shaders and create batch buffers]
     GPU --> Poll[poll events and refresh input / logical viewport]
@@ -33,7 +33,7 @@ flowchart TD
     Destroy --> Release[Release GPU resources, context, window and SDL]
 ```
 
-Only one Runtime can exist at a time. Construction, calls and destruction belong on its owning thread. Cleanup also handles failed initialization.
+Only one Runtime can exist at a time. Construction, calls and destruction belong on the main thread. Cleanup also handles failed initialization.
 
 ## Input and drawing
 
@@ -50,9 +50,9 @@ Application renderers cull scene content before submitting primitives. `polygon`
 
 ## Sessions and timing
 
-[Session](../../include/kinetra/session.h) provides `advance`, `render` and `title`. `run_session(runtime, session, frame_limit)` handles wall-clock elapsed time, event polling, updates, rendering and shutdown for a directly launched application. Zero frame limit means unlimited; negative limits throw.
+A [Session](../../include/kinetra/session.h) provides `advance`, `render`, `title`, `request()` and `close_on_escape()`. `run_session(runtime, session, frame_limit)` measures wall-clock elapsed time, polls events, advances, and renders unless the session made a request; a `menu` or `exit` request ends the run. Zero frame limit means unlimited; negative limits throw. Hosting several applications, the request table and the launcher loop are in [launcher, sessions and overlays](launcher-overlays.md).
 
-Kinetra’s optional [SessionHost](launcher-overlays.md) manages registered factories and transitions. `run_launcher` owns the standard menu/session event loop; a custom launcher can drive the same host directly. Applications own pause/resume and `FixedClock` instances. FixedClock validates its step and caps backlog; excess stall time is dropped. Applications select their own update rates.
+Applications own pause and resume and their `FixedClock` instances, so each selects its own update rate. `FixedClock` validates its step and caps the backlog; time beyond the cap is dropped, which keeps input responsive after a stall. `RateCounter` turns counted frames or updates into a per-second rate for statistics displays.
 
 ## External consumers
 
@@ -74,7 +74,5 @@ Applications and the bundled launcher executable are built in [Kinetra-Lab](http
 [Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [External consumer fixture](../../tests/consumer/CMakeLists.txt) compile public simulation/runtime interfaces without any Lab source.
 
 No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
-
-Sessions can override `close_on_escape()` and `exit_requested()` to provide an application-owned exit action. `run_session` honors both policies.
 
 Input exposes independent `right_clicked` and `right_mouse_down` fields. The click edge clears on each poll; held buttons clear on release or focus loss.
