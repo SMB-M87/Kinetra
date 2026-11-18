@@ -110,13 +110,14 @@ The presets are the only place where option combinations live. CI uses the same 
   - adding a headless configuration;
   - updating checkout to the current major (`actions/checkout@v7`);
   - keeping the workflow name `CI` and the job id `checks` stable for branch protection.
+- **Warning helper scope.** Integrating Lab showed that the warning flags lived in a directory-scoped variable, which is empty in an embedding project. The flags now live inside `kinetra_target_warnings`, and Lab reports its 119 warnings as measured.
 - **Graphics test.** `kinetra_engine_graphics` fails locally with "Mouse input lost". The unchanged code fails the same way, in a separate worktree, with both SDL offscreen and the WSLg display. This is pre-existing in this WSL2 environment, not a regression; see *Open points*.
 
 ## Verification
 
 | Command | Result |
 | --- | --- |
-| `cmake --workflow --preset ci` | passed: 0 warnings with `-Werror`, 20/20 non-graphics tests |
+| `cmake --workflow --preset ci` | passed: 0 warnings with `-Werror`, 21/21 non-graphics tests |
 | `cmake --workflow --preset headless` | passed: 20/20 |
 | `cmake --workflow --preset asan` | passed: 20/20, no sanitizer reports |
 | `cmake --workflow --preset dev` | passed: 21/21 (includes the launcher test) |
