@@ -1,6 +1,6 @@
 # Development and verification
 
-Core builds need no Kinetra-Lab checkout. Application builds and tests belong to Lab.
+Build options and the commands for core, graphics and external-consumer checks. Core builds need no Kinetra-Lab checkout; application builds and tests belong to Lab. Which checks a change needs is decided by its [verification level](testing.md#verification-levels).
 
 ## Table of contents
 

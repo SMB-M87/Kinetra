@@ -15,7 +15,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 
 [Documentation index](docs/README.md)
 
-Directory guides: [docs](docs/README.md), [include](include/README.md), [src](src/README.md), [tests](tests/README.md).
+Directory guides: [docs](docs/README.md), [include](include/README.md), [src](src/README.md), [tests](tests/README.md), [tools](tools/README.md).
 
 ## Features
 
@@ -80,7 +80,9 @@ This local source override does not change Lab's recorded dependency. Before pub
 
 Directory guides: [public headers](include/README.md), [implementation](src/README.md) and [tests](tests/README.md).
 
-Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), or [runtime contract](docs/engine/runtime.md). [AGENTS.md](AGENTS.md) records engineering rules.
+Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), or [runtime contract](docs/engine/runtime.md).
+
+Contributors follow the [development workflow](docs/workflow.md): every change gets a [design document](docs/design/README.md), tests, a review and documentation, and is verified at the [level its impact requires](docs/testing.md#verification-levels). [AGENTS.md](AGENTS.md) records the rules for agents and developers; [conventions](docs/conventions.md) and the [documentation guide](docs/documentation.md) give the details.
 
 ## Platform support
 

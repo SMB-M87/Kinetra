@@ -10,7 +10,7 @@ Start with the architecture map, then follow the subsystem contract relevant to 
 
 [Parent guide](../README.md)
 
-Directory guides: [decisions](decisions/README.md), [engine](engine/README.md).
+Directory guides: [decisions](decisions/README.md), [design](design/README.md), [engine](engine/README.md).
 
 ## Design and workflows
 
@@ -21,12 +21,18 @@ Directory guides: [decisions](decisions/README.md), [engine](engine/README.md).
 | Where are subsystem contracts indexed? | [Engine contracts](engine/README.md) |
 | How are historical decisions organized? | [Decision guide](decisions/README.md) |
 | What depends on what? Who owns objects? | [Architecture](architecture.md) |
-| How do I build, test and validate a change? | [Development](development.md) |
+| How does a change move from idea to commit? | [Workflow](workflow.md) |
+| How is C++ and CMake written here? | [Conventions](conventions.md) |
+| What do I test, and which checks does a change need? | [Testing](testing.md) |
+| How do I build and run graphics or consumer checks? | [Development](development.md) |
+| How are READMEs, diagrams and `///` comments written? | [Documentation guide](documentation.md) |
+| What is being changed now, and why? | [Design documents](design/README.md) |
 | What are the geometry and physics contracts? | [Math and physics](engine/math-physics.md) |
 | How do pathfinding and steering cooperate? | [Navigation](engine/navigation.md) |
 | How do window/input/rendering and sessions work? | [Runtime](engine/runtime.md) |
 | How do I register applications and overlays? | [Launcher and overlays](engine/launcher-overlays.md) |
-| What rules must agents follow? | [AGENTS](../AGENTS.md) |
+| What rules must agents follow? | [AGENTS](../AGENTS.md) and [agent skills](../.agents/skills/README.md) |
+| Which development scripts exist? | [Tools](../tools/README.md) |
 
 ## Applications
 
