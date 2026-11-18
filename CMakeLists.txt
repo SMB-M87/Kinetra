@@ -59,9 +59,10 @@ if(BUILD_TESTING)
         SOURCES tests/traffic_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_avoidance_tests PREFIX kinetra_avoidance
         SOURCES tests/avoidance_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_moving_contact_tests PREFIX kinetra_moving_contacts
+        SOURCES tests/moving_contact_tests.cpp LIBRARIES Kinetra::Simulation)
     # Plain main()-style suites; converted to doctest in roadmap phase 3.
     foreach(suite IN ITEMS
-            "kinetra_moving_contact_tests:kinetra_moving_contacts:moving_contact_tests"
             "kinetra_translation_sweep_tests:kinetra_translation_sweeps:translation_sweep_tests"
             "kinetra_sweep_tests:kinetra_sweeps:sweep_tests"
             "kinetra_polygon_tests:kinetra_polygons:polygon_tests"
