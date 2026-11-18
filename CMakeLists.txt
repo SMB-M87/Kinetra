@@ -53,9 +53,9 @@ if(KINETRA_BUILD_RUNTIME)
     target_compile_features(kinetra_launcher PUBLIC cxx_std_20)
     target_link_libraries(kinetra_launcher PUBLIC Kinetra::Runtime)
     if(BUILD_TESTING)
-        kinetra_add_test(kinetra_launcher_tests NAME kinetra_launcher
+        # Window-free: these suites link the runtime libraries but never open a window.
+        kinetra_add_doctest(kinetra_launcher_tests PREFIX kinetra_launcher
             SOURCES tests/launcher_tests.cpp LIBRARIES Kinetra::Launcher)
-        # Window-free: links the runtime library but never opens a window.
         kinetra_add_doctest(kinetra_settings_view_tests PREFIX kinetra_settings_view
             SOURCES tests/settings_view_tests.cpp LIBRARIES Kinetra::Runtime)
     endif()
@@ -87,8 +87,8 @@ if(BUILD_TESTING)
     endforeach()
 endif()
 if(BUILD_TESTING AND KINETRA_BUILD_RUNTIME AND KINETRA_TEST_GRAPHICS)
-    kinetra_add_test(kinetra_engine_runtime_tests NAME kinetra_engine_graphics
-        SOURCES tests/runtime_tests.cpp LIBRARIES Kinetra::Runtime SDL2::SDL2 OpenGL::GL
+    kinetra_add_doctest(kinetra_engine_runtime_tests PREFIX kinetra_engine_graphics
+        SOURCES tests/runtime_tests.cpp LIBRARIES Kinetra::Launcher SDL2::SDL2 OpenGL::GL
         LABELS graphics)
 endif()
 
