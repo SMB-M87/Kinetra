@@ -52,7 +52,7 @@ Settled with the user in a grilling session on 2026-11-18. ⚑ marks answers tha
 | Rule layers | Global instructions → Kinetra → Lab | Global covers hobby projects in general; repositories add to it |
 | Language | English docs and comments; Dutch conversation | Public repositories; matches existing docs |
 | Verification | Docs / Targeted / Full by impact | No builds for README edits, and no unverified code |
-| Git | Agents commit freely on feature branches; no push, no pull requests ⚑ | The user publishes; local commits keep agent work reviewable |
+| Git | Agents commit on feature branches, push them and open pull requests; never merge ⚑ (first decided as no push or PR, then changed by the user on the same day) | Work is reviewable on GitHub with its reasons attached; merging stays with the user |
 | Cycle | Always full: design document, tests, review, docs ⚑ | The user wants a traceable software cycle |
 | Comments | `///` contracts on public API, *why*-comments in `.cpp` | Understandable code, clangd hover, Doxygen-ready |
 | READMEs | One README with content per module; subdirectories only with own content | Insight instead of navigation-only pages |
@@ -113,17 +113,14 @@ Documentation only, so the **Docs** level applies:
 
 **Title:** `docs: define development cycle, verification levels and agent skills`
 
-**Description:**
+The description is published with the pull request. It covers:
+- the rewritten `AGENTS.md`;
+- the new workflow, conventions, testing and documentation pages;
+- design documents;
+- the six skills;
+- the docs checker and the ADR 0011 link fix.
 
-> Replaces the process-only agent rules with a complete development cycle shared by Kinetra and Kinetra-Lab.
->
-> - `AGENTS.md` rewritten: routing table, cycle, verification by impact (Docs / Targeted / Full), git rules, `///` code-documentation standard, module READMEs with content, and a reason for each rule.
-> - New pages: workflow, C++/CMake conventions, testing and verification levels, documentation guide, and design documents (`docs/design/`).
-> - Repository skills in `.agents/skills/` (`feature`, `grilling`, `verify`, `doc-module`, `refactor`, `adr`), exposed to Claude Code through `.claude/skills`.
-> - `tools/check_docs.py` checks Markdown links and anchors (the Docs verification level).
-> - Fixes a dead link in ADR 0011.
->
-> Documentation only; verified with `python3 tools/check_docs.py`.
+Kinetra-Lab's pull request depends on this one, so it must merge first, with a merge commit.
 
 ## Open points
 

@@ -1,6 +1,6 @@
 ---
 name: feature
-description: Run a change in Kinetra or Kinetra-Lab through the full development cycle (understand, design document, decisions, test plan, implementation, verification, review, documentation, commits, hand-over). Use when starting any code or documentation change that will be committed, or when the user says /feature, "nieuwe feature", "pak dit op", "fix deze bug".
+description: Run a change in Kinetra or Kinetra-Lab through the full development cycle (understand, design document, decisions, test plan, implementation, verification, review, documentation, commits, push and pull request, hand-over). Use when starting any code or documentation change that will be committed, or when the user says /feature, "nieuwe feature", "pak dit op", "fix deze bug".
 argument-hint: "<topic or problem description>"
 ---
 
@@ -48,12 +48,23 @@ Review `git diff main...HEAD` with `/code-review` (Claude Code) or the global `c
 ## 8. Document
 
 - Update the module README (with the `doc-module` skill if it is thin), contract pages, diagrams and indexes.
-- Set the design document's status to `implemented`, and fill **Pull request** with a title and description the user can paste.
+- Set the design document's status to `implemented`, and fill **Pull request** with the title and description.
 - Run the docs check, then make the final commit.
 
-## 9. Hand over (in Dutch)
+## 9. Push and open pull requests
 
-- What changed and why, in a few lines; the branch and its commits per repository.
+Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull-request):
+
+1. Check that `git status --short` shows no stray files. Run a final `git log --oneline main..HEAD` and make sure every commit belongs to this change.
+2. Push each branch: Kinetra before Lab. Run `git push -u origin <branch>`; if SSH is unavailable, use the HTTPS fallback from `AGENTS.md`.
+3. Write the description from the design document's **Pull request** section to a file in the session scratchpad. It covers Summary, Changes, Design, Verification, Review notes, Dependencies and merge order, and Follow-up.
+4. Run `gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>`. For a Lab pull request with a pointer change, link the Kinetra pull request and state that it merges first, with a merge commit.
+5. Run `gh pr view <number> --json url,mergeable` and report conflicts; never merge.
+
+## 10. Hand over (in Dutch)
+
+- What changed and why, in a few lines.
+- The pull-request links, and the commits per repository.
 - Verification commands and results, and anything not run, with the reason.
 - Remaining risks and open points.
-- What the user must push, in order: Kinetra before Lab when the pointer changed. Agents never push or open pull requests.
+- The merge order (Kinetra before Lab).

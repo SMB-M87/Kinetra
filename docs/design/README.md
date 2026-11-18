@@ -66,7 +66,8 @@ Findings and how they were resolved.
 Commands and results.
 
 ## Pull request
-Title and description, ready to paste.
+Title and description used for `gh pr create`: Summary, Changes, Design,
+Verification, Review notes, Dependencies and merge order, Follow-up.
 
 ## Open points
 ```

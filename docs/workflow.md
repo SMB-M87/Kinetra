@@ -12,7 +12,7 @@ How a change moves from idea to commit in Kinetra and Kinetra-Lab. Every change 
 - [5. Verify](#5-verify)
 - [6. Review](#6-review)
 - [7. Document](#7-document)
-- [8. Commit and hand over](#8-commit-and-hand-over)
+- [8. Commit, push and open a pull request](#8-commit-push-and-open-a-pull-request)
 - [Branches and commits](#branches-and-commits)
 - [Changes across Kinetra and Lab](#changes-across-kinetra-and-lab)
 - [Open points](#open-points)
@@ -33,10 +33,11 @@ flowchart LR
     V --> R[Review the diff]
     R -->|findings| I
     R --> Doc[Update docs and comments]
-    Doc --> C[Final commit and hand-over]
+    Doc --> C[Final commit, push, pull request]
+    C --> M[User reviews and merges]
 ```
 
-The design document is the backbone. It is written first, it collects the decisions, test plan and review outcome, and it ends with the pull-request text for the user. The `feature` skill runs the whole loop.
+The design document is the backbone. It is written first, it collects the decisions, test plan and review outcome, and it ends with the pull-request description. The `feature` skill runs the whole loop.
 
 ## 1. Understand
 
@@ -93,11 +94,27 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 - Add or update index entries: the design index and, for an ADR, the decision index.
 - Run the docs check.
 
-## 8. Commit and hand over
+## 8. Commit, push and open a pull request
 
 - The final commit leaves the branch consistent: code, tests, docs and design document agree.
-- The design document's *Pull request* section holds a ready-to-paste title and description.
-- Report to the user in Dutch: what changed, the commits, the verification commands and results, remaining risks, and what to push in which order.
+- The design document's *Pull request* section holds the title and description. The description has these parts:
+  - **Summary**: what changed and why, in two or three lines.
+  - **Changes**: grouped by area.
+  - **Design**: a link to the design document and any ADR.
+  - **Verification**: commands and results, and what was not run.
+  - **Review notes**: what deserves the reviewer's attention.
+  - **Dependencies and merge order**.
+  - **Follow-up**.
+- Push the branch (`git push -u origin <branch>`). If SSH is unavailable, use the HTTPS fallback in [AGENTS.md](../AGENTS.md#git).
+- Open the pull request against `main`:
+
+  ```sh
+  gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>
+  ```
+
+  Write the body to a scratch file, never into the repository.
+- Check the result with `gh pr view <number> --json mergeable,url`, and report a conflict instead of resolving it on `main`.
+- Report to the user in Dutch: what changed, the commits and pull-request links, the verification commands and results, remaining risks, and the merge order. Never merge yourself.
 
 ## Branches and commits
 
@@ -108,7 +125,7 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 | Commit body | Optional: why, and the observable effect; no file lists | |
 | Types | `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`, `perf` | |
 
-Agents commit only on the feature branch and never push, open pull requests or merge; see [AGENTS.md](../AGENTS.md#git).
+Agents commit only on the feature branch. They push that branch and open a pull request, but never push to `main` or merge; see [AGENTS.md](../AGENTS.md#git).
 
 ## Changes across Kinetra and Lab
 
@@ -116,18 +133,20 @@ Agents commit only on the feature branch and never push, open pull requests or m
 sequenceDiagram
     participant K as Kinetra branch
     participant L as Lab branch
+    participant G as GitHub
     participant U as User
     K->>K: design, implement, verify, commit engine change
+    K->>G: push branch, open Kinetra pull request
     L->>L: design (links the Kinetra design), adapt applications
     L->>L: commit submodule pointer to the Kinetra commit
     L->>L: full Lab verification against that pointer
-    U->>K: push and merge Kinetra first
-    U->>L: update pointer to merged commit if needed, then push Lab
+    L->>G: push branch, open Lab pull request (links Kinetra PR)
+    U->>G: review and merge Kinetra first, then Lab
 ```
 
-- Reusable mechanisms change in Kinetra; application policy changes in Lab. When both change, each repository gets its own branch and design document. The Lab design document links to the Kinetra one.
-- A Lab commit that points at an unpublished Kinetra commit cannot be built by others. The hand-over must say that Kinetra is pushed first.
-- If Kinetra is merged with a squash, the pointer must be moved to the merged commit before Lab is published.
+- Reusable mechanisms change in Kinetra; application policy changes in Lab. When both change, each repository gets its own branch, design document and pull request. The Lab design document and pull request link to the Kinetra ones.
+- Push the Kinetra branch before the Lab branch, so the pointer is fetchable for anyone who checks out the Lab pull request.
+- Merge the Kinetra pull request with a merge commit, not a squash, so Lab's pointer stays reachable after the branch is deleted. After a squash, the pointer must first be moved to the merged commit in a follow-up Lab commit.
 
 ## Open points
 

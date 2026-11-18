@@ -14,7 +14,7 @@ Procedures that agents (Claude Code, Codex) load on demand. Each skill is a dire
 
 | Skill | Use | Invoked |
 | --- | --- | --- |
-| [feature](feature/SKILL.md) | Run a change through the full development cycle | At the start of every change, or `/feature` |
+| [feature](feature/SKILL.md) | Run a change through the full development cycle, up to an open pull request | At the start of every change, or `/feature` |
 | [grilling](grilling/SKILL.md) | Settle open decisions with the user in rounds of forms | On request, or from `feature` |
 | [verify](verify/SKILL.md) | Choose and run the verification level for the diff | After changes, before committing |
 | [doc-module](doc-module/SKILL.md) | Write a module README and `///` header summaries | On request, or from `feature` |
