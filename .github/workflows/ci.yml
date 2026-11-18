@@ -39,6 +39,9 @@ jobs:
 
       - uses: actions/checkout@v7
 
+      - name: Trust the workspace in the container
+        run: git config --global --add safe.directory '*'
+
       - name: Format check (clang-format)
         run: |
           git ls-files -- '*.h' '*.cpp' ':(exclude)include/glad/**' ':(exclude)include/KHR/**' ':(exclude)third_party/**' \
