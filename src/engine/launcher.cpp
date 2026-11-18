@@ -180,7 +180,7 @@ void SessionHost::advance(double elapsed, const Input &input, Camera2D &camera) 
         session_->advance(elapsed, input, camera);
 }
 int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applications,
-                 std::optional<LaunchSelection> initial, int frame_limit) {
+                 std::optional<LaunchSelection> initial, int frame_limit, LauncherBindings bindings) {
     if (frame_limit < 0)
         throw std::invalid_argument("Negative frame limit");
     SessionHost host(std::move(applications));
@@ -190,12 +190,12 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
     using Clock = std::chrono::steady_clock;
     auto previous = Clock::now(), last_title = previous;
     int frames = 0;
-    while (runtime.poll()) {
+    while (runtime.poll(host.session() ? host.session()->close_on_escape() : bindings.escape_closes_menu)) {
         const auto now = Clock::now();
         const double elapsed = std::chrono::duration<double>(now - previous).count();
         previous = now;
         bool switched = false;
-        if (host.session() && runtime.input().hit(Key::m)) {
+        if (host.session() && bindings.menu_key && runtime.input().hit(*bindings.menu_key)) {
             host.return_to_menu();
             switched = true;
         } else if (!host.session()) {
@@ -211,8 +211,18 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
             previous = Clock::now();
         if (host.session()) {
             host.advance(elapsed, runtime.input(), runtime.camera);
+            const SessionRequest request = host.session()->request();
+            if (request == SessionRequest::exit)
+                break;
+            if (request == SessionRequest::menu) {
+                // Destroy before the menu draws, so a session never coexists with the next one.
+                host.return_to_menu();
+                switched = true;
+            }
+        }
+        if (host.session())
             host.session()->render(runtime);
-        } else
+        else
             menu.draw(runtime);
         if (switched || now - last_title > std::chrono::milliseconds(500)) {
             runtime.title(host.session() ? host.session()->title() : "Kinetra | Start menu");

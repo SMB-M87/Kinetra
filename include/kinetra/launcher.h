@@ -71,8 +71,23 @@ class SessionHost {
     std::unique_ptr<Session> session_;
     bool fresh_{};
 };
-/// Standard menu/session event loop. M returns to the menu; factories own application
-/// configuration and bindings. Zero frame limit means unlimited; returns presented frames.
+/// Keys the standard launcher loop handles itself; sessions receive all other input.
+struct LauncherBindings {
+    /// Returns from a running session to the menu. std::nullopt leaves leaving to
+    /// SessionRequest::menu alone.
+    std::optional<Key> menu_key = Key::m;
+    /// Whether Escape closes the window while the menu shows. During a run,
+    /// Session::close_on_escape() decides instead.
+    bool escape_closes_menu = true;
+};
+/// Standard menu/session event loop.
+///
+/// After every advance it reads Session::request(): `menu` destroys the session and draws
+/// the menu in the same frame, `exit` ends the loop without rendering. `bindings` adds the
+/// menu key and the Escape policy. Factories own application configuration. Zero frame
+/// limit means unlimited; returns the frames presented. Throws std::invalid_argument for a
+/// negative frame limit; factory exceptions propagate.
 int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applications,
-                 std::optional<LaunchSelection> initial = std::nullopt, int frame_limit = 0);
+                 std::optional<LaunchSelection> initial = std::nullopt, int frame_limit = 0,
+                 LauncherBindings bindings = {});
 } // namespace kinetra
