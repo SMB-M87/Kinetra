@@ -78,4 +78,4 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 | --- | --- | --- |
 | 2026-11-18 | [Tooling and CI](2026-11-18-tooling-and-ci.md) | implemented |
 | 2026-11-18 | [Development process and agent rules](2026-11-18-development-process.md) | implemented |
-| 2026-11-18 | [Settings overlay, glyphs and session navigation](2026-11-18-overlay-glyphs-navigation.md): Lab roadmap phase 3, engine side | accepted |
+| 2026-11-18 | [Settings overlay, glyphs and session navigation](2026-11-18-overlay-glyphs-navigation.md): Lab roadmap phase 3, engine side | implemented |
