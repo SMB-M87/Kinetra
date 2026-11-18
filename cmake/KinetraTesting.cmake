@@ -10,20 +10,34 @@ include_guard(GLOBAL)
 include("${CMAKE_CURRENT_LIST_DIR}/../third_party/doctest/cmake/doctest.cmake")
 
 # kinetra_add_doctest(<executable> PREFIX <ctest-prefix> SOURCES <files...>
-#                     [LIBRARIES <targets...>] [LABELS <labels...>])
+#                     [LIBRARIES <targets...>] [LABELS <labels...>] [TIMEOUT <seconds>])
 #   Builds a doctest executable with a shared main and registers each test case as
 #   "<ctest-prefix>:<case name>", so `ctest -R '^<ctest-prefix>'` selects the suite.
+#   Every case gets the label `unit` plus LABELS, and TIMEOUT if given.
 function(kinetra_add_doctest executable)
-    cmake_parse_arguments(arg "" "PREFIX" "SOURCES;LIBRARIES;LABELS" ${ARGN})
+    cmake_parse_arguments(arg "" "PREFIX;TIMEOUT" "SOURCES;LIBRARIES;LABELS" ${ARGN})
     if(NOT arg_PREFIX OR NOT arg_SOURCES)
         message(FATAL_ERROR "kinetra_add_doctest(${executable}) needs PREFIX and SOURCES")
     endif()
     add_executable(${executable} ${arg_SOURCES})
     target_link_libraries(${executable} PRIVATE kinetra_doctest_main ${arg_LIBRARIES})
-    set(labels unit ${arg_LABELS})
     doctest_discover_tests(${executable}
         TEST_PREFIX "${arg_PREFIX}:"
-        PROPERTIES LABELS "${labels}")
+        TEST_LIST ${executable}_TESTS)
+    # doctest forwards PROPERTIES as a flat argument list, which splits a property with
+    # several values (two labels become a label and a bogus property). Set the properties
+    # in a CTest include that runs after discovery, on the list of discovered cases.
+    set(labels unit ${arg_LABELS})
+    set(properties "LABELS \"${labels}\"")
+    if(arg_TIMEOUT)
+        string(APPEND properties " TIMEOUT ${arg_TIMEOUT}")
+    endif()
+    set(properties_file "${CMAKE_CURRENT_BINARY_DIR}/${executable}_properties.cmake")
+    file(WRITE "${properties_file}"
+        "if(DEFINED ${executable}_TESTS)\n"
+        "  set_tests_properties(\${${executable}_TESTS} PROPERTIES ${properties})\n"
+        "endif()\n")
+    set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES "${properties_file}")
 endfunction()
 
 # kinetra_add_test(<executable> NAME <ctest-name> SOURCES <files...>
