@@ -33,6 +33,7 @@ Directory guides: [decisions](decisions/README.md), [design](design/README.md), 
 | How do window/input/rendering and sessions work? | [Runtime](engine/runtime.md) |
 | How do I register applications and overlays? | [Launcher and overlays](engine/launcher-overlays.md) |
 | What rules must agents follow? | [AGENTS](../AGENTS.md) and [agent skills](../.agents/skills/README.md) |
+| Which skill fits my situation, and what will it do? | [Skills overview](../.agents/skills/README.md) and each skill's README ([template](documentation.md#skill-readme-template)) |
 | Which development scripts exist? | [Tools](../tools/README.md) |
 
 ## Applications

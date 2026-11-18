@@ -6,6 +6,7 @@ How Kinetra and Kinetra-Lab are documented. Documentation exists to give insight
 
 - [What goes where](#what-goes-where)
 - [Module README template](#module-readme-template)
+- [Skill README template](#skill-readme-template)
 - [Code comments](#code-comments)
 - [Diagrams](#diagrams)
 - [Page layout](#page-layout)
@@ -26,6 +27,7 @@ How Kinetra and Kinetra-Lab are documented. Documentation exists to give insight
 | What is the contract of an engine subsystem? | `docs/engine/*.md` |
 | Why was a boundary chosen? | ADR in `docs/decisions/` |
 | What was changed in a branch, and why? | Design document in `docs/design/` |
+| Which skill fits my situation, and what will it do? | The skill's `README.md` ([template](#skill-readme-template)); all skills in the [skills overview](../.agents/skills/README.md) |
 | How do we work? | `AGENTS.md`, [workflow](workflow.md), [conventions](conventions.md), [testing](testing.md) and this page |
 
 Modules are engine subsystems (simulation, runtime, launcher), Lab applications (Demo, Dotio, i4sim), the bundled launcher and test suites. A subdirectory such as `include/`, `src/` or `tests/` gets its own README only when it has something to say beyond its parent, for example a non-obvious file layout or a contract of its own. Third-party directories keep a short provenance README.
@@ -71,6 +73,43 @@ Known gaps, questions and planned work.
 ```
 
 Sections without content are left out. A module README that only lists files and links is not finished.
+
+## Skill README template
+
+Each skill directory in `.agents/skills/` holds two files for two readers:
+
+| File | Reader | Content |
+| --- | --- | --- |
+| `SKILL.md` | The agent that runs the skill | Frontmatter for discovery, then the steps to carry out |
+| `README.md` | A person choosing a skill or reviewing its work | What the skill is for, use cases, limits and how it fits the cycle |
+
+The README explains the skill; it does not copy the steps, because `SKILL.md` stays the one authoritative procedure. The [skills overview](../.agents/skills/README.md) lists every skill in one line and links its README.
+
+```markdown
+# <skill>
+
+<One or two sentences: what the skill does, and what you have when it finishes.>
+
+## Table of contents
+<local heading links>
+
+[Skills overview](../README.md) · [Instructions for agents](SKILL.md) · [Project overview](../../../README.md) · [Documentation index](../../../docs/README.md)
+
+## Use cases
+| Situation | Example request | Result |
+Three to five concrete situations from Kinetra or Kinetra-Lab, each with the
+words that start the skill and what you get back: files, commits, questions.
+
+## When not to use it
+Situations that look similar but belong to another skill, or need no skill.
+
+## How it works
+The main steps as a short list or flowchart: what the skill reads, what it
+changes, what it asks the user, and what it never does (merge, push to main).
+
+## Related skills
+Which skills it calls, and which skills call it.
+```
 
 ## Code comments
 
