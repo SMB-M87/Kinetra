@@ -1,12 +1,15 @@
 # Agent skills
 
-Procedures that agents (Claude Code, Codex) load on demand. Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agentskills.io) format. Codex reads `.agents/skills/` and Claude Code reads `.claude/skills/`, which is a symlink to this directory. Kinetra-Lab links to the same directory, so both repositories use one set of skills.
+Procedures that agents (Claude Code, Codex) load on demand. This page is the overview of all repository skills. Codex reads `.agents/skills/` and Claude Code reads `.claude/skills/`, which is a symlink to this directory. Kinetra-Lab links to the same directory, so both repositories use one set of skills.
+
+Each skill is a directory with two files: a `SKILL.md` in the [Agent Skills](https://agentskills.io) format, which the agent follows, and a `README.md` that explains the skill to people with use cases ([template](../../docs/documentation.md#skill-readme-template)). The README is not part of the agent's instructions.
 
 ## Table of contents
 
 - [Skills](#skills)
 - [How they fit the cycle](#how-they-fit-the-cycle)
 - [Maintenance](#maintenance)
+- [Open points](#open-points)
 
 [Agent rules](../../AGENTS.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
@@ -46,3 +49,8 @@ flowchart LR
 - Skills follow the rules in [AGENTS.md](../../AGENTS.md) and link to the docs pages instead of copying them, so a rule changes in one place.
 - Skill names must not collide with the global skills or with Claude Code built-ins (`code-review`, `simplify`, `init`, …).
 - A skill that reaches outside the repository (push, PR, network) needs an explicit rule in AGENTS.md first.
+- A change that adds or changes a skill updates its `README.md` and the table on this page in the same commit.
+
+## Open points
+
+- The skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch, as planned in the Kinetra-Lab quality roadmap (documentation cleanup).
