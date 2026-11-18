@@ -54,6 +54,8 @@ ADRs record historical context, including applications formerly in this reposito
 | [0009](decisions/0009-core-and-lab.md) | Core/Lab split and source integration |
 | [0010](decisions/0010-generic-launcher-in-core.md) | Generic launcher ownership in Kinetra |
 | [0008](decisions/0008-public-engine-and-consumers.md) | Public navigation, optional launcher and external consumers |
+| [0013](decisions/0013-settings-overlay-in-kinetra.md) | Settings overlay in Kinetra, built from application rows (accepted, not yet implemented) |
+| [0014](decisions/0014-session-navigation-requests.md) | Session navigation requests and configurable launcher bindings; amends 0010 (accepted, not yet implemented) |
 
 Weighted navigation and priority steering ownership: [ADR 0011](decisions/0011-weighted-navigation-and-priority-steering.md).
 
