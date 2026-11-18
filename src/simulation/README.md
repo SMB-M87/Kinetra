@@ -13,7 +13,7 @@ These sources form `Kinetra::Simulation` and depend only on the standard library
 
 | File | Responsibility |
 | --- | --- |
-| [traffic.cpp](traffic.cpp) | Stable FIFO admission, request cancellation and physical occupancy protection |
+| [traffic.cpp](traffic.cpp) | Stable FIFO admission, temporary eligibility, request cancellation and physical occupancy protection |
 | [avoidance.cpp](avoidance.cpp) | Reciprocal circular velocity constraints, reachable velocity selection and bounded relaxation |
 | [physics.cpp](physics.cpp) | Body integration, circle/OBB/convex polygon contacts, area inertia, relative convex translation sweeps, shared collision timeline, impulses and world stepping |
 | [spatial_grid.cpp](spatial_grid.cpp) | AABB indexing and overlap queries |

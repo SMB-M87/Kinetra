@@ -18,6 +18,8 @@ int main() {
     kinetra::TrafficGate crossing;
     const std::uint64_t requester = 4;
     if (crossing.update({&requester, 1}, {}).agent != requester) return 17;
+    crossing.clear();
+    if (crossing.update({&requester, 1}, {}, {&requester, 1}).agent) return 18;
     kinetra::AvoidanceAgent agent;
     const auto avoidance = kinetra::avoid_collisions(agent, {1, 0}, {}, 1.f / 60);
     if (!avoidance.feasible || !kinetra::finite(avoidance.acceleration)) return 15;

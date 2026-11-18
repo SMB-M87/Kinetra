@@ -15,7 +15,7 @@ Consumers include these headers as `<kinetra/name.h>`. This is the engine's firs
 | --- | --- | --- |
 | [math.h](math.h) | Vectors, geometry and numeric helpers | Header-only |
 | [physics.h](physics.h), [spatial_grid.h](spatial_grid.h), [collision_grid.h](collision_grid.h) | Circle/box/convex polygon bodies, contacts, convex translation sweeps and spatial queries | `Kinetra::Simulation` |
-| [traffic.h](traffic.h) | Occupancy-aware FIFO admission for caller-defined conflict zones | `Kinetra::Simulation` |
+| [traffic.h](traffic.h) | Occupancy-aware FIFO admission with eligibility for caller-defined conflict zones | `Kinetra::Simulation` |
 | [avoidance.h](avoidance.h) | Reciprocal circle/axis-aligned rectangle velocity selection, acceleration limits and explicit infeasibility | `Kinetra::Simulation` |
 | [navigation.h](navigation.h), [weighted_grid.h](weighted_grid.h), [steering.h](steering.h) | Paths, routes and local steering | `Kinetra::Simulation` |
 | [engine.h](engine.h), [session.h](session.h) | Runtime, input, drawing and direct sessions | `Kinetra::Runtime` |

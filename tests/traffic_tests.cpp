@@ -45,6 +45,28 @@ int main() {
         gate.clear();
         require(gate.update(last, {}).agent == 1, "Clear retained a stale ticket");
         require(!gate.update({}, {}).agent, "Empty snapshots retained an admission");
+        gate.clear();
+        const std::array<std::uint64_t, 1> blocked_head{3};
+        state = gate.update(requests, {}, blocked_head);
+        require(state.agent == 7 && state.waiting == 2,
+                "Blocked head prevented admission to an available exit");
+        state = gate.update(requests, {}, requests);
+        require(state.agent == 7, "Temporary ineligibility revoked an approaching grant");
+        const std::array<std::uint64_t, 2> survivors{3, 9};
+        state = gate.update(survivors, {});
+        require(state.agent == 3, "Recovered request lost its original FIFO ticket");
+        gate.clear();
+        require(!gate.update(requests, {}, requests).agent, "All-ineligible queue admitted traffic");
+        const std::array<std::uint64_t, 1> unknown{42};
+        rejected = false;
+        try { gate.update(requests, {}, unknown); }
+        catch (const std::invalid_argument &) { rejected = true; }
+        require(rejected, "Ineligible ID absent from requests was accepted");
+        rejected = false;
+        try { gate.update(requests, {}, duplicate); }
+        catch (const std::invalid_argument &) { rejected = true; }
+        require(rejected, "Duplicate ineligible IDs accepted");
+        require(gate.update(requests, {}).agent == 3, "Rejected eligibility changed queue state");
         std::cout << "Traffic gate contracts passed\n";
     } catch (const std::exception &error) {
         std::cerr << error.what() << '\n'; return 1;

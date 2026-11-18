@@ -86,6 +86,15 @@ its request, stops, or is absent from the request set. Multiple occupants report
 `occupied_conflict` and admit nobody; applications must still permit occupants to
 leave. `waiting` counts requesting agents other than the admitted agent.
 
+The three-argument `update(requests, occupants, ineligible)` overload permits
+application-owned readiness checks, such as exit clearance. Ineligible IDs must be
+unique members of `requests`; they keep their tickets while new admission selects
+the oldest eligible request. An existing admission remains valid even if later
+marked ineligible. This avoids revoking a grant during approach; the application
+must retain any space reserved for that grant until it is safely released. With
+all requests ineligible and no occupant/grant, admission is empty. The original
+two-argument API treats every request as eligible.
+
 No timer revokes an approaching grant. Cancel only when the agent can safely stop
 outside the zone. Fair progress depends on admitted agents eventually clearing it.
 Applications own zone discovery, safe stopping lines, exit availability, stalled

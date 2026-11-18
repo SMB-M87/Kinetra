@@ -25,11 +25,17 @@ Applications supply complete request/occupancy snapshots, discover zones, constr
 movement before entry and allow occupants to exit. No timer revokes a grant while
 an agent may still be approaching at speed.
 
+An additive eligibility overload lets callers defer requests with blocked exits
+without cancelling their FIFO tickets. New grants select the oldest eligible
+request. Existing grants and physical occupancy still take precedence; readiness
+changes never revoke an approaching grant. Exit geometry and reservations remain
+application-owned.
+
 ## Consequences
 
 The mechanism is headless and independent of math, JSON and application models.
 i4sim initially uses it only for isolated T/+ junctions with single-cell corridor
-arms. More complex intersections, occupied exits, stalled owners and multi-zone
+arms. More complex intersections, exit clearance/reservations, stalled owners and multi-zone
 cycles require additional application policy. FIFO progress assumes each admitted
 agent eventually clears the zone. Tests cover state transitions and the external
 consumer links the public API. The authoritative contract is
