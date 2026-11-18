@@ -158,6 +158,9 @@ bool SettingsOverlay::update(const Input &input, Camera2D &camera) {
             continue;
         if (const auto *zoom_row = std::get_if<ZoomRow>(&rows_[i])) {
             const ZoomLimits limits = zoom_row->limits();
+            validate(limits);
+            // Multiply or divide instead of zoom(camera, +-1, limits): it keeps the
+            // results bit-identical to the panel Lab used before.
             if (on(zoom_in))
                 camera.pixels_per_unit =
                     std::clamp(camera.pixels_per_unit * zoom_factor, limits.minimum, limits.maximum);

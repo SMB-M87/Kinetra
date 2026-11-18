@@ -34,13 +34,22 @@ struct ZoomLimits {
     float minimum, maximum;
 };
 
+/// Throws std::invalid_argument unless 0 < minimum <= maximum and both are finite.
+inline void validate(ZoomLimits limits) {
+    if (!std::isfinite(limits.minimum) || !std::isfinite(limits.maximum) || limits.minimum <= 0 ||
+        limits.minimum > limits.maximum)
+        throw std::invalid_argument("Invalid zoom limits");
+}
+
 /// Zoom change per step: one wheel notch or one ZOOM IN / ZOOM OUT click.
 inline constexpr float zoom_factor = 1.1f;
 
 /// Zooms `camera` by `steps` steps of zoom_factor (positive zooms in) and clamps the result
 /// to `limits`. Fractional steps come from smooth wheels. Zero steps still clamp, so a
 /// change of limits (for example leaving a debug mode) takes effect on the next frame.
+/// Throws std::invalid_argument when the limits are not finite, positive and ordered.
 inline void zoom(Camera2D &camera, float steps, ZoomLimits limits) {
+    validate(limits);
     camera.pixels_per_unit =
         std::clamp(camera.pixels_per_unit * std::pow(zoom_factor, steps), limits.minimum, limits.maximum);
 }

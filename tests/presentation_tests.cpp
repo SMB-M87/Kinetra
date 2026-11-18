@@ -70,6 +70,12 @@ TEST_CASE("zero zoom steps still apply new limits") {
     CHECK(camera.pixels_per_unit == 17);
 }
 
+TEST_CASE("invalid zoom limits are rejected") {
+    kinetra::Camera2D camera;
+    CHECK_THROWS_AS(kinetra::zoom(camera, 1, {50, 25}), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::zoom(camera, 1, {0, 25}), std::invalid_argument);
+}
+
 TEST_CASE("the rate counter publishes once per window") {
     kinetra::RateCounter frames(0.5);
     CHECK(frames.rate() == 0);
