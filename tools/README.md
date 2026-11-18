@@ -1,0 +1,30 @@
+# Tools
+
+Development scripts shared by Kinetra and Kinetra-Lab. They need only Python 3 and Git: no build, no network.
+
+## Table of contents
+
+- [check_docs.py](#check_docspy)
+- [Open points](#open-points)
+
+[Parent guide](../README.md) · [Documentation index](../docs/README.md)
+
+## check_docs.py
+
+The **Docs** [verification level](../docs/testing.md#verification-levels). It checks every tracked or untracked-but-not-ignored Markdown file in the repository for:
+
+- relative links whose target file or directory does not exist;
+- `#anchor` fragments that match no heading in the target page, using GitHub's slug rules (including `-1`, `-2` for duplicate headings).
+
+Fenced code blocks and inline code are skipped, so templates and examples may contain placeholder links. External URLs are not fetched. Submodule contents are not scanned, but links into a checked-out submodule are resolved.
+
+```sh
+python3 tools/check_docs.py                    # in Kinetra
+python3 external/Kinetra/tools/check_docs.py   # in Kinetra-Lab (any path inside the repository works)
+```
+
+Output is one `path:line: problem` per broken link, then a summary. The exit status is 1 when anything is broken, so the same command can run in CI.
+
+## Open points
+
+- A check that every module directory has a README with content would enforce the [documentation rule](../docs/documentation.md#what-goes-where); it is not automated yet.
