@@ -1,8 +1,8 @@
 # Test registration shared by Kinetra and Kinetra-Lab.
 #
-# New tests use doctest (vendored in third_party/doctest) and are registered with
-# kinetra_add_doctest, which creates one CTest entry per TEST_CASE. Existing plain
-# main()-style tests use kinetra_add_test until they are converted.
+# Tests use doctest (vendored in third_party/doctest) and are registered with
+# kinetra_add_doctest, which creates one CTest entry per TEST_CASE. kinetra_add_test
+# remains for a program that cannot use doctest.
 # See docs/testing.md for how to write tests.
 
 include_guard(GLOBAL)
