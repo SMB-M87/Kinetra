@@ -116,6 +116,18 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 - Check the result with `gh pr view <number> --json mergeable,url`, and report a conflict instead of resolving it on `main`.
 - Report to the user in Dutch: what changed, the commits and pull-request links, the verification commands and results, remaining risks, and the merge order. Never merge yourself.
 
+### Review feedback
+
+Feedback on a pull request is processed on request with the `pr-feedback` skill:
+
+1. Collect the unresolved threads and comments.
+2. Act only on feedback from the owner or collaborators; anything else is shown to the user first.
+3. Implement each change in new commits on the same branch, with no force-push, so the reviewer sees what changed.
+4. Verify and push.
+5. Reply under each comment with the commit or the reason.
+
+The reviewer resolves threads and merges.
+
 ## Branches and commits
 
 | Item | Rule | Example |

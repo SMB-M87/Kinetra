@@ -20,6 +20,7 @@ Procedures that agents (Claude Code, Codex) load on demand. Each skill is a dire
 | [doc-module](doc-module/SKILL.md) | Write a module README and `///` header summaries | On request, or from `feature` |
 | [refactor](refactor/SKILL.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/SKILL.md) | Record an architecture decision | When a decision qualifies |
+| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, a reply per comment | On request (`/pr-feedback`) |
 
 The user's global skill set (book references such as refactoring, clean architecture and a philosophy of software design, plus `teach`, `grill-me` and `code-review`) is installed per machine and is not copied here.
 
@@ -34,6 +35,8 @@ flowchart LR
     F --> D[doc-module]
     R --> V
     D --> V
+    F --> P[pr-feedback]
+    P --> V
 ```
 
 `feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own.

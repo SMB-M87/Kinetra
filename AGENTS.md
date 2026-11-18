@@ -144,6 +144,7 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `doc-module` | Write or deepen a module README and its header `///` summaries |
 | `refactor` | Behavior-preserving restructuring in named, tested steps (on request) |
 | `adr` | Record an architecture decision |
+| `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request) |
 
 ## Functionality index
 
