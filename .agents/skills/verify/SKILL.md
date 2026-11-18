@@ -37,20 +37,20 @@ Comment-only means the diff of a code file contains only comment lines (`git dif
 
 **Docs.** Run `python3 tools/check_docs.py` (in Kinetra) or `python3 external/Kinetra/tools/check_docs.py` (in Lab). Fix broken links, then stop. No build.
 
-**Targeted.** Reuse the existing build directory: Kinetra standalone uses `build`; in Lab, Lab uses `build` and the core uses `build-core`. If it does not exist, configure it once with the commands from the Full level, without running the full test suite.
+**Targeted.** Reuse the `dev` preset build directory (`build-dev`); if it does not exist, configure it once with `cmake --preset dev`.
 
 ```sh
-cmake --build <build-dir> --target <targets> -j2
-ctest --test-dir <build-dir> -R '<regex>' --output-on-failure
+cmake --build --preset dev --target <targets>
+ctest --preset dev -R '<regex>'
 ```
 
 Pick targets and tests from the mapping tables: Kinetra in [testing](../../../docs/testing.md#choosing-targeted-tests), Lab in Lab's `AGENTS.md`.
 
 **Full.**
 
-- Kinetra only: configure, build and run `ctest` in Kinetra (commands in [testing](../../../docs/testing.md#full)), then `./build.sh` in Lab when a Lab checkout is available.
-- Lab: `./build.sh` from the Lab root.
-- Runtime, launcher or presentation changes: also the graphics configuration with `KINETRA_TEST_GRAPHICS=ON` and `SDL_VIDEODRIVER=offscreen LIBGL_ALWAYS_SOFTWARE=1`, plus bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
+- Kinetra only: `cmake --workflow --preset ci`, which is the same as CI. Then run Lab's `ci` workflow when a Lab checkout is available.
+- Lab: `cmake --workflow --preset ci` and `cmake --workflow --preset headless` from the Lab root (or `./build.sh`).
+- Runtime, launcher or presentation changes: also `cmake --workflow --preset graphics` (it sets `SDL_VIDEODRIVER=offscreen` and software Mesa), plus bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
 - Public header or target changes: also the external consumer fixture.
 
 ## 4. Report

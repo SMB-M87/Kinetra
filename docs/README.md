@@ -24,7 +24,8 @@ Directory guides: [decisions](decisions/README.md), [design](design/README.md), 
 | How does a change move from idea to commit? | [Workflow](workflow.md) |
 | How is C++ and CMake written here? | [Conventions](conventions.md) |
 | What do I test, and which checks does a change need? | [Testing](testing.md) |
-| How do I build and run graphics or consumer checks? | [Development](development.md) |
+| How do I build with presets, set up clangd/clang-tidy, or run graphics or consumer checks? | [Development](development.md) |
+| What does CI check on a pull request? | [Testing: continuous integration](testing.md#continuous-integration) |
 | How are READMEs, diagrams and `///` comments written? | [Documentation guide](documentation.md) |
 | What is being changed now, and why? | [Design documents](design/README.md) |
 | What are the geometry and physics contracts? | [Math and physics](engine/math-physics.md) |

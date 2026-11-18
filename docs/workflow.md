@@ -162,4 +162,4 @@ sequenceDiagram
 
 ## Open points
 
-- CI per pull request (headless build, tests, format and docs checks) is planned; see the Lab quality roadmap in `docs/design/` of Kinetra-Lab.
+- Branch protection on `main` requires the `CI / checks` status. A red CI blocks the merge, so fix it on the branch instead of bypassing it.

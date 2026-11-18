@@ -15,7 +15,7 @@ Directory guides: [consumer](consumer/README.md).
 
 | Source or directory | CTest name | Responsibility |
 | --- | --- | --- |
-| [traffic_tests.cpp](traffic_tests.cpp) | `kinetra_traffic` | FIFO ordering, eligibility/ticket preservation, non-revoking grants, new arrivals, cancellation, occupied/contested zones, invalid snapshots and reset |
+| [traffic_tests.cpp](traffic_tests.cpp) | `kinetra_traffic:<case>` (doctest) | FIFO ordering, eligibility/ticket preservation, non-revoking grants, new arrivals, cancellation, occupied/contested zones, invalid snapshots and reset |
 | [avoidance_tests.cpp](avoidance_tests.cpp) | `kinetra_avoidance` | Acceleration/speed limits, infeasibility, deterministic IDs, time units, noncooperative motion, rectangular gap/cutoff/tangent checks, 2/4/8 rectangular encounters and 2/4/8/16 circular-agent arrival without overlap |
 | [moving_contact_tests.cpp](moving_contact_tests.cpp) | `kinetra_moving_contacts` | Relative queries, fast moving pairs, crossing/overtaking, chronological chains, spinning tangent-contact progress, narrow resting gaps, tiny-body contact tolerance and observable event-budget fallback |
 | [translation_sweep_tests.cpp](translation_sweep_tests.cpp) | `kinetra_translation_sweeps` | All convex translation pairs, timing, orientation, misses, thin walls, repeated impacts and free rotational integration |
@@ -41,7 +41,7 @@ flowchart LR
 CTest coverage follows the configured options. The separate consumer checks source integration; graphics tests require an actual OpenGL context.
 
 
-The root [CMakeLists.txt](../CMakeLists.txt) registers tests when `BUILD_TESTING` is enabled. Graphics tests also require `KINETRA_BUILD_RUNTIME` and `KINETRA_TEST_GRAPHICS`. The consumer is configured separately.
+The root [CMakeLists.txt](../CMakeLists.txt) registers tests when `BUILD_TESTING` is enabled: doctest suites with `kinetra_add_doctest` (one CTest entry per case), and the remaining plain `main()` suites with `kinetra_add_test`. The traffic suite is the doctest reference; how to write and run cases is described in [testing](../docs/testing.md#writing-a-doctest-suite). Graphics tests also require `KINETRA_BUILD_RUNTIME` and `KINETRA_TEST_GRAPHICS`. The consumer is configured separately.
 
 See [development](../docs/development.md) for commands, dependencies and graphics backend requirements; see the [implementation map](../src/README.md) for tested modules.
 
