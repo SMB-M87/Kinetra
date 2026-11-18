@@ -300,7 +300,7 @@ void Runtime::circle(Vec2 center, float radius, Color color) {
     transparent.a = 0;
     Vec2 previous{1, 0};
     for (int i = 1; i <= segments; ++i) {
-        const Vec2 next = i == segments ? Vec2{1, 0} : rotated({1, 0}, i * 6.28318530718f / segments);
+        const Vec2 next = i == segments ? Vec2{1, 0} : rotated({1, 0}, static_cast<float>(i) * 6.28318530718f / static_cast<float>(segments));
         const Vec2 a = center + previous * inner, b = center + next * inner;
         const Vec2 c = center + previous * outer, d = center + next * outer;
         triangle(center, a, b, color);

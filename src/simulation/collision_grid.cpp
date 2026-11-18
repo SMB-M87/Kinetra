@@ -31,7 +31,7 @@ void collide_grid(Body &body, const CollisionGrid &grid) {
                 wall.shape = Shape::box;
                 wall.motion = Motion::fixed;
                 wall.position =
-                    grid.origin + Vec2{(col + 0.5f) * grid.cell_size, (row + 0.5f) * grid.cell_size};
+                    grid.origin + Vec2{(static_cast<float>(col) + 0.5f) * grid.cell_size, (static_cast<float>(row) + 0.5f) * grid.cell_size};
                 wall.half_extents = {grid.cell_size / 2, grid.cell_size / 2};
                 wall.friction = 0;
                 if (const auto contact = collide(body, wall))
@@ -59,9 +59,9 @@ std::optional<float> segment_grid(Vec2 start, Vec2 end, const CollisionGrid &gri
     const float increment_y = delta.y == 0 ? infinity : grid.cell_size / std::abs(delta.y);
     float next_x = delta.x == 0
                        ? infinity
-                       : (grid.origin.x + (column + (step_x > 0)) * grid.cell_size - start.x) / delta.x;
+                       : (grid.origin.x + static_cast<float>(column + (step_x > 0)) * grid.cell_size - start.x) / delta.x;
     float next_y =
-        delta.y == 0 ? infinity : (grid.origin.y + (row + (step_y > 0)) * grid.cell_size - start.y) / delta.y;
+        delta.y == 0 ? infinity : (grid.origin.y + static_cast<float>(row + (step_y > 0)) * grid.cell_size - start.y) / delta.y;
     for (int crossed = 0; crossed < grid.rows + grid.columns + 4; ++crossed) {
         const float t = std::min(next_x, next_y);
         if (t > 1)

@@ -128,9 +128,9 @@ void rectangular_geometry() {
     b.half_extents = {0.2f, 0.7f};
     b.velocity = {0.3f, -0.7f};
     for (int direction = 0; direction < 24; ++direction) {
-        b.position = rotated({3, 0}, direction * 6.283185307f / 24);
+        b.position = rotated({3, 0}, static_cast<float>(direction) * 6.283185307f / 24);
         for (int heading = 0; heading < 24; ++heading) {
-            a.velocity = rotated({2, 0}, heading * 6.283185307f / 24);
+            a.velocity = rotated({2, 0}, static_cast<float>(heading) * 6.283185307f / 24);
             result = avoid_collisions(a, a.velocity, {&b, 1}, 1, settings);
             const auto inflated = a.half_extents + b.half_extents + Vec2{0.0199f, 0.0199f};
             require(result.feasible && !enters_rectangle((result.velocity - b.velocity) * settings.horizon, b.position, inflated),
@@ -169,7 +169,7 @@ void scenario(int count, bool parked, bool rectangles = false) {
     std::vector<AvoidanceAgent> agents;
     std::vector<Vec2> goals;
     for (int i = 0; i < count; ++i) {
-        const Vec2 position = rotated({-6, 0}, 6.283185307f * i / count);
+        const Vec2 position = rotated({-6, 0}, 6.283185307f * static_cast<float>(i) / static_cast<float>(count));
         agents.push_back({std::uint64_t(i), position, {}, 0.4f});
         goals.push_back(-position);
     }

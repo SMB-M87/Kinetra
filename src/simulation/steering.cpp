@@ -62,9 +62,9 @@ Vec2 steer(const Body &a, Vec2 target, std::span<const Body> obstacles, const St
     for (const auto &neighbor : obstacles) {
         validate(neighbor);
         const Vec2 away = a.position - neighbor.position;
-        const float distance = length(away);
-        if (distance > 0 && distance < s.separation_radius)
-            separation += normalized(away) * (1 - distance / s.separation_radius);
+        const float gap = length(away);
+        if (gap > 0 && gap < s.separation_radius)
+            separation += normalized(away) * (1 - gap / s.separation_radius);
     }
     acceleration =
         limited(acceleration + separation * (s.max_acceleration * s.separation_weight), s.max_acceleration);

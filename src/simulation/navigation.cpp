@@ -84,7 +84,7 @@ std::vector<kinetra::Vec2> Navigation::path(kinetra::Vec2 start, kinetra::Vec2 g
         // envelope. Depart monotonically from each nearby surface before A*.
         std::vector<std::pair<float, kinetra::Vec2>> candidates;
         for (int direction = 0; direction < 16; ++direction) {
-            const auto escape = start + kinetra::rotated({2, 0}, direction * 0.392699082f);
+            const auto escape = start + kinetra::rotated({2, 0}, static_cast<float>(direction) * 0.392699082f);
             if (inside(escape) && clear(escape, escape) && can_depart(start, escape))
                 candidates.emplace_back(kinetra::length(escape - goal), escape);
         }

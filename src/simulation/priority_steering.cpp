@@ -88,13 +88,13 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
         }
         if (length(a.velocity) == 0 || distance(a.position, other.position) >
                                            length(a.half_extents) + length(other.half_extents) +
-                                               2 * s.prediction_steps * s.prediction_step * s.max_speed)
+                                               static_cast<float>(2 * s.prediction_steps) * s.prediction_step * s.max_speed)
             continue;
         bool found = false;
         for (int i = 0; i <= s.prediction_steps && !found; ++i)
             for (int j = 0; j <= s.prediction_steps; ++j) {
-                const Vec2 diff = (a.position + a.velocity * (i * s.prediction_step)) -
-                                  (other.position + other.velocity * (j * s.prediction_step));
+                const Vec2 diff = (a.position + a.velocity * (static_cast<float>(i) * s.prediction_step)) -
+                                  (other.position + other.velocity * (static_cast<float>(j) * s.prediction_step));
                 const Vec2 extent = (a.half_extents + other.half_extents) * s.safety_multiplier;
                 if (std::abs(diff.x) < extent.x && std::abs(diff.y) < extent.y) {
                     result.predictive += normalized(diff);

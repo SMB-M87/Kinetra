@@ -323,7 +323,7 @@ void hundreds_of_agents() {
         if (i % 3 == 0) {
             b.shape = Shape::box;
             b.half_extents = {0.3f, 0.2f};
-            b.angle = i * 0.1f;
+            b.angle = static_cast<float>(i) * 0.1f;
         }
         b.motion = i % 2 ? Motion::controlled : Motion::dynamic;
         world.add(b);

@@ -101,7 +101,7 @@ void chronological_chain() {
         std::size_t ids[3];
         for (int k = 0; k < 3; ++k) {
             const int i = reverse ? 2 - k : k;
-            ids[i] = world.add(agent(0, {-2.f + 2 * i, 0}, {i == 0 ? 600.f : 0.f, 0}));
+            ids[i] = world.add(agent(0, {-2.f + static_cast<float>(2 * i), 0}, {i == 0 ? 600.f : 0.f, 0}));
         }
         world.step(1.f / 60);
         require(std::abs(world.body(ids[0]).position.x + 0.4f) < 0.001f &&
