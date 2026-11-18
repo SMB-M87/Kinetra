@@ -8,13 +8,13 @@
 
 include_guard(GLOBAL)
 
-set(KINETRA_WARNING_FLAGS -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
-
 # kinetra_target_warnings(<target> [AS_ERRORS])
 #   Adds the warning set to one target's C++ compilation. AS_ERRORS also adds -Werror.
 function(kinetra_target_warnings target)
     cmake_parse_arguments(arg "AS_ERRORS" "" "" ${ARGN})
-    set(flags ${KINETRA_WARNING_FLAGS})
+    # Defined here, not as a variable: functions are global, but variables set in
+    # Kinetra's directory scope are invisible to an embedding project such as Lab.
+    set(flags -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
     if(arg_AS_ERRORS)
         list(APPEND flags -Werror)
     endif()
