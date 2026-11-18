@@ -1,0 +1,30 @@
+# Static analysis for first-party C++ (see docs/development.md#static-analysis).
+# Run on changed files: run-clang-tidy -p build-dev <files>. Not enforced in CI yet.
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  performance-*,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-emplace,
+  modernize-use-using,
+  modernize-loop-convert,
+  modernize-make-unique,
+  readability-identifier-naming,
+  readability-const-return-type,
+  readability-redundant-control-flow,
+  readability-redundant-smartptr-get,
+  misc-unused-using-decls
+HeaderFilterRegex: '/(include/kinetra|src|tests|labs|launcher)/'
+CheckOptions:
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.EnumConstantCase: lower_case
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: _

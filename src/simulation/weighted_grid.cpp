@@ -16,13 +16,15 @@ WeightedGrid::WeightedGrid(Vec2 dimension, Vec2 size) : cell_size_(size) {
     weights_.resize(blocked_.size());
 }
 int WeightedGrid::cell(Vec2 p) const {
-    if (!finite(p) || p.x < 0 || p.y < 0 || p.x >= width_ * cell_size_.x || p.y >= height_ * cell_size_.y)
+    if (!finite(p) || p.x < 0 || p.y < 0 || p.x >= static_cast<float>(width_) * cell_size_.x ||
+        p.y >= static_cast<float>(height_) * cell_size_.y)
         return -1;
     return int(p.y / cell_size_.y) * width_ + int(p.x / cell_size_.x);
 }
 Vec2 WeightedGrid::center(int id) const {
     static_cast<void>(blocked_.at(id));
-    return {(id % width_ + 0.5f) * cell_size_.x, (id / width_ + 0.5f) * cell_size_.y};
+    return {(static_cast<float>(id % width_) + 0.5f) * cell_size_.x,
+            (static_cast<float>(id / width_) + 0.5f) * cell_size_.y};
 }
 bool WeightedGrid::blocked(int id) const {
     return id < 0 || id >= int(blocked_.size()) || blocked_[id];
@@ -46,8 +48,8 @@ bool WeightedGrid::clear(Vec2 start, Vec2 goal, Vec2 extent) const {
         throw std::invalid_argument("Grid clearance requires finite points and nonnegative half extents");
     const Vec2 low{std::min(start.x, goal.x) - extent.x, std::min(start.y, goal.y) - extent.y};
     const Vec2 high{std::max(start.x, goal.x) + extent.x, std::max(start.y, goal.y) + extent.y};
-    if (low.x < 0 || low.y < 0 || high.x > width_ * cell_size_.x || high.y > height_ * cell_size_.y ||
-        blocked(cell(start)) || blocked(cell(goal)))
+    if (low.x < 0 || low.y < 0 || high.x > static_cast<float>(width_) * cell_size_.x ||
+        high.y > static_cast<float>(height_) * cell_size_.y || blocked(cell(start)) || blocked(cell(goal)))
         return false;
     const Vec2 travel = goal - start;
     for (int y = std::max(0, int(low.y / cell_size_.y));
@@ -56,8 +58,11 @@ bool WeightedGrid::clear(Vec2 start, Vec2 goal, Vec2 extent) const {
              x <= std::min(width_ - 1, int(high.x / cell_size_.x)); ++x) {
             if (!blocked(y * width_ + x))
                 continue;
-            const Vec2 minimum = Vec2{x * cell_size_.x, y * cell_size_.y} - extent;
-            const Vec2 maximum = Vec2{(x + 1) * cell_size_.x, (y + 1) * cell_size_.y} + extent;
+            const Vec2 minimum =
+                Vec2{static_cast<float>(x) * cell_size_.x, static_cast<float>(y) * cell_size_.y} - extent;
+            const Vec2 maximum =
+                Vec2{static_cast<float>(x + 1) * cell_size_.x, static_cast<float>(y + 1) * cell_size_.y} +
+                extent;
             float enter = 0, exit = 1;
             bool intersects = true;
             for (int axis = 0; axis < 2; ++axis) {
@@ -66,14 +71,16 @@ bool WeightedGrid::clear(Vec2 start, Vec2 goal, Vec2 extent) const {
                 const float lo = axis == 0 ? minimum.x : minimum.y;
                 const float hi = axis == 0 ? maximum.x : maximum.y;
                 if (v == 0) {
-                    if (p <= lo || p >= hi) intersects = false;
+                    if (p <= lo || p >= hi)
+                        intersects = false;
                 } else {
                     float near = (lo - p) / v, far = (hi - p) / v;
                     if (near > far)
                         std::swap(near, far);
                     enter = std::max(enter, near);
                     exit = std::min(exit, far);
-                    if (enter >= exit) intersects = false;
+                    if (enter >= exit)
+                        intersects = false;
                 }
             }
             if (intersects)
@@ -142,7 +149,8 @@ std::vector<Segment> WeightedGrid::borders() const {
             const int id = y * width_ + x;
             if (blocked(id))
                 continue;
-            const Vec2 a{x * cell_size_.x, y * cell_size_.y}, b = a + cell_size_;
+            const Vec2 a{static_cast<float>(x) * cell_size_.x, static_cast<float>(y) * cell_size_.y},
+                b = a + cell_size_;
             if (x == 0 || blocked(id - 1))
                 result.push_back({a, {a.x, b.y}});
             if (x + 1 == width_ || blocked(id + 1))

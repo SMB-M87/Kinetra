@@ -15,7 +15,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 
 [Documentation index](docs/README.md)
 
-Directory guides: [docs](docs/README.md), [include](include/README.md), [src](src/README.md), [tests](tests/README.md), [tools](tools/README.md).
+Directory guides: [docs](docs/README.md), [include](include/README.md), [src](src/README.md), [tests](tests/README.md), [third_party/doctest](third_party/doctest/README.md), [tools](tools/README.md).
 
 ## Features
 
@@ -29,13 +29,12 @@ Directory guides: [docs](docs/README.md), [include](include/README.md), [src](sr
 Requires C++20, CMake 3.16+, a build tool. The default build is headless.
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure
+cmake --workflow --preset dev        # Debug, runtime, warnings; needs CMake 3.25+, Ninja, ccache
+cmake --workflow --preset headless   # simulation only, no SDL2/OpenGL needed
 ```
 
-Enable `-DKINETRA_BUILD_RUNTIME=ON` for SDL2/OpenGL (development packages required).
-See [development](docs/development.md) for graphics verification. Run applications from Kinetra-Lab.
+Without presets: `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel && ctest --test-dir build`. Enable `-DKINETRA_BUILD_RUNTIME=ON` for SDL2/OpenGL (development packages required).
+See [development](docs/development.md) for all presets, editor setup and graphics verification. Run applications from Kinetra-Lab.
 
 ## Using Kinetra
 

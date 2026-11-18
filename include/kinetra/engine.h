@@ -3,8 +3,8 @@
 #include "camera.h"
 #include <array>
 #include <memory>
-#include <string>
 #include <span>
+#include <string>
 
 namespace kinetra {
 

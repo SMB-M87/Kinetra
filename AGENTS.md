@@ -84,7 +84,8 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 Details and examples are in the [conventions](docs/conventions.md).
 
 - First-party headers use `.h` and implementations use `.cpp`; never `.hpp`, `.hxx`, `.hh`, `.cc` or `.cxx`. Leave third-party/generated files unchanged (`src/glad.c`, `include/glad/`, `include/KHR/`).
-- Follow `.clang-format`. Format the files you change; put any repository-wide reformatting in a separate commit.
+- Follow `.clang-format`. Format the files you change; put any repository-wide reformatting in a separate commit and list it in `.git-blame-ignore-revs`.
+- Code compiles warning-free with `KINETRA_WARNINGS`; CI fails on any Kinetra warning. Fix the cause (explicit conversions, renamed shadows) instead of suppressing it.
 - Prefer RAII, const-correctness, explicit ownership, value types and standard C++20. Avoid global mutable state.
 - Simulation results must be deterministic for a given seed: inject seeded RNGs; never use `std::rand` or `std::random_device` in simulation logic.
 - Name units and tuning constants (`constexpr`) instead of repeating magic numbers.
@@ -144,6 +145,7 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `doc-module` | Write or deepen a module README and its header `///` summaries |
 | `refactor` | Behavior-preserving restructuring in named, tested steps (on request) |
 | `adr` | Record an architecture decision |
+| `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request) |
 
 ## Functionality index
 
@@ -155,4 +157,4 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | Shared overlays | [debug](include/kinetra/debug_view.h), [help](include/kinetra/help_view.h) | [design](docs/engine/launcher-overlays.md) |
 | Generic launcher | [launcher API](include/kinetra/launcher.h) | [tests](tests/launcher_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
 | Applications and bundled launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned registration, executables and tests |
-| Build, verification and docs checks | [CMake](CMakeLists.txt), [consumer](tests/consumer/), [tools](tools/README.md) | [development](docs/development.md), [testing](docs/testing.md) |
+| Build, presets, CI and docs checks | [CMake](CMakeLists.txt), [presets](CMakePresets.json), [CMake helpers](cmake/), [CI](.github/workflows/ci.yml), [consumer](tests/consumer/), [tools](tools/README.md) | [development](docs/development.md), [testing](docs/testing.md) |

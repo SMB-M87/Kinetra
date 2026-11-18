@@ -7,7 +7,8 @@ Vec2 constrain_borders(const Body &a, Vec2 acceleration, std::span<const Segment
     validate(a);
     if (a.shape != Shape::box || a.angle != 0 || !finite(acceleration))
         throw std::invalid_argument("Border steering requires an axis-aligned box and finite acceleration");
-    for (float v : {s.max_speed, s.max_acceleration, s.border_distance, s.border_strength, s.border_lookahead})
+    for (float v :
+         {s.max_speed, s.max_acceleration, s.border_distance, s.border_strength, s.border_lookahead})
         if (!std::isfinite(v) || v <= 0)
             throw std::invalid_argument("Border steering settings must be finite and positive");
     acceleration = limited(acceleration, s.max_acceleration);
@@ -30,8 +31,9 @@ Vec2 constrain_borders(const Body &a, Vec2 acceleration, std::span<const Segment
         // Brake before contact. At rest a touching parking goal stays valid; only
         // actual penetration requests an outward velocity, continuously at d=0.
         const float clearance = std::max(0.f, d);
-        const float stopping_speed = std::sqrt(s.max_acceleration * s.max_acceleration +
-                                               2 * s.max_acceleration * clearance) - s.max_acceleration;
+        const float stopping_speed =
+            std::sqrt(s.max_acceleration * s.max_acceleration + 2 * s.max_acceleration * clearance) -
+            s.max_acceleration;
         const float inward = std::min(clearance / std::max(1.f, s.border_lookahead), stopping_speed);
         const float t = std::clamp(-d / s.border_distance, 0.f, 1.f);
         const float outward = std::min(s.max_speed, s.border_strength * t * t * (3 - 2 * t));
@@ -86,15 +88,17 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
             result.collision +=
                 length(diff) > 0.01f ? normalized(diff) * std::max(1.f, 10 / length(diff)) : -contact->normal;
         }
-        if (length(a.velocity) == 0 || distance(a.position, other.position) >
-                                           length(a.half_extents) + length(other.half_extents) +
-                                               2 * s.prediction_steps * s.prediction_step * s.max_speed)
+        if (length(a.velocity) == 0 ||
+            distance(a.position, other.position) >
+                length(a.half_extents) + length(other.half_extents) +
+                    static_cast<float>(2 * s.prediction_steps) * s.prediction_step * s.max_speed)
             continue;
         bool found = false;
         for (int i = 0; i <= s.prediction_steps && !found; ++i)
             for (int j = 0; j <= s.prediction_steps; ++j) {
-                const Vec2 diff = (a.position + a.velocity * (i * s.prediction_step)) -
-                                  (other.position + other.velocity * (j * s.prediction_step));
+                const Vec2 diff =
+                    (a.position + a.velocity * (static_cast<float>(i) * s.prediction_step)) -
+                    (other.position + other.velocity * (static_cast<float>(j) * s.prediction_step));
                 const Vec2 extent = (a.half_extents + other.half_extents) * s.safety_multiplier;
                 if (std::abs(diff.x) < extent.x && std::abs(diff.y) < extent.y) {
                     result.predictive += normalized(diff);
@@ -109,8 +113,9 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
     const Vec2 offset = target - a.position;
     const float speed = s.max_speed * (arrival ? std::min(1.f, length(offset) / s.arrival_radius) : 1.f);
     result.seek = limited(normalized(offset) * speed - a.velocity, s.max_acceleration);
-    const Vec2 force = length(result.collision) > 0 ? result.collision
-                       : length(result.predictive) > 0 ? result.predictive : result.seek;
+    const Vec2 force = length(result.collision) > 0    ? result.collision
+                       : length(result.predictive) > 0 ? result.predictive
+                                                       : result.seek;
     const Vec2 acceleration = limited(force, s.max_acceleration);
     result.acceleration = constrain_borders(a, acceleration, borders, s);
     result.border = result.acceleration - acceleration;
@@ -119,11 +124,11 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
 } // namespace kinetra
 
 namespace kinetra {
-Vec2 tangent_steer(const Body &a, Vec2 target, std::span<const Body> neighbors,
-                   float speed, float force, float horizon, bool arrival) {
+Vec2 tangent_steer(const Body &a, Vec2 target, std::span<const Body> neighbors, float speed, float force,
+                   float horizon, bool arrival) {
     validate(a);
-    if (!finite(target) || !std::isfinite(speed) || speed <= 0 ||
-        !std::isfinite(force) || force <= 0 || !std::isfinite(horizon) || horizon <= 0 || horizon > 64)
+    if (!finite(target) || !std::isfinite(speed) || speed <= 0 || !std::isfinite(force) || force <= 0 ||
+        !std::isfinite(horizon) || horizon <= 0 || horizon > 64)
         throw std::invalid_argument("Invalid tangent steering settings");
     const Vec2 desired = normalized(target - a.position);
     Vec2 repulsion{};
@@ -134,17 +139,19 @@ Vec2 tangent_steer(const Body &a, Vec2 target, std::span<const Body> neighbors,
         const float safety = radius + other_radius;
         const Vec2 offset = a.position - other.position;
         const float d = length(offset);
-        if (d >= safety + speed * horizon || d < 0.00001f) continue;
+        if (d >= safety + speed * horizon || d < 0.00001f)
+            continue;
         const float angle = std::atan2(offset.y, offset.x) + std::asin(std::clamp(safety / d, -1.f, 1.f));
         const Vec2 tangent = other.position + Vec2{std::cos(angle), std::sin(angle)} * safety;
         const Vec2 away = a.position - tangent;
-        if (length(away) < 0.00001f) continue;
+        if (length(away) < 0.00001f)
+            continue;
         const float alpha = std::atan2(-away.y, -away.x) - std::atan2(desired.y, desired.x);
         const float wrapped = std::remainder(alpha, 6.283185307f);
         repulsion += normalized(away) * (std::exp(.1f * wrapped) * .1f * (safety + radius - length(away)));
     }
     const float slow = std::max(.01f, radius * 2 * .45f);
-    const float desired_speed = speed * (arrival ? std::min(1.f, distance(a.position,target)/slow) : 1.f);
+    const float desired_speed = speed * (arrival ? std::min(1.f, distance(a.position, target) / slow) : 1.f);
     return limited(normalized(desired + repulsion) * desired_speed - a.velocity, force);
 }
-}
+} // namespace kinetra

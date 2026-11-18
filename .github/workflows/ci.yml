@@ -1,0 +1,63 @@
+# Checks every pull request and every push to main. See docs/testing.md#continuous-integration.
+#
+# The toolchain is pinned: a dated Arch Linux image plus the Arch Linux Archive
+# snapshot below, so compiler warnings (-Werror) and clang-format output cannot
+# change without a commit. The snapshot matches the Artix/Arch development
+# environment (gcc 16.2.1, clang/clang-format 23.1.5, CMake 4.5.0). Bump both
+# deliberately, in their own commit, and fix what the new toolchain reports.
+#
+# Graphics tests are compiled but not run (no GPU); run them locally with
+# `cmake --workflow --preset graphics`. The workflow name "CI" and job id
+# "checks" are required status checks on main; keep them stable.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARCH_SNAPSHOT: "2026/11/17"
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel-20261108.0.623074
+    steps:
+      - name: Install pinned toolchain and dependencies
+        run: |
+          echo "Server = https://archive.archlinux.org/repos/${ARCH_SNAPSHOT}/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist
+          pacman -Syyuu --noconfirm --needed git python cmake ninja ccache clang sdl2-compat libglvnd mesa
+          gcc --version | head -1; clang-format --version; cmake --version | head -1
+
+      - uses: actions/checkout@v7
+
+      - name: Trust the workspace in the container
+        run: git config --global --add safe.directory '*'
+
+      - name: Format check (clang-format)
+        run: |
+          git ls-files -- '*.h' '*.cpp' ':(exclude)include/glad/**' ':(exclude)include/KHR/**' ':(exclude)third_party/**' \
+            | xargs clang-format --dry-run --Werror
+
+      - name: Documentation links
+        run: python3 tools/check_docs.py
+
+      - name: Headless build and test (no SDL2/OpenGL)
+        run: cmake --workflow --preset headless
+
+      - name: Full build and test (runtime, graphics tests compiled, warnings as errors)
+        run: cmake --workflow --preset ci
+
+      - name: External consumer
+        run: |
+          cmake -S tests/consumer -B build-consumer -G Ninja -DKINETRA_SOURCE="$PWD" -DCONSUMER_GRAPHICS=ON
+          cmake --build build-consumer
+          ./build-consumer/consumer

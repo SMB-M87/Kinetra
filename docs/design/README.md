@@ -76,4 +76,5 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-18 | [Tooling and CI](2026-11-18-tooling-and-ci.md) | implemented |
 | 2026-11-18 | [Development process and agent rules](2026-11-18-development-process.md) | implemented |

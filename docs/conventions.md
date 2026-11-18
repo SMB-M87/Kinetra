@@ -21,6 +21,7 @@ How code in Kinetra and Kinetra-Lab is written and structured. The rules apply t
 ## Files and formatting
 
 - C++20, with headers in `.h` and implementations in `.cpp`. Generated and third-party sources stay untouched.
+- Code compiles without warnings under `KINETRA_WARNINGS` (`-Wall -Wextra -Wpedantic -Wshadow -Wconversion`). CI enforces this for Kinetra with `-Werror`. Make conversions explicit (`static_cast<float>(count)`) instead of silencing the warning.
 - `.clang-format` in the repository root is authoritative: LLVM-based, 4-space indent, 110 columns. Format the files you change (`clang-format -i <files>`). A repository-wide reformat is a separate `chore` commit.
 - One main type or cohesive group of functions per header and `.cpp` pair; file names are `snake_case`.
 
@@ -111,12 +112,12 @@ Avoid Singleton, global registries and deep inheritance; prefer composition and 
 
 ## CMake
 
-- Target-based only: `target_include_directories`, `target_link_libraries` and `target_compile_features(<t> PUBLIC cxx_std_20)` per target. No global `include_directories` or flags.
+- Target-based only: `target_include_directories`, `target_link_libraries` and `target_compile_features(<t> PUBLIC cxx_std_20)` per target. No global `include_directories` or flags; option combinations belong in [CMakePresets.json](../CMakePresets.json).
 - `PRIVATE` by default; `PUBLIC` only when consumers need it.
 - A target is a linking boundary: headless logic, presentation, executable. Do not create one per directory.
-- Tests register with `add_test` under a name that starts with the module (`kinetra_<module>…`), so `ctest -R` can select them.
+- Tests register through `kinetra_add_doctest` (new tests) or `kinetra_add_test` (plain suites) from [KinetraTesting.cmake](../cmake/KinetraTesting.cmake), under a name that starts with the module (`kinetra_<module>…`), so `ctest -R` can select them.
 
 ## Open points
 
-- Warnings (`-Wall -Wextra -Wpedantic -Wshadow -Wconversion`), presets, `.clang-tidy` and a sanitizer build are planned in the tooling phase of the Lab quality roadmap.
+- **clang-tidy.** Naming and bug-prone checks are configured in [.clang-tidy](../.clang-tidy), but findings are not yet triaged or enforced.
 - Existing code violates several rules above (relative includes, flags, magic numbers, global state in Dotio). The roadmap schedules these per module.

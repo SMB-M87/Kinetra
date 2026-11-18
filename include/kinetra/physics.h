@@ -48,7 +48,7 @@ void integrate(Body &body, float seconds, float damping = 0);
 /// Earliest segment hit fraction, including a start inside the circle; nullopt on miss.
 std::optional<float> segment_circle(Vec2 start, Vec2 end, Vec2 center, float radius);
 struct SweepContact {
-    float fraction; // Earliest hit along the center segment, in [0, 1].
+    float fraction;  // Earliest hit along the center segment, in [0, 1].
     Contact contact; // Normal from the moving body toward the obstacle.
 };
 /// Sweep a circle from its current position to end against an obstacle's current pose.

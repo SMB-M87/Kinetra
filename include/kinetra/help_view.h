@@ -21,13 +21,14 @@ inline void draw_help(Runtime &runtime, std::span<const std::string_view> lines,
                                   runtime.camera.viewport.y / style.reference_view.y});
     const std::size_t count = expanded ? lines.size() : 1;
     const Vec2 half{(expanded ? style.width : style.collapsed_width) * scale / 2,
-                    (expanded && style.expanded_height > 0 ? style.expanded_height : 12 + 10 * count) *
+                    (expanded && style.expanded_height > 0 ? style.expanded_height
+                                                           : static_cast<float>(12 + 10 * count)) *
                         scale / 2};
     runtime.box(runtime.camera.screen_to_world(style.origin * scale + half),
                 half / runtime.camera.pixels_per_unit, 0, style.background);
     for (std::size_t row = 0; row < count; ++row)
         draw_text(runtime, expanded ? lines[row] : style.collapsed,
-                  (style.text_origin + Vec2{0, row * 10.f}) * scale, scale,
+                  (style.text_origin + Vec2{0, static_cast<float>(row) * 10.f}) * scale, scale,
                   row == 0 ? style.heading : style.text);
 }
 /// Optional visibility controller for applications using the default H binding.

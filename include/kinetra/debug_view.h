@@ -34,8 +34,8 @@ struct DebugMenu {
             visible = !visible;
         const float size = scale(viewport);
         const Vec2 point = (input.mouse - origin(viewport)) / size;
-        const bool captured =
-            visible && point.x >= 0 && point.x <= 182 && point.y >= 0 && point.y < 22 + options.size() * 16;
+        const bool captured = visible && point.x >= 0 && point.x <= 182 && point.y >= 0 &&
+                              point.y < static_cast<float>(22 + options.size() * 16);
         if (captured && input.clicked && point.y >= 22) {
             const auto row = std::size_t((point.y - 22) / 16);
             if (options[row].enabled)
@@ -50,7 +50,7 @@ struct DebugMenu {
             return;
         const float size = scale(runtime.camera.viewport);
         const Vec2 origin = this->origin(runtime.camera.viewport);
-        const Vec2 half{91 * size, (22 + options.size() * 16) * size / 2};
+        const Vec2 half{91 * size, static_cast<float>(22 + options.size() * 16) * size / 2};
         runtime.box(runtime.camera.screen_to_world(origin + half), half / runtime.camera.pixels_per_unit, 0,
                     {0.04f, 0.07f, 0.12f});
         draw_text(runtime, "DEBUG MENU", origin + Vec2{4, 6} * size, size, {1, 1, 1});
@@ -64,11 +64,13 @@ struct DebugMenu {
             if (option.number)
                 text += " " + std::to_string(option.number());
             const bool hovered = (option.enabled || option.action) && point.x >= 0 && point.x <= 182 &&
-                                 point.y >= 22 + row * 16.f && point.y < 38 + row * 16.f;
-            draw_text(runtime, text, origin + Vec2{4, 26 + row * 16.f} * size, size,
+                                 point.y >= 22 + static_cast<float>(row) * 16.f &&
+                                 point.y < 38 + static_cast<float>(row) * 16.f;
+            draw_text(runtime, text, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size, size,
                       hovered ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.9f, 1});
             if (option.visualization)
-                option.visualization(runtime, origin + Vec2{4, 26 + row * 16.f} * size, size);
+                option.visualization(runtime, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size,
+                                     size);
         }
     }
 };
@@ -77,7 +79,8 @@ struct DebugMenu {
 inline void draw_debug_circle(Runtime &runtime, Vec2 center, float radius, Color color) {
     constexpr int segments = 32;
     for (int i = 0; i < segments; ++i) {
-        const float a = i * 6.283185307f / segments, b = (i + 1) * 6.283185307f / segments;
+        const float a = static_cast<float>(i) * 6.283185307f / static_cast<float>(segments),
+                    b = static_cast<float>(i + 1) * 6.283185307f / static_cast<float>(segments);
         runtime.line(center + Vec2{std::cos(a), std::sin(a)} * radius,
                      center + Vec2{std::cos(b), std::sin(b)} * radius, 2.f / runtime.camera.pixels_per_unit,
                      color);

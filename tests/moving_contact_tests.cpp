@@ -1,5 +1,5 @@
-#include <kinetra/physics.h>
 #include <iostream>
+#include <kinetra/physics.h>
 #include <stdexcept>
 
 using namespace kinetra;
@@ -25,8 +25,7 @@ Body agent(int shape, Vec2 position, Vec2 velocity) {
 void pair_query() {
     const auto a = agent(0, {-2, 0}, {}), b = agent(0, {2, 0}, {});
     const auto hit = sweep_translation(a, {2, 0}, b, {-2, 0});
-    require(hit && std::abs(hit->fraction - 0.45f) < 0.00001f &&
-                length(hit->contact.point) < 0.0001f &&
+    require(hit && std::abs(hit->fraction - 0.45f) < 0.00001f && length(hit->contact.point) < 0.0001f &&
                 length(hit->contact.normal - Vec2{1, 0}) < 0.0001f,
             "Moving pair sweep has incorrect time/point/normal");
     const Vec2 drift{3, -4};
@@ -47,7 +46,8 @@ void fast_head_on() {
             auto a = agent(shape_a, {-2, 0}, {600, 0});
             auto b = agent(shape_b, {2, 0}, {-600, 0});
             a.motion = b.motion = Motion::controlled;
-            world.add(a); world.add(b);
+            world.add(a);
+            world.add(b);
             world.step(1.f / 60);
             require(world.body(0).position.x < world.body(1).position.x,
                     "Fast controlled agents exchanged sides without contact");
@@ -73,7 +73,8 @@ void crossing_and_overtaking() {
     World crossing;
     auto a = agent(0, {-2, 0}, {600, 0}), b = agent(0, {0, -2}, {0, 600});
     a.motion = b.motion = Motion::controlled;
-    crossing.add(a); crossing.add(b);
+    crossing.add(a);
+    crossing.add(b);
     crossing.step(1.f / 60);
     require(length(crossing.body(0).velocity - a.velocity) > 1 &&
                 length(crossing.body(0).position - crossing.body(1).position) > 0.399f,
@@ -101,15 +102,15 @@ void chronological_chain() {
         std::size_t ids[3];
         for (int k = 0; k < 3; ++k) {
             const int i = reverse ? 2 - k : k;
-            ids[i] = world.add(agent(0, {-2.f + 2 * i, 0}, {i == 0 ? 600.f : 0.f, 0}));
+            ids[i] = world.add(agent(0, {-2.f + static_cast<float>(2 * i), 0}, {i == 0 ? 600.f : 0.f, 0}));
         }
         world.step(1.f / 60);
         require(std::abs(world.body(ids[0]).position.x + 0.4f) < 0.001f &&
                     std::abs(world.body(ids[1]).position.x - 1.6f) < 0.001f &&
                     std::abs(world.body(ids[2]).position.x - 8.8f) < 0.001f,
                 "Contact chain was processed out of chronological order");
-        require(std::abs(world.body(ids[2]).velocity.x - 600) < 0.001f &&
-                    !world.sweep_budget_exhausted(), "Contact chain lost final impulse or exhausted budget");
+        require(std::abs(world.body(ids[2]).velocity.x - 600) < 0.001f && !world.sweep_budget_exhausted(),
+                "Contact chain lost final impulse or exhausted budget");
     }
 }
 void spinning_tangent_contact() {
@@ -199,9 +200,12 @@ void budget_observability() {
     wall.shape = Shape::box;
     wall.motion = Motion::fixed;
     wall.half_extents = {0.05f, 3};
-    wall.restitution = 1; wall.friction = 0;
-    wall.position = {-1, 0}; world.add(wall);
-    wall.position = {1, 0}; world.add(wall);
+    wall.restitution = 1;
+    wall.friction = 0;
+    wall.position = {-1, 0};
+    world.add(wall);
+    wall.position = {1, 0};
+    world.add(wall);
     auto ball = agent(0, {}, {60000, 0});
     world.add(ball);
     world.step(1.f / 60);
@@ -218,9 +222,17 @@ void budget_observability() {
 } // namespace
 int main() {
     try {
-        pair_query(); fast_head_on(); crossing_and_overtaking(); chronological_chain(); spinning_tangent_contact(); narrow_resting_gap(); tiny_touching_contact(); budget_observability();
+        pair_query();
+        fast_head_on();
+        crossing_and_overtaking();
+        chronological_chain();
+        spinning_tangent_contact();
+        narrow_resting_gap();
+        tiny_touching_contact();
+        budget_observability();
         std::cout << "Moving contact contracts passed\n";
     } catch (const std::exception &error) {
-        std::cerr << error.what() << '\n'; return 1;
+        std::cerr << error.what() << '\n';
+        return 1;
     }
 }

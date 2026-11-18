@@ -43,10 +43,8 @@ int main() {
                     "Parking footprint overlaps a blocked neighboring cell");
             require(footprint.path({5, 5}, {1, 35}, {2, 2}).empty(),
                     "Parking footprint crosses the outer boundary");
-            require(!footprint.clear({15, 15}, {35, 35}, {2, 2}),
-                    "Swept footprint cut a blocked corner");
-            require(footprint.clear({18, 15}, {18, 35}, {2, 2}),
-                    "Clear wall-tangent footprint rejected");
+            require(!footprint.clear({15, 15}, {35, 35}, {2, 2}), "Swept footprint cut a blocked corner");
+            require(footprint.clear({18, 15}, {18, 35}, {2, 2}), "Clear wall-tangent footprint rejected");
             const auto safe = footprint.path({5, 25}, {45, 25}, {2, 2});
             require(!safe.empty(), "Footprint planner failed to detour");
             Vec2 previous{5, 25};
@@ -92,7 +90,8 @@ int main() {
                 const auto value = constrain_borders(sliding, {-.2f, .1f}, std::span(&wall, 1), settings);
                 require(finite(value) && length(value) <= settings.max_acceleration + 1e-6f,
                         "Wall reaction exceeded acceleration bound");
-                if (!first) require(distance(previous, value) < .01f, "Wall reaction jumps at contact");
+                if (!first)
+                    require(distance(previous, value) < .01f, "Wall reaction jumps at contact");
                 first = false;
                 previous = value;
             }
@@ -129,13 +128,16 @@ int main() {
         forces = priority_steer(a, {100, 20}, std::span(&neighbor, 1), {}, settings);
         require(finite(forces.acceleration) && length(forces.collision) > 0,
                 "Coincident bodies were not handled");
-        const auto tangent = tangent_steer(a, {100,20}, std::span(&neighbor,1));
+        const auto tangent = tangent_steer(a, {100, 20}, std::span(&neighbor, 1));
         require(finite(tangent) && length(tangent) <= .600001f, "Invalid tangent acceleration");
         require(length(tangent_steer(a, a.position, {})) <= .600001f,
                 "Tangent arrival acceleration exceeded limit");
         rejected = false;
-        try { tangent_steer(a, {100,20}, {}, 2, .6f, 65); }
-        catch (const std::invalid_argument &) { rejected = true; }
+        try {
+            tangent_steer(a, {100, 20}, {}, 2, .6f, 65);
+        } catch (const std::invalid_argument &) {
+            rejected = true;
+        }
         require(rejected, "Tangent steering accepted unbounded horizon");
         std::cout << "PASS weighted navigation and priority steering\n";
     } catch (const std::exception &e) {

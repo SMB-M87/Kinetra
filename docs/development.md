@@ -1,29 +1,66 @@
 # Development and verification
 
-Build options and the commands for core, graphics and external-consumer checks. Core builds need no Kinetra-Lab checkout; application builds and tests belong to Lab. Which checks a change needs is decided by its [verification level](testing.md#verification-levels).
+How to build Kinetra, which options and presets exist, and how to set up the tools around the code: editor, warnings, static analysis and sanitizers. Core builds need no Kinetra-Lab checkout; application builds and tests belong to Lab. Which checks a change needs is decided by its [verification level](testing.md#verification-levels).
 
 ## Table of contents
 
 - [Dependencies and options](#dependencies-and-options)
+- [Presets](#presets)
 - [Checks](#checks)
 - [Graphics execution](#graphics-execution)
 - [External consumers](#external-consumers)
+- [Editor and tools](#editor-and-tools)
+- [Open points](#open-points)
 
 [Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)
 
 ## Dependencies and options
 
-C++20, CMake 3.16+ and a build tool are required. Runtime additionally requires SDL2/OpenGL development files and an OpenGL 3.3 context.
+Requirements:
+
+- **Always:** C++20 (GCC or Clang), CMake 3.16 or newer, and a build tool.
+- **Presets:** CMake 3.25 or newer and Ninja; ccache speeds up rebuilds.
+- **Runtime:** SDL2 (on Arch: `sdl2-compat`) and OpenGL development files, plus an OpenGL 3.3 context.
+
+On Arch/Artix: `pacman -S --needed base-devel cmake ninja ccache clang sdl2-compat libglvnd mesa`.
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `KINETRA_BUILD_RUNTIME` | OFF | Build optional SDL2/OpenGL Runtime |
+| `KINETRA_BUILD_RUNTIME` | OFF | Build the optional SDL2/OpenGL `Kinetra::Runtime` and `Kinetra::Launcher` |
 | `BUILD_TESTING` | ON | Build core tests |
-| `KINETRA_TEST_GRAPHICS` | OFF | Add runtime tests requiring an OpenGL context |
+| `KINETRA_TEST_GRAPHICS` | OFF | Add runtime tests that need an OpenGL context (CTest label `graphics`) |
+| `KINETRA_WARNINGS` | OFF | Compile Kinetra targets with `-Wall -Wextra -Wpedantic -Wshadow -Wconversion` |
+| `KINETRA_WARNINGS_AS_ERRORS` | OFF | Add `-Werror` to that warning set. CI enables it: Kinetra must stay warning-free |
 
-`KINETRA_BUILD_RUNTIME` also builds `Kinetra::Launcher` and its window-free tests. Application build switches belong to Kinetra-Lab. The root build contains no application executable. Use fresh build directories after migration to avoid stale binaries/options.
+The warning set and test registration live in [cmake/](../cmake/). Kinetra-Lab uses the same helpers (`kinetra_directory_warnings`, `kinetra_add_doctest`) with its own options. Use fresh build directories after changing options to avoid stale binaries.
+
+## Presets
+
+[CMakePresets.json](../CMakePresets.json) bundles the option combinations. Every preset builds in `build-<preset>/`, which is ignored by Git. A workflow preset configures, builds and tests in one command:
+
+```sh
+cmake --workflow --preset dev
+```
+
+| Preset | Build type | Runtime | Extras | Tests run |
+| --- | --- | --- | --- | --- |
+| `dev` | Debug | on | warnings, ccache, `compile_commands.json` | all except `graphics` |
+| `release` | Release | on | ccache | all except `graphics` |
+| `headless` | Release | off | ccache | all |
+| `asan` | Debug | off | AddressSanitizer + UndefinedBehaviorSanitizer | all |
+| `graphics` | Release | on | graphics tests, `SDL_VIDEODRIVER=offscreen`, software Mesa | all, including `graphics` |
+| `ci` | Release | on | warnings as errors, graphics tests compiled | all except `graphics` |
+
+`release` has configure, build and test presets but no workflow preset. Run its steps separately: `cmake --preset release && cmake --build --preset release && ctest --preset release`. For iterative work, rebuild one target with `cmake --build --preset dev --target <target>`.
 
 ## Checks
+
+```sh
+cmake --workflow --preset ci       # what CI runs: everything compiled, warnings as errors
+cmake --workflow --preset dev      # day-to-day
+```
+
+Without presets, the classic commands still work:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -31,26 +68,40 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-`kinetra_behavior` and `kinetra_navigation` cover core contracts. Check changed documentation links and paths when editing docs. Format changed authored C++ using `.clang-format`; leave generated GLAD/KHR unchanged.
+Check changed documentation with `python3 tools/check_docs.py`, and formatting with `clang-format --dry-run --Werror <files>`. Leave generated GLAD/KHR and `third_party/` unchanged.
 
 ## Graphics execution
 
 ```sh
-cmake -S . -B build-runtime -DKINETRA_BUILD_RUNTIME=ON -DKINETRA_TEST_GRAPHICS=ON
-cmake --build build-runtime --parallel
-SDL_VIDEODRIVER=offscreen LIBGL_ALWAYS_SOFTWARE=1 ctest --test-dir build-runtime --output-on-failure
+cmake --workflow --preset graphics
 ```
 
-Use a desktop or Xvfb if SDL lacks offscreen support. Software rendering does not establish desktop performance or feel. Application presentation, menu, switching and bounded smoke checks run in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab#tests-and-resources).
+The preset sets `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1` for the tests. Use a desktop or Xvfb if SDL lacks offscreen support. Software rendering does not establish desktop performance or feel. Application presentation, menu, switching and bounded smoke checks run in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab#tests-and-resources).
 
 ## External consumers
 
-The separate [consumer fixture](../tests/consumer/) checks public simulation interfaces and, with `CONSUMER_GRAPHICS=ON`, runtime headers/linking without opening a window. Run it explicitly when changing the public build boundary:
+The separate [consumer fixture](../tests/consumer/) checks the public simulation interfaces. With `CONSUMER_GRAPHICS=ON`, it also checks the runtime headers and linking, without opening a window. Run it when changing the public build boundary (CI always runs it):
 
 ```sh
-cmake -S tests/consumer -B build-consumer -DKINETRA_SOURCE="$PWD"
-cmake --build build-consumer --parallel
+cmake -S tests/consumer -B build-consumer -G Ninja -DKINETRA_SOURCE="$PWD" -DCONSUMER_GRAPHICS=ON
+cmake --build build-consumer
 ./build-consumer/consumer
 ```
 
-For runtime linking, add `-DCONSUMER_GRAPHICS=ON` and provide the SDL2/OpenGL dependencies. Kinetra is integrated from source with `add_subdirectory`; installed CMake packages are not provided.
+Kinetra is integrated from source with `add_subdirectory`; no installed CMake package is provided.
+
+## Editor and tools
+
+| Tool | Setup | Use |
+| --- | --- | --- |
+| clangd | [.clangd](../.clangd) points at `build-dev/compile_commands.json`; run `cmake --preset dev` once | Completion, go-to-definition, `///` contracts on hover, diagnostics with the project's flags |
+| clang-format | [.clang-format](../.clang-format), clang-format 23 (same as CI) | Format the files you change; most editors do it on save |
+| clang-tidy | [.clang-tidy](../.clang-tidy) | `run-clang-tidy -p build-dev <files>` on changed files. Checks: bugprone, performance, selected modernize, and naming per the [conventions](conventions.md#naming). Not enforced in CI yet |
+| Sanitizers | `asan` preset | `cmake --workflow --preset asan` finds memory and undefined-behavior errors in the headless code |
+| gdb | `dev` preset (Debug) | `gdb --args build-dev/<test executable>` |
+
+`git blame` skips the formatting-only commits listed in [.git-blame-ignore-revs](../.git-blame-ignore-revs) after `git config blame.ignoreRevsFile .git-blame-ignore-revs`; GitHub does this automatically.
+
+## Open points
+
+- clang-tidy findings are not yet triaged; enforcing a subset in CI is a later decision.
