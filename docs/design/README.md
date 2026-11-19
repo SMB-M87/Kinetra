@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-19 | [Static window titles](2026-11-19-static-window-titles.md): "Launcher" in the menu, the application name in a session | implemented |
 | 2026-11-19 | [Documentation cleanup](2026-11-19-docs-cleanup.md): header contracts, module READMEs, ADR index | implemented |
 | 2026-11-18 | [Skill documentation](2026-11-18-skill-documentation.md): a README with use cases for every skill | implemented |
 | 2026-11-18 | [Tooling and CI](2026-11-18-tooling-and-ci.md) | implemented |

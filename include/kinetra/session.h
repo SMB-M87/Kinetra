@@ -18,7 +18,9 @@ class Session {
     virtual void advance(double elapsed, const Input &input, Camera2D &camera) = 0;
     /// Draws the current state; called only when request() is `none` after advance().
     virtual void render(Runtime &runtime) = 0;
-    /// Window title for the running session.
+    /// Window title for the running session: the application's name only. State belongs in
+    /// the window itself, not in the title. Hosts may refresh the title less often than
+    /// every frame.
     virtual std::string title() = 0;
     /// Read after every advance and before render. Defaults to `none`.
     virtual SessionRequest request() const { return SessionRequest::none; }
