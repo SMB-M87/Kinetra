@@ -1,6 +1,8 @@
 #pragma once
 
 #include "bitmap_text.h"
+#include <algorithm>
+#include <cstdio>
 #include <functional>
 #include <span>
 #include <string_view>
@@ -135,5 +137,50 @@ inline void draw_debug_vector(Runtime &runtime, Vec2 position, Vec2 vector, Colo
     runtime.line(position, end, width, color);
     runtime.line(end, end - rotated(direction, 0.6f) * head, width, color);
     runtime.line(end, end - rotated(direction, -0.6f) * head, width, color);
+}
+
+/// Layout of the frame-time graph in logical screen pixels.
+struct FrameTimeGraph {
+    /// Height of the bar area; a bar this tall is `ceiling_ms` or longer.
+    static constexpr float height = 60;
+    /// Frame time at the top of the bar area, in milliseconds.
+    static constexpr float ceiling_ms = 50;
+    /// Reference lines: one and two refreshes of a 60 Hz display.
+    static constexpr float one_refresh_ms = 1000.f / 60, two_refreshes_ms = 2000.f / 60;
+    /// Width of the graph: one pixel per frame held.
+    static constexpr float width = float(FrameTimes::capacity);
+    /// Top-left corner for `viewport`: centered at the top edge, where no Lab overlay draws.
+    static Vec2 origin(Vec2 viewport) { return {viewport.x / 2 - width / 2, 8}; }
+};
+
+/// Draws `times` as a bar graph, newest on the right, with lines at 16.7 and 33.3 ms and the
+/// average and worst frame below it, in screen space at FrameTimeGraph::origin(). Bars up to
+/// one 60 Hz refresh (plus 5 % timer jitter) are green, up to two yellow, longer ones red.
+inline void draw_frame_times(Runtime &runtime, const FrameTimes &times) {
+    const auto &camera = runtime.camera;
+    const Vec2 origin = FrameTimeGraph::origin(camera.viewport);
+    const float pixels_per_ms = FrameTimeGraph::height / FrameTimeGraph::ceiling_ms;
+    // Screen-space rectangle from its top-left corner and size, like draw_text.
+    const auto rectangle = [&](Vec2 corner, Vec2 size, Color color) {
+        runtime.box(camera.screen_to_world(corner + size / 2), size / 2 / camera.pixels_per_unit, 0, color);
+    };
+    rectangle(origin - Vec2{4, 4}, {FrameTimeGraph::width + 8, FrameTimeGraph::height + 20},
+              {0, 0, 0, 0.55f});
+    const float bottom = origin.y + FrameTimeGraph::height;
+    const float first = FrameTimeGraph::width - float(times.size());
+    for (std::size_t i = 0; i < times.size(); ++i) {
+        const float ms = float(times[i] * 1000);
+        const float bar = std::min(ms, FrameTimeGraph::ceiling_ms) * pixels_per_ms;
+        const Color color = ms <= FrameTimeGraph::one_refresh_ms * 1.05f     ? Color{0.3f, 0.9f, 0.4f}
+                            : ms <= FrameTimeGraph::two_refreshes_ms * 1.05f ? Color{1, 0.85f, 0.2f}
+                                                                             : Color{1, 0.3f, 0.25f};
+        rectangle({origin.x + first + float(i), bottom - bar}, {1, bar}, color);
+    }
+    for (const float ms : {FrameTimeGraph::one_refresh_ms, FrameTimeGraph::two_refreshes_ms})
+        rectangle({origin.x, bottom - ms * pixels_per_ms}, {FrameTimeGraph::width, 1}, {1, 1, 1, 0.45f});
+    char text[64];
+    std::snprintf(text, sizeof text, "FRAME AVG %.1f MS WORST %.1f MS", times.average() * 1000,
+                  times.worst() * 1000);
+    draw_text(runtime, text, {origin.x, bottom + 4}, 1, {1, 1, 1});
 }
 } // namespace kinetra

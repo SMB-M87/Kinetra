@@ -1,7 +1,9 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <stdexcept>
 
 namespace kinetra {
@@ -70,6 +72,54 @@ class RateCounter {
   private:
     double window_, elapsed_{}, rate_{};
     int events_{};
+};
+
+/// The durations of the most recent frames, for a frame-time graph.
+///
+/// Holds the last `capacity` values in a ring; older ones are dropped. Runtime records the
+/// time between successive presented frames, so a stall anywhere (simulation, drawing,
+/// driver or compositor) shows as one long frame.
+class FrameTimes {
+  public:
+    /// Frames kept: four seconds at 60 frames per second.
+    static constexpr std::size_t capacity = 240;
+    /// Adds one frame of `seconds`. Throws std::invalid_argument for negative or non-finite
+    /// time.
+    void record(double seconds) {
+        if (!std::isfinite(seconds) || seconds < 0)
+            throw std::invalid_argument("Frame time must be finite and nonnegative");
+        samples_[(first_ + size_) % capacity] = seconds;
+        if (size_ < capacity)
+            ++size_;
+        else
+            first_ = (first_ + 1) % capacity;
+    }
+    /// Number of frames held, at most capacity.
+    std::size_t size() const { return size_; }
+    /// Frame `index` in seconds, oldest first. Throws std::out_of_range when index >= size().
+    double operator[](std::size_t index) const {
+        if (index >= size_)
+            throw std::out_of_range("Frame index out of range");
+        return samples_[(first_ + index) % capacity];
+    }
+    /// Mean of the frames held, in seconds; zero when empty.
+    double average() const {
+        double sum = 0;
+        for (std::size_t i = 0; i < size_; ++i)
+            sum += (*this)[i];
+        return size_ ? sum / double(size_) : 0;
+    }
+    /// Longest frame held, in seconds; zero when empty.
+    double worst() const {
+        double result = 0;
+        for (std::size_t i = 0; i < size_; ++i)
+            result = std::max(result, (*this)[i]);
+        return result;
+    }
+
+  private:
+    std::array<double, capacity> samples_{};
+    std::size_t first_{}, size_{};
 };
 
 } // namespace kinetra

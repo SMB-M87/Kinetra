@@ -54,6 +54,12 @@ A [Session](../../include/kinetra/session.h) provides `advance`, `render`, `titl
 
 Applications own pause and resume and their `FixedClock` instances, so each selects its own update rate. `FixedClock` validates its step and caps the backlog; time beyond the cap is dropped, which keeps input responsive after a stall. `RateCounter` turns counted frames or updates into a per-second rate for statistics displays.
 
+**Interpolation.** A fixed clock runs a whole number of ticks per frame. At 60 frames per second and 200 ticks per second, that is three ticks one frame and four the next, so motion drawn straight from the simulation moves unevenly, and more so when frame times vary. `FixedClock::interpolation()` is the fraction of the next tick already accumulated. An application keeps each moving object's state before and after the last tick, and draws it at `lerp(before, after, interpolation())` (`lerp_angle` for angles, the shorter way around). The drawing then trails the simulation by less than one tick. Kinetra does not store poses itself: what moves, and what counts as a jump that must not be blended (a teleport, a respawn), is application knowledge.
+
+**Frame times.** `Runtime::end()` records the wall-clock time since the previous `end()` in `frame_times()`, a `FrameTimes` ring of the last 240 frames. Because it is measured after the buffer swap, a frame that a blocking VSync, the driver or the compositor held back shows as a long frame. `draw_frame_times(runtime, times)` in [debug_view.h](../../include/kinetra/debug_view.h) draws them as a bar graph at the top center of the window, with lines at one and two 60 Hz refreshes and the average and worst frame below. Kinetra-Lab shows it through a FRAME TIMES row in each application's settings panel.
+
+The graph tells two kinds of stutter apart. Long frames mean the frame reached the screen late: the application, the driver or the compositor stalled. Even frames combined with uneven motion on screen point to presentation outside the application, such as a compositor that drops or repeats frames (WSLg, which does not apply VSync).
+
 ## External consumers
 
 Source consumers use `add_subdirectory` and link the public targets; headless integration is shown in the [root README](../../README.md#using-kinetra). Runtime consumers enable the runtime before adding Kinetra:
@@ -71,6 +77,6 @@ Applications and the bundled launcher executable are built in [Kinetra-Lab](http
 
 [Runtime tests](../../tests/runtime_tests.cpp) cover window lifecycle, partial cleanup, resize, pixel output, camera transforms, focus, held/pressed input and quit. [External consumer fixture](../../tests/consumer/CMakeLists.txt) compile public simulation/runtime interfaces without any Lab source.
 
-No texture system, pose interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
+No texture system, built-in pose storage for interpolation, context sharing, multithreaded renderer or alternate backend is implemented. Software Mesa validates tested rendering contracts, not Artix desktop performance. See [development](../development.md) for commands.
 
 Input exposes independent `right_clicked` and `right_mouse_down` fields. The click edge clears on each poll; held buttons clear on release or focus loss.

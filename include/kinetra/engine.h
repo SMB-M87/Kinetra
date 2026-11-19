@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.h"
+#include "timing.h"
 #include <array>
 #include <memory>
 #include <span>
@@ -110,8 +111,12 @@ class Runtime {
     void polygon(std::span<const Vec2> vertices, Color color);
     /// Straight line of `width` world units.
     void line(Vec2 from, Vec2 to, float width, Color color);
-    /// Uploads and draws the batch, then presents the frame.
+    /// Uploads and draws the batch, then presents the frame. From the second frame on, also
+    /// records the time since the previous end() in frame_times().
     void end();
+    /// Wall-clock time between the last presented frames, oldest first. With VSync this is
+    /// the display's refresh interval; a longer entry is a frame that reached the screen late.
+    const FrameTimes &frame_times() const;
     /// The view used by all drawing calls. poll() sets its viewport; the application owns
     /// position and zoom.
     Camera2D camera;
