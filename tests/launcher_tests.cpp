@@ -1,5 +1,5 @@
 // Window-free tests for the launcher library (include/kinetra/launcher.h): menu paging
-// and configuration, SessionHost transitions, and debug-menu actions. The loops that
+// and configuration, SessionHost transitions, and debug-menu actions and stepper buttons. The loops that
 // need a window are covered by runtime_tests.cpp.
 #include <kinetra/debug_view.h>
 #include <kinetra/launcher.h>
@@ -111,4 +111,77 @@ TEST_CASE("a debug menu action runs and captures the click") {
     click.mouse = {1280 - 180 * DebugMenu::scale({1280, 800}), 36 * DebugMenu::scale({1280, 800})};
     CHECK(debug.update(click, {1280, 800}, {&action, 1}));
     CHECK(actions == 1);
+}
+
+namespace {
+/// A left click at panel position `point` (panel pixels from the menu's top-left corner)
+/// in a 1280 × 800 viewport.
+Input click_in_debug_menu(const DebugMenu &menu, Vec2 point) {
+    const Vec2 viewport{1280, 800};
+    Input click;
+    click.clicked = true;
+    click.mouse = menu.origin(viewport) + point * DebugMenu::scale(viewport);
+    return click;
+}
+
+/// The vertical middle of the first row, in panel pixels.
+constexpr float first_row_middle = DebugMenu::heading_height + DebugMenu::row_height / 2;
+} // namespace
+
+TEST_CASE("a debug menu stepper runs the button under the click") {
+    DebugMenu debug;
+    debug.visible = true;
+    int actions = 0, value = 0;
+    DebugOption option{"SPEED", nullptr, [&] { ++actions; }};
+    option.decrease = [&] { --value; };
+    option.increase = [&] { ++value; };
+    const float decrease_middle = DebugMenu::decrease_left + DebugMenu::stepper_width / 2;
+    const float increase_middle = DebugMenu::increase_left + DebugMenu::stepper_width / 2;
+    CHECK(debug.update(click_in_debug_menu(debug, {increase_middle, first_row_middle}), {1280, 800},
+                       {&option, 1}));
+    CHECK(value == 1);
+    debug.update(click_in_debug_menu(debug, {decrease_middle, first_row_middle}), {1280, 800}, {&option, 1});
+    debug.update(click_in_debug_menu(debug, {decrease_middle, first_row_middle}), {1280, 800}, {&option, 1});
+    CHECK(value == -1);
+    CHECK_MESSAGE(actions == 0, "a button click does not also run the row");
+    // The gap between the buttons is split between them, and the [+] zone runs to the edge.
+    const float gap_left = DebugMenu::decrease_left + DebugMenu::stepper_width;
+    debug.update(click_in_debug_menu(debug, {DebugMenu::increase_left - 1, first_row_middle}), {1280, 800},
+                 {&option, 1});
+    CHECK(value == 0);
+    debug.update(click_in_debug_menu(debug, {gap_left + 1, first_row_middle}), {1280, 800}, {&option, 1});
+    CHECK(value == -1);
+    debug.update(click_in_debug_menu(debug, {DebugMenu::panel_width - 0.5f, first_row_middle}), {1280, 800},
+                 {&option, 1});
+    CHECK(value == 0);
+    CHECK(actions == 0);
+}
+
+TEST_CASE("a click beside the stepper buttons still runs the row") {
+    DebugMenu debug;
+    debug.visible = true;
+    bool enabled = false;
+    int steps = 0;
+    DebugOption option{"WORKLOAD", &enabled};
+    option.increase = [&] { ++steps; };
+    debug.update(click_in_debug_menu(debug, {DebugMenu::text_margin, first_row_middle}), {1280, 800},
+                 {&option, 1});
+    CHECK(enabled);
+    CHECK(steps == 0);
+    // Without a [-] button its zone is part of the row.
+    debug.update(click_in_debug_menu(debug, {DebugMenu::decrease_left + 1, first_row_middle}), {1280, 800},
+                 {&option, 1});
+    CHECK_FALSE(enabled);
+    CHECK(steps == 0);
+}
+
+TEST_CASE("a row without stepper buttons takes clicks across its full width") {
+    DebugMenu debug;
+    debug.visible = true;
+    int actions = 0;
+    DebugOption option{"RESET", nullptr, [&] { ++actions; }};
+    for (const float x :
+         {0.5f, DebugMenu::decrease_left + 1, DebugMenu::increase_left + 1, DebugMenu::panel_width - 0.5f})
+        CHECK(debug.update(click_in_debug_menu(debug, {x, first_row_middle}), {1280, 800}, {&option, 1}));
+    CHECK(actions == 4);
 }

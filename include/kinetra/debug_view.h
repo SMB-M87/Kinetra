@@ -9,7 +9,7 @@
 
 namespace kinetra {
 /// One row of the debug menu. Set `enabled` for a check box or `action` for a button; the
-/// other fields add read-only content to the row.
+/// other fields add read-only content to the row, and `decrease` and `increase` add buttons.
 struct DebugOption {
     /// Row text; the viewed characters must outlive the menu's draw() calls.
     std::string_view label;
@@ -24,6 +24,12 @@ struct DebugOption {
     /// Optional custom drawing next to the row: runtime, top-left screen position of the
     /// row text, and the menu scale.
     std::function<void(Runtime &, Vec2, float)> visualization{};
+    /// Optional `[-]` button at the right edge of the row, called when it is clicked
+    /// instead of the row. With a button, keep the row text within 21 characters, so it
+    /// ends before the button.
+    std::function<void()> decrease{};
+    /// Optional `[+]` button at the right edge of the row; see `decrease`.
+    std::function<void()> increase{};
 };
 
 /// Shared screen-space debug controls. Layout is identical for drawing and picking;
@@ -44,6 +50,12 @@ struct DebugMenu {
     /// Distance from the viewport's top-right corner to the default panel position, in
     /// panel pixels.
     static constexpr float screen_margin = 8;
+    /// Width of a `[-]` or `[+]` button: three glyph cells, in panel pixels.
+    static constexpr float stepper_width = 18;
+    /// Left edge of the `[+]` button, flush with the right text margin, in panel pixels.
+    static constexpr float increase_left = panel_width - text_margin - stepper_width;
+    /// Left edge of the `[-]` button, one glyph cell before `[+]`, in panel pixels.
+    static constexpr float decrease_left = increase_left - 6 - stepper_width;
 
     /// Whether the panel shows.
     bool visible{};
@@ -76,11 +88,21 @@ struct DebugMenu {
         const bool captured = visible && point.x >= 0 && point.x <= panel_width && point.y >= 0 &&
                               point.y < row_top(options.size());
         if (captured && input.clicked && point.y >= heading_height) {
-            const auto row = std::size_t((point.y - heading_height) / row_height);
-            if (options[row].enabled)
-                *options[row].enabled = !*options[row].enabled;
-            else if (options[row].action)
-                options[row].action();
+            auto &option = options[std::size_t((point.y - heading_height) / row_height)];
+            switch (part_at(option, point.x)) {
+            case RowPart::decrease:
+                option.decrease();
+                break;
+            case RowPart::increase:
+                option.increase();
+                break;
+            case RowPart::label:
+                if (option.enabled)
+                    *option.enabled = !*option.enabled;
+                else if (option.action)
+                    option.action();
+                break;
+            }
         }
         return captured;
     }
@@ -103,15 +125,42 @@ struct DebugMenu {
                 text += " " + option.text();
             if (option.number)
                 text += " " + std::to_string(option.number());
-            const bool hovered = (option.enabled || option.action) && point.x >= 0 &&
-                                 point.x <= panel_width && point.y >= row_top(row) &&
-                                 point.y < row_top(row + 1);
-            const Vec2 text_position = origin + Vec2{text_margin, row_top(row) + text_margin} * size;
+            const bool on_row = point.x >= 0 && point.x <= panel_width && point.y >= row_top(row) &&
+                                point.y < row_top(row + 1);
+            const RowPart hovered = part_at(option, point.x);
+            const auto color = [&](RowPart part, bool clickable) {
+                return on_row && clickable && hovered == part ? highlight_color : text_color;
+            };
+            const float top = row_top(row) + text_margin;
+            const Vec2 text_position = origin + Vec2{text_margin, top} * size;
             draw_text(runtime, text, text_position, size,
-                      hovered ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.9f, 1});
+                      color(RowPart::label, option.enabled || option.action));
+            if (option.decrease)
+                draw_text(runtime, "[-]", origin + Vec2{decrease_left, top} * size, size,
+                          color(RowPart::decrease, true));
+            if (option.increase)
+                draw_text(runtime, "[+]", origin + Vec2{increase_left, top} * size, size,
+                          color(RowPart::increase, true));
             if (option.visualization)
                 option.visualization(runtime, text_position, size);
         }
+    }
+
+  private:
+    /// Text color of a clickable row or button under the pointer, and of everything else.
+    static constexpr Color highlight_color{0.25f, 0.65f, 1.f}, text_color{0.8f, 0.9f, 1};
+    /// The part of a row a click or the pointer is on.
+    enum class RowPart { label, decrease, increase };
+    /// The part of `option`'s row at panel x coordinate `x`. The gap between the two buttons
+    /// is split between them and the `[+]` zone runs to the panel edge, so a near miss still
+    /// hits the button it is closest to. A row without a button keeps that zone as label.
+    static RowPart part_at(const DebugOption &option, float x) {
+        const float gap = increase_left - (decrease_left + stepper_width);
+        if (option.increase && x >= increase_left - gap / 2)
+            return RowPart::increase;
+        if (option.decrease && x >= decrease_left - gap / 2 && x < increase_left - gap / 2)
+            return RowPart::decrease;
+        return RowPart::label;
     }
 };
 
