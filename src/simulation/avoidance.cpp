@@ -1,6 +1,6 @@
 #include <array>
-#include <kinetra/avoidance.h>
-#include <kinetra/physics.h>
+#include <kinetra/simulation/avoidance.h>
+#include <kinetra/simulation/physics.h>
 #include <limits>
 #include <optional>
 #include <stdexcept>

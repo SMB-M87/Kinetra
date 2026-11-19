@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <kinetra/physics.h>
+#include <kinetra/simulation/physics.h>
 #include <utility>
 #include <vector>
 

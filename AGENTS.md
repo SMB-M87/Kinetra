@@ -31,7 +31,7 @@ Read only what the task needs; the pages are written to stand on their own.
 | Write or review C++ or CMake | [Conventions](docs/conventions.md) |
 | Add tests or pick a verification level | [Testing](docs/testing.md); build options in [development](docs/development.md) |
 | Write READMEs, diagrams or `///` comments | [Documentation guide](docs/documentation.md) |
-| Work on one module | Its guide: [simulation](src/simulation/README.md), [runtime and launcher](src/engine/README.md), [tests](tests/README.md) |
+| Work on one module | Its guide: [simulation](src/simulation/README.md), [runtime and launcher](src/runtime/README.md), [tests](tests/README.md) |
 | Understand dependencies and ownership | [Architecture](docs/architecture.md), [engine contracts](docs/README.md#engine-contracts) |
 | Find out why a boundary exists | [Decisions](docs/decisions/README.md) |
 | See current and planned work | [Design documents](docs/design/README.md) |
@@ -84,7 +84,7 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 
 Details and examples are in the [conventions](docs/conventions.md).
 
-- First-party headers use `.h` and implementations use `.cpp`; never `.hpp`, `.hxx`, `.hh`, `.cc` or `.cxx`. Leave third-party/generated files unchanged (`src/glad.c`, `include/glad/`, `include/KHR/`).
+- First-party headers use `.h` and implementations use `.cpp`; never `.hpp`, `.hxx`, `.hh`, `.cc` or `.cxx`. Headers live only under an include root, in the folder of their layer; the [directory layout](docs/conventions.md#directory-layout) applies to Kinetra and Lab. Leave third-party/generated files unchanged (`src/glad.c`, `include/glad/`, `include/KHR/`).
 - Follow `.clang-format`. Format the files you change; put any repository-wide reformatting in a separate commit and list it in `.git-blame-ignore-revs`.
 - Code compiles warning-free with `KINETRA_WARNINGS`; CI fails on any Kinetra warning. Fix the cause (explicit conversions, renamed shadows) instead of suppressing it.
 - Prefer RAII, const-correctness, explicit ownership, value types and standard C++20. Avoid global mutable state.
@@ -117,7 +117,7 @@ The code must explain itself to a reader who has not seen the design.
 - The summary states the contract: purpose; units and coordinate space; ownership and lifetime of borrowed objects; preconditions; invariants; behavior on invalid input; and thread-safety when relevant.
 - In `.cpp` files, explain *why* at each algorithm, invariant, workaround and tuning constant. Do not narrate what a line does.
 - Update or remove comments in the same commit as the behavior they describe.
-- Format, examples and a before/after sample are in the [documentation guide](docs/documentation.md#code-comments). `TrafficGate` in [traffic.h](include/kinetra/traffic.h) is a good existing example.
+- Format, examples and a before/after sample are in the [documentation guide](docs/documentation.md#code-comments). `TrafficGate` in [traffic.h](include/kinetra/simulation/traffic.h) is a good existing example.
 
 *Why:* the user wants to learn the code from the code. clangd shows `///` on hover, and Doxygen can render it later without rewriting.
 
@@ -158,9 +158,9 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | Capability | Implementation | Tests / authoritative documentation |
 | --- | --- | --- |
 | Math, collision, physics, spatial search | [public API](include/kinetra/), [simulation](src/simulation/) | [simulation tests](tests/simulation_tests.cpp), [contracts](docs/engine/math-physics.md) |
-| Navigation, steering, avoidance, traffic | [navigation](include/kinetra/navigation.h), [steering](include/kinetra/steering.h), [traffic](include/kinetra/traffic.h) | [navigation tests](tests/navigation_tests.cpp), [design](docs/engine/navigation.md) |
-| Window, input, rendering and direct sessions | [runtime](src/engine/), [session API](include/kinetra/session.h) | [runtime tests](tests/runtime_tests.cpp), [runtime guide](docs/engine/runtime.md) |
-| Shared overlays and text | [settings](include/kinetra/settings_view.h), [debug](include/kinetra/debug_view.h), [help](include/kinetra/help_view.h), [text](include/kinetra/bitmap_text.h) | [settings tests](tests/settings_view_tests.cpp), [presentation tests](tests/presentation_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
-| Generic launcher | [launcher API](include/kinetra/launcher.h) | [tests](tests/launcher_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
+| Navigation, steering, avoidance, traffic | [navigation](include/kinetra/simulation/navigation.h), [steering](include/kinetra/simulation/steering.h), [traffic](include/kinetra/simulation/traffic.h) | [navigation tests](tests/navigation_tests.cpp), [design](docs/engine/navigation.md) |
+| Window, input, rendering and direct sessions | [runtime](src/runtime/), [session API](include/kinetra/runtime/session.h) | [runtime tests](tests/runtime_tests.cpp), [runtime guide](docs/engine/runtime.md) |
+| Shared overlays and text | [settings](include/kinetra/runtime/settings_view.h), [debug](include/kinetra/runtime/debug_view.h), [help](include/kinetra/runtime/help_view.h), [text](include/kinetra/runtime/bitmap_text.h) | [settings tests](tests/settings_view_tests.cpp), [presentation tests](tests/presentation_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
+| Generic launcher | [launcher API](include/kinetra/runtime/launcher.h) | [tests](tests/launcher_tests.cpp), [contracts](docs/engine/launcher-overlays.md) |
 | Applications and bundled launcher | [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) | Application-owned registration, executables and tests |
 | Build, presets, CI and docs checks | [CMake](CMakeLists.txt), [presets](CMakePresets.json), [CMake helpers](cmake/), [CI](.github/workflows/ci.yml), [consumer](tests/consumer/), [tools](tools/README.md) | [development](docs/development.md), [testing](docs/testing.md) |

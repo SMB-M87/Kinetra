@@ -40,7 +40,10 @@ flowchart LR
         RT["runtime.cpp<br/>Runtime"]
         SE["session.cpp<br/>run_session"]
         SV["settings_view.cpp<br/>SettingsOverlay"]
-        HDR["header-only:<br/>bitmap_text, overlay_style,<br/>debug_menu, debug_view, help_view"]
+        HDR["header-only:<br/>bitmap_text, overlay_style,<br/>debug_view, help_view"]
+    end
+    subgraph View["include/kinetra/view (header-only, headless)"]
+        VW["camera, input,<br/>debug_menu"]
     end
     subgraph Launcher["Kinetra::Launcher"]
         LA["launcher.cpp<br/>LaunchMenu, SessionHost, run_launcher"]
@@ -50,9 +53,11 @@ flowchart LR
     SV --> RT
     LA --> SE
     LA --> HDR
+    HDR --> VW
+    RT --> VW
 ```
 
-*Takeaway:* everything draws through `Runtime`; the launcher builds on the session contract and the shared text and overlay helpers.
+*Takeaway:* everything draws through `Runtime`; the launcher builds on the session contract and the shared text and overlay helpers. The view types in `include/kinetra/view/` need no window, so headless application logic uses them too.
 
 | File | Responsibility | Target |
 | --- | --- | --- |
@@ -64,13 +69,14 @@ flowchart LR
 
 | Public header | Responsibility | Linking | Contract |
 | --- | --- | --- | --- |
-| [engine.h](../../include/kinetra/engine.h) | `Runtime`, `Input`, `Key`, `Color` | `Kinetra::Runtime` | [Runtime](../../docs/engine/runtime.md) |
-| [session.h](../../include/kinetra/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
-| [settings_view.h](../../include/kinetra/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
-| [launcher.h](../../include/kinetra/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
-| [bitmap_text.h](../../include/kinetra/bitmap_text.h), [overlay_style.h](../../include/kinetra/overlay_style.h), [debug_view.h](../../include/kinetra/debug_view.h), [help_view.h](../../include/kinetra/help_view.h) | Glyphs and text, the panels' shared style, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
-| [debug_menu.h](../../include/kinetra/debug_menu.h) | `DebugEntry`, `DebugFolds` and the row helpers: a debug menu as data | Header-only; usable headless | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
-| [camera.h](../../include/kinetra/camera.h), [timing.h](../../include/kinetra/timing.h) | `Camera2D` and zoom, `FixedClock`, `RateCounter`, `FrameTimes`, `FrameLimiter` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md), [presentation helpers](../../docs/engine/launcher-overlays.md#presentation-helpers) |
+| [engine.h](../../include/kinetra/runtime/engine.h) | `Runtime`, `FramePacing` | `Kinetra::Runtime` | [Runtime](../../docs/engine/runtime.md) |
+| [input.h](../../include/kinetra/view/input.h) | `Input`, `Key`, `Color` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md) |
+| [session.h](../../include/kinetra/runtime/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
+| [settings_view.h](../../include/kinetra/runtime/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
+| [launcher.h](../../include/kinetra/runtime/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
+| [bitmap_text.h](../../include/kinetra/runtime/bitmap_text.h), [overlay_style.h](../../include/kinetra/runtime/overlay_style.h), [debug_view.h](../../include/kinetra/runtime/debug_view.h), [help_view.h](../../include/kinetra/runtime/help_view.h) | Glyphs and text, the panels' shared style, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
+| [debug_menu.h](../../include/kinetra/view/debug_menu.h) | `DebugEntry`, `DebugFolds` and the row helpers: a debug menu as data | Header-only; usable headless | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
+| [camera.h](../../include/kinetra/view/camera.h), [timing.h](../../include/kinetra/runtime/timing.h) | `Camera2D` and zoom, `FixedClock`, `RateCounter`, `FrameTimes`, `FrameLimiter` | Header-only; usable headless (`timing.h` stays with the runtime: it paces the main loop) | [Runtime](../../docs/engine/runtime.md), [presentation helpers](../../docs/engine/launcher-overlays.md#presentation-helpers) |
 
 ## How it works
 
@@ -111,7 +117,7 @@ After a transition the clock restarts, so building a world does not count as sim
 - `run_launcher` starts a session only from the menu, after the previous one was destroyed, so two sessions never exist at once (Dotio's world is a singleton). `SessionHost::start` itself keeps the old session until the factory succeeds, so a throwing factory leaves the old session and camera untouched.
 - Overlay positions are in logical panel pixels, scaled by a factor that depends only on the viewport.
 - Borrowed pointers (overlay flags, and whatever the functions of a debug entry refer to) must outlive the overlay's `update` and `draw` calls.
-- The debug menu and the settings panel draw with [overlay_style.h](../../include/kinetra/overlay_style.h) only; a color or mark that both use is defined there once.
+- The debug menu and the settings panel draw with [overlay_style.h](../../include/kinetra/runtime/overlay_style.h) only; a color or mark that both use is defined there once.
 
 ## Changing this module
 
@@ -119,7 +125,7 @@ After a transition the clock restarts, so building a world does not count as sim
 - **A new kind of debug row:** add a `DebugEntryKind`, its mark in `overlay_style.h` and its branch in `DebugMenu::draw_mark`; add a click case to `launcher_tests.cpp` and a pixel to the draw case in `runtime_tests.cpp`.
 - **A new glyph:** add it to `glyph()` in `bitmap_text.h` and a case to `presentation_tests.cpp`.
 - **A new host rule** (for example another request): change both `run_session` and `run_launcher`, the table in the [launcher contract](../../docs/engine/launcher-overlays.md#sessions-and-requests), and add graphics cases to `runtime_tests.cpp`. A change to `Session` breaks every application; record it in an ADR.
-- **A new key:** add it to `Key` in `engine.h` and to the SDL mapping in `runtime.cpp`, and to the key loop in `runtime_tests.cpp`.
+- **A new key:** add it to `Key` in `view/input.h` and to the SDL mapping in `runtime.cpp`, and to the key loop in `runtime_tests.cpp`.
 
 ## Tests
 

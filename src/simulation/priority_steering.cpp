@@ -1,4 +1,4 @@
-#include <kinetra/steering.h>
+#include <kinetra/simulation/steering.h>
 #include <limits>
 #include <stdexcept>
 

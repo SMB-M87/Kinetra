@@ -1,6 +1,6 @@
-// Contract tests for kinetra::Navigation (include/kinetra/navigation.h) and the public math
+// Contract tests for kinetra::Navigation (include/kinetra/simulation/navigation.h) and the public math
 // boundaries it relies on: invalid settings, swept clearance, exact and projected goals.
-#include <kinetra/navigation.h>
+#include <kinetra/simulation/navigation.h>
 
 #include <doctest/doctest.h>
 

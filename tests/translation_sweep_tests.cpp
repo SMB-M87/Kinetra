@@ -1,7 +1,7 @@
-// Contract tests for convex translation sweeps (include/kinetra/physics.h): every convex
+// Contract tests for convex translation sweeps (include/kinetra/simulation/physics.h): every convex
 // mover against walls, circles and polygons, timing, orientation, misses, thin-wall world
 // impacts, repeated impacts and the free rotational integration sweeps must not change.
-#include <kinetra/physics.h>
+#include <kinetra/simulation/physics.h>
 
 #include <doctest/doctest.h>
 

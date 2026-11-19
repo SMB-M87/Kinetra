@@ -1,7 +1,7 @@
-// Contract tests for circle sweeps (include/kinetra/physics.h): impact timing against walls,
+// Contract tests for circle sweeps (include/kinetra/simulation/physics.h): impact timing against walls,
 // circles and polygons, corners, initial overlap, rigid transforms, thin-wall world impacts,
 // remaining travel and the bounded repeated-bounce budget.
-#include <kinetra/physics.h>
+#include <kinetra/simulation/physics.h>
 
 #include <doctest/doctest.h>
 

@@ -21,7 +21,7 @@ A `DebugMenu` row can only be clicked as a whole, so an application that wants t
 
 ## Problem
 
-- `DebugMenu::update` maps a click to a row index and then toggles `enabled` or runs `action` ([debug_view.h](../../include/kinetra/debug_view.h)). The x position inside the row is ignored, so one row has exactly one command.
+- `DebugMenu::update` maps a click to a row index and then toggles `enabled` or runs `action` ([debug_view.h](../../include/kinetra/runtime/debug_view.h)). The x position inside the row is ignored, so one row has exactly one command.
 - A number that goes up and down therefore takes two rows. i4sim has `SPEED +`, `SPEED -`, `FORCE +`, `FORCE -`, `HORIZON +`, `HORIZON -`, `UPS +` and `UPS -`, and none of these rows shows the value: the operator reads it from the HUD, which can be turned off.
 - The layout numbers 182, 22 and 16 (panel width, heading height, row height in panel pixels) and the 4-pixel text margin are repeated in `update` and `draw`. A second hit zone would repeat them again.
 
@@ -68,7 +68,7 @@ The first commit names the layout constants without changing behavior. The secon
 
 ## Affected areas
 
-- [debug_view.h](../../include/kinetra/debug_view.h): `DebugOption::decrease`, `DebugOption::increase`, the `DebugMenu` layout constants and `part_at`.
+- [debug_view.h](../../include/kinetra/runtime/debug_view.h): `DebugOption::decrease`, `DebugOption::increase`, the `DebugMenu` layout constants and `part_at`.
 - [launcher_tests.cpp](../../tests/launcher_tests.cpp): the new cases.
 - [launcher and overlays](../engine/launcher-overlays.md): the `DebugMenu` paragraph.
 - Public header change: Full level. No other engine file uses the new fields; Lab adopts them in the i4sim debug menu.

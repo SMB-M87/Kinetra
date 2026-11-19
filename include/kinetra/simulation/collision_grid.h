@@ -1,5 +1,5 @@
 #pragma once
-#include "physics.h"
+#include <kinetra/simulation/physics.h>
 #include <span>
 
 namespace kinetra {

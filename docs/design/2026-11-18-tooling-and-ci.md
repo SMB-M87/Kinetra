@@ -82,7 +82,7 @@ The presets are the only place where option combinations live. CI uses the same 
 - `.clangd`, `.clang-tidy`, `.git-blame-ignore-revs`, `.github/workflows/ci.yml`.
 
 **Code**
-- Explicit integer-to-float conversions in `include/kinetra/{bitmap_text,debug_view,help_view}.h`, `src/engine/{launcher,runtime}.cpp`, `src/simulation/{collision_grid,navigation,priority_steering,weighted_grid}.cpp` and five test files.
+- Explicit integer-to-float conversions in `include/kinetra/{bitmap_text,debug_view,help_view}.h`, `src/runtime/{launcher,runtime}.cpp`, `src/simulation/{collision_grid,navigation,priority_steering,weighted_grid}.cpp` and five test files.
 - One renamed shadowing local in `steering.cpp`.
 
 **Tests**

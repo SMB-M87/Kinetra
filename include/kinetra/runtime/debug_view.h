@@ -1,12 +1,12 @@
 #pragma once
 
-#include "bitmap_text.h"
-#include "debug_menu.h"
-#include "overlay_style.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <kinetra/runtime/bitmap_text.h>
+#include <kinetra/runtime/overlay_style.h>
+#include <kinetra/view/debug_menu.h>
 #include <span>
 #include <string>
 #include <string_view>

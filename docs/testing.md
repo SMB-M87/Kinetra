@@ -52,7 +52,7 @@ The bottom of the pyramid runs on every build and catches most regressions. Each
 New tests use [doctest](../third_party/doctest/README.md). [traffic_tests.cpp](../tests/traffic_tests.cpp) is the reference suite.
 
 ```cpp
-#include <kinetra/traffic.h>
+#include <kinetra/simulation/traffic.h>
 
 #include <doctest/doctest.h>
 
@@ -132,7 +132,7 @@ Kinetra-Lab (engine plus applications), from the Lab root: `cmake --workflow --p
 | Steering (`steering.cpp`, `priority_steering.cpp`) | `kinetra_tests kinetra_weighted_navigation_tests` | `^kinetra_(behavior\|weighted_navigation)` |
 | Avoidance (`avoidance.cpp`) | `kinetra_avoidance_tests` | `^kinetra_avoidance` |
 | Traffic admission (`traffic.cpp`) | `kinetra_traffic_tests` | `^kinetra_traffic` |
-| Runtime and launcher (`src/engine/`) | Full level with graphics | |
+| Runtime and launcher (`src/runtime/`) | Full level with graphics | |
 
 Runtime and launcher behavior is always Full level. While iterating on `settings_view.cpp` or `launcher.cpp`, the window-free suites `kinetra_settings_view` and `kinetra_launcher` give quick feedback in the `dev` build. The header-only helpers (`bitmap_text.h`, `camera.h`, `timing.h`, `debug_view.h`, `help_view.h`) are public headers, so changing them is Full level; their window-free cases are in `kinetra_presentation` and `kinetra_behavior`. Build target and CTest prefix differ for some suites; the [test map](../tests/README.md#test-map) lists both.
 

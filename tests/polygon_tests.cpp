@@ -1,8 +1,8 @@
-// Contract tests for convex polygon bodies (include/kinetra/physics.h): validation, bounds,
+// Contract tests for convex polygon bodies (include/kinetra/simulation/physics.h): validation, bounds,
 // exact and rigid-transform-invariant contacts, inertia, and their use by navigation,
 // steering and a settling world.
-#include <kinetra/navigation.h>
-#include <kinetra/steering.h>
+#include <kinetra/simulation/navigation.h>
+#include <kinetra/simulation/steering.h>
 
 #include <doctest/doctest.h>
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "math.h"
+#include <kinetra/simulation/math.h>
 #include <span>
 #include <vector>
 

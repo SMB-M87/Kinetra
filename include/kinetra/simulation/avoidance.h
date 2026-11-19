@@ -1,7 +1,7 @@
 #pragma once
 
-#include "math.h"
 #include <cstdint>
+#include <kinetra/simulation/math.h>
 #include <span>
 
 namespace kinetra {

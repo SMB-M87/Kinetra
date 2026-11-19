@@ -1,11 +1,11 @@
 // Window-free tests for the header-only presentation helpers: the bitmap glyph table
 // (bitmap_text.h), camera zoom stepping (camera.h), the rate counter, frame times and frame
 // limiter (timing.h), angle interpolation (math.h) and debug-menu rows (debug_menu.h).
-#include <kinetra/bitmap_text.h>
-#include <kinetra/camera.h>
-#include <kinetra/debug_menu.h>
-#include <kinetra/math.h>
-#include <kinetra/timing.h>
+#include <kinetra/runtime/bitmap_text.h>
+#include <kinetra/runtime/timing.h>
+#include <kinetra/simulation/math.h>
+#include <kinetra/view/camera.h>
+#include <kinetra/view/debug_menu.h>
 
 #include <doctest/doctest.h>
 

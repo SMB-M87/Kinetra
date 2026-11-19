@@ -2,7 +2,7 @@
 // The drawn style the screen-space overlays share: colors, state marks and panel pieces.
 // The settings panel and the debug menu draw with these, so they look like one program.
 
-#include "bitmap_text.h"
+#include <kinetra/runtime/bitmap_text.h>
 
 #include <algorithm>
 #include <cmath>

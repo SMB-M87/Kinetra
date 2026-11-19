@@ -6,7 +6,7 @@ capsules, and two nodes), rasterized with supersampling. It is the single source
 
 - resources/kinetra.ico: the Windows executable icon, PNG entries from 16 to 256 px;
 - resources/kinetra-icon.png: the 256 px image, for documentation and desktop files;
-- src/engine/window_icon.inc: the 64 px RGBA pixels that Runtime gives every window.
+- src/runtime/window_icon.inc: the 64 px RGBA pixels that Runtime gives every window.
 
 Usage:
     python3 tools/make_icon.py          # regenerate the three files

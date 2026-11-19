@@ -43,7 +43,7 @@ The same rule holds in Kinetra and in every Kinetra-Lab module ([ADR 0015](decis
 ```
 
 - **A `.h` never sits outside an include root.** Not in `src/`, not loose in `tests/`.
-- **One include root per module**, named after the module, so every include starts with it: `<i4sim/simulation/simulation.h>`, `<kinetra/view/camera.h>`. Never `"../"`, never a bare `"session.h"` that another module also has.
+- **One include root per module**, named after the module, so every include starts with it: `"i4sim/simulation/simulation.h"` for a project header, `<kinetra/view/camera.h>` for Kinetra (see [include order](#headers-and-includes)). Never `"../"`, never a bare `"session.h"` that another module also has.
 - **Layers before topics.** A presentation layer gets a `presentation/` folder; Kinetra's layers are `simulation/`, `view/` and `runtime/`.
 - **Topic folders** group related headers once a layer would hold more than about twelve. A folder for one file is not a topic: fold it into its neighbour.
 - **`detail/`** inside a topic holds internal headers: those that no header outside `detail/` includes. Code outside the module does not include them.

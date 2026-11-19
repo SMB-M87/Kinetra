@@ -11,7 +11,7 @@ Status: accepted; amended by [0014](0014-session-navigation-requests.md). Kinetr
 
 ## Decision
 
-Supersede the generic launcher portion of [0009](0009-core-and-lab.md). Kinetra owns `kinetra/launcher.h`, its implementation and generic tests. `Kinetra::Launcher` builds with `KINETRA_BUILD_RUNTIME` and depends only on `Kinetra::Runtime`.
+Supersede the generic launcher portion of [0009](0009-core-and-lab.md). Kinetra owns `kinetra/runtime/launcher.h`, its implementation and generic tests. `Kinetra::Launcher` builds with `KINETRA_BUILD_RUNTIME` and depends only on `Kinetra::Runtime`.
 
 ## Consequences
 

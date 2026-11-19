@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <kinetra/traffic.h>
+#include <kinetra/simulation/traffic.h>
 #include <stdexcept>
 
 namespace kinetra {

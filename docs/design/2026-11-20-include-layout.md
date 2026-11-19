@@ -21,8 +21,8 @@ Kinetra's 21 public headers sit side by side in `include/kinetra/`, so the inclu
 
 ## Problem
 
-- **No layer in the path.** `#include <kinetra/steering.h>` and `#include <kinetra/settings_view.h>` look alike, although the first needs only `Kinetra::Simulation` and the second `Kinetra::Runtime`. The layer rule in [conventions](../conventions.md#layers-and-dependencies) cannot be read from an include line.
-- **Headless types in a runtime header.** `Key`, `Input` and `Color` live in [engine.h](../../include/kinetra/engine.h) next to `Runtime`. [debug_menu.h](../../include/kinetra/debug_menu.h), which Lab's logic includes headless, includes `engine.h` for them.
+- **No layer in the path.** `#include <kinetra/simulation/steering.h>` and `#include <kinetra/runtime/settings_view.h>` look alike, although the first needs only `Kinetra::Simulation` and the second `Kinetra::Runtime`. The layer rule in [conventions](../conventions.md#layers-and-dependencies) cannot be read from an include line.
+- **Headless types in a runtime header.** `Key`, `Input` and `Color` live in [engine.h](../../include/kinetra/runtime/engine.h) next to `Runtime`. [debug_menu.h](../../include/kinetra/view/debug_menu.h), which Lab's logic includes headless, includes `engine.h` for them.
 - **No directory rule.** [conventions.md](../conventions.md#files-and-formatting) says `.h` and `.cpp`, but not where they go. Kinetra-Lab drifted: headers in `src/` and `tests/`, one-file `include`/`src` pairs, and `../../` includes across modules.
 
 ## Goals and non-goals
@@ -83,7 +83,7 @@ flowchart BT
   - topic folders once a layer holds more than about twelve headers, never for one file;
   - internal headers in a `detail/` folder within their topic;
   - test helper headers in `tests/include/<name>/testing/`;
-  - includes always start with the module name (`<i4sim/simulation/simulation.h>`), never `../`.
+  - includes always start with the module name (`"i4sim/simulation/simulation.h"`, `<kinetra/view/camera.h>`), never `../`.
 
 ## Affected areas
 

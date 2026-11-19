@@ -26,19 +26,20 @@ Directory guides: [docs](docs/README.md), [tests](tests/README.md), [tools](tool
 
 - Headless geometry, collisions, physics, spatial queries, navigation and steering.
 - Optional window, input, camera, colored primitives, bitmap text and direct sessions.
-- Public C++ headers under `include/kinetra/`; CMake targets `Kinetra::Simulation`, optional `Kinetra::Runtime` and `Kinetra::Launcher`.
-- Optional reusable launcher menu and session host in `<kinetra/launcher.h>`; application registration and gameplay remain in Lab.
+- Public C++ headers under `include/kinetra/`, grouped by layer in `simulation/`, `view/` and `runtime/`; CMake targets `Kinetra::Simulation`, optional `Kinetra::Runtime` and `Kinetra::Launcher`.
+- Optional reusable launcher menu and session host in `<kinetra/runtime/launcher.h>`; application registration and gameplay remain in Lab.
 
 ## Modules
 
-| Module | CMake target | Public headers in `include/kinetra/` | Guide |
+| Module | CMake target | Public headers in `include/kinetra/<layer>/` | Guide |
 | --- | --- | --- | --- |
-| Simulation: geometry, physics, spatial queries, navigation, steering, avoidance, traffic admission | `Kinetra::Simulation` | `math.h`, `physics.h`, `spatial_grid.h`, `collision_grid.h`, `navigation.h`, `weighted_grid.h`, `steering.h`, `avoidance.h`, `traffic.h` | [Simulation](src/simulation/README.md) |
-| Runtime: window, input, drawing, sessions, overlays | `Kinetra::Runtime` (optional) | `engine.h`, `session.h`, `settings_view.h`, and header-only `camera.h`, `timing.h`, `bitmap_text.h`, `debug_view.h`, `help_view.h` | [Runtime and launcher](src/engine/README.md) |
-| Launcher: menu, session host and loop | `Kinetra::Launcher` (optional) | `launcher.h` | [Runtime and launcher](src/engine/README.md) |
+| Simulation: geometry, physics, spatial queries, navigation, steering, avoidance, traffic admission | `Kinetra::Simulation` | `simulation/`: `math.h`, `physics.h`, `spatial_grid.h`, `collision_grid.h`, `navigation.h`, `weighted_grid.h`, `steering.h`, `avoidance.h`, `traffic.h` | [Simulation](src/simulation/README.md) |
+| View: camera, input and debug-menu rows, usable headless | header-only, with `Kinetra::Simulation` | `view/`: `camera.h`, `input.h`, `debug_menu.h` | [Runtime and launcher](src/runtime/README.md) |
+| Runtime: window, drawing, sessions, overlays | `Kinetra::Runtime` (optional) | `runtime/`: `engine.h`, `session.h`, `settings_view.h`, and header-only `timing.h`, `bitmap_text.h`, `overlay_style.h`, `debug_view.h`, `help_view.h` | [Runtime and launcher](src/runtime/README.md) |
+| Launcher: menu, session host and loop | `Kinetra::Launcher` (optional) | `runtime/launcher.h` | [Runtime and launcher](src/runtime/README.md) |
 | Tests and the external consumer | | | [Core tests](tests/README.md) |
 
-Include headers as `<kinetra/physics.h>`. `include/glad/` and `include/KHR/` hold the generated OpenGL loader; they are private to the runtime. The vendored test framework is described in [third_party/doctest](third_party/doctest/README.md).
+Include headers with their layer, as `<kinetra/simulation/physics.h>`; a headless consumer includes `simulation/` and `view/` only. The rule for both repositories is in [conventions](docs/conventions.md#directory-layout). `include/glad/` and `include/KHR/` hold the generated OpenGL loader; they are private to the runtime. The vendored test framework is described in [third_party/doctest](third_party/doctest/README.md).
 
 ## Quick start
 
@@ -64,7 +65,7 @@ target_link_libraries(my_simulation PRIVATE Kinetra::Simulation)
 ```
 
 ```cpp
-#include <kinetra/physics.h>
+#include <kinetra/simulation/physics.h>
 
 int main() {
     kinetra::World world;

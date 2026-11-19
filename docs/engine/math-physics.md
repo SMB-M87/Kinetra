@@ -15,11 +15,11 @@ Headless mechanisms use world units, seconds and radians. Positive rotation is c
 
 | API | Contract |
 | --- | --- |
-| [math.h](../../include/kinetra/math.h) | Vec2 arithmetic, dot/cross, normalization, rotation, signed angle, interpolation, distances, bounds and shape values |
-| [physics.h](../../include/kinetra/physics.h) | Body state, contacts, integration, impulses and World |
-| [spatial_grid.h](../../include/kinetra/spatial_grid.h) | Rebuildable AABB index; sorted unique overlapping input indices |
-| [collision_grid.h](../../include/kinetra/collision_grid.h) | Row-major occupancy collision and first blocked segment fraction |
-| [camera.h](../../include/kinetra/camera.h) | Logical screen pixels Y-down ↔ world Y-up; validates finite positive viewport/zoom |
+| [math.h](../../include/kinetra/simulation/math.h) | Vec2 arithmetic, dot/cross, normalization, rotation, signed angle, interpolation, distances, bounds and shape values |
+| [physics.h](../../include/kinetra/simulation/physics.h) | Body state, contacts, integration, impulses and World |
+| [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) | Rebuildable AABB index; sorted unique overlapping input indices |
+| [collision_grid.h](../../include/kinetra/simulation/collision_grid.h) | Row-major occupancy collision and first blocked segment fraction |
+| [camera.h](../../include/kinetra/view/camera.h) | Logical screen pixels Y-down ↔ world Y-up; validates finite positive viewport/zoom |
 
 `normalized({0,0})` returns zero; degenerate segment distance reduces to point distance. Arithmetic helpers generally follow IEEE floating-point propagation; `finite` lets boundaries reject invalid vectors. Body, camera, grid, navigation and clock entry points validate their contracts. AABB touching counts as overlap.
 

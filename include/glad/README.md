@@ -15,6 +15,6 @@ This directory contains the generated GLAD header used by the optional SDL2/Open
 
 ## Integration and maintenance
 
-The [runtime implementation](../../src/engine/README.md) uses GLAD to access OpenGL entry points. The header includes [KHR platform definitions](../KHR/README.md). These backend details are kept out of the [public Kinetra headers](../kinetra/).
+The [runtime implementation](../../src/runtime/README.md) uses GLAD to access OpenGL entry points. The header includes [KHR platform definitions](../KHR/README.md). These backend details are kept out of the [public Kinetra headers](../kinetra/).
 
 Preserve generated code and embedded licenses. This README documents the bundled files without changing them.

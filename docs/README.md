@@ -19,7 +19,7 @@ Directory guides: [decisions](decisions/README.md), [design](design/README.md).
 | Question | Authoritative page |
 | --- | --- |
 | What does the headless simulation contain, and how does it work? | [Simulation](../src/simulation/README.md) |
-| How do the window, sessions, overlays and launcher work? | [Runtime and launcher](../src/engine/README.md) |
+| How do the window, sessions, overlays and launcher work? | [Runtime and launcher](../src/runtime/README.md) |
 | Which test suites exist, and how does the external consumer work? | [Core tests](../tests/README.md) |
 | What exactly does one function promise? | The `///` summary in its header in [include/kinetra](../include/kinetra/) |
 | What depends on what? Who owns objects? | [Architecture](architecture.md) |

@@ -19,7 +19,7 @@ The headless half of Kinetra (`Kinetra::Simulation`): geometry, rigid-body physi
 
 The module supplies reusable motion mechanisms: what happens when bodies touch, how an agent finds a route around obstacles, how it steers along that route, and who may enter a shared zone first. It depends only on the C++ standard library.
 
-Not here: drawing, input and windows ([runtime](../engine/README.md); Simulation does not link it), and every application policy: world generation, goal selection, retry and replanning schedules, update rates, AI decisions and units conversion. Those belong to the consumer, as the [responsibility map](../../docs/architecture.md#responsibility-map) lists.
+Not here: drawing, input and windows ([runtime](../runtime/README.md); Simulation does not link it), and every application policy: world generation, goal selection, retry and replanning schedules, update rates, AI decisions and units conversion. Those belong to the consumer, as the [responsibility map](../../docs/architecture.md#responsibility-map) lists.
 
 ## Concepts
 
@@ -62,15 +62,15 @@ flowchart TD
 
 | Public header | Source | Responsibility | Contract |
 | --- | --- | --- | --- |
-| [math.h](../../include/kinetra/math.h) | header-only | Vectors, segments, circles and bounding boxes | [Math and physics](../../docs/engine/math-physics.md) |
-| [spatial_grid.h](../../include/kinetra/spatial_grid.h) | [spatial_grid.cpp](spatial_grid.cpp) | Rebuildable AABB index with sorted, unique query results | [Math and physics](../../docs/engine/math-physics.md#collision-and-queries) |
-| [physics.h](../../include/kinetra/physics.h) | [physics.cpp](physics.cpp) | Body validation, contacts, impulses, integration, sweeps and `World` stepping | [Math and physics](../../docs/engine/math-physics.md) |
-| [collision_grid.h](../../include/kinetra/collision_grid.h) | [collision_grid.cpp](collision_grid.cpp) | Bodies against an occupancy grid; first blocked fraction of a segment | [Math and physics](../../docs/engine/math-physics.md#collision-and-queries) |
-| [navigation.h](../../include/kinetra/navigation.h) | [navigation.cpp](navigation.cpp) | A* over swept circular clearance, string pulling and route following | [Navigation](../../docs/engine/navigation.md#planning-and-following) |
-| [weighted_grid.h](../../include/kinetra/weighted_grid.h) | [weighted_grid.cpp](weighted_grid.cpp) | Congestion-weighted A* with a rectangular footprint; merged free-space borders | [Navigation](../../docs/engine/navigation.md#weighted-grids-and-priority-steering) |
-| [steering.h](../../include/kinetra/steering.h) | [steering.cpp](steering.cpp), [priority_steering.cpp](priority_steering.cpp) | `steer` (arrival and predictive avoidance), `priority_steer` and `constrain_borders` (axis-aligned boxes and walls), `tangent_steer` (experimental) | [Navigation](../../docs/engine/navigation.md#contracts) |
-| [avoidance.h](../../include/kinetra/avoidance.h) | [avoidance.cpp](avoidance.cpp) | ORCA-style velocity selection under speed and acceleration limits | [Navigation](../../docs/engine/navigation.md#reciprocal-local-avoidance) |
-| [traffic.h](../../include/kinetra/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
+| [math.h](../../include/kinetra/simulation/math.h) | header-only | Vectors, segments, circles and bounding boxes | [Math and physics](../../docs/engine/math-physics.md) |
+| [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) | [spatial_grid.cpp](spatial_grid.cpp) | Rebuildable AABB index with sorted, unique query results | [Math and physics](../../docs/engine/math-physics.md#collision-and-queries) |
+| [physics.h](../../include/kinetra/simulation/physics.h) | [physics.cpp](physics.cpp) | Body validation, contacts, impulses, integration, sweeps and `World` stepping | [Math and physics](../../docs/engine/math-physics.md) |
+| [collision_grid.h](../../include/kinetra/simulation/collision_grid.h) | [collision_grid.cpp](collision_grid.cpp) | Bodies against an occupancy grid; first blocked fraction of a segment | [Math and physics](../../docs/engine/math-physics.md#collision-and-queries) |
+| [navigation.h](../../include/kinetra/simulation/navigation.h) | [navigation.cpp](navigation.cpp) | A* over swept circular clearance, string pulling and route following | [Navigation](../../docs/engine/navigation.md#planning-and-following) |
+| [weighted_grid.h](../../include/kinetra/simulation/weighted_grid.h) | [weighted_grid.cpp](weighted_grid.cpp) | Congestion-weighted A* with a rectangular footprint; merged free-space borders | [Navigation](../../docs/engine/navigation.md#weighted-grids-and-priority-steering) |
+| [steering.h](../../include/kinetra/simulation/steering.h) | [steering.cpp](steering.cpp), [priority_steering.cpp](priority_steering.cpp) | `steer` (arrival and predictive avoidance), `priority_steer` and `constrain_borders` (axis-aligned boxes and walls), `tangent_steer` (experimental) | [Navigation](../../docs/engine/navigation.md#contracts) |
+| [avoidance.h](../../include/kinetra/simulation/avoidance.h) | [avoidance.cpp](avoidance.cpp) | ORCA-style velocity selection under speed and acceleration limits | [Navigation](../../docs/engine/navigation.md#reciprocal-local-avoidance) |
+| [traffic.h](../../include/kinetra/simulation/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
 
 The header summaries (`///`) state each function's units, preconditions and errors; the contract pages explain the behavior in depth.
 

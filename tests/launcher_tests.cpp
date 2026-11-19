@@ -1,8 +1,8 @@
-// Window-free tests for the launcher library (include/kinetra/launcher.h): menu paging
+// Window-free tests for the launcher library (include/kinetra/runtime/launcher.h): menu paging
 // and configuration, SessionHost transitions, and debug-menu actions and stepper buttons. The loops that
 // need a window are covered by runtime_tests.cpp.
-#include <kinetra/debug_view.h>
-#include <kinetra/launcher.h>
+#include <kinetra/runtime/debug_view.h>
+#include <kinetra/runtime/launcher.h>
 
 #include <doctest/doctest.h>
 

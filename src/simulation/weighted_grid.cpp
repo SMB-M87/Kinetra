@@ -1,4 +1,4 @@
-#include <kinetra/weighted_grid.h>
+#include <kinetra/simulation/weighted_grid.h>
 #include <limits>
 #include <queue>
 #include <stdexcept>

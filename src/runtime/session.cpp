@@ -1,5 +1,5 @@
 #include <chrono>
-#include <kinetra/session.h>
+#include <kinetra/runtime/session.h>
 #include <stdexcept>
 
 namespace kinetra {

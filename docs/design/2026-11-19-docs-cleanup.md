@@ -56,7 +56,7 @@ No load-bearing decision is open: the scope was settled in the Lab roadmap on 20
 | --- | --- | --- |
 | Where the public header map goes | Each module README lists its own headers; the root README gets a short module table (module, target, headers, README) | A reader who looks for a header finds the module that explains it; the root stays an entry point |
 | `docs/engine/README.md` | Removed; `docs/README.md` already routes to all four contract pages | Its contract map repeated the documentation index |
-| `src/README.md` | Removed; its rows move to the module READMEs (the GLAD loader row to `src/engine/README.md`) and its target diagram is the one in architecture | Same diagram existed twice |
+| `src/README.md` | Removed; its rows move to the module READMEs (the GLAD loader row to `src/runtime/README.md`) and its target diagram is the one in architecture | Same diagram existed twice |
 | `tests/consumer/README.md` | Folded into a section of `tests/README.md` | The fixture is one of the test suites; two files is not worth a page |
 | ADR index | Table in `docs/decisions/README.md`; `docs/README.md` keeps a short `Decisions` section that points there | The index belongs next to the ADRs; keeping the heading keeps old `#decisions` links in design documents working |
 | ADR status lines | 0013 and 0014 become `accepted`; 0009 and 0010 get status lines naming their supersession and amendment | Status lines are maintenance data the `adr` skill keeps current; the decision text stays untouched |
@@ -73,7 +73,7 @@ Comments only, in the style of the [documentation guide](../documentation.md#hea
 ```mermaid
 flowchart TD
     Root["README.md<br/>module table"] --> Sim["src/simulation/README.md<br/>Kinetra::Simulation"]
-    Root --> Eng["src/engine/README.md<br/>Kinetra::Runtime, Kinetra::Launcher"]
+    Root --> Eng["src/runtime/README.md<br/>Kinetra::Runtime, Kinetra::Launcher"]
     Root --> Tests["tests/README.md<br/>suites and consumer fixture"]
     Root --> Docs["docs/README.md<br/>documentation index"]
     Docs --> Contracts["docs/engine/*.md<br/>detailed contracts"]
@@ -100,7 +100,7 @@ A read-only audit on 2026-11-19 compared the remaining pages with CMake, the pre
 | `docs/development.md` | `compile_commands.json` and ccache shown for some presets only | Stated once for all presets |
 | `docs/engine/runtime.md` | Overlays "header-only"; focus loss clears keys only | `SettingsOverlay` compiled into Runtime; focus loss also releases mouse buttons |
 | `docs/engine/*.md`, `AGENTS.md`, `docs/testing.md` | History wording ("former", "original", "remains compatible", "the earlier rule") | Present-tense descriptions; `tangent_steer` moved out of *Verification* |
-| `src/engine/README.md` | "`SessionHost` destroys the old session before creating the next one" | `run_launcher` starts sessions only from the menu; `start` keeps the old session until the factory succeeds |
+| `src/runtime/README.md` | "`SessionHost` destroys the old session before creating the next one" | `run_launcher` starts sessions only from the menu; `start` keeps the old session until the factory succeeds |
 | `AGENTS.md`, `.agents/skills/README.md` | "Each skill directory has a README.md" | The READMEs are still to be written (open point) |
 | ADRs 0013, 0014 | "accepted, not yet implemented" | "accepted" |
 
@@ -111,7 +111,7 @@ Left as is: the skill table in both `AGENTS.md` and the skills overview, and the
 - `include/kinetra/*.h`: `///` comments only.
 - Removed: `include/README.md`, `include/kinetra/README.md`, `src/README.md`, `docs/engine/README.md`, `tests/consumer/README.md`.
 - Rewritten: `src/simulation/README.md`, `docs/decisions/README.md`.
-- Updated: `README.md`, `AGENTS.md`, `docs/README.md`, `docs/architecture.md`, `docs/engine/*.md` navigation lines, `src/engine/README.md`, `tests/README.md`, `include/glad/README.md`, `.agents/skills/adr/SKILL.md`, ADR status lines, and the pages named in [stale facts](#stale-facts).
+- Updated: `README.md`, `AGENTS.md`, `docs/README.md`, `docs/architecture.md`, `docs/engine/*.md` navigation lines, `src/runtime/README.md`, `tests/README.md`, `include/glad/README.md`, `.agents/skills/adr/SKILL.md`, ADR status lines, and the pages named in [stale facts](#stale-facts).
 
 ## Test plan
 
@@ -158,7 +158,7 @@ Not run: builds and tests, because the Docs level does not need them.
 
 **Changes.**
 - Headers: `///` contracts for every public type, function and field in the simulation and runtime headers, checked against the implementation. Comments only; the code is identical.
-- Module guides: `src/simulation/README.md` rewritten (concepts, structure, mechanisms and trade-offs, invariants, recipes, suites); `src/engine/README.md` gains the header table; `tests/README.md` gains build targets, the consumer fixture and an *Adding a suite* recipe; the root README gets a module table.
+- Module guides: `src/simulation/README.md` rewritten (concepts, structure, mechanisms and trade-offs, invariants, recipes, suites); `src/runtime/README.md` gains the header table; `tests/README.md` gains build targets, the consumer fixture and an *Adding a suite* recipe; the root README gets a module table.
 - Removed: `include/README.md`, `include/kinetra/README.md`, `src/README.md`, `docs/engine/README.md`, `tests/consumer/README.md`.
 - Decisions: index in `docs/decisions/README.md`, in number order with status and supersessions; status lines of 0009, 0010, 0013 and 0014; the `adr` skill points to the new index.
 - Stale facts: the Runtime/Simulation edge, the session request in the frame sequence, `SettingsOverlay`'s target, the CI presets, build targets versus CTest prefixes, physics limits and history wording ([table](#stale-facts)).

@@ -21,10 +21,10 @@ The user wants every Lab application to offer what i4sim's debug menu offers: se
 
 ## Problem
 
-- **The menu's structure is application text.** `DebugMenu` draws one string per row ([debug_view.h](../../include/kinetra/debug_view.h)). i4sim builds sections, nesting and state marks into that string (`row_text` in Lab's `labs/i4sim/src/session.cpp`: two spaces per level, then `[X]`, `[*]`, `+` or `-`) and draws its color swatch through the `visualization` hook. Dotio indents its PATHS filters with spaces in the label. Demo and Dotio are about to get sections and numbers too, and would have to copy i4sim's adapter.
+- **The menu's structure is application text.** `DebugMenu` draws one string per row ([debug_view.h](../../include/kinetra/runtime/debug_view.h)). i4sim builds sections, nesting and state marks into that string (`row_text` in Lab's `labs/i4sim/src/session.cpp`: two spaces per level, then `[X]`, `[*]`, `+` or `-`) and draws its color swatch through the `visualization` hook. Dotio indents its PATHS filters with spaces in the label. Demo and Dotio are about to get sections and numbers too, and would have to copy i4sim's adapter.
 - **The panels look like a text dump.** No border, no title bar, no highlighted row, state marks made of bracket glyphs, and values that start wherever the label ends. The settings panel centers every row, so check boxes do not line up.
 - **Backquote is a poor shortcut.** It is a dead key on several keyboard layouts, and it only works after Debug Mode was switched on in the settings panel.
-- **No frame pacing without VSync.** `Runtime` asks for a swap interval and only logs when that fails ([runtime.cpp](../../src/engine/runtime.cpp)); `run_session` and `run_launcher` then loop as fast as they can. Measured in WSLg, where SDL reports `VSync unavailable`: 5.7 ms per frame for Dotio, 8.3 ms for Demo and 6.0 ms for i4sim (600 frames each, release build), while the WSLg compositor presents at 60 Hz. The compositor shows whichever frame is newest, so the age of the shown frame varies by up to a whole frame, and the application competes with the compositor for the processor. The user sees uneven motion there and smooth motion in the native Windows build, which has VSync.
+- **No frame pacing without VSync.** `Runtime` asks for a swap interval and only logs when that fails ([runtime.cpp](../../src/runtime/runtime.cpp)); `run_session` and `run_launcher` then loop as fast as they can. Measured in WSLg, where SDL reports `VSync unavailable`: 5.7 ms per frame for Dotio, 8.3 ms for Demo and 6.0 ms for i4sim (600 frames each, release build), while the WSLg compositor presents at 60 Hz. The compositor shows whichever frame is newest, so the age of the shown frame varies by up to a whole frame, and the application competes with the compositor for the processor. The user sees uneven motion there and smooth motion in the native Windows build, which has VSync.
 - **The window icon is missing from the WSLg title bar.** This is not an engine defect: WSLg's compositor draws that title bar and never passes an application icon to it (`frame_create(..., NULL)` in `xwayland/window-manager.c` of microsoft/weston-mirror, commit `2318fec`). It does forward `_NET_WM_ICON` to the Windows taskbar, where the icon shows. Only the documentation changes.
 
 ## Goals and non-goals
@@ -57,7 +57,7 @@ The user wants every Lab application to offer what i4sim's debug menu offers: se
 
 ### Debug entries (headless)
 
-[`kinetra/debug_menu.h`](../../include/kinetra/debug_menu.h) holds what a menu shows, without `Runtime`:
+[`kinetra/view/debug_menu.h`](../../include/kinetra/view/debug_menu.h) holds what a menu shows, without `Runtime`:
 
 | Type | Role |
 | --- | --- |
@@ -116,14 +116,14 @@ stateDiagram-v2
 
 ## Affected areas
 
-- New: [`include/kinetra/debug_menu.h`](../../include/kinetra/debug_menu.h).
-- [`include/kinetra/debug_view.h`](../../include/kinetra/debug_view.h): `DebugMenu` draws `DebugEntry`; `DebugOption` removed; `debug_chord`; pacing caption.
-- [`include/kinetra/bitmap_text.h`](../../include/kinetra/bitmap_text.h): `draw_glyph` and `text_width`.
-- New: [`include/kinetra/overlay_style.h`](../../include/kinetra/overlay_style.h): the colors, marks and panel pieces both overlays draw with.
-- [`include/kinetra/settings_view.h`](../../include/kinetra/settings_view.h), [`src/engine/settings_view.cpp`](../../src/engine/settings_view.cpp): style, Ctrl on release, chord, gating.
-- [`include/kinetra/engine.h`](../../include/kinetra/engine.h), [`src/engine/runtime.cpp`](../../src/engine/runtime.cpp): `FramePacing`, `pacing()`, `limit_frames()`, the limiter.
+- New: [`include/kinetra/view/debug_menu.h`](../../include/kinetra/view/debug_menu.h).
+- [`include/kinetra/runtime/debug_view.h`](../../include/kinetra/runtime/debug_view.h): `DebugMenu` draws `DebugEntry`; `DebugOption` removed; `debug_chord`; pacing caption.
+- [`include/kinetra/runtime/bitmap_text.h`](../../include/kinetra/runtime/bitmap_text.h): `draw_glyph` and `text_width`.
+- New: [`include/kinetra/runtime/overlay_style.h`](../../include/kinetra/runtime/overlay_style.h): the colors, marks and panel pieces both overlays draw with.
+- [`include/kinetra/runtime/settings_view.h`](../../include/kinetra/runtime/settings_view.h), [`src/runtime/settings_view.cpp`](../../src/runtime/settings_view.cpp): style, Ctrl on release, chord, gating.
+- [`include/kinetra/runtime/engine.h`](../../include/kinetra/runtime/engine.h), [`src/runtime/runtime.cpp`](../../src/runtime/runtime.cpp): `FramePacing`, `pacing()`, `limit_frames()`, the limiter.
 - Tests: [launcher](../../tests/launcher_tests.cpp), [settings view](../../tests/settings_view_tests.cpp), [presentation](../../tests/presentation_tests.cpp), [runtime](../../tests/runtime_tests.cpp), the [consumer](../../tests/consumer/).
-- Docs: [launcher and overlays](../engine/launcher-overlays.md), [runtime guide](../engine/runtime.md), [engine README](../../src/engine/README.md).
+- Docs: [launcher and overlays](../engine/launcher-overlays.md), [runtime guide](../engine/runtime.md), [engine README](../../src/runtime/README.md).
 
 ## Test plan
 
@@ -176,8 +176,8 @@ Title: `feat(overlays): tree debug menu, restyled panels, Shift+Ctrl and frame p
 **Summary.** A debug menu is now data: `DebugEntry` rows with a kind, state, value, buttons, nesting depth and swatch, built without a window and drawn by `DebugMenu` in a style it shares with the settings panel. Shift+Ctrl opens the debug menu and switches the debug mode on. Where the platform has no VSync (WSLg), `Runtime` paces frames at the display's refresh rate instead of looping two to three times per refresh.
 
 **Changes.**
-- `kinetra/debug_menu.h` (new, headless): `DebugEntry`, `DebugEntryKind`, `DebugFolds`, `debug_check`, `debug_number`, `debug_count`.
-- `kinetra/overlay_style.h` (new): colors, marks and panel pieces for both overlays.
+- `kinetra/view/debug_menu.h` (new, headless): `DebugEntry`, `DebugEntryKind`, `DebugFolds`, `debug_check`, `debug_number`, `debug_count`.
+- `kinetra/runtime/overlay_style.h` (new): colors, marks and panel pieces for both overlays.
 - `DebugMenu`: draws entries (arrows, check boxes, radio marks, right-aligned values, swatches, a rule), wider panel, new scale. `DebugOption` and the Backquote binding are removed.
 - `SettingsOverlay`: restyled, left-aligned rows, outlined action buttons, public button centers. Ctrl acts on release; `update_debug` handles Shift+Ctrl, sets the borrowed debug flag and hides the menu while the panel is open or the debug mode is off.
 - `Runtime`: `FramePacing`, `pacing()`, `limit_frames()`, `frame_interval()`; `FrameLimiter` in `timing.h`; `Input::focus_lost`; the frame-time graph names the pacing.

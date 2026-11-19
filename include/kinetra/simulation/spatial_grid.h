@@ -1,8 +1,8 @@
 #pragma once
 
-#include "math.h"
 #include <cstddef>
 #include <cstdint>
+#include <kinetra/simulation/math.h>
 #include <span>
 #include <unordered_map>
 #include <vector>

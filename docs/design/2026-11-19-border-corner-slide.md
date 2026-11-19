@@ -57,7 +57,7 @@ The takeaway: only the corner region changes. A box sliding flush along the floo
 ## Affected areas
 
 - `src/simulation/priority_steering.cpp`: the axis choice in `constrain_borders`.
-- `include/kinetra/steering.h`: the contract of `constrain_borders` names the corner rule.
+- `include/kinetra/simulation/steering.h`: the contract of `constrain_borders` names the corner rule.
 - `docs/engine/navigation.md`, `tests/README.md`.
 - `tests/weighted_navigation_tests.cpp`: one new case.
 - Consumers: only Kinetra-Lab's i4sim calls `priority_steer` and `constrain_borders`.

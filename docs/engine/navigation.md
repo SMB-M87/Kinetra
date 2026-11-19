@@ -46,12 +46,12 @@ A direct clear segment bypasses A*. Route calculation and following share the sa
 
 | Interface | Responsibility |
 | --- | --- |
-| [Navigation](../../include/kinetra/navigation.h) | Configurable positive finite grid resolution and circular envelope; owns a snapshot of obstacle bodies |
+| [Navigation](../../include/kinetra/simulation/navigation.h) | Configurable positive finite grid resolution and circular envelope; owns a snapshot of obstacle bodies |
 | `rebuild(bounds, obstacles)` | Validates geometry, caches grid occupancy, swept neighbor links and connected-region labels |
 | `path(start, goal)` | Returns waypoints excluding start; empty means failure; free endpoints retain exact coordinates |
 | `clear(a,b)` | Swept-circle clearance against stored geometry; does not enforce navigation bounds |
 | `route_target(position, route, navigation)` | Consumes visible intermediate waypoints and supplies corner lookahead |
-| [steer](../../include/kinetra/steering.h) | Bounded acceleration with arrival, optional separation and predictive local avoidance |
+| [steer](../../include/kinetra/simulation/steering.h) | Bounded acceleration with arrival, optional separation and predictive local avoidance |
 
 The raster is limited to 262,144 cells. The default resolution is one world unit and clearance radius 0.85. Touching the clearance envelope is blocked. Disconnected free goals fail; occupied goals project within the source region. Starts inside the conservative margin may depart outward, but never cross a surface. Rebuild can allocate; it is not a transaction guarantee on allocation failure.
 
@@ -64,7 +64,7 @@ pairs retain the conservative envelope; the option is off by default.
 
 ## Reciprocal local avoidance
 
-[avoidance.h](../../include/kinetra/avoidance.h) provides `avoid_collisions(agent, preferred_velocity, neighbors, dt, settings)` in `Kinetra::Simulation`. Its circular velocity-obstacle construction follows [Optimal Reciprocal Collision Avoidance](https://gamma-web.iacs.umd.edu/ORCA/), with a speed disc and a reachable-velocity disc for the caller's acceleration bound.
+[avoidance.h](../../include/kinetra/simulation/avoidance.h) provides `avoid_collisions(agent, preferred_velocity, neighbors, dt, settings)` in `Kinetra::Simulation`. Its circular velocity-obstacle construction follows [Optimal Reciprocal Collision Avoidance](https://gamma-web.iacs.umd.edu/ORCA/), with a speed disc and a reachable-velocity disc for the caller's acceleration bound.
 
 - Supply one immutable snapshot per update, unique stable agent IDs, positive circular radii and consistent time units. Cooperative neighbors share pairwise corrections equally; noncooperative neighbors retain their supplied velocity and assign full avoidance responsibility to the caller. Convex body consumers can use `bounding_radius` for conservative envelopes.
 - Set `half_extents` to positive components for a fixed axis-aligned rectangle, or leave both zero for a circle. Box/box pairs use the summed rectangular footprint, expanded by `clearance` on each axis. Their finite-horizon velocity obstacle is projected onto its visible cutoff edges and two tangent rays. Overlap recovery uses the timestep cutoff. Mixed circle/box pairs retain enclosing circles; `radius` must therefore enclose any supplied rectangle. Rotating rectangles require conservative circular envelopes.
@@ -76,7 +76,7 @@ This is holonomic local avoidance. Applications still own route planning, static
 
 ## Traffic admission
 
-[traffic.h](../../include/kinetra/traffic.h) provides `TrafficGate` in
+[traffic.h](../../include/kinetra/simulation/traffic.h) provides `TrafficGate` in
 `Kinetra::Simulation`, independently of geometry and steering. Call `update` once
 per control step with complete unique-ID request and physical-occupancy snapshots
 for one exclusive conflict zone. New requests join in stable ID order; existing

@@ -1,6 +1,6 @@
-#include <kinetra/bitmap_text.h>
-#include <kinetra/overlay_style.h>
-#include <kinetra/settings_view.h>
+#include <kinetra/runtime/bitmap_text.h>
+#include <kinetra/runtime/overlay_style.h>
+#include <kinetra/runtime/settings_view.h>
 
 #include <algorithm>
 #include <stdexcept>
