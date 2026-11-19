@@ -14,6 +14,7 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 using namespace kinetra;
@@ -292,6 +293,20 @@ TEST_CASE("run_launcher returns to the menu on a menu request") {
     CHECK(application.created == 1);
     CHECK_MESSAGE(application.destroyed == 1, "the session is destroyed when it asks for the menu");
     CHECK_MESSAGE(application.renders == 1, "the menu, not the session, draws the frame of the request");
+}
+
+TEST_CASE("run_launcher titles the window after the menu or the running session from the first frame") {
+    Runtime runtime("Kinetra launcher", 160, 120);
+    const auto title = [] { return std::string(SDL_GetWindowTitle(SDL_GL_GetCurrentWindow())); };
+    ScriptedApplication application;
+    CHECK(run_launcher(runtime, application.registrations(), std::nullopt, 1) == 1);
+    CHECK(title() == launcher_window_title);
+    CHECK(run_launcher(runtime, application.registrations(), LaunchSelection{}, 1) == 1);
+    CHECK(title() == "SCRIPTED SESSION");
+    application.request = SessionRequest::menu;
+    application.request_at = 1;
+    CHECK(run_launcher(runtime, application.registrations(), LaunchSelection{}, 1) == 1);
+    CHECK_MESSAGE(title() == launcher_window_title, "returning to the menu restores the menu title");
 }
 
 TEST_CASE("run_launcher ends on an exit request without rendering that frame") {

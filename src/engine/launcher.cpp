@@ -188,7 +188,11 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
     if (initial)
         host.start(*initial, runtime.camera);
     using Clock = std::chrono::steady_clock;
-    auto previous = Clock::now(), last_title = previous;
+    // Titles change only on transitions; the periodic refresh covers a session whose title
+    // changes on its own without asking the window manager every frame.
+    constexpr auto title_refresh = std::chrono::milliseconds(500);
+    auto previous = Clock::now();
+    std::optional<Clock::time_point> last_title; // empty until the first frame sets it
     int frames = 0;
     while (runtime.poll(host.session() ? host.session()->close_on_escape() : bindings.escape_closes_menu)) {
         const auto now = Clock::now();
@@ -224,7 +228,7 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
             host.session()->render(runtime);
         else
             menu.draw(runtime);
-        if (switched || now - last_title > std::chrono::milliseconds(500)) {
+        if (switched || !last_title || now - *last_title > title_refresh) {
             runtime.title(host.session() ? host.session()->title() : std::string(launcher_window_title));
             last_title = now;
         }
