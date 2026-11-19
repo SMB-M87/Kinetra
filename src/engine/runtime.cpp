@@ -5,6 +5,7 @@
 #include <kinetra/engine.h>
 #include <optional>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 namespace kinetra {
@@ -27,6 +28,30 @@ void set_window_icon(SDL_Window *window) {
     }
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
+}
+
+/// Refresh rate assumed when SDL does not know the display's, in frames per second.
+constexpr int fallback_refresh_rate = 60;
+/// How long before a frame deadline the limiter stops sleeping and polls the clock instead.
+/// A sleep ends up to a scheduler tick late; the last stretch is waited out with yields,
+/// which costs far less than busy-waiting the whole interval.
+constexpr auto limiter_poll_margin = std::chrono::microseconds(1500);
+
+/// Seconds between refreshes of the display that shows `window`.
+double refresh_interval(SDL_Window *window) {
+    SDL_DisplayMode mode{};
+    const int display = SDL_GetWindowDisplayIndex(window);
+    const bool known =
+        display >= 0 && SDL_GetCurrentDisplayMode(display, &mode) == 0 && mode.refresh_rate > 0;
+    return 1.0 / (known ? mode.refresh_rate : fallback_refresh_rate);
+}
+
+/// Blocks until `deadline` on the steady clock.
+void wait_until(std::chrono::steady_clock::time_point deadline) {
+    if (deadline - std::chrono::steady_clock::now() > limiter_poll_margin)
+        std::this_thread::sleep_until(deadline - limiter_poll_margin);
+    while (std::chrono::steady_clock::now() < deadline)
+        std::this_thread::yield();
 }
 
 std::optional<Key> key(SDL_Keycode code) {
@@ -134,6 +159,12 @@ struct Runtime::Impl {
     FrameTimes frame_times;
     /// When the previous frame was presented; empty before the first one.
     std::optional<std::chrono::steady_clock::time_point> presented;
+    /// Whether the platform accepted a swap interval, and whether the limiter replaces it
+    /// when it did not.
+    bool vsync{}, limit_frames{true};
+    /// Paces frames at the display's refresh rate; times are seconds since `epoch`.
+    FrameLimiter limiter{1.0 / fallback_refresh_rate};
+    std::chrono::steady_clock::time_point epoch{std::chrono::steady_clock::now()};
 
     ~Impl() {
         if (gl_ready) {
@@ -179,8 +210,11 @@ Runtime::Runtime(const std::string &text, int width, int height) : impl_(std::ma
         throw std::runtime_error("OpenGL 3.3 functions could not be loaded");
     impl_->gl_ready = true;
     // Adaptive synchronization avoids halving the presentation rate on a missed refresh.
-    if (SDL_GL_SetSwapInterval(-1) != 0 && SDL_GL_SetSwapInterval(1) != 0)
-        SDL_Log("VSync unavailable: %s", SDL_GetError());
+    impl_->vsync = SDL_GL_SetSwapInterval(-1) == 0 || SDL_GL_SetSwapInterval(1) == 0;
+    impl_->limiter = FrameLimiter(refresh_interval(impl_->window));
+    if (!impl_->vsync)
+        SDL_Log("VSync unavailable (%s); pacing frames at %.0f per second", SDL_GetError(),
+                1 / impl_->limiter.interval());
     const GLuint vs = shader(GL_VERTEX_SHADER, R"(#version 330 core
 layout(location=0) in vec2 point;
 layout(location=1) in vec4 tint;
@@ -368,7 +402,16 @@ void Runtime::end() {
                  impl_->vertices.data(), GL_STREAM_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, GLsizei(impl_->vertices.size()));
     SDL_GL_SwapWindow(impl_->window);
-    // Measured after the swap returns, so a blocking VSync or a stalled compositor counts.
+    if (pacing() == FramePacing::limited) {
+        const auto seconds = [&](std::chrono::steady_clock::time_point time) {
+            return std::chrono::duration<double>(time - impl_->epoch).count();
+        };
+        const double until = impl_->limiter.next(seconds(std::chrono::steady_clock::now()));
+        wait_until(impl_->epoch + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                                      std::chrono::duration<double>(until)));
+    }
+    // Measured after the swap and the limiter return, so a blocking VSync, a stalled
+    // compositor and the limiter's wait all count.
     const auto now = std::chrono::steady_clock::now();
     if (impl_->presented)
         impl_->frame_times.record(std::chrono::duration<double>(now - *impl_->presented).count());
@@ -377,6 +420,23 @@ void Runtime::end() {
 
 const FrameTimes &Runtime::frame_times() const {
     return impl_->frame_times;
+}
+
+FramePacing Runtime::pacing() const {
+    if (impl_->vsync)
+        return FramePacing::vsync;
+    return impl_->limit_frames ? FramePacing::limited : FramePacing::uncapped;
+}
+
+void Runtime::limit_frames(bool limited) {
+    // A series that was interrupted must not judge the first frame after it as late.
+    if (limited && !impl_->limit_frames)
+        impl_->limiter.reset();
+    impl_->limit_frames = limited;
+}
+
+double Runtime::frame_interval() const {
+    return impl_->limiter.interval();
 }
 
 } // namespace kinetra

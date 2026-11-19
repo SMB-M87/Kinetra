@@ -1,6 +1,6 @@
 // Window-free tests for the header-only presentation helpers: the bitmap glyph table
-// (bitmap_text.h), camera zoom stepping (camera.h), the rate counter and frame times
-// (timing.h) and angle interpolation (math.h).
+// (bitmap_text.h), camera zoom stepping (camera.h), the rate counter, frame times and frame
+// limiter (timing.h) and angle interpolation (math.h).
 #include <kinetra/bitmap_text.h>
 #include <kinetra/camera.h>
 #include <kinetra/math.h>
@@ -9,6 +9,7 @@
 #include <doctest/doctest.h>
 
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 using kinetra::Glyph;
@@ -142,4 +143,44 @@ TEST_CASE("angle interpolation takes the shorter way around") {
     const float halfway = kinetra::lerp_angle(3.1f, -3.1f, 0.5f);
     CHECK(std::abs(std::remainder(halfway - 3.14159265f, 6.28318531f)) < 1e-4f);
     CHECK(kinetra::lerp_angle(0.5f, 0.5f + 6.28318531f, 0.5f) == doctest::Approx(0.5f));
+}
+
+TEST_CASE("the frame limiter spaces frames one interval apart") {
+    kinetra::FrameLimiter limiter(0.010);
+    CHECK(limiter.interval() == 0.010);
+    CHECK_MESSAGE(limiter.next(5.000) == 5.000, "the first frame starts the series and does not wait");
+    CHECK(limiter.next(5.002) == doctest::Approx(5.010));
+    CHECK(limiter.next(5.013) == doctest::Approx(5.020));
+    CHECK(limiter.next(5.021) == doctest::Approx(5.030));
+}
+
+TEST_CASE("a late frame does not wait and the next one makes up for it") {
+    kinetra::FrameLimiter limiter(0.010);
+    limiter.next(1.000);
+    INFO("4 ms late: no wait, and the series keeps its deadlines");
+    CHECK(limiter.next(1.014) == 1.014);
+    CHECK(limiter.next(1.016) == doctest::Approx(1.020));
+}
+
+TEST_CASE("a stall starts a new series instead of a burst of short frames") {
+    kinetra::FrameLimiter limiter(0.010);
+    limiter.next(1.000);
+    CHECK_MESSAGE(limiter.next(1.250) == 1.250, "more than one interval late");
+    CHECK_MESSAGE(limiter.next(1.251) == doctest::Approx(1.260), "the next frame waits a whole interval");
+}
+
+TEST_CASE("a reset frame limiter starts over") {
+    kinetra::FrameLimiter limiter(0.010);
+    limiter.next(1.000);
+    limiter.reset();
+    CHECK(limiter.next(1.001) == 1.001);
+    CHECK(limiter.next(1.002) == doctest::Approx(1.011));
+}
+
+TEST_CASE("the frame limiter rejects invalid intervals and times") {
+    CHECK_THROWS_AS(kinetra::FrameLimiter(0), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::FrameLimiter(-1), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::FrameLimiter(std::numeric_limits<double>::infinity()), std::invalid_argument);
+    kinetra::FrameLimiter limiter(0.010);
+    CHECK_THROWS_AS(limiter.next(std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
 }

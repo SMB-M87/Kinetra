@@ -297,6 +297,35 @@ TEST_CASE("presented frames are timed and the frame-time graph draws them") {
     CHECK(glGetError() == GL_NO_ERROR);
 }
 
+TEST_CASE("without vsync the frame limiter spaces frames by the display's refresh interval") {
+    Runtime runtime("Kinetra pacing", 320, 200);
+    REQUIRE(runtime.poll());
+    CHECK(runtime.frame_interval() > 0);
+    if (runtime.pacing() == FramePacing::vsync) {
+        runtime.limit_frames(false);
+        CHECK_MESSAGE(runtime.pacing() == FramePacing::vsync, "the limiter has no say under VSync");
+        return;
+    }
+    CHECK_MESSAGE(runtime.pacing() == FramePacing::limited, "the limiter is on by default");
+    constexpr int frames = 24;
+    for (int frame = 0; frame < frames; ++frame) {
+        runtime.begin({0, 0, 0, 1});
+        runtime.end();
+    }
+    // The first timed frame may start the limiter's series; every later one waits for its
+    // deadline, so the frames cannot average less than one interval.
+    CHECK(runtime.frame_times().size() == frames - 1);
+    CHECK(runtime.frame_times().average() >= runtime.frame_interval() * 0.9);
+    runtime.limit_frames(false);
+    CHECK(runtime.pacing() == FramePacing::uncapped);
+    runtime.limit_frames(true);
+    CHECK(runtime.pacing() == FramePacing::limited);
+    runtime.begin({0, 0, 0, 1});
+    draw_frame_times(runtime, runtime.frame_times());
+    runtime.end();
+    CHECK(glGetError() == GL_NO_ERROR);
+}
+
 TEST_CASE("a runtime reopens after destruction") {
     Runtime reopened("Kinetra reopened", 160, 120);
     CHECK(reopened.poll());

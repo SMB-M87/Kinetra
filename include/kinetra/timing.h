@@ -122,4 +122,43 @@ class FrameTimes {
     std::size_t first_{}, size_{};
 };
 
+/// Decides until when a frame must wait, to pace frames without VSync.
+///
+/// Times are seconds on any monotonic clock. Deadlines advance by one interval, so the
+/// average rate is exact and a wait that ends late is made up by the next one. A frame that
+/// comes more than one interval after its deadline starts a new series, so a stall is not
+/// followed by a burst of short frames.
+class FrameLimiter {
+  public:
+    /// `interval`: seconds between frames. Throws std::invalid_argument unless it is finite
+    /// and positive.
+    explicit FrameLimiter(double interval) : interval_(interval) {
+        if (!std::isfinite(interval) || interval <= 0)
+            throw std::invalid_argument("Invalid frame interval");
+    }
+    /// Seconds between frames.
+    double interval() const { return interval_; }
+    /// Call when a frame is finished at time `now`. Returns the time to wait until before
+    /// starting the next frame: `now` when the frame is on time or late, a later time when
+    /// it is early. Throws std::invalid_argument for a non-finite time.
+    double next(double now) {
+        if (!std::isfinite(now))
+            throw std::invalid_argument("Frame time must be finite");
+        const double deadline = previous_ + interval_;
+        if (!started_ || now > deadline + interval_) {
+            started_ = true;
+            previous_ = now;
+            return now;
+        }
+        previous_ = deadline;
+        return std::max(now, deadline);
+    }
+    /// Forgets the series; the next frame starts a new one. For a pause in presenting.
+    void reset() { started_ = false; }
+
+  private:
+    double interval_, previous_{};
+    bool started_{};
+};
+
 } // namespace kinetra

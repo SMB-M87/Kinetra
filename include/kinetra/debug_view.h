@@ -2,6 +2,7 @@
 
 #include "bitmap_text.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <functional>
 #include <span>
@@ -220,9 +221,10 @@ struct FrameTimeGraph {
     static Vec2 origin(Vec2 viewport) { return {viewport.x - width - 12, 8}; }
 };
 
-/// Draws `times` as a bar graph, newest on the right, with lines at 16.7 and 33.3 ms and the
-/// average and worst frame below it, in screen space at FrameTimeGraph::origin(). Bars up to
-/// one 60 Hz refresh (plus 5 % timer jitter) are green, up to two yellow, longer ones red.
+/// Draws `times` as a bar graph, newest on the right, with lines at 16.7 and 33.3 ms, and
+/// below it the average and worst frame and how `runtime` paces frames (Runtime::pacing()),
+/// in screen space at FrameTimeGraph::origin(). Bars up to one 60 Hz refresh (plus 5 % timer
+/// jitter) are green, up to two yellow, longer ones red.
 inline void draw_frame_times(Runtime &runtime, const FrameTimes &times) {
     const auto &camera = runtime.camera;
     const Vec2 origin = FrameTimeGraph::origin(camera.viewport);
@@ -231,7 +233,7 @@ inline void draw_frame_times(Runtime &runtime, const FrameTimes &times) {
     const auto rectangle = [&](Vec2 corner, Vec2 size, Color color) {
         runtime.box(camera.screen_to_world(corner + size / 2), size / 2 / camera.pixels_per_unit, 0, color);
     };
-    rectangle(origin - Vec2{4, 4}, {FrameTimeGraph::width + 8, FrameTimeGraph::height + 20},
+    rectangle(origin - Vec2{4, 4}, {FrameTimeGraph::width + 8, FrameTimeGraph::height + 32},
               {0, 0, 0, 0.55f});
     const float bottom = origin.y + FrameTimeGraph::height;
     const float first = FrameTimeGraph::width - float(times.size());
@@ -249,5 +251,20 @@ inline void draw_frame_times(Runtime &runtime, const FrameTimes &times) {
     std::snprintf(text, sizeof text, "FRAME AVG %.1f MS WORST %.1f MS", times.average() * 1000,
                   times.worst() * 1000);
     draw_text(runtime, text, {origin.x, bottom + 4}, 1, {1, 1, 1});
+    // What spaces the frames decides how to read the bars: VSync gives even ones, a limiter
+    // nearly even ones, and uncapped frames are as short as drawing allows.
+    const int rate = static_cast<int>(std::lround(1 / runtime.frame_interval()));
+    switch (runtime.pacing()) {
+    case FramePacing::vsync:
+        std::snprintf(text, sizeof text, "PACING VSYNC");
+        break;
+    case FramePacing::limited:
+        std::snprintf(text, sizeof text, "PACING LIMIT %d HZ", rate);
+        break;
+    case FramePacing::uncapped:
+        std::snprintf(text, sizeof text, "PACING UNCAPPED");
+        break;
+    }
+    draw_text(runtime, text, {origin.x, bottom + 16}, 1, {0.7f, 0.8f, 1});
 }
 } // namespace kinetra
