@@ -48,7 +48,7 @@ Pick targets and tests from the mapping tables: Kinetra in [testing](../../../do
 
 **Full.**
 
-- Kinetra only: `cmake --workflow --preset ci`, which is the same as CI. Then run Lab's `ci` workflow when a Lab checkout is available.
+- Kinetra only: `cmake --workflow --preset ci` and `cmake --workflow --preset headless`, the two configurations CI runs. Then run Lab's Full level when a Lab checkout is available.
 - Lab: `cmake --workflow --preset ci` and `cmake --workflow --preset headless` from the Lab root (or `./build.sh`).
 - Runtime, launcher or presentation changes: also `cmake --workflow --preset graphics` (it sets `SDL_VIDEODRIVER=offscreen` and software Mesa), plus bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
 - Public header or target changes: also the external consumer fixture.
