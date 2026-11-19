@@ -1,5 +1,7 @@
 # 0009: Separate core library from Lab consumers
 
+Status: accepted; generic launcher ownership superseded by [0010](0010-generic-launcher-in-core.md). Kinetra holds the reusable core; applications live in Kinetra-Lab.
+
 ## Table of contents
 
 - [Decision](#decision)

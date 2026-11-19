@@ -4,17 +4,29 @@
 #include <string_view>
 
 namespace kinetra {
+/// Appearance of the help panel. Sizes are panel pixels, scaled so that `reference_view`
+/// fills the window (at most 2x).
 struct HelpStyle {
+    /// Window size in panel pixels at scale 1.
     Vec2 reference_view{300, 210};
+    /// Expanded panel width; `expanded_height` zero sizes the height to the lines.
     float width{286}, expanded_height{};
+    /// Top-left corner of the panel and of the first text line.
     Vec2 origin{4, 4}, text_origin{10, 10};
+    /// Single line shown while collapsed.
     std::string_view collapsed{"H: SHOW CONTROLS"};
+    /// Panel width while collapsed.
     float collapsed_width{108};
+    /// Panel color.
     Color background{0.025f, 0.035f, 0.06f};
+    /// Color of the lines, and of the first line (or the collapsed line).
     Color text{0.9f, 0.93f, 1.f}, heading{0.55f, 1.f, 0.35f};
 };
 /// Screen-space help content may include category headings and application sections.
 /// Draw after world content; application bindings remain independent of the renderer.
+///
+/// Draws `lines` (10 panel pixels apart) when `expanded`, otherwise only the collapsed
+/// line. The first line uses the heading color. The views must stay valid during the call.
 inline void draw_help(Runtime &runtime, std::span<const std::string_view> lines, bool expanded,
                       const HelpStyle &style = {}) {
     const float scale = std::min({2.f, runtime.camera.viewport.x / style.reference_view.x,
@@ -33,11 +45,14 @@ inline void draw_help(Runtime &runtime, std::span<const std::string_view> lines,
 }
 /// Optional visibility controller for applications using the default H binding.
 struct HelpOverlay {
+    /// Whether the full help shows.
     bool expanded{};
+    /// Toggles `expanded` when `toggle` is pressed this frame.
     void update(const Input &input, Key toggle = Key::h) {
         if (input.hit(toggle))
             expanded = !expanded;
     }
+    /// Draws the help in its current state; see draw_help().
     void draw(Runtime &runtime, std::span<const std::string_view> lines, const HelpStyle &style = {}) const {
         draw_help(runtime, lines, expanded, style);
     }

@@ -9,7 +9,7 @@ Headless mechanisms use world units, seconds and radians. Positive rotation is c
 - [Collision and queries](#collision-and-queries)
 - [Limits and verification](#limits-and-verification)
 
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+[Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Public contracts
 
@@ -29,7 +29,7 @@ Headless mechanisms use world units, seconds and radians. Positive rotation is c
 | controlled | Yes | Yes | No |
 | dynamic | Yes | Yes | Yes |
 
-Body dimensions and mass must be finite and positive. `Shape::polygon` uses 3–32 strictly convex counterclockwise `Body::vertices` in local coordinates, centered at the area centroid. Edges shorter than 0.0001 world units, collinear vertices and concave/self-intersecting outlines are rejected. Circle radius and box half extents retain their existing meaning. `regular_polygon(sides, radius)` creates centered geometry. `local_extents` and `bounding_radius` provide conservative envelopes for all shapes. Polygon inertia integrates the uniform-density area about the local origin; contacts use SAT and a clipped representative point. Concave/compound bodies are not implemented. Acceleration persists until the caller changes it. `World::add` returns an index stable until `clear`; the engine has no body-removal API.
+Body dimensions and mass must be finite and positive. `Shape::polygon` uses 3–32 strictly convex counterclockwise `Body::vertices` in local coordinates, centered at the area centroid. Edges shorter than 0.0001 world units, collinear vertices and concave/self-intersecting outlines are rejected. `radius` applies to circles and `half_extents` to boxes. `regular_polygon(sides, radius)` creates centered geometry. `local_extents` and `bounding_radius` provide conservative envelopes for all shapes. Polygon inertia integrates the uniform-density area about the local origin; contacts use SAT and a clipped representative point. Concave/compound bodies are not implemented. Acceleration persists until the caller changes it. `World::add` returns an index stable until `clear`; the engine has no body-removal API.
 
 ## Physics update flow
 
@@ -71,4 +71,4 @@ Application-specific math adapters and pixel/world coordinate conversions remain
 
 The solver uses a representative contact point. Continuous detection covers circle and nonrotating box/polygon pairs, including moving/moving contacts. Pairs containing rotating boxes/polygons remain discrete and can tunnel. If an impact imparts angular velocity to a dynamic box/polygon, subsequent pairs containing that body also use discrete detection; the translation sweep is not rotational CCD. There are no joints, robust stacking manifolds or cross-machine bitwise determinism. Segment queries are not a complete scene raycasting API.
 
-[Simulation tests](../../tests/simulation_tests.cpp) cover shape boundaries, containment, momentum, rotation, material response, mixed modes, invalid inputs, grid queries and a 400-body workload. [Navigation tests](../../tests/navigation_tests.cpp) also exercise zero vectors, degenerate segments, finite-value checks and exact endpoints. Test commands are in [development](../development.md).
+[Simulation tests](../../tests/simulation_tests.cpp) cover shape boundaries, containment, momentum, rotation, material response, mixed modes, invalid inputs, grid queries and a 400-body workload. [Navigation tests](../../tests/navigation_tests.cpp) also exercise zero vectors, degenerate segments, finite-value checks and exact endpoints. Which suites to run for a change is in [testing](../testing.md#choosing-targeted-tests); every suite is listed in the [test map](../../tests/README.md#test-map).

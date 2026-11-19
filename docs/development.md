@@ -12,7 +12,7 @@ How to build Kinetra, which options and presets exist, and how to set up the too
 - [Editor and tools](#editor-and-tools)
 - [Open points](#open-points)
 
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md)
+[Project overview](../README.md) · [Documentation index](README.md)
 
 ## Dependencies and options
 
@@ -36,7 +36,7 @@ The warning set and test registration live in [cmake/](../cmake/). Kinetra-Lab u
 
 ## Presets
 
-[CMakePresets.json](../CMakePresets.json) bundles the option combinations. Every preset builds in `build-<preset>/`, which is ignored by Git. A workflow preset configures, builds and tests in one command:
+[CMakePresets.json](../CMakePresets.json) bundles the option combinations. Every preset builds in `build-<preset>/`, which is ignored by Git, and exports `compile_commands.json` there for clangd. Every preset except `ci` uses ccache. A workflow preset configures, builds and tests in one command:
 
 ```sh
 cmake --workflow --preset dev
@@ -44,9 +44,9 @@ cmake --workflow --preset dev
 
 | Preset | Build type | Runtime | Extras | Tests run |
 | --- | --- | --- | --- | --- |
-| `dev` | Debug | on | warnings, ccache, `compile_commands.json` | all except `graphics` |
-| `release` | Release | on | ccache | all except `graphics` |
-| `headless` | Release | off | ccache | all |
+| `dev` | Debug | on | warnings | all except `graphics` |
+| `release` | Release | on | | all except `graphics` |
+| `headless` | Release | off | | all |
 | `asan` | Debug | off | AddressSanitizer + UndefinedBehaviorSanitizer | all |
 | `graphics` | Release | on | graphics tests, `SDL_VIDEODRIVER=offscreen`, software Mesa | all, including `graphics` |
 | `ci` | Release | on | warnings as errors, graphics tests compiled | all except `graphics` |
@@ -56,11 +56,12 @@ cmake --workflow --preset dev
 ## Checks
 
 ```sh
-cmake --workflow --preset ci       # what CI runs: everything compiled, warnings as errors
+cmake --workflow --preset ci       # CI: everything compiled, warnings as errors
+cmake --workflow --preset headless # CI: simulation only, without SDL2/OpenGL
 cmake --workflow --preset dev      # day-to-day
 ```
 
-Without presets, the classic commands still work:
+Without presets (CMake older than 3.25), configure and build directly:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

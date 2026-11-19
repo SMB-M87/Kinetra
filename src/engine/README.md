@@ -13,7 +13,7 @@ The optional interactive half of Kinetra: an SDL2/OpenGL 3.3 window with input a
 - [Tests](#tests)
 - [Open points](#open-points)
 
-[Parent guide](../README.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
+[Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
 ## Purpose and scope
 
@@ -60,8 +60,16 @@ flowchart LR
 | [session.cpp](session.cpp) | `run_session`: the loop for one directly launched session | `Kinetra::Runtime` |
 | [settings_view.cpp](settings_view.cpp) | `SettingsOverlay`: rows, layout, picking and drawing | `Kinetra::Runtime` |
 | [launcher.cpp](launcher.cpp) | `LaunchMenu`, `MenuLayout`, `SessionHost` and `run_launcher` | `Kinetra::Launcher` |
+| [glad.c](../glad.c) | Generated OpenGL 3.3 loader; keep its generated contents ([provenance](../../include/glad/README.md)) | `Kinetra::Runtime` |
 
-Public headers: [engine.h](../../include/kinetra/engine.h), [session.h](../../include/kinetra/session.h), [settings_view.h](../../include/kinetra/settings_view.h), [launcher.h](../../include/kinetra/launcher.h), and the header-only [bitmap_text.h](../../include/kinetra/bitmap_text.h), [debug_view.h](../../include/kinetra/debug_view.h) and [help_view.h](../../include/kinetra/help_view.h).
+| Public header | Responsibility | Linking | Contract |
+| --- | --- | --- | --- |
+| [engine.h](../../include/kinetra/engine.h) | `Runtime`, `Input`, `Key`, `Color` | `Kinetra::Runtime` | [Runtime](../../docs/engine/runtime.md) |
+| [session.h](../../include/kinetra/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
+| [settings_view.h](../../include/kinetra/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
+| [launcher.h](../../include/kinetra/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
+| [bitmap_text.h](../../include/kinetra/bitmap_text.h), [debug_view.h](../../include/kinetra/debug_view.h), [help_view.h](../../include/kinetra/help_view.h) | Glyphs and text, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
+| [camera.h](../../include/kinetra/camera.h), [timing.h](../../include/kinetra/timing.h) | `Camera2D` and zoom, `FixedClock`, `RateCounter` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md), [presentation helpers](../../docs/engine/launcher-overlays.md#presentation-helpers) |
 
 ## How it works
 
@@ -99,7 +107,7 @@ After a transition the clock restarts, so building a world does not count as sim
 - One `Runtime` at a time, created, used and destroyed on the main thread. Sessions are destroyed before the Runtime.
 - Public headers expose no SDL, GLAD or OpenGL types; Runtime does not link Simulation.
 - A host reads `request()` after every advance and before render; a session never sees a frame after its `menu` or `exit` request.
-- `SessionHost` destroys the old session before creating the next one (Dotio's world is a singleton), and a throwing factory leaves the old session and camera untouched.
+- `run_launcher` starts a session only from the menu, after the previous one was destroyed, so two sessions never exist at once (Dotio's world is a singleton). `SessionHost::start` itself keeps the old session until the factory succeeds, so a throwing factory leaves the old session and camera untouched.
 - Overlay positions are in logical panel pixels, scaled by a factor that depends only on the viewport.
 - Borrowed pointers (overlay flags, debug options) must outlive the overlay's `update` and `draw` calls.
 
@@ -124,7 +132,7 @@ cmake --workflow --preset dev        # window-free suites
 cmake --workflow --preset graphics   # adds the graphics suite (software OpenGL, offscreen SDL)
 ```
 
-The external consumer in [tests/consumer](../../tests/consumer/README.md) links the public API from outside the repository.
+The [external consumer](../../tests/README.md#external-consumer) links the public API from outside the repository.
 
 ## Open points
 

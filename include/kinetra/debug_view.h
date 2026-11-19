@@ -6,27 +6,47 @@
 #include <string_view>
 
 namespace kinetra {
+/// One row of the debug menu. Set `enabled` for a check box or `action` for a button; the
+/// other fields add read-only content to the row.
 struct DebugOption {
+    /// Row text; the viewed characters must outlive the menu's draw() calls.
     std::string_view label;
-    bool *enabled{}; // Borrowed; must outlive update/draw.
+    /// Check box state, toggled by a click. Borrowed; must outlive update/draw.
+    bool *enabled{};
+    /// Called on a click when `enabled` is null.
     std::function<void()> action{};
+    /// Optional text appended to the label on every draw.
     std::function<std::string()> text{};
+    /// Optional number appended to the label on every draw.
     std::function<double()> number{};
+    /// Optional custom drawing next to the row: runtime, top-left screen position of the
+    /// row text, and the menu scale.
     std::function<void(Runtime &, Vec2, float)> visualization{};
 };
 
 /// Shared screen-space debug controls. Layout is identical for drawing and picking;
 /// all pointer input inside the panel is consumed, including held fire.
+///
+/// Positions are logical window pixels. The panel is 182 panel pixels wide, with a 22-pixel
+/// heading and 16 pixels per option, scaled by scale().
 struct DebugMenu {
+    /// Whether the panel shows.
     bool visible{};
+    /// Last pointer position, used for hover highlighting in draw().
     Vec2 pointer{-1, -1};
-    // Negative x preserves the default right-aligned layout. Otherwise use fixed screen pixels.
+    /// Negative x preserves the default right-aligned layout. Otherwise use fixed screen pixels.
     Vec2 screen_origin{-1, -1};
+    /// Top-left corner of the panel for `viewport`: `screen_origin`, or near the top-right
+    /// corner by default.
     Vec2 origin(Vec2 viewport) const {
         const float size = scale(viewport);
         return screen_origin.x < 0 ? Vec2{viewport.x - 190 * size, 8 * size} : screen_origin;
     }
+    /// Screen pixels per panel pixel for a viewport, at most 1.5.
     static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 260.f}); }
+    /// Applies one frame of input: `toggle` shows or hides the panel, and a click on a row
+    /// toggles its flag or runs its action. Returns true when the pointer is over the
+    /// visible panel, so the caller must ignore that pointer input.
     bool update(const Input &input, Vec2 viewport, std::span<DebugOption> options,
                 Key toggle = Key::backquote) {
         pointer = input.mouse;
@@ -45,6 +65,7 @@ struct DebugMenu {
         }
         return captured;
     }
+    /// Draws the panel in screen space when visible; pass the same options as to update().
     void draw(Runtime &runtime, std::span<const DebugOption> options) const {
         if (!visible)
             return;
@@ -76,6 +97,8 @@ struct DebugMenu {
 };
 
 /// Draw collision outlines at a stable two-pixel width without covering the body.
+///
+/// Circle outline in world coordinates, as 32 line segments.
 inline void draw_debug_circle(Runtime &runtime, Vec2 center, float radius, Color color) {
     constexpr int segments = 32;
     for (int i = 0; i < segments; ++i) {
@@ -86,6 +109,8 @@ inline void draw_debug_circle(Runtime &runtime, Vec2 center, float radius, Color
                      color);
     }
 }
+/// Outline of a box with half extents `half`, rotated by `angle` radians, at a two-pixel
+/// width; world coordinates.
 inline void draw_debug_box(Runtime &runtime, Vec2 center, Vec2 half, float angle, Color color) {
     const std::array<Vec2, 4> corners{
         {{-half.x, -half.y}, {half.x, -half.y}, {half.x, half.y}, {-half.x, half.y}}};
@@ -95,6 +120,9 @@ inline void draw_debug_box(Runtime &runtime, Vec2 center, Vec2 half, float angle
 }
 
 /// Debug widths and nonzero vectors remain legible across camera zoom levels.
+///
+/// Draws `vector` as an arrow from `position`, at least 1.5 world units and 24 screen
+/// pixels long; a zero vector draws nothing.
 inline void draw_debug_vector(Runtime &runtime, Vec2 position, Vec2 vector, Color color) {
     const float magnitude = length(vector);
     if (magnitude == 0)

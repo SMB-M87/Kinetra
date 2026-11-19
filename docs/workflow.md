@@ -17,7 +17,7 @@ How a change moves from idea to commit in Kinetra and Kinetra-Lab. Every change 
 - [Changes across Kinetra and Lab](#changes-across-kinetra-and-lab)
 - [Open points](#open-points)
 
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
+[Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
 
 ## The cycle
 

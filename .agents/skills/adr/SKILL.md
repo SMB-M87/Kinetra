@@ -20,7 +20,7 @@ If any is false, the design document's **Decisions** table is enough. Say so and
 
 | Decision about | Location | Index |
 | --- | --- | --- |
-| Engine boundaries, public API, `Kinetra::` targets | Kinetra `docs/decisions/` | Table in Kinetra [docs/README.md](../../../docs/README.md#decisions) |
+| Engine boundaries, public API, `Kinetra::` targets | Kinetra `docs/decisions/` | Table in Kinetra [docs/decisions/README.md](../../../docs/decisions/README.md#decision-index) |
 | Lab application structure, Lab-only boundaries | Lab `docs/decisions/`, created with its own README when the first Lab ADR is written | Lab `docs/README.md` |
 
 Numbering continues from the highest existing number in that directory: `NNNN-short-slug.md`.
@@ -55,6 +55,6 @@ Keep it short: an ADR records *that* and *why*, not the full design (which lives
 
 ## 4. Maintain
 
-- Add the ADR to the index table. When it replaces an older decision, set the old ADR's status to `superseded by [NNNN](...)`; never delete history.
+- Add the ADR to the index table. When it replaces or amends an older decision, set the old ADR's status to `superseded by [NNNN](...)` or `amended by [NNNN](...)` and update its row in the index; never delete history.
 - Link the ADR from the design document, and from the architecture or contract page it affects.
 - Run the docs check, then commit as `docs(adr): record NNNN <slug>` (or together with the change it belongs to).

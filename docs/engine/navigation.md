@@ -12,7 +12,7 @@
 - [Application policies](#application-policies)
 - [Verification](#verification)
 
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+[Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Planning and following
 
@@ -60,7 +60,7 @@ Pathfinding uses Euclidean heuristic and orthogonal/diagonal travel costs. Smoot
 `Steering::rectangular_clearance` is an opt-in for axis-aligned box pairs: avoidance
 uses summed half extents plus clearance instead of a circumscribed agent circle.
 This permits physically clear rectangular passages. Rotated boxes and other shape
-pairs retain the conservative envelope; the default remains unchanged.
+pairs retain the conservative envelope; the option is off by default.
 
 ## Reciprocal local avoidance
 
@@ -92,8 +92,8 @@ unique members of `requests`; they keep their tickets while new admission select
 the oldest eligible request. An existing admission remains valid even if later
 marked ineligible. This avoids revoking a grant during approach; the application
 must retain any space reserved for that grant until it is safely released. With
-all requests ineligible and no occupant/grant, admission is empty. The original
-two-argument API treats every request as eligible.
+all requests ineligible and no occupant/grant, admission is empty. The
+two-argument overload treats every request as eligible.
 
 No timer revokes an approaching grant. Cancel only when the agent can safely stop
 outside the zone. Fair progress depends on admitted agents eventually clearing it.
@@ -127,7 +127,9 @@ receive bounded recovery, not a collision-free guarantee. `SteeringForces::borde
 reports the applied acceleration correction (at most twice the acceleration cap),
 not an unbounded inverse-square diagnostic force. Arrival can be disabled at intermediate waypoints. Settings are explicit in caller-selected time units: defaults use 2 units/time and 0.6 units/time squared, eight prediction steps and a 1.025 safety multiplier. Caller-owned integration and clock must use consistent units. Neighbor spans exclude the agent. Coincident bodies receive a finite separating force. Unsupported rotated/circular bodies and invalid settings throw.
 
-These supplement the existing APIs; `steer` and `Navigation` behavior remains compatible. See [ADR 0011](../decisions/0011-weighted-navigation-and-priority-steering.md) and [weighted navigation tests](../../tests/weighted_navigation_tests.cpp).
+`tangent_steer` is experimental tangent/spring local steering translated from i4sim. It returns bounded acceleration with explicit speed, force and horizon; callers keep integration and boundary/contact handling. It is not a collision-free velocity solver.
+
+These functions are separate from `steer` and `Navigation`, which keep their own geometry and units. See [ADR 0011](../decisions/0011-weighted-navigation-and-priority-steering.md) and [weighted navigation tests](../../tests/weighted_navigation_tests.cpp).
 
 ## Application policies
 
@@ -136,5 +138,3 @@ Applications own goal selection, replanning schedules, streamed obstacle residen
 ## Verification
 
 [Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
-
-The additive `tangent_steer` function implements experimental tangent/spring local steering from i4sim. It returns bounded acceleration with explicit speed, force and horizon; callers retain integration and boundary/contact handling. It is not a collision-free velocity solver. Existing steering functions retain their defaults.

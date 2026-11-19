@@ -6,6 +6,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 ## Table of contents
 
 - [Features](#features)
+- [Modules](#modules)
 - [Quick start](#quick-start)
 - [Using Kinetra](#using-kinetra)
 - [Working with Kinetra-Lab](#working-with-kinetra-lab)
@@ -15,7 +16,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 
 [Documentation index](docs/README.md)
 
-Directory guides: [docs](docs/README.md), [include](include/README.md), [src](src/README.md), [tests](tests/README.md), [third_party/doctest](third_party/doctest/README.md), [tools](tools/README.md).
+Directory guides: [docs](docs/README.md), [tests](tests/README.md), [tools](tools/README.md).
 
 ## Features
 
@@ -23,6 +24,17 @@ Directory guides: [docs](docs/README.md), [include](include/README.md), [src](sr
 - Optional window, input, camera, colored primitives, bitmap text and direct sessions.
 - Public C++ headers under `include/kinetra/`; CMake targets `Kinetra::Simulation`, optional `Kinetra::Runtime` and `Kinetra::Launcher`.
 - Optional reusable launcher menu and session host in `<kinetra/launcher.h>`; application registration and gameplay remain in Lab.
+
+## Modules
+
+| Module | CMake target | Public headers in `include/kinetra/` | Guide |
+| --- | --- | --- | --- |
+| Simulation: geometry, physics, spatial queries, navigation, steering, avoidance, traffic admission | `Kinetra::Simulation` | `math.h`, `physics.h`, `spatial_grid.h`, `collision_grid.h`, `navigation.h`, `weighted_grid.h`, `steering.h`, `avoidance.h`, `traffic.h` | [Simulation](src/simulation/README.md) |
+| Runtime: window, input, drawing, sessions, overlays | `Kinetra::Runtime` (optional) | `engine.h`, `session.h`, `settings_view.h`, and header-only `camera.h`, `timing.h`, `bitmap_text.h`, `debug_view.h`, `help_view.h` | [Runtime and launcher](src/engine/README.md) |
+| Launcher: menu, session host and loop | `Kinetra::Launcher` (optional) | `launcher.h` | [Runtime and launcher](src/engine/README.md) |
+| Tests and the external consumer | | | [Core tests](tests/README.md) |
+
+Include headers as `<kinetra/physics.h>`. `include/glad/` and `include/KHR/` hold the generated OpenGL loader; they are private to the runtime. The vendored test framework is described in [third_party/doctest](third_party/doctest/README.md).
 
 ## Quick start
 
@@ -61,32 +73,18 @@ Runtime consumers enable `KINETRA_BUILD_RUNTIME` and link `Kinetra::Runtime`. Ki
 
 ## Working with Kinetra-Lab
 
-Kinetra-Lab includes Kinetra as a Git submodule at `external/Kinetra` and builds it from source. Lab records an exact engine commit. The standalone Kinetra checkout and Lab's submodule are independent Git checkouts; changes do not synchronize automatically.
-
-You can develop engine changes either here or inside Lab's submodule. Build and test the engine with the commands above, then verify the applications in Lab. Publish the Kinetra change first; next select that published commit in Lab's submodule, rebuild/test Lab, and commit and publish Lab's updated submodule pointer. Application-only changes belong in Lab.
-
-For unpublished work in sibling directories, run from Kinetra-Lab:
-
-```sh
-cmake -S . -B build-local-core -DCMAKE_BUILD_TYPE=Release -DKINETRA_SOURCE_DIR=../Kinetra
-cmake --build build-local-core -j2
-ctest --test-dir build-local-core --output-on-failure
-```
-
-This local source override does not change Lab's recorded dependency. Before publishing Lab, test against the published commit in `external/Kinetra` using its normal build directory. See the [complete Lab workflow](https://github.com/SMB-M87/Kinetra-Lab#kinetra-development-workflow) for branch handling, engine and Lab publishing order, receiving updates, and build commands.
+Kinetra-Lab includes Kinetra as a Git submodule at `external/Kinetra` and records one exact engine commit. An engine change is made, committed and published here first; Lab then moves its pointer to that commit and verifies the applications against it. Application-only changes belong in Lab. Lab's [external dependencies guide](https://github.com/SMB-M87/Kinetra-Lab/blob/main/external/README.md) has the steps and commands, including building Lab against an unpublished sibling checkout, and the [workflow](docs/workflow.md#changes-across-kinetra-and-lab) gives the merge order.
 
 ## Documentation
 
-Directory guides: [public headers](include/README.md), [implementation](src/README.md) and [tests](tests/README.md).
-
-Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), or [runtime contract](docs/engine/runtime.md).
+Start with the [documentation index](docs/README.md) and the [architecture](docs/architecture.md); each [module guide](#modules) explains its own code.
 
 Contributors follow the [development workflow](docs/workflow.md): every change gets a [design document](docs/design/README.md), tests, a review and documentation, and is verified at the [level its impact requires](docs/testing.md#verification-levels). [AGENTS.md](AGENTS.md) records the rules for agents and developers; [conventions](docs/conventions.md) and the [documentation guide](docs/documentation.md) give the details.
 
 ## Platform support
 
 Linux is supported; Artix/Linux is the desktop target. Windows/macOS and 3D are unsupported.
-Physics is discrete and fast bodies can tunnel. Navigation does not guarantee arrival in moving crowds.
+Continuous collision detection covers circles and nonrotating boxes and polygons; rotating boxes and polygons are checked discretely and can tunnel. Navigation does not guarantee arrival in moving crowds.
 Rendering has no texture system or pose interpolation. Cross-machine bitwise determinism is not promised.
 
 ## License

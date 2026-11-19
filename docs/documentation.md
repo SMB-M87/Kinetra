@@ -13,7 +13,7 @@ How Kinetra and Kinetra-Lab are documented. Documentation exists to give insight
 - [Style and maintenance](#style-and-maintenance)
 - [Open points](#open-points)
 
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
+[Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
 
 ## What goes where
 
@@ -202,7 +202,7 @@ Directory guides: [child](child/README.md).
 ```
 
 - The table of contents is an explicit list, because GitHub does not render `[TOC]`.
-- The navigation line comes directly below the table of contents. Leave out links that would point to the page itself. The *Directory guides* line lists only direct child guides.
+- The navigation line comes directly below the table of contents. Leave out links that would point to the page itself, and name each target once: when the parent guide is also the documentation index, link it only as the documentation index. The *Directory guides* line lists only direct child guides.
 - No separate "Navigation" section and no link footer at the end of the page.
 
 ## Style and maintenance

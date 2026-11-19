@@ -16,7 +16,7 @@ How code in Kinetra and Kinetra-Lab is written and structured. The rules apply t
 - [CMake](#cmake)
 - [Open points](#open-points)
 
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
+[Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
 
 ## Files and formatting
 
@@ -83,8 +83,8 @@ Dependencies point inward. Inner layers never include outer ones.
 ```mermaid
 flowchart BT
     Sim["Kinetra::Simulation<br/>math, physics, navigation, steering, traffic"]
-    Rt["Kinetra::Runtime<br/>window, input, rendering, sessions"] --> Sim
-    La["Kinetra::Launcher<br/>menu, session host, overlays"] --> Rt
+    Rt["Kinetra::Runtime<br/>window, input, rendering, sessions, overlays"]
+    La["Kinetra::Launcher<br/>menu, session host, launcher loop"] --> Rt
     Logic["Application logic (Lab)<br/>headless rules and state"] --> Sim
     Pres["Application presentation (Lab)<br/>session, input mapping, drawing"] --> Logic
     Pres --> Rt

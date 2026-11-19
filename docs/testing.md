@@ -13,7 +13,7 @@ What to test, how to write tests, and which checks a change needs, locally and i
 - [Reporting](#reporting)
 - [Open points](#open-points)
 
-[Directory guide](README.md) · [Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
+[Project overview](../README.md) · [Documentation index](README.md) · [Agent rules](../AGENTS.md)
 
 ## Test kinds
 
@@ -49,7 +49,7 @@ The bottom of the pyramid runs on every build and catches most regressions. Each
 
 ## Writing a doctest suite
 
-New tests use [doctest](../third_party/doctest/README.md). [traffic_tests.cpp](../tests/traffic_tests.cpp) is the reference conversion of a former `main()` suite.
+New tests use [doctest](../third_party/doctest/README.md). [traffic_tests.cpp](../tests/traffic_tests.cpp) is the reference suite.
 
 ```cpp
 #include <kinetra/traffic.h>
@@ -116,22 +116,25 @@ Kinetra standalone:
 
 ```sh
 cmake --workflow --preset ci
+cmake --workflow --preset headless
 ```
 
-This is the same configuration as CI. For runtime or launcher changes, also run `cmake --workflow --preset graphics` and report the backend. For public header or target changes, also run the [external consumer](development.md#external-consumers).
+These are the two configurations CI runs; `headless` proves that `Kinetra::Simulation` builds without SDL2 and OpenGL. For runtime or launcher changes, also run `cmake --workflow --preset graphics` and report the backend. For public header or target changes, also run the [external consumer](development.md#external-consumers).
 
-Kinetra-Lab (engine plus applications), from the Lab root: `cmake --workflow --preset ci`, or `./build.sh`, which builds and tests Kinetra in `build-core` and Lab in `build`.
+Kinetra-Lab (engine plus applications), from the Lab root: `cmake --workflow --preset ci` and `cmake --workflow --preset headless`, which is what Lab's CI runs, or `./build.sh`, which builds and tests Kinetra in `build-core` and Lab in `build`. Lab's [AGENTS.md](https://github.com/SMB-M87/Kinetra-Lab/blob/main/AGENTS.md) adds the graphics workflow for runtime, presentation and launcher changes.
 
 ## Choosing targeted tests
 
-| Changed area in Kinetra | Test targets / CTest regex |
-| --- | --- |
-| Math, shapes, collision, physics (`src/simulation/`) | `kinetra_behavior`, `kinetra_polygons`, `kinetra_sweeps`, `kinetra_translation_sweeps`, `kinetra_moving_contacts` |
-| Navigation and weighted grids | `kinetra_navigation`, `kinetra_weighted_navigation` |
-| Steering and avoidance | `kinetra_avoidance`, `kinetra_navigation` |
-| Traffic admission | `kinetra_traffic` |
-| Launcher menu and session host | `kinetra_launcher` (runtime build) |
-| Runtime, rendering, text | Full level with graphics |
+| Changed area in Kinetra | Build targets | CTest regex |
+| --- | --- | --- |
+| Math, shapes, collision, physics (`physics.cpp`, `spatial_grid.cpp`, `collision_grid.cpp`) | `kinetra_tests kinetra_polygon_tests kinetra_sweep_tests kinetra_translation_sweep_tests kinetra_moving_contact_tests` | `^kinetra_(behavior\|polygons\|sweeps\|translation_sweeps\|moving_contacts)` |
+| Navigation and weighted grids (`navigation.cpp`, `weighted_grid.cpp`) | `kinetra_navigation_tests kinetra_weighted_navigation_tests` | `^kinetra_(navigation\|weighted_navigation)` |
+| Steering (`steering.cpp`, `priority_steering.cpp`) | `kinetra_tests kinetra_weighted_navigation_tests` | `^kinetra_(behavior\|weighted_navigation)` |
+| Avoidance (`avoidance.cpp`) | `kinetra_avoidance_tests` | `^kinetra_avoidance` |
+| Traffic admission (`traffic.cpp`) | `kinetra_traffic_tests` | `^kinetra_traffic` |
+| Runtime and launcher (`src/engine/`) | Full level with graphics | |
+
+Runtime and launcher behavior is always Full level. While iterating on `settings_view.cpp` or `launcher.cpp`, the window-free suites `kinetra_settings_view` and `kinetra_launcher` give quick feedback in the `dev` build. The header-only helpers (`bitmap_text.h`, `camera.h`, `timing.h`, `debug_view.h`, `help_view.h`) are public headers, so changing them is Full level; their window-free cases are in `kinetra_presentation` and `kinetra_behavior`. Build target and CTest prefix differ for some suites; the [test map](../tests/README.md#test-map) lists both.
 
 Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-Lab/blob/main/AGENTS.md).
 
