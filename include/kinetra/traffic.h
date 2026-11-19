@@ -7,9 +7,14 @@
 #include <vector>
 
 namespace kinetra {
+/// Result of one TrafficGate::update().
 struct TrafficAdmission {
+    /// The agent allowed into the zone: the single physical occupant, the persisting grant,
+    /// or the oldest eligible request. Empty when nobody may enter.
     std::optional<std::uint64_t> agent;
+    /// Requesting agents other than the admitted one.
     std::size_t waiting{};
+    /// True when more than one agent physically occupies the zone; nobody is admitted then.
     bool occupied_conflict{};
 };
 
@@ -23,6 +28,9 @@ struct TrafficAdmission {
 /// Geometry, braking, zone selection and multi-zone deadlock prevention stay external.
 class TrafficGate {
   public:
+    /// Updates the queue from the snapshots and returns the admission; every request is
+    /// eligible. Throws std::invalid_argument, before changing state, when a snapshot
+    /// contains duplicate IDs.
     TrafficAdmission update(std::span<const std::uint64_t> requests,
                             std::span<const std::uint64_t> occupants);
     /// Temporarily ineligible requests retain their FIFO tickets. New admission
@@ -30,6 +38,8 @@ class TrafficGate {
     /// ineligible must contain unique IDs from requests. Invalid input leaves state intact.
     TrafficAdmission update(std::span<const std::uint64_t> requests, std::span<const std::uint64_t> occupants,
                             std::span<const std::uint64_t> ineligible);
+    /// Forgets the queue and the grant, for example when the policy is disabled or
+    /// replaced. Does not move anything.
     void clear();
 
   private:
