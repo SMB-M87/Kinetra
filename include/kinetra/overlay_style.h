@@ -30,6 +30,12 @@ inline constexpr Glyph arrow_closed{0, 8, 12, 14, 12, 8, 0}, arrow_open{0, 0, 31
 inline constexpr Glyph check_off{0, 31, 17, 17, 17, 31, 0}, check_on{0, 31, 31, 31, 31, 31, 0};
 inline constexpr Glyph radio_off{0, 14, 17, 17, 17, 14, 0}, radio_on{0, 14, 31, 31, 31, 14, 0};
 
+/// `point` moved to the nearest whole pixel. Text and marks start on whole pixels, so a font
+/// pixel never has an edge on a pixel center, where it would be drawn or not by chance.
+inline Vec2 snapped(Vec2 point) {
+    return {std::round(point.x), std::round(point.y)};
+}
+
 /// Filled rectangle in logical screen pixels, from its top-left corner. Edges are rounded to
 /// whole pixels, so neighboring pieces meet without a seam; a rectangle that rounds to
 /// nothing is not drawn.
@@ -59,8 +65,8 @@ inline void draw_panel(Runtime &runtime, Vec2 corner, Vec2 size, float title_hei
     draw_rectangle(runtime, corner, size, panel_color);
     draw_rectangle(runtime, corner, {size.x, title_height}, title_color);
     const float text_top = (title_height - 7 * scale) / 2;
-    draw_text(runtime, title, corner + Vec2{6 * scale, text_top}, scale, bright_color);
-    draw_text(runtime, hint, corner + Vec2{size.x - (6 + text_width(hint)) * scale, text_top}, scale,
+    draw_text(runtime, title, snapped(corner + Vec2{6 * scale, text_top}), scale, bright_color);
+    draw_text(runtime, hint, snapped(corner + Vec2{size.x - (6 + text_width(hint)) * scale, text_top}), scale,
               dim_color);
     draw_outline(runtime, corner, size, scale, border_color);
 }
@@ -69,7 +75,8 @@ inline void draw_panel(Runtime &runtime, Vec2 corner, Vec2 size, float title_hei
 /// `size` screen pixels; `lit` draws it as the button under the pointer.
 inline void draw_sign_button(Runtime &runtime, Vec2 corner, Vec2 size, char sign, float scale, bool lit) {
     draw_rectangle(runtime, corner, size, lit ? accent_color : button_color);
-    draw_glyph(runtime, glyph(sign), corner + Vec2{(size.x - 5 * scale) / 2, (size.y - 7 * scale) / 2}, scale,
+    draw_glyph(runtime, glyph(sign),
+               snapped(corner + Vec2{(size.x - 5 * scale) / 2, (size.y - 7 * scale) / 2}), scale,
                lit ? panel_color : text_color);
 }
 
@@ -79,7 +86,8 @@ inline void draw_text_button(Runtime &runtime, Vec2 corner, Vec2 size, std::stri
                              bool lit) {
     draw_rectangle(runtime, corner, size, lit ? band_color : button_color);
     draw_outline(runtime, corner, size, scale, lit ? accent_color : border_color);
-    draw_text(runtime, text, corner + Vec2{(size.x - text_width(text) * scale) / 2, (size.y - 7 * scale) / 2},
+    draw_text(runtime, text,
+              snapped(corner + Vec2{(size.x - text_width(text) * scale) / 2, (size.y - 7 * scale) / 2}),
               scale, lit ? bright_color : text_color);
 }
 } // namespace kinetra::overlay

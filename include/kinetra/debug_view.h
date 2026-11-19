@@ -116,8 +116,8 @@ struct DebugMenu {
             return;
         const float size = scale(runtime.camera.viewport);
         const Vec2 origin = this->origin(runtime.camera.viewport);
-        // Screen position of a point given in panel pixels.
-        const auto at = [&](float x, float y) { return origin + Vec2{x, y} * size; };
+        // Screen position of a point given in panel pixels, on a whole pixel.
+        const auto at = [&](float x, float y) { return overlay::snapped(origin + Vec2{x, y} * size); };
         overlay::draw_panel(runtime, origin, Vec2{panel_width, height(entries.size())} * size,
                             heading_height * size, "DEBUG", "SHIFT+CTRL", size);
         const Vec2 point = (pointer - origin) / size;

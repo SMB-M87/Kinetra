@@ -231,8 +231,8 @@ void SettingsOverlay::draw(Runtime &runtime) const {
     const Vec2 half{panel_width / 2, (actions + bottom_margin) / 2};
     const float size = scale(camera.viewport);
     const Vec2 origin = camera.viewport / 2 - half * size;
-    // Screen position of a point given in panel pixels.
-    const auto at = [&](float x, float y) { return origin + Vec2{x, y} * size; };
+    // Screen position of a point given in panel pixels, on a whole pixel.
+    const auto at = [&](float x, float y) { return overlay::snapped(origin + Vec2{x, y} * size); };
     overlay::draw_panel(runtime, origin, half * (2 * size), title_height * size, "SETTINGS", "CTRL", size);
     const Vec2 point = (pointer_ - origin) / size;
     const bool inside = point.x >= 0 && point.x <= panel_width;
