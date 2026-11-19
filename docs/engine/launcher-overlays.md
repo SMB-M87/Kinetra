@@ -48,7 +48,7 @@ stateDiagram-v2
 
 `LauncherBindings` holds those keys: `menu_key` (M by default; `std::nullopt` leaves returning to `SessionRequest::menu`) and `escape_closes_menu` (true by default). During a run, Escape follows `Session::close_on_escape()`. Kinetra-Lab passes `{std::nullopt, false}`, so only its sessions' own requests and the window's close button leave a run.
 
-The window title names what is on screen, nothing more: `launcher_window_title` ("Launcher") while the menu is open, and `Session::title()`, the application's name, while a session runs. The loop refreshes it on every transition and otherwise every 500 ms. Status such as pause state or counters belongs in the window, where the application draws it.
+The window title names what is on screen, nothing more: `launcher_window_title` ("Launcher") while the menu is open, and `Session::title()`, the application's name, while a session runs. The loop sets it on the first frame and on every transition, and otherwise refreshes it every 500 ms. Status such as pause state or counters belongs in the window, where the application draws it.
 
 ## Settings overlay
 
