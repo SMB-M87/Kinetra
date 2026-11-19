@@ -1,4 +1,5 @@
 #include <kinetra/steering.h>
+#include <limits>
 #include <stdexcept>
 
 namespace kinetra {
@@ -24,7 +25,20 @@ Vec2 constrain_borders(const Body &a, Vec2 acceleration, std::span<const Segment
                           std::abs(edge.end.y - edge.start.y) / 2 + a.half_extents.y};
         const Vec2 offset = a.position - center;
         const Vec2 gap{std::abs(offset.x) - extent.x, std::abs(offset.y) - extent.y};
-        const bool x_axis = gap.x >= gap.y;
+        bool x_axis = gap.x >= gap.y;
+        if (gap.x >= 0 && gap.y >= 0) {
+            // Beside a corner of the expanded segment, the face the body would reach last at
+            // its current velocity is the one it can hit, as in a swept-box test. The larger
+            // gap alone picks the wrong face for a body that slides flush along one wall past
+            // the end of another: with both gaps zero it braked the slide and stuck there.
+            const float infinity = std::numeric_limits<float>::infinity();
+            const float approach_x = offset.x >= 0 ? -a.velocity.x : a.velocity.x;
+            const float approach_y = offset.y >= 0 ? -a.velocity.y : a.velocity.y;
+            const float reach_x = approach_x > 0 ? gap.x / approach_x : infinity;
+            const float reach_y = approach_y > 0 ? gap.y / approach_y : infinity;
+            if (reach_x != reach_y)
+                x_axis = reach_x > reach_y;
+        }
         const float d = x_axis ? gap.x : gap.y;
         const float sign = (x_axis ? offset.x : offset.y) >= 0 ? 1.f : -1.f;
         const float velocity = (x_axis ? a.velocity.x : a.velocity.y) * sign;

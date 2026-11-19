@@ -64,6 +64,9 @@ struct SteeringForces {
 /// Constrain next-step normal velocity near borders while retaining tangential steering.
 /// Uses caller-selected time units with one integration step per call. Overlaps receive
 /// bounded recovery; borders have no passive repulsion at rest outside their surface.
+/// Beside the end of a segment, the face the agent would reach last at its current
+/// velocity constrains it, so an agent sliding flush along one wall passes the end of
+/// another that meets it at a convex corner.
 ///
 /// `agent` must be an unrotated box. Throws std::invalid_argument for another body, a
 /// nonfinite acceleration, a border that is not horizontal or vertical, or settings
