@@ -29,9 +29,22 @@ struct DebugOption {
 /// Shared screen-space debug controls. Layout is identical for drawing and picking;
 /// all pointer input inside the panel is consumed, including held fire.
 ///
-/// Positions are logical window pixels. The panel is 182 panel pixels wide, with a 22-pixel
-/// heading and 16 pixels per option, scaled by scale().
+/// Positions are logical window pixels. The layout constants below are panel pixels, which
+/// scale() converts to screen pixels.
 struct DebugMenu {
+    /// Width of the panel, in panel pixels.
+    static constexpr float panel_width = 182;
+    /// Height of the "DEBUG MENU" heading above the first row, in panel pixels.
+    static constexpr float heading_height = 22;
+    /// Height of one row, in panel pixels.
+    static constexpr float row_height = 16;
+    /// Distance from the panel's left edge, and from the top of a row, to its text, in
+    /// panel pixels.
+    static constexpr float text_margin = 4;
+    /// Distance from the viewport's top-right corner to the default panel position, in
+    /// panel pixels.
+    static constexpr float screen_margin = 8;
+
     /// Whether the panel shows.
     bool visible{};
     /// Last pointer position, used for hover highlighting in draw().
@@ -42,10 +55,14 @@ struct DebugMenu {
     /// corner by default.
     Vec2 origin(Vec2 viewport) const {
         const float size = scale(viewport);
-        return screen_origin.x < 0 ? Vec2{viewport.x - 190 * size, 8 * size} : screen_origin;
+        return screen_origin.x < 0
+                   ? Vec2{viewport.x - (panel_width + screen_margin) * size, screen_margin * size}
+                   : screen_origin;
     }
     /// Screen pixels per panel pixel for a viewport, at most 1.5.
     static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 260.f}); }
+    /// Top edge of row `row` below the panel's top, in panel pixels.
+    static float row_top(std::size_t row) { return heading_height + static_cast<float>(row) * row_height; }
     /// Applies one frame of input: `toggle` shows or hides the panel, and a click on a row
     /// toggles its flag or runs its action. Returns true when the pointer is over the
     /// visible panel, so the caller must ignore that pointer input.
@@ -56,10 +73,10 @@ struct DebugMenu {
             visible = !visible;
         const float size = scale(viewport);
         const Vec2 point = (input.mouse - origin(viewport)) / size;
-        const bool captured = visible && point.x >= 0 && point.x <= 182 && point.y >= 0 &&
-                              point.y < static_cast<float>(22 + options.size() * 16);
-        if (captured && input.clicked && point.y >= 22) {
-            const auto row = std::size_t((point.y - 22) / 16);
+        const bool captured = visible && point.x >= 0 && point.x <= panel_width && point.y >= 0 &&
+                              point.y < row_top(options.size());
+        if (captured && input.clicked && point.y >= heading_height) {
+            const auto row = std::size_t((point.y - heading_height) / row_height);
             if (options[row].enabled)
                 *options[row].enabled = !*options[row].enabled;
             else if (options[row].action)
@@ -73,10 +90,10 @@ struct DebugMenu {
             return;
         const float size = scale(runtime.camera.viewport);
         const Vec2 origin = this->origin(runtime.camera.viewport);
-        const Vec2 half{91 * size, static_cast<float>(22 + options.size() * 16) * size / 2};
+        const Vec2 half = Vec2{panel_width, row_top(options.size())} * size / 2;
         runtime.box(runtime.camera.screen_to_world(origin + half), half / runtime.camera.pixels_per_unit, 0,
                     {0.04f, 0.07f, 0.12f});
-        draw_text(runtime, "DEBUG MENU", origin + Vec2{4, 6} * size, size, {1, 1, 1});
+        draw_text(runtime, "DEBUG MENU", origin + Vec2{text_margin, 6} * size, size, {1, 1, 1});
         const Vec2 point = (pointer - origin) / size;
         for (std::size_t row = 0; row < options.size(); ++row) {
             const auto &option = options[row];
@@ -86,14 +103,14 @@ struct DebugMenu {
                 text += " " + option.text();
             if (option.number)
                 text += " " + std::to_string(option.number());
-            const bool hovered = (option.enabled || option.action) && point.x >= 0 && point.x <= 182 &&
-                                 point.y >= 22 + static_cast<float>(row) * 16.f &&
-                                 point.y < 38 + static_cast<float>(row) * 16.f;
-            draw_text(runtime, text, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size, size,
+            const bool hovered = (option.enabled || option.action) && point.x >= 0 &&
+                                 point.x <= panel_width && point.y >= row_top(row) &&
+                                 point.y < row_top(row + 1);
+            const Vec2 text_position = origin + Vec2{text_margin, row_top(row) + text_margin} * size;
+            draw_text(runtime, text, text_position, size,
                       hovered ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.9f, 1});
             if (option.visualization)
-                option.visualization(runtime, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size,
-                                     size);
+                option.visualization(runtime, text_position, size);
         }
     }
 };
