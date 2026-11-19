@@ -95,7 +95,7 @@ Title: `feat(launcher): title the menu window "Launcher"`
 - `runtime_tests.cpp`: graphics case for the first-frame and menu titles.
 - `launcher-overlays.md`: what the title shows.
 
-**Design.** [docs/design/2026-11-19-static-window-titles.md](docs/design/2026-11-19-static-window-titles.md)
+**Design.** [docs/design/2026-11-19-static-window-titles.md](2026-11-19-static-window-titles.md).
 
 **Verification.** `cmake --workflow --preset ci`: 215/215. Graphics: 223/224; the failing `input drawing and resizing` case fails on `main` too in WSLg. The new case failed before the fix.
 
