@@ -102,7 +102,7 @@ Title: `fix(steering): let a box sliding along a wall pass a convex corner`
 - Contract: `steering.h` and the navigation page name the corner rule.
 - Tests: a box sliding over a step passes its convex corner, both one unit before it and over 200 integration steps.
 
-**Design.** [docs/design/2026-11-19-border-corner-slide.md](docs/design/2026-11-19-border-corner-slide.md)
+**Design.** [docs/design/2026-11-19-border-corner-slide.md](2026-11-19-border-corner-slide.md)
 
 **Verification.** `cmake --workflow --preset ci` (223/223), `headless` (201/201), the external consumer, docs check, clang-format. The new case fails without the fix. Kinetra-Lab's full suite, including its golden and pressure summaries, passes unchanged against this commit.
 
