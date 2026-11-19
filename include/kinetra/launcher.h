@@ -8,6 +8,9 @@
 #include <vector>
 
 namespace kinetra {
+/// Window title run_launcher() shows while the menu is open. A running session supplies
+/// its own name through Session::title().
+inline constexpr std::string_view launcher_window_title = "Launcher";
 /// One application entry of the launcher menu.
 struct LaunchChoice {
     /// Row label; must not be empty.

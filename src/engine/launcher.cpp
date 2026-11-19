@@ -225,7 +225,7 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
         else
             menu.draw(runtime);
         if (switched || now - last_title > std::chrono::milliseconds(500)) {
-            runtime.title(host.session() ? host.session()->title() : "Kinetra | Start menu");
+            runtime.title(host.session() ? host.session()->title() : std::string(launcher_window_title));
             last_title = now;
         }
         if (++frames == frame_limit)
