@@ -91,6 +91,13 @@ inline float signed_angle(Vec2 a, Vec2 b) {
 inline Vec2 lerp(Vec2 a, Vec2 b, float t) {
     return a + (b - a) * t;
 }
+/// Angle in radians between `a` (`t` = 0) and `b` (`t` = 1) along the shorter way around,
+/// so 3.1 to -3.1 passes through pi rather than zero. The result is not wrapped to [-pi, pi].
+inline float lerp_angle(float a, float b, float t) {
+    constexpr float pi = 3.14159265358979f;
+    const float difference = std::remainder(b - a, 2 * pi);
+    return a + difference * t;
+}
 /// Line segment from `start` to `end`.
 struct Segment {
     Vec2 start, end;

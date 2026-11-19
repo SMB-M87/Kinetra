@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <chrono>
 #include <cmath>
 #include <glad/glad.h>
 #include <kinetra/engine.h>
@@ -130,6 +131,9 @@ struct Runtime::Impl {
         float x, y, r, g, b, a;
     };
     std::vector<Vertex> vertices;
+    FrameTimes frame_times;
+    /// When the previous frame was presented; empty before the first one.
+    std::optional<std::chrono::steady_clock::time_point> presented;
 
     ~Impl() {
         if (gl_ready) {
@@ -364,6 +368,15 @@ void Runtime::end() {
                  impl_->vertices.data(), GL_STREAM_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, GLsizei(impl_->vertices.size()));
     SDL_GL_SwapWindow(impl_->window);
+    // Measured after the swap returns, so a blocking VSync or a stalled compositor counts.
+    const auto now = std::chrono::steady_clock::now();
+    if (impl_->presented)
+        impl_->frame_times.record(std::chrono::duration<double>(now - *impl_->presented).count());
+    impl_->presented = now;
+}
+
+const FrameTimes &Runtime::frame_times() const {
+    return impl_->frame_times;
 }
 
 } // namespace kinetra

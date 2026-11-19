@@ -10,6 +10,7 @@
 
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <memory>
@@ -257,6 +258,43 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     event.type = SDL_QUIT;
     send(event);
     REQUIRE_MESSAGE(!runtime.poll(), "Window quit ignored");
+}
+
+TEST_CASE("presented frames are timed and the frame-time graph draws them") {
+    Runtime runtime("Kinetra frame times", 320, 200);
+    REQUIRE(runtime.poll());
+    for (int frame = 0; frame < 3; ++frame) {
+        runtime.begin({0, 0, 0, 1});
+        runtime.end();
+    }
+    REQUIRE_MESSAGE(runtime.frame_times().size() == 2, "The first frame has no predecessor to time");
+    CHECK(runtime.frame_times().worst() >= 0);
+    // A fixed history makes the bars predictable: every frame within one 60 Hz refresh.
+    FrameTimes times;
+    for (std::size_t i = 0; i < FrameTimes::capacity; ++i)
+        times.record(0.010);
+    runtime.begin({0, 0, 0, 1});
+    draw_frame_times(runtime, times);
+    runtime.end();
+    glFinish();
+    // Read the bar area's bottom row, just above the bars' base, from the presented frame.
+    const Vec2 origin = FrameTimeGraph::origin(runtime.camera.viewport);
+    const int row = int(runtime.camera.viewport.y - (origin.y + FrameTimeGraph::height - 2));
+    // The front buffer is undefined after a swap on some drivers; count the better buffer.
+    int green = 0;
+    for (const auto buffer : {GL_FRONT, GL_BACK}) {
+        std::vector<unsigned char> pixels(240 * 3);
+        glReadBuffer(buffer);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadPixels(int(origin.x), row, 240, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+        int count = 0;
+        for (std::size_t i = 0; i < pixels.size(); i += 3)
+            if (pixels[i] < 120 && pixels[i + 1] > 180 && pixels[i + 2] < 140)
+                ++count;
+        green = std::max(green, count);
+    }
+    CHECK_MESSAGE(green > 200, "Short frames were not drawn as green bars");
+    CHECK(glGetError() == GL_NO_ERROR);
 }
 
 TEST_CASE("a runtime reopens after destruction") {

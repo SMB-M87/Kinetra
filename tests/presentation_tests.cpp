@@ -1,11 +1,14 @@
 // Window-free tests for the header-only presentation helpers: the bitmap glyph table
-// (bitmap_text.h), camera zoom stepping (camera.h) and the rate counter (timing.h).
+// (bitmap_text.h), camera zoom stepping (camera.h), the rate counter and frame times
+// (timing.h) and angle interpolation (math.h).
 #include <kinetra/bitmap_text.h>
 #include <kinetra/camera.h>
+#include <kinetra/math.h>
 #include <kinetra/timing.h>
 
 #include <doctest/doctest.h>
 
+#include <cmath>
 #include <stdexcept>
 
 using kinetra::Glyph;
@@ -99,4 +102,44 @@ TEST_CASE("the rate counter rejects invalid time") {
     CHECK_THROWS_AS(kinetra::RateCounter(0), std::invalid_argument);
     kinetra::RateCounter counter;
     CHECK_THROWS_AS(counter.advance(-1), std::invalid_argument);
+}
+
+TEST_CASE("frame times keep the newest frames in order") {
+    kinetra::FrameTimes times;
+    CHECK(times.size() == 0);
+    CHECK(times.average() == 0);
+    CHECK(times.worst() == 0);
+    times.record(0.25);
+    times.record(0.5);
+    REQUIRE(times.size() == 2);
+    CHECK(times[0] == 0.25);
+    CHECK(times[1] == 0.5);
+    CHECK(times.average() == doctest::Approx(0.375));
+    CHECK(times.worst() == 0.5);
+    CHECK_THROWS_AS(times[2], std::out_of_range);
+}
+
+TEST_CASE("frame times drop the oldest frame when full") {
+    kinetra::FrameTimes times;
+    for (std::size_t i = 0; i < kinetra::FrameTimes::capacity + 3; ++i)
+        times.record(double(i));
+    REQUIRE(times.size() == kinetra::FrameTimes::capacity);
+    CHECK(times[0] == 3);
+    CHECK(times[times.size() - 1] == double(kinetra::FrameTimes::capacity + 2));
+    CHECK(times.worst() == double(kinetra::FrameTimes::capacity + 2));
+}
+
+TEST_CASE("frame times reject invalid durations") {
+    kinetra::FrameTimes times;
+    CHECK_THROWS_AS(times.record(-0.001), std::invalid_argument);
+    CHECK_THROWS_AS(times.record(std::nan("")), std::invalid_argument);
+    CHECK(times.size() == 0);
+}
+
+TEST_CASE("angle interpolation takes the shorter way around") {
+    CHECK(kinetra::lerp_angle(0, 1, 0.25f) == doctest::Approx(0.25f));
+    // From just below pi to just above -pi is a small step across pi, not a full turn back.
+    const float halfway = kinetra::lerp_angle(3.1f, -3.1f, 0.5f);
+    CHECK(std::abs(std::remainder(halfway - 3.14159265f, 6.28318531f)) < 1e-4f);
+    CHECK(kinetra::lerp_angle(0.5f, 0.5f + 6.28318531f, 0.5f) == doctest::Approx(0.5f));
 }
