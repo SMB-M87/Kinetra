@@ -93,7 +93,7 @@ flowchart LR
 ### Settings overlay
 
 - **Style.** The same panel, title bar and row band. Toggle rows are a check box and a label in one left-aligned column; help sections are group rows with their lines indented below; LAUNCHER, RESUME and EXIT are outlined buttons. The layout constants change; `row_y()`, `actions_y()`, `half_extent()` and `expanded()` keep their meaning, and the button centers become public constants, so callers that click by layout keep working after the next restyle.
-- **Ctrl.** `update()` opens or closes the panel when Ctrl is released, unless Shift was down while Ctrl was held.
+- **Ctrl.** `update()` opens or closes the panel when Ctrl is released, unless Shift was down while Ctrl was held, or the window lost focus meanwhile (`Input::focus_lost`, new).
 - **Shift+Ctrl.** `debug_chord(input)` is true on the frame the second of the two keys goes down. `update_debug()` then shows the menu and sets the borrowed debug flag, or hides the menu when it was showing. The overlay's flag pointer becomes non-const.
 - **Gating.** `update_debug()` hides the menu and returns false while the panel is open or the debug mode is off, so a session calls it every frame without conditions.
 
@@ -145,7 +145,15 @@ Public headers, runtime behavior and several modules change: Full level, with gr
 
 ## Review
 
-Filled in after the review.
+`/code-review` at high effort over this branch together with the Lab branch that uses it. Findings in the engine and their resolution:
+
+| Finding | Resolution |
+| --- | --- |
+| Ctrl acts on release, and a window that loses focus releases every key, so a system shortcut that starts with Ctrl opened the settings panel | `Input::focus_lost`; the overlay forgets a pending Ctrl when it is set |
+| A geometric number step up and down returned to a neighboring float, not the same value | Steps are rounded to four decimals |
+| A row with `[-] [+]` buttons but no action was drawn in the dim color of a row that only shows something | Drawn as a live row |
+| Text of a panel centered in a window of odd size, and centered button labels, started on half pixels | Overlay text and marks start on whole pixels (`overlay::snapped`) |
+| With Shift held, Ctrl is the debug shortcut and does not open the settings panel | Not changed: the shortcut the user chose |
 
 ## Verification
 
