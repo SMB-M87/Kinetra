@@ -40,7 +40,7 @@ flowchart LR
         RT["runtime.cpp<br/>Runtime"]
         SE["session.cpp<br/>run_session"]
         SV["settings_view.cpp<br/>SettingsOverlay"]
-        HDR["header-only:<br/>bitmap_text, debug_view, help_view"]
+        HDR["header-only:<br/>bitmap_text, overlay_style,<br/>debug_menu, debug_view, help_view"]
     end
     subgraph Launcher["Kinetra::Launcher"]
         LA["launcher.cpp<br/>LaunchMenu, SessionHost, run_launcher"]
@@ -68,8 +68,9 @@ flowchart LR
 | [session.h](../../include/kinetra/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
 | [settings_view.h](../../include/kinetra/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
 | [launcher.h](../../include/kinetra/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
-| [bitmap_text.h](../../include/kinetra/bitmap_text.h), [debug_view.h](../../include/kinetra/debug_view.h), [help_view.h](../../include/kinetra/help_view.h) | Glyphs and text, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
-| [camera.h](../../include/kinetra/camera.h), [timing.h](../../include/kinetra/timing.h) | `Camera2D` and zoom, `FixedClock`, `RateCounter` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md), [presentation helpers](../../docs/engine/launcher-overlays.md#presentation-helpers) |
+| [bitmap_text.h](../../include/kinetra/bitmap_text.h), [overlay_style.h](../../include/kinetra/overlay_style.h), [debug_view.h](../../include/kinetra/debug_view.h), [help_view.h](../../include/kinetra/help_view.h) | Glyphs and text, the panels' shared style, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
+| [debug_menu.h](../../include/kinetra/debug_menu.h) | `DebugEntry`, `DebugFolds` and the row helpers: a debug menu as data | Header-only; usable headless | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
+| [camera.h](../../include/kinetra/camera.h), [timing.h](../../include/kinetra/timing.h) | `Camera2D` and zoom, `FixedClock`, `RateCounter`, `FrameTimes`, `FrameLimiter` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md), [presentation helpers](../../docs/engine/launcher-overlays.md#presentation-helpers) |
 
 ## How it works
 
@@ -109,11 +110,13 @@ After a transition the clock restarts, so building a world does not count as sim
 - A host reads `request()` after every advance and before render; a session never sees a frame after its `menu` or `exit` request.
 - `run_launcher` starts a session only from the menu, after the previous one was destroyed, so two sessions never exist at once (Dotio's world is a singleton). `SessionHost::start` itself keeps the old session until the factory succeeds, so a throwing factory leaves the old session and camera untouched.
 - Overlay positions are in logical panel pixels, scaled by a factor that depends only on the viewport.
-- Borrowed pointers (overlay flags, debug options) must outlive the overlay's `update` and `draw` calls.
+- Borrowed pointers (overlay flags, and whatever the functions of a debug entry refer to) must outlive the overlay's `update` and `draw` calls.
+- The debug menu and the settings panel draw with [overlay_style.h](../../include/kinetra/overlay_style.h) only; a color or mark that both use is defined there once.
 
 ## Changing this module
 
-- **A new overlay row kind:** add an alternative to `SettingsRow`, give it a height in `SettingsOverlay::layout()` and a click and draw branch, then add a layout case to `settings_view_tests.cpp`. Lab's settings screenshots depend on the existing coordinates; keep them.
+- **A new overlay row kind:** add an alternative to `SettingsRow`, give it a height in `SettingsOverlay::layout()` and a click and draw branch, then add a layout case to `settings_view_tests.cpp`. Lab finds rows through `row_y()` and the public button centers, so a changed layout only needs its captures rendered again.
+- **A new kind of debug row:** add a `DebugEntryKind`, its mark in `overlay_style.h` and its branch in `DebugMenu::draw_mark`; add a click case to `launcher_tests.cpp` and a pixel to the draw case in `runtime_tests.cpp`.
 - **A new glyph:** add it to `glyph()` in `bitmap_text.h` and a case to `presentation_tests.cpp`.
 - **A new host rule** (for example another request): change both `run_session` and `run_launcher`, the table in the [launcher contract](../../docs/engine/launcher-overlays.md#sessions-and-requests), and add graphics cases to `runtime_tests.cpp`. A change to `Session` breaks every application; record it in an ADR.
 - **A new key:** add it to `Key` in `engine.h` and to the SDL mapping in `runtime.cpp`, and to the key loop in `runtime_tests.cpp`.
@@ -122,15 +125,17 @@ After a transition the clock restarts, so building a world does not count as sim
 
 | Suite | Covers | Needs a window |
 | --- | --- | --- |
-| `kinetra_launcher` | Menu paging and configuration, `SessionHost` transitions, debug actions | No |
-| `kinetra_settings_view` | Overlay layout, rows, capture and actions | No |
-| `kinetra_presentation` | Glyph table, zoom stepping, rate counter | No |
-| `kinetra_engine_graphics` | Input, rendering, resize, `run_session` and `run_launcher` requests and bindings | Yes (`KINETRA_TEST_GRAPHICS`) |
+| `kinetra_launcher` | Menu paging and configuration, `SessionHost` transitions, debug-menu clicks and buttons | No |
+| `kinetra_settings_view` | Overlay layout, rows, capture and actions, Ctrl and Shift+Ctrl, the debug menu's visibility | No |
+| `kinetra_presentation` | Glyph table, zoom stepping, rate counter, frame limiter, debug folds and rows | No |
+| `kinetra_engine_graphics` | Input, rendering, resize, the drawn panels, frame pacing, `run_session` and `run_launcher` requests and bindings | Yes (`KINETRA_TEST_GRAPHICS`) |
 
 ```sh
 cmake --workflow --preset dev        # window-free suites
 cmake --workflow --preset graphics   # adds the graphics suite (software OpenGL, offscreen SDL)
 ```
+
+The offscreen driver accepts a swap interval, so the pacing case only checks that the limiter stays out of the way there. To see the limiter work, run the suite's executable against a real window on a platform without VSync: `build-graphics/kinetra_engine_runtime_tests -tc="without vsync*"`.
 
 The [external consumer](../../tests/README.md#external-consumer) links the public API from outside the repository.
 

@@ -1,61 +1,61 @@
 #pragma once
 
 #include "bitmap_text.h"
+#include "debug_menu.h"
+#include "overlay_style.h"
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <cstdio>
-#include <functional>
 #include <span>
+#include <string>
 #include <string_view>
 
 namespace kinetra {
-/// One row of the debug menu. Set `enabled` for a check box or `action` for a button; the
-/// other fields add read-only content to the row, and `decrease` and `increase` add buttons.
-struct DebugOption {
-    /// Row text; the viewed characters must outlive the menu's draw() calls.
-    std::string_view label;
-    /// Check box state, toggled by a click. Borrowed; must outlive update/draw.
-    bool *enabled{};
-    /// Called on a click when `enabled` is null.
-    std::function<void()> action{};
-    /// Optional text appended to the label on every draw.
-    std::function<std::string()> text{};
-    /// Optional number appended to the label on every draw.
-    std::function<double()> number{};
-    /// Optional custom drawing next to the row: runtime, top-left screen position of the
-    /// row text, and the menu scale.
-    std::function<void(Runtime &, Vec2, float)> visualization{};
-    /// Optional `[-]` button at the right edge of the row, called when it is clicked
-    /// instead of the row. With a button, keep the row text within 21 characters, so it
-    /// ends before the button.
-    std::function<void()> decrease{};
-    /// Optional `[+]` button at the right edge of the row; see `decrease`.
-    std::function<void()> increase{};
-};
+/// Whether this frame's input is the debug shortcut, Shift+Ctrl: true on the frame the
+/// second of the two keys goes down, in either order. A key that is pressed and released
+/// within one frame counts as down for that frame.
+inline bool debug_chord(const Input &input) {
+    const bool shift = input.down(Key::shift) || input.hit(Key::shift);
+    const bool control = input.down(Key::control) || input.hit(Key::control);
+    return (input.hit(Key::control) && shift) || (input.hit(Key::shift) && control);
+}
 
-/// Shared screen-space debug controls. Layout is identical for drawing and picking;
-/// all pointer input inside the panel is consumed, including held fire.
+/// Shared screen-space debug controls: a panel that draws DebugEntry rows and maps clicks to
+/// them. Layout is identical for drawing and picking; all pointer input inside the panel is
+/// consumed, including held fire.
 ///
 /// Positions are logical window pixels. The layout constants below are panel pixels, which
-/// scale() converts to screen pixels.
+/// scale() converts to screen pixels. The panel is not opened by a key of its own:
+/// SettingsOverlay::update_debug() shows and hides it, and so may any other owner through
+/// `visible`.
 struct DebugMenu {
     /// Width of the panel, in panel pixels.
-    static constexpr float panel_width = 182;
-    /// Height of the "DEBUG MENU" heading above the first row, in panel pixels.
-    static constexpr float heading_height = 22;
+    static constexpr float panel_width = 216;
+    /// Height of the title bar above the first row, in panel pixels.
+    static constexpr float heading_height = 20;
     /// Height of one row, in panel pixels.
     static constexpr float row_height = 16;
-    /// Distance from the panel's left edge, and from the top of a row, to its text, in
-    /// panel pixels.
-    static constexpr float text_margin = 4;
+    /// Distance from the panel's left and right edge to its content, in panel pixels.
+    static constexpr float text_margin = 6;
+    /// Distance from the top of a row to its text, in panel pixels.
+    static constexpr float text_top = 4;
+    /// Indentation per nesting level, and the width of the column that holds a row's state
+    /// mark before its label, in panel pixels.
+    static constexpr float indent = 10, mark_width = 10;
     /// Distance from the viewport's top-right corner to the default panel position, in
     /// panel pixels.
     static constexpr float screen_margin = 8;
-    /// Width of a `[-]` or `[+]` button: three glyph cells, in panel pixels.
-    static constexpr float stepper_width = 18;
-    /// Left edge of the `[+]` button, flush with the right text margin, in panel pixels.
+    /// Width of a `[-]` or `[+]` button and the gap between the two, in panel pixels.
+    static constexpr float stepper_width = 14, stepper_gap = 2;
+    /// Left edge of the `[+]` button, flush with the right margin, in panel pixels.
     static constexpr float increase_left = panel_width - text_margin - stepper_width;
-    /// Left edge of the `[-]` button, one glyph cell before `[+]`, in panel pixels.
-    static constexpr float decrease_left = increase_left - 6 - stepper_width;
+    /// Left edge of the `[-]` button, in panel pixels.
+    static constexpr float decrease_left = increase_left - stepper_gap - stepper_width;
+    /// Side of a row's color swatch at the right margin, in panel pixels.
+    static constexpr float swatch_size = 7;
+    /// Space below the last row, in panel pixels.
+    static constexpr float bottom_padding = 4;
 
     /// Whether the panel shows.
     bool visible{};
@@ -71,96 +71,140 @@ struct DebugMenu {
                    ? Vec2{viewport.x - (panel_width + screen_margin) * size, screen_margin * size}
                    : screen_origin;
     }
-    /// Screen pixels per panel pixel for a viewport, at most 1.5.
-    static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 260.f}); }
+    /// Screen pixels per panel pixel for a viewport: at most 1.5, and smaller on a low window,
+    /// so about as many rows fit a 540-pixel window as an 800-pixel one.
+    static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 420.f}); }
     /// Top edge of row `row` below the panel's top, in panel pixels.
-    static float row_top(std::size_t row) { return heading_height + static_cast<float>(row) * row_height; }
-    /// Applies one frame of input: `toggle` shows or hides the panel, and a click on a row
-    /// toggles its flag or runs its action. Returns true when the pointer is over the
-    /// visible panel, so the caller must ignore that pointer input.
-    bool update(const Input &input, Vec2 viewport, std::span<DebugOption> options,
-                Key toggle = Key::backquote) {
+    static constexpr float row_top(std::size_t row) {
+        return heading_height + static_cast<float>(row) * row_height;
+    }
+    /// Height of a panel with `rows` rows, in panel pixels.
+    static constexpr float height(std::size_t rows) { return row_top(rows) + bottom_padding; }
+    /// Left edge of the label of a row at nesting level `depth`, in panel pixels. The state
+    /// mark sits `mark_width` before it.
+    static constexpr float label_left(int depth) {
+        return text_margin + static_cast<float>(std::max(depth, 0)) * indent + mark_width;
+    }
+
+    /// Applies one frame of input: a click on a row runs its `[-]` or `[+]` function or its
+    /// action. Returns true when the pointer is over the visible panel, so the caller must
+    /// ignore that pointer input.
+    bool update(const Input &input, Vec2 viewport, std::span<const DebugEntry> entries) {
         pointer = input.mouse;
-        if (input.hit(toggle))
-            visible = !visible;
-        const float size = scale(viewport);
-        const Vec2 point = (input.mouse - origin(viewport)) / size;
+        const Vec2 point = (input.mouse - origin(viewport)) / scale(viewport);
         const bool captured = visible && point.x >= 0 && point.x <= panel_width && point.y >= 0 &&
-                              point.y < row_top(options.size());
-        if (captured && input.clicked && point.y >= heading_height) {
-            auto &option = options[std::size_t((point.y - heading_height) / row_height)];
-            switch (part_at(option, point.x)) {
+                              point.y < height(entries.size());
+        if (captured && input.clicked && point.y >= heading_height && point.y < row_top(entries.size())) {
+            const auto &entry = entries[static_cast<std::size_t>((point.y - heading_height) / row_height)];
+            switch (part_at(entry, point.x)) {
             case RowPart::decrease:
-                option.decrease();
+                entry.decrease();
                 break;
             case RowPart::increase:
-                option.increase();
+                entry.increase();
                 break;
             case RowPart::label:
-                if (option.enabled)
-                    *option.enabled = !*option.enabled;
-                else if (option.action)
-                    option.action();
+                if (entry.action)
+                    entry.action();
                 break;
             }
         }
         return captured;
     }
-    /// Draws the panel in screen space when visible; pass the same options as to update().
-    void draw(Runtime &runtime, std::span<const DebugOption> options) const {
+
+    /// Draws the panel in screen space when visible; pass the same entries as to update().
+    void draw(Runtime &runtime, std::span<const DebugEntry> entries) const {
         if (!visible)
             return;
         const float size = scale(runtime.camera.viewport);
         const Vec2 origin = this->origin(runtime.camera.viewport);
-        const Vec2 half = Vec2{panel_width, row_top(options.size())} * size / 2;
-        runtime.box(runtime.camera.screen_to_world(origin + half), half / runtime.camera.pixels_per_unit, 0,
-                    {0.04f, 0.07f, 0.12f});
-        draw_text(runtime, "DEBUG MENU", origin + Vec2{text_margin, 6} * size, size, {1, 1, 1});
+        // Screen position of a point given in panel pixels, on a whole pixel.
+        const auto at = [&](float x, float y) { return overlay::snapped(origin + Vec2{x, y} * size); };
+        overlay::draw_panel(runtime, origin, Vec2{panel_width, height(entries.size())} * size,
+                            heading_height * size, "DEBUG", "SHIFT+CTRL", size);
         const Vec2 point = (pointer - origin) / size;
-        for (std::size_t row = 0; row < options.size(); ++row) {
-            const auto &option = options[row];
-            std::string text = std::string(option.enabled ? (*option.enabled ? "[X] " : "[ ] ") : "") +
-                               std::string(option.label);
-            if (option.text)
-                text += " " + option.text();
-            if (option.number)
-                text += " " + std::to_string(option.number());
-            const bool on_row = point.x >= 0 && point.x <= panel_width && point.y >= row_top(row) &&
-                                point.y < row_top(row + 1);
-            const RowPart hovered = part_at(option, point.x);
-            const auto color = [&](RowPart part, bool clickable) {
-                return on_row && clickable && hovered == part ? highlight_color : text_color;
-            };
-            const float top = row_top(row) + text_margin;
-            const Vec2 text_position = origin + Vec2{text_margin, top} * size;
-            draw_text(runtime, text, text_position, size,
-                      color(RowPart::label, option.enabled || option.action));
-            if (option.decrease)
-                draw_text(runtime, "[-]", origin + Vec2{decrease_left, top} * size, size,
-                          color(RowPart::decrease, true));
-            if (option.increase)
-                draw_text(runtime, "[+]", origin + Vec2{increase_left, top} * size, size,
-                          color(RowPart::increase, true));
-            if (option.visualization)
-                option.visualization(runtime, text_position, size);
+        for (std::size_t row = 0; row < entries.size(); ++row) {
+            const auto &entry = entries[row];
+            const float top = row_top(row);
+            const bool on_row =
+                point.x >= 0 && point.x <= panel_width && point.y >= top && point.y < top + row_height;
+            const RowPart hovered = part_at(entry, point.x);
+            const bool heading = entry.kind == DebugEntryKind::group && entry.depth == 0;
+            const bool lit = on_row && hovered == RowPart::label && static_cast<bool>(entry.action);
+            // The band stays inside the outline, which is one panel pixel wide.
+            if (lit || heading)
+                overlay::draw_rectangle(runtime, at(1, top), Vec2{panel_width - 2, row_height} * size,
+                                        lit ? overlay::band_color : overlay::section_color);
+            if (entry.rule_above)
+                overlay::draw_rectangle(runtime, at(text_margin, top),
+                                        {(panel_width - 2 * text_margin) * size, std::max(1.f, size)},
+                                        overlay::rule_color);
+            const float label = label_left(entry.depth);
+            const bool active = entry.active && entry.active();
+            draw_mark(runtime, entry.kind, active, at(label - mark_width, top + text_top), size);
+            // Dim text is for a row that only shows something; a row with buttons is live.
+            const bool adjustable = entry.increase || entry.decrease;
+            draw_text(runtime, entry.label, at(label, top + text_top), size,
+                      lit || heading               ? overlay::bright_color
+                      : entry.action || adjustable ? overlay::text_color
+                                                   : overlay::dim_color);
+            float right = panel_width - text_margin;
+            if (adjustable) {
+                const Vec2 button{stepper_width * size, (row_height - 4) * size};
+                if (entry.decrease)
+                    overlay::draw_sign_button(runtime, at(decrease_left, top + 2), button, '-', size,
+                                              on_row && hovered == RowPart::decrease);
+                if (entry.increase)
+                    overlay::draw_sign_button(runtime, at(increase_left, top + 2), button, '+', size,
+                                              on_row && hovered == RowPart::increase);
+                right = decrease_left - text_margin;
+            }
+            if (entry.swatch) {
+                right -= swatch_size;
+                overlay::draw_rectangle(runtime, at(right, top + text_top),
+                                        Vec2{swatch_size, swatch_size} * size, *entry.swatch);
+                right -= text_margin;
+            }
+            if (entry.value) {
+                const std::string value = entry.value();
+                draw_text(runtime, value, at(right - text_width(value), top + text_top), size,
+                          overlay::value_color);
+            }
         }
     }
 
   private:
-    /// Text color of a clickable row or button under the pointer, and of everything else.
-    static constexpr Color highlight_color{0.25f, 0.65f, 1.f}, text_color{0.8f, 0.9f, 1};
     /// The part of a row a click or the pointer is on.
     enum class RowPart { label, decrease, increase };
-    /// The part of `option`'s row at panel x coordinate `x`. The gap between the two buttons
+    /// The part of `entry`'s row at panel x coordinate `x`. The gap between the two buttons
     /// is split between them and the `[+]` zone runs to the panel edge, so a near miss still
     /// hits the button it is closest to. A row without a button keeps that zone as label.
-    static RowPart part_at(const DebugOption &option, float x) {
-        const float gap = increase_left - (decrease_left + stepper_width);
-        if (option.increase && x >= increase_left - gap / 2)
+    static RowPart part_at(const DebugEntry &entry, float x) {
+        const float middle = increase_left - stepper_gap / 2;
+        if (entry.increase && x >= middle)
             return RowPart::increase;
-        if (option.decrease && x >= decrease_left - gap / 2 && x < increase_left - gap / 2)
+        if (entry.decrease && x >= decrease_left - stepper_gap / 2 && x < middle)
             return RowPart::decrease;
         return RowPart::label;
+    }
+    /// Draws the state mark of a row of `kind` at screen position `corner`; a button has none.
+    static void draw_mark(Runtime &runtime, DebugEntryKind kind, bool active, Vec2 corner, float size) {
+        switch (kind) {
+        case DebugEntryKind::button:
+            break;
+        case DebugEntryKind::check:
+            draw_glyph(runtime, active ? overlay::check_on : overlay::check_off, corner, size,
+                       active ? overlay::on_color : overlay::dim_color);
+            break;
+        case DebugEntryKind::choice:
+            draw_glyph(runtime, active ? overlay::radio_on : overlay::radio_off, corner, size,
+                       active ? overlay::on_color : overlay::dim_color);
+            break;
+        case DebugEntryKind::group:
+            draw_glyph(runtime, active ? overlay::arrow_open : overlay::arrow_closed, corner, size,
+                       overlay::accent_color);
+            break;
+        }
     }
 };
 
@@ -220,9 +264,10 @@ struct FrameTimeGraph {
     static Vec2 origin(Vec2 viewport) { return {viewport.x - width - 12, 8}; }
 };
 
-/// Draws `times` as a bar graph, newest on the right, with lines at 16.7 and 33.3 ms and the
-/// average and worst frame below it, in screen space at FrameTimeGraph::origin(). Bars up to
-/// one 60 Hz refresh (plus 5 % timer jitter) are green, up to two yellow, longer ones red.
+/// Draws `times` as a bar graph, newest on the right, with lines at 16.7 and 33.3 ms, and
+/// below it the average and worst frame and how `runtime` paces frames (Runtime::pacing()),
+/// in screen space at FrameTimeGraph::origin(). Bars up to one 60 Hz refresh (plus 5 % timer
+/// jitter) are green, up to two yellow, longer ones red.
 inline void draw_frame_times(Runtime &runtime, const FrameTimes &times) {
     const auto &camera = runtime.camera;
     const Vec2 origin = FrameTimeGraph::origin(camera.viewport);
@@ -231,7 +276,7 @@ inline void draw_frame_times(Runtime &runtime, const FrameTimes &times) {
     const auto rectangle = [&](Vec2 corner, Vec2 size, Color color) {
         runtime.box(camera.screen_to_world(corner + size / 2), size / 2 / camera.pixels_per_unit, 0, color);
     };
-    rectangle(origin - Vec2{4, 4}, {FrameTimeGraph::width + 8, FrameTimeGraph::height + 20},
+    rectangle(origin - Vec2{4, 4}, {FrameTimeGraph::width + 8, FrameTimeGraph::height + 32},
               {0, 0, 0, 0.55f});
     const float bottom = origin.y + FrameTimeGraph::height;
     const float first = FrameTimeGraph::width - float(times.size());
@@ -249,5 +294,20 @@ inline void draw_frame_times(Runtime &runtime, const FrameTimes &times) {
     std::snprintf(text, sizeof text, "FRAME AVG %.1f MS WORST %.1f MS", times.average() * 1000,
                   times.worst() * 1000);
     draw_text(runtime, text, {origin.x, bottom + 4}, 1, {1, 1, 1});
+    // What spaces the frames decides how to read the bars: VSync gives even ones, a limiter
+    // nearly even ones, and uncapped frames are as short as drawing allows.
+    const int rate = static_cast<int>(std::lround(1 / runtime.frame_interval()));
+    switch (runtime.pacing()) {
+    case FramePacing::vsync:
+        std::snprintf(text, sizeof text, "PACING VSYNC");
+        break;
+    case FramePacing::limited:
+        std::snprintf(text, sizeof text, "PACING LIMIT %d HZ", rate);
+        break;
+    case FramePacing::uncapped:
+        std::snprintf(text, sizeof text, "PACING UNCAPPED");
+        break;
+    }
+    draw_text(runtime, text, {origin.x, bottom + 16}, 1, {0.7f, 0.8f, 1});
 }
 } // namespace kinetra

@@ -7,6 +7,7 @@
 #include <kinetra/engine.h>
 #include <kinetra/launcher.h>
 #include <kinetra/session.h>
+#include <kinetra/settings_view.h>
 
 #include <doctest/doctest.h>
 
@@ -294,6 +295,138 @@ TEST_CASE("presented frames are timed and the frame-time graph draws them") {
         green = std::max(green, count);
     }
     CHECK_MESSAGE(green > 200, "Short frames were not drawn as green bars");
+    CHECK(glGetError() == GL_NO_ERROR);
+}
+
+namespace {
+/// Whether the presented frame shows `expected` at logical screen pixel `point` (Y down),
+/// within rounding. The front buffer is undefined after a swap on some drivers, so either
+/// buffer may hold the frame.
+bool presented(const Runtime &runtime, Vec2 point, Color expected) {
+    for (const auto buffer : {GL_FRONT, GL_BACK}) {
+        unsigned char pixel[4]{};
+        glReadBuffer(buffer);
+        glReadPixels(int(point.x), int(runtime.camera.viewport.y - 1 - point.y), 1, 1, GL_RGBA,
+                     GL_UNSIGNED_BYTE, pixel);
+        const auto near = [](unsigned char channel, float value) {
+            return std::abs(float(channel) - value * 255) <= 3;
+        };
+        if (near(pixel[0], expected.r) && near(pixel[1], expected.g) && near(pixel[2], expected.b))
+            return true;
+    }
+    return false;
+}
+} // namespace
+
+TEST_CASE("the debug menu draws its panel, section band, marks and swatch") {
+    Runtime runtime("Kinetra debug menu", 640, 480);
+    REQUIRE(runtime.poll());
+    bool flag = true;
+    float speed = 2;
+    DebugFolds folds("MOTION");
+    const std::vector<DebugEntry> entries{
+        folds.section("MOTION"), debug_check("RECOVERY", flag), debug_number("SPEED", speed, {1, 4, 1}),
+        DebugEntry{.label = "RESET", .action = [] {}, .swatch = Color{1, 0, 0}, .rule_above = true}};
+    DebugMenu menu;
+    menu.visible = true;
+    menu.screen_origin = {8, 32};
+    runtime.begin({0, 0, 0, 1});
+    menu.draw(runtime, entries);
+    runtime.end();
+    glFinish();
+    const float scale = DebugMenu::scale(runtime.camera.viewport);
+    // A point of the panel, given in panel pixels.
+    const auto at = [&](float x, float y) { return menu.screen_origin + Vec2{x, y} * scale; };
+    CHECK_MESSAGE(presented(runtime, at(100, 3), overlay::title_color), "title bar");
+    CHECK_MESSAGE(presented(runtime, at(120, DebugMenu::row_top(0) + 8), overlay::section_color),
+                  "band of the section heading");
+    CHECK_MESSAGE(presented(runtime, at(120, DebugMenu::row_top(1) + 8), overlay::panel_color), "panel body");
+    CHECK_MESSAGE(presented(runtime,
+                            at(DebugMenu::label_left(1) - DebugMenu::mark_width + 2.5f,
+                               DebugMenu::row_top(1) + DebugMenu::text_top + 3.5f),
+                            overlay::on_color),
+                  "a check box that is on is filled");
+    CHECK_MESSAGE(presented(runtime, at(DebugMenu::increase_left + 1.5f, DebugMenu::row_top(2) + 4),
+                            overlay::button_color),
+                  "the [+] button of a number row");
+    CHECK_MESSAGE(presented(runtime,
+                            at(DebugMenu::panel_width - DebugMenu::text_margin - 3.5f,
+                               DebugMenu::row_top(3) + DebugMenu::text_top + 3.5f),
+                            {1, 0, 0}),
+                  "swatch at the right margin");
+    CHECK_MESSAGE(presented(runtime, at(DebugMenu::panel_width + 6, 40), {0, 0, 0}),
+                  "nothing beside the panel");
+    // The row under the pointer lights up when a click would do something.
+    menu.pointer = at(120, DebugMenu::row_top(3) + 8);
+    runtime.begin({0, 0, 0, 1});
+    menu.draw(runtime, entries);
+    runtime.end();
+    glFinish();
+    CHECK_MESSAGE(presented(runtime, at(120, DebugMenu::row_top(3) + 8), overlay::band_color), "hovered row");
+    CHECK(glGetError() == GL_NO_ERROR);
+}
+
+TEST_CASE("the settings panel and its toolbar draw in the shared style") {
+    Runtime runtime("Kinetra settings", 640, 480);
+    REQUIRE(runtime.poll());
+    bool statistics = true, debug = true;
+    SettingsOverlay overlay({ToggleRow{"STATISTICS", &statistics}, ToggleRow{"DEBUG MODE", &debug},
+                             HelpSection{"CONTROLS", {"WASD  MOVE"}}},
+                            &debug);
+    runtime.begin({0, 0, 0, 1});
+    overlay.draw(runtime);
+    runtime.end();
+    glFinish();
+    CHECK_MESSAGE(presented(runtime, {6, 6}, overlay::button_color), "SETTINGS toolbar button");
+    CHECK_MESSAGE(presented(runtime, {70, 6}, overlay::button_color), "DEBUG toolbar button in debug mode");
+    Input open;
+    open.pressed[std::size_t(Key::control)] = true;
+    open.mouse = {630, 470};
+    REQUIRE(overlay.update(open, runtime.camera));
+    runtime.begin({0, 0, 0, 1});
+    overlay.draw(runtime);
+    runtime.end();
+    glFinish();
+    const float scale = SettingsOverlay::scale(runtime.camera.viewport);
+    const Vec2 origin = runtime.camera.viewport / 2 - overlay.half_extent() * scale;
+    const auto at = [&](float x, float y) { return origin + Vec2{x, y} * scale; };
+    CHECK_MESSAGE(presented(runtime, at(100, 3), overlay::title_color), "title bar");
+    CHECK_MESSAGE(presented(runtime, at(150, overlay.row_y(0) + 3), overlay::panel_color), "panel body");
+    CHECK_MESSAGE(presented(runtime, at(14.5f, overlay.row_y(0) + 3.5f), overlay::on_color),
+                  "a toggle that is on is a filled box");
+    CHECK_MESSAGE(presented(runtime, at(SettingsOverlay::resume_x - 26, overlay.actions_y() + 3),
+                            overlay::button_color),
+                  "RESUME button");
+    CHECK_MESSAGE(presented(runtime, {6, 6}, {0, 0, 0}), "the toolbar is hidden while the panel is open");
+    CHECK(glGetError() == GL_NO_ERROR);
+}
+
+TEST_CASE("without vsync the frame limiter spaces frames by the display's refresh interval") {
+    Runtime runtime("Kinetra pacing", 320, 200);
+    REQUIRE(runtime.poll());
+    CHECK(runtime.frame_interval() > 0);
+    if (runtime.pacing() == FramePacing::vsync) {
+        runtime.limit_frames(false);
+        CHECK_MESSAGE(runtime.pacing() == FramePacing::vsync, "the limiter has no say under VSync");
+        return;
+    }
+    CHECK_MESSAGE(runtime.pacing() == FramePacing::limited, "the limiter is on by default");
+    constexpr int frames = 24;
+    for (int frame = 0; frame < frames; ++frame) {
+        runtime.begin({0, 0, 0, 1});
+        runtime.end();
+    }
+    // The first timed frame may start the limiter's series; every later one waits for its
+    // deadline, so the frames cannot average less than one interval.
+    CHECK(runtime.frame_times().size() == frames - 1);
+    CHECK(runtime.frame_times().average() >= runtime.frame_interval() * 0.9);
+    runtime.limit_frames(false);
+    CHECK(runtime.pacing() == FramePacing::uncapped);
+    runtime.limit_frames(true);
+    CHECK(runtime.pacing() == FramePacing::limited);
+    runtime.begin({0, 0, 0, 1});
+    draw_frame_times(runtime, runtime.frame_times());
+    runtime.end();
     CHECK(glGetError() == GL_NO_ERROR);
 }
 

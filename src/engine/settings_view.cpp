@@ -1,4 +1,5 @@
 #include <kinetra/bitmap_text.h>
+#include <kinetra/overlay_style.h>
 #include <kinetra/settings_view.h>
 
 #include <algorithm>
@@ -7,43 +8,47 @@
 
 namespace kinetra {
 namespace {
-// Layout in logical panel pixels. The values reproduce the panel Kinetra-Lab drew before
-// the overlay moved here (ADR 0013), so its screenshots and settings tests stay valid.
-constexpr float title_y = 12;
-constexpr float first_row_y = 40;
-constexpr float row_spacing = 28;
+// Layout in logical panel pixels. A row's position is the top edge of its text; the row is
+// clickable, and lights up, in a band around it.
+constexpr float title_height = 22;
+constexpr float first_row_y = 33;
+constexpr float row_spacing = 18;
+constexpr float band_above = 5;
+constexpr float band_below = row_spacing - band_above;
+// Extra space before the first help section, and between a section's last line and the
+// next row.
 constexpr float section_gap = 4;
-constexpr float line_spacing = 14;
-constexpr float hint_spacing = 28;
-constexpr float bottom_margin = 50;
-// A row is clickable from 4 pixels above its text to 11 pixels below the 7-pixel glyphs.
-constexpr float band_above = 4;
-constexpr float band_below = 18;
-// Clicks outside this column of the open panel are captured but do nothing.
-constexpr float column_left = 10;
-constexpr float column_right = 174;
+constexpr float line_spacing = 12;
+constexpr float lines_gap = 4;
+// From where the next row would be to the text of the action buttons, with the rule between.
+constexpr float actions_gap = 12;
+constexpr float rule_above_actions = 11;
+constexpr float bottom_margin = 22;
+constexpr float button_height = 18;
+// Columns: the state mark, and the label with the help lines below it.
+constexpr float mark_x = 12;
+constexpr float label_x = 24;
+// The zoom buttons, like the steppers of a debug-menu row.
+constexpr float stepper_width = 14;
 
-/// A horizontal button: drawn at `text_x`, clickable in [left, right).
+/// A button of the action row: clickable and drawn `width` wide around `center`.
 struct Button {
     std::string_view text;
-    float text_x, left, right;
+    float center, width;
+    constexpr float left() const { return center - width / 2; }
+    constexpr float right() const { return center + width / 2; }
 };
-constexpr Button zoom_in{"ZOOM IN", 36, 32, 81};
-constexpr Button zoom_out{"ZOOM OUT", 101, 97, 152};
-constexpr Button launcher_button{"LAUNCHER", 27.5f, 24.5f, 77.5f};
-constexpr Button resume_button{"RESUME", 86.5f, 83.5f, 124.5f};
-constexpr Button exit_button{"EXIT", 133.5f, 130.5f, 159.5f};
+constexpr Button launcher_button{"LAUNCHER", SettingsOverlay::launcher_x, 72};
+constexpr Button resume_button{"RESUME", SettingsOverlay::resume_x, 56};
+constexpr Button exit_button{"EXIT", SettingsOverlay::exit_x, 40};
 
-// Closed-state toolbar, in screen pixels at the top-left corner of the window.
+// Closed-state toolbar, in screen pixels at the top-left corner of the window. A button is
+// clickable in its whole cell and drawn `toolbar_inset` inside it.
 constexpr float toolbar_height = 24;
 constexpr float settings_button_right = 64;
 constexpr float debug_button_right = 112;
+constexpr float toolbar_inset = 3;
 constexpr Vec2 debug_menu_origin{8, 32};
-
-constexpr Color panel_color{0.025f, 0.035f, 0.06f};
-constexpr Color text_color{0.9f, 0.93f, 1};
-constexpr Color toolbar_text_color{1, 1, 1};
-constexpr Color highlight_color{0.25f, 0.65f, 1.f};
 
 bool in_band(Vec2 point, float y) {
     return point.y >= y - band_above && point.y < y + band_below;
@@ -54,13 +59,18 @@ bool on_toolbar(Vec2 mouse, float left, float right) {
 bool is_section(const SettingsRow &row) {
     return std::holds_alternative<HelpSection>(row);
 }
-float centered_x(std::string_view text) {
-    // Glyph cells are 6 pixels wide; the last cell has no trailing gap.
-    return (SettingsOverlay::panel_width - (static_cast<float>(text.size()) * 6.f - 1.f)) / 2;
+/// Which zoom button panel x coordinate `x` is on: -1 for out, 1 for in, 0 for neither.
+/// Each zone is its button and half the gap to the other one.
+int zoom_button_at(float x) {
+    const float middle = (SettingsOverlay::zoom_out_x + SettingsOverlay::zoom_in_x) / 2;
+    if (x < SettingsOverlay::zoom_out_x - stepper_width / 2 ||
+        x > SettingsOverlay::zoom_in_x + stepper_width / 2)
+        return 0;
+    return x < middle ? -1 : 1;
 }
 } // namespace
 
-SettingsOverlay::SettingsOverlay(std::vector<SettingsRow> rows, const bool *debug_mode)
+SettingsOverlay::SettingsOverlay(std::vector<SettingsRow> rows, bool *debug_mode)
     : rows_(std::move(rows)), expanded_(rows_.size(), false), debug_mode_(debug_mode) {
     bool sections = false;
     for (const auto &row : rows_) {
@@ -76,14 +86,15 @@ SettingsOverlay::SettingsOverlay(std::vector<SettingsRow> rows, const bool *debu
 }
 
 float SettingsOverlay::scale(Vec2 viewport) {
-    // 204 x 418 fits the tallest Lab panel with a margin; the scale never depends on the
-    // expanded state, so opening a help section does not resize the panel.
-    return std::min({2.f, viewport.x / 204.f, viewport.y / 418.f});
+    // 228 x 315 fits the tallest Lab panel, with both help sections open, and a margin. The
+    // scale never depends on the expanded state, so opening a section does not resize the
+    // panel.
+    return std::min({2.f, viewport.x / 228.f, viewport.y / 315.f});
 }
 
 std::vector<float> SettingsOverlay::layout() const {
     std::vector<float> positions;
-    positions.reserve(rows_.size());
+    positions.reserve(rows_.size() + 1);
     float y = first_row_y;
     bool sections = false;
     for (std::size_t i = 0; i < rows_.size(); ++i) {
@@ -94,26 +105,16 @@ std::vector<float> SettingsOverlay::layout() const {
         }
         positions.push_back(y);
         y += row_spacing;
-        // Expanded lines start one line below the toggle; the next toggle follows one
-        // line below the last line.
         if (section && expanded_[i] && !section->lines.empty())
-            y += line_spacing * static_cast<float>(section->lines.size() - 1);
+            y += line_spacing * static_cast<float>(section->lines.size()) + lines_gap;
     }
+    // One past the last row: where the next row would be.
+    positions.push_back(y);
     return positions;
 }
 
-float SettingsOverlay::actions_y(const std::vector<float> &positions) const {
-    if (positions.empty())
-        return first_row_y;
-    const std::size_t last = positions.size() - 1;
-    float y = positions[last] + row_spacing;
-    if (const auto *section = std::get_if<HelpSection>(&rows_[last]); section && expanded_[last])
-        y += line_spacing * static_cast<float>(section->lines.size());
-    return y;
-}
-
 float SettingsOverlay::actions_y() const {
-    return actions_y(layout());
+    return layout().back() + actions_gap;
 }
 
 Vec2 SettingsOverlay::half_extent() const {
@@ -121,7 +122,9 @@ Vec2 SettingsOverlay::half_extent() const {
 }
 
 float SettingsOverlay::row_y(std::size_t index) const {
-    return layout().at(index);
+    if (index >= rows_.size())
+        throw std::out_of_range("Settings row out of range");
+    return layout()[index];
 }
 
 bool SettingsOverlay::expanded(std::size_t index) const {
@@ -131,19 +134,34 @@ bool SettingsOverlay::expanded(std::size_t index) const {
 bool SettingsOverlay::update(const Input &input, Camera2D &camera) {
     pointer_ = input.mouse;
     const bool was_visible = visible_;
+    // Ctrl acts when it is released, so Ctrl followed by Shift is still the debug shortcut
+    // and never opens this panel first. A press whose key is not held, as scripted input
+    // sends it, is a complete tap.
+    const bool shift = input.down(Key::shift) || input.hit(Key::shift);
+    if (input.hit(Key::control))
+        control_armed_ = !shift;
+    else if (shift || input.focus_lost)
+        // A window that loses focus releases Ctrl without the user letting go of it, as when
+        // a system shortcut that starts with Ctrl takes the focus away.
+        control_armed_ = false;
+    const bool tapped = control_armed_ && !input.down(Key::control);
+    if (tapped)
+        control_armed_ = false;
+    if (tapped || (!visible_ && input.clicked && on_toolbar(input.mouse, 0, settings_button_right))) {
+        visible_ = !visible_;
+        return modal_ = was_visible || visible_;
+    }
+    modal_ = was_visible || visible_;
+    if (!visible_ || !input.clicked)
+        return modal_;
     // Positions are taken before this click changes any section, as drawn last frame.
     const auto positions = layout();
-    const float actions = actions_y(positions);
+    const float actions = positions.back() + actions_gap;
     const Vec2 half{panel_width / 2, (actions + bottom_margin) / 2};
     const Vec2 point = (input.mouse - camera.viewport / 2) / scale(camera.viewport) + half;
-    if (input.hit(Key::control) ||
-        (!visible_ && input.clicked && on_toolbar(input.mouse, 0, settings_button_right))) {
-        visible_ = !visible_;
-        return was_visible || visible_;
-    }
-    if (!visible_ || !input.clicked || point.x < column_left || point.x > column_right)
-        return was_visible || visible_;
-    auto on = [&](const Button &button) { return point.x >= button.left && point.x < button.right; };
+    if (point.x < 0 || point.x > panel_width)
+        return true;
+    auto on = [&](const Button &button) { return point.x >= button.left() && point.x < button.right(); };
     if (in_band(point, actions)) {
         if (on(launcher_button))
             request_ = SessionRequest::menu;
@@ -158,15 +176,8 @@ bool SettingsOverlay::update(const Input &input, Camera2D &camera) {
             continue;
         if (const auto *zoom_row = std::get_if<ZoomRow>(&rows_[i])) {
             const ZoomLimits limits = zoom_row->limits();
-            validate(limits);
-            // Multiply or divide instead of zoom(camera, +-1, limits): it keeps the
-            // results bit-identical to the panel Lab used before.
-            if (on(zoom_in))
-                camera.pixels_per_unit =
-                    std::clamp(camera.pixels_per_unit * zoom_factor, limits.minimum, limits.maximum);
-            else if (on(zoom_out))
-                camera.pixels_per_unit =
-                    std::clamp(camera.pixels_per_unit / zoom_factor, limits.minimum, limits.maximum);
+            if (const int direction = zoom_button_at(point.x))
+                zoom(camera, static_cast<float>(direction), limits);
         } else if (const auto *toggle = std::get_if<ToggleRow>(&rows_[i]))
             *toggle->value = !*toggle->value;
         else
@@ -177,73 +188,98 @@ bool SettingsOverlay::update(const Input &input, Camera2D &camera) {
 }
 
 bool SettingsOverlay::update_debug(const Input &input, Vec2 viewport, DebugMenu &menu,
-                                   std::span<DebugOption> options) const {
+                                   std::span<const DebugEntry> entries) {
     menu.screen_origin = debug_menu_origin;
-    const bool captured = menu.update(input, viewport, options);
+    debug_open_ = false;
+    if (modal_ || !debug_mode_) {
+        menu.visible = false;
+        return false;
+    }
+    if (debug_chord(input)) {
+        // The shortcut is also the way into the debug mode, so it never needs the panel.
+        menu.visible = !*debug_mode_ || !menu.visible;
+        *debug_mode_ = true;
+    }
+    if (!*debug_mode_) {
+        menu.visible = false;
+        return false;
+    }
+    bool captured = menu.update(input, viewport, entries);
     if (on_toolbar(input.mouse, settings_button_right, debug_button_right)) {
         if (input.clicked)
             menu.visible = !menu.visible;
-        return true;
+        captured = true;
     }
+    debug_open_ = menu.visible;
     return captured;
 }
 
 void SettingsOverlay::draw(Runtime &runtime) const {
     const Camera2D &camera = runtime.camera;
     if (!visible_) {
-        const bool debug = debug_mode_ && *debug_mode_;
-        const float width = debug ? debug_button_right : settings_button_right;
-        runtime.box(camera.screen_to_world({width / 2, toolbar_height / 2}),
-                    Vec2{width / 2, toolbar_height / 2} / camera.pixels_per_unit, 0, panel_color);
-        draw_text(runtime, "SETTINGS", {8, 8}, 1,
-                  on_toolbar(pointer_, 0, settings_button_right) ? highlight_color : toolbar_text_color);
-        if (debug)
-            draw_text(runtime, "DEBUG", {72, 8}, 1,
-                      on_toolbar(pointer_, settings_button_right, debug_button_right) ? highlight_color
-                                                                                      : toolbar_text_color);
+        const Vec2 size{0, toolbar_height - 2 * toolbar_inset};
+        auto button = [&](std::string_view text, float left, float right, bool lit) {
+            overlay::draw_text_button(runtime, {left + toolbar_inset, toolbar_inset},
+                                      {right - left - 2 * toolbar_inset, size.y}, text, 1, lit);
+        };
+        button("SETTINGS", 0, settings_button_right, on_toolbar(pointer_, 0, settings_button_right));
+        if (debug_mode_ && *debug_mode_)
+            button("DEBUG", settings_button_right, debug_button_right,
+                   debug_open_ || on_toolbar(pointer_, settings_button_right, debug_button_right));
         return;
     }
     const auto positions = layout();
-    const float actions = actions_y(positions);
+    const float actions = positions.back() + actions_gap;
     const Vec2 half{panel_width / 2, (actions + bottom_margin) / 2};
     const float size = scale(camera.viewport);
     const Vec2 origin = camera.viewport / 2 - half * size;
-    runtime.box(camera.screen_to_world(camera.viewport / 2), half * size / camera.pixels_per_unit, 0,
-                panel_color);
+    // Screen position of a point given in panel pixels, on a whole pixel.
+    const auto at = [&](float x, float y) { return overlay::snapped(origin + Vec2{x, y} * size); };
+    overlay::draw_panel(runtime, origin, half * (2 * size), title_height * size, "SETTINGS", "CTRL", size);
     const Vec2 point = (pointer_ - origin) / size;
-    // Highlights use the same bands as picking. The full-width column includes its right
-    // edge, as the click test does.
-    auto line = [&](std::string_view text, float y, bool interactive, float x, float left = column_left,
-                    float right = column_right) {
-        const bool hovered = interactive && point.x >= left &&
-                             (point.x < right || (right == column_right && point.x == right)) &&
-                             in_band(point, y);
-        draw_text(runtime, text, origin + Vec2{x, y} * size, size, hovered ? highlight_color : text_color);
-    };
-    auto centered = [&](std::string_view text, float y, bool interactive) {
-        line(text, y, interactive, centered_x(text));
-    };
-    auto button = [&](const Button &b, float y) { line(b.text, y, true, b.text_x, b.left, b.right); };
-    centered("SETTINGS", title_y, false);
+    const bool inside = point.x >= 0 && point.x <= panel_width;
     for (std::size_t i = 0; i < rows_.size(); ++i) {
         const float y = positions[i];
-        if (std::holds_alternative<ZoomRow>(rows_[i])) {
-            button(zoom_in, y);
-            button(zoom_out, y);
-        } else if (const auto *toggle = std::get_if<ToggleRow>(&rows_[i]))
-            centered((*toggle->value ? "[X] " : "[ ] ") + toggle->label, y, true);
-        else {
+        const bool on_row = inside && in_band(point, y);
+        const bool zoom_row = std::holds_alternative<ZoomRow>(rows_[i]);
+        // A zoom row is two buttons; the others are clickable as a whole.
+        const bool lit = on_row && !zoom_row;
+        if (lit)
+            overlay::draw_rectangle(runtime, at(1, y - band_above), Vec2{panel_width - 2, row_spacing} * size,
+                                    overlay::band_color);
+        const Color color = lit ? overlay::bright_color : overlay::text_color;
+        if (zoom_row) {
+            draw_text(runtime, "ZOOM", at(label_x, y), size, color);
+            const int hovered = on_row ? zoom_button_at(point.x) : 0;
+            const Vec2 button{stepper_width * size, (row_spacing - 4) * size};
+            overlay::draw_sign_button(runtime, at(zoom_out_x - stepper_width / 2, y - band_above + 2), button,
+                                      '-', size, hovered < 0);
+            overlay::draw_sign_button(runtime, at(zoom_in_x - stepper_width / 2, y - band_above + 2), button,
+                                      '+', size, hovered > 0);
+        } else if (const auto *toggle = std::get_if<ToggleRow>(&rows_[i])) {
+            const bool on = *toggle->value;
+            draw_glyph(runtime, on ? overlay::check_on : overlay::check_off, at(mark_x, y), size,
+                       on ? overlay::on_color : overlay::dim_color);
+            draw_text(runtime, toggle->label, at(label_x, y), size, color);
+        } else {
             const auto &section = std::get<HelpSection>(rows_[i]);
-            centered((expanded_[i] ? "HIDE " : "SHOW ") + section.label, y, true);
+            draw_glyph(runtime, expanded_[i] ? overlay::arrow_open : overlay::arrow_closed, at(mark_x, y),
+                       size, overlay::accent_color);
+            draw_text(runtime, section.label, at(label_x, y), size, color);
             if (expanded_[i])
                 for (std::size_t k = 0; k < section.lines.size(); ++k)
-                    centered(section.lines[k], y + line_spacing * static_cast<float>(k + 1), false);
+                    draw_text(runtime, section.lines[k],
+                              at(label_x, y + row_spacing + line_spacing * static_cast<float>(k)), size,
+                              overlay::dim_color);
         }
     }
-    button(launcher_button, actions);
-    button(resume_button, actions);
-    button(exit_button, actions);
-    centered("CTRL  SETTINGS", actions + hint_spacing, false);
+    overlay::draw_rectangle(runtime, at(mark_x, actions - rule_above_actions),
+                            {(panel_width - 2 * mark_x) * size, std::max(1.f, size)}, overlay::rule_color);
+    const float button_top = actions - (button_height - 7) / 2;
+    for (const auto &button : {launcher_button, resume_button, exit_button})
+        overlay::draw_text_button(
+            runtime, at(button.left(), button_top), Vec2{button.width, button_height} * size, button.text,
+            size, inside && in_band(point, actions) && point.x >= button.left() && point.x < button.right());
 }
 
 } // namespace kinetra

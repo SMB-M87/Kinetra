@@ -63,6 +63,9 @@ struct Input {
     bool right_clicked{}, right_mouse_down{};
     /// Wheel notches this frame; positive scrolls away from the user. Can be fractional.
     float wheel{};
+    /// The window lost focus since the previous poll. The keys and buttons that are no longer
+    /// held were released by that, not by the user.
+    bool focus_lost{};
     /// Whether `key` is held. Throws std::out_of_range for Key::count.
     bool down(Key key) const { return held.at(static_cast<std::size_t>(key)); }
     /// Whether `key` went down this frame. Throws std::out_of_range for Key::count.
@@ -71,6 +74,17 @@ struct Input {
 /// RGBA color, each channel in [0, 1]; alpha 1 is opaque.
 struct Color {
     float r{}, g{}, b{}, a{1};
+};
+
+/// What spaces the frames Runtime::end() presents.
+enum class FramePacing {
+    /// The platform accepted a swap interval: presenting waits for the display.
+    vsync,
+    /// No swap interval is available; end() waits until one refresh interval has passed
+    /// since the previous frame.
+    limited,
+    /// No swap interval and no waiting: frames are presented as fast as they are drawn.
+    uncapped,
 };
 
 /// SDL2/OpenGL 3.3 window, input and batched primitive drawing. Own on the main
@@ -82,8 +96,9 @@ struct Color {
 /// uploads, draws and presents.
 class Runtime {
   public:
-    /// Opens a resizable window of `width` x `height` logical pixels with the Kinetra icon
-    /// (not shown where the platform ignores window icons, such as native Wayland). Throws
+    /// Opens a resizable window of `width` x `height` logical pixels with the Kinetra icon.
+    /// The icon is not shown where the platform ignores window icons: native Wayland, and
+    /// the title bar that WSLg draws (its taskbar entry does show it). Throws
     /// std::invalid_argument for nonpositive dimensions and std::runtime_error when another
     /// Runtime is active or SDL, the OpenGL 3.3 context or the shaders fail.
     explicit Runtime(const std::string &title = "Kinetra", int width = 1280, int height = 800);
@@ -112,11 +127,24 @@ class Runtime {
     void polygon(std::span<const Vec2> vertices, Color color);
     /// Straight line of `width` world units.
     void line(Vec2 from, Vec2 to, float width, Color color);
-    /// Uploads and draws the batch, then presents the frame. From the second frame on, also
-    /// records the time since the previous end() in frame_times().
+    /// Uploads and draws the batch, then presents the frame. Without VSync it then waits for
+    /// the frame limiter, unless that was switched off (see pacing()). From the second frame
+    /// on, also records the time since the previous end() in frame_times().
     void end();
-    /// Wall-clock time between the last presented frames, oldest first. With VSync this is
-    /// the display's refresh interval; a longer entry is a frame that reached the screen late.
+    /// What spaces the frames: `vsync` when the platform accepted a swap interval when the
+    /// window was opened; otherwise `limited`, or `uncapped` after limit_frames(false).
+    FramePacing pacing() const;
+    /// Chooses between `limited` (true, the default) and `uncapped` on a platform without
+    /// VSync; does nothing where presenting already waits for the display. An application
+    /// that renders frames for a file rather than for a viewer switches the limit off.
+    void limit_frames(bool limited);
+    /// Seconds between frames that the display asks for: one over the refresh rate of the
+    /// window's display when it was opened, 1/60 when that is unknown. The limiter aims for
+    /// this interval.
+    double frame_interval() const;
+    /// Wall-clock time between the last presented frames, oldest first. With VSync or the
+    /// frame limiter this is the display's refresh interval; a longer entry is a frame that
+    /// reached the screen late.
     const FrameTimes &frame_times() const;
     /// The view used by all drawing calls. poll() sets its viewport; the application owns
     /// position and zoom.

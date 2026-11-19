@@ -1,15 +1,18 @@
 // Window-free tests for the header-only presentation helpers: the bitmap glyph table
-// (bitmap_text.h), camera zoom stepping (camera.h), the rate counter and frame times
-// (timing.h) and angle interpolation (math.h).
+// (bitmap_text.h), camera zoom stepping (camera.h), the rate counter, frame times and frame
+// limiter (timing.h), angle interpolation (math.h) and debug-menu rows (debug_menu.h).
 #include <kinetra/bitmap_text.h>
 #include <kinetra/camera.h>
+#include <kinetra/debug_menu.h>
 #include <kinetra/math.h>
 #include <kinetra/timing.h>
 
 #include <doctest/doctest.h>
 
 #include <cmath>
+#include <limits>
 #include <stdexcept>
+#include <string>
 
 using kinetra::Glyph;
 using kinetra::glyph;
@@ -142,4 +145,160 @@ TEST_CASE("angle interpolation takes the shorter way around") {
     const float halfway = kinetra::lerp_angle(3.1f, -3.1f, 0.5f);
     CHECK(std::abs(std::remainder(halfway - 3.14159265f, 6.28318531f)) < 1e-4f);
     CHECK(kinetra::lerp_angle(0.5f, 0.5f + 6.28318531f, 0.5f) == doctest::Approx(0.5f));
+}
+
+TEST_CASE("text width counts six pixels per character less the last gap") {
+    CHECK(kinetra::text_width("") == 0);
+    CHECK(kinetra::text_width("A") == 5);
+    CHECK(kinetra::text_width("DEBUG") == 29);
+}
+
+TEST_CASE("the frame limiter spaces frames one interval apart") {
+    kinetra::FrameLimiter limiter(0.010);
+    CHECK(limiter.interval() == 0.010);
+    CHECK_MESSAGE(limiter.next(5.000) == 5.000, "the first frame starts the series and does not wait");
+    CHECK(limiter.next(5.002) == doctest::Approx(5.010));
+    CHECK(limiter.next(5.013) == doctest::Approx(5.020));
+    CHECK(limiter.next(5.021) == doctest::Approx(5.030));
+}
+
+TEST_CASE("a late frame does not wait and the next one makes up for it") {
+    kinetra::FrameLimiter limiter(0.010);
+    limiter.next(1.000);
+    INFO("4 ms late: no wait, and the series keeps its deadlines");
+    CHECK(limiter.next(1.014) == 1.014);
+    CHECK(limiter.next(1.016) == doctest::Approx(1.020));
+}
+
+TEST_CASE("a stall starts a new series instead of a burst of short frames") {
+    kinetra::FrameLimiter limiter(0.010);
+    limiter.next(1.000);
+    CHECK_MESSAGE(limiter.next(1.250) == 1.250, "more than one interval late");
+    CHECK_MESSAGE(limiter.next(1.251) == doctest::Approx(1.260), "the next frame waits a whole interval");
+}
+
+TEST_CASE("a reset frame limiter starts over") {
+    kinetra::FrameLimiter limiter(0.010);
+    limiter.next(1.000);
+    limiter.reset();
+    CHECK(limiter.next(1.001) == 1.001);
+    CHECK(limiter.next(1.002) == doctest::Approx(1.011));
+}
+
+TEST_CASE("the frame limiter rejects invalid intervals and times") {
+    CHECK_THROWS_AS(kinetra::FrameLimiter(0), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::FrameLimiter(-1), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::FrameLimiter(std::numeric_limits<double>::infinity()), std::invalid_argument);
+    kinetra::FrameLimiter limiter(0.010);
+    CHECK_THROWS_AS(limiter.next(std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
+}
+
+TEST_CASE("debug folds keep one section open and a click on it closes it") {
+    kinetra::DebugFolds folds("SIMULATION");
+    CHECK(folds.section_open("SIMULATION"));
+    auto simulation = folds.section("SIMULATION");
+    auto motion = folds.section("MOTION");
+    CHECK(simulation.kind == kinetra::DebugEntryKind::group);
+    CHECK(simulation.depth == 0);
+    CHECK(simulation.active());
+    CHECK_FALSE(motion.active());
+    motion.action();
+    CHECK(folds.section_open("MOTION"));
+    CHECK_FALSE(folds.section_open("SIMULATION"));
+    CHECK_FALSE(simulation.active());
+    motion.action();
+    CHECK_FALSE(folds.section_open("MOTION"));
+    CHECK_MESSAGE(!kinetra::DebugFolds().section_open("SIMULATION"), "no section is open by default");
+}
+
+TEST_CASE("a debug list shows its value and closes with its section or after a choice") {
+    kinetra::DebugFolds folds("MOTION");
+    std::string profile = "IMPROVED";
+    auto list = folds.list("PROFILE", [&] { return profile; });
+    CHECK(list.kind == kinetra::DebugEntryKind::group);
+    CHECK(list.depth == 1);
+    CHECK(list.value() == "IMPROVED");
+    CHECK_FALSE(folds.list_open("PROFILE"));
+    list.action();
+    CHECK(folds.list_open("PROFILE"));
+    CHECK(list.active());
+    folds.close_list();
+    CHECK_FALSE(folds.list_open("PROFILE"));
+
+    list.action();
+    folds.list("PLANNER", [] { return std::string("A*"); }).action();
+    CHECK_MESSAGE(!folds.list_open("PROFILE"), "one list is open at a time");
+    CHECK(folds.list_open("PLANNER"));
+    folds.section("TRAFFIC").action();
+    CHECK_MESSAGE(!folds.list_open("PLANNER"), "a list belongs to the section it was opened in");
+}
+
+TEST_CASE("a debug check row flips its borrowed flag") {
+    bool flag = false;
+    auto row = kinetra::debug_check("VECTORS", flag, 2);
+    CHECK(row.kind == kinetra::DebugEntryKind::check);
+    CHECK(row.depth == 2);
+    CHECK_FALSE(row.active());
+    row.action();
+    CHECK(flag);
+    CHECK(row.active());
+}
+
+TEST_CASE("a debug number row steps by an amount or a factor and stops at its limits") {
+    float clearance = 0.2f;
+    auto added = kinetra::debug_number("CLEARANCE", clearance, {0, 0.5f, 0.1f});
+    CHECK_FALSE(added.action);
+    added.increase();
+    CHECK(clearance == doctest::Approx(0.3f));
+    for (int i = 0; i < 10; ++i)
+        added.increase();
+    CHECK(clearance == 0.5f);
+    for (int i = 0; i < 10; ++i)
+        added.decrease();
+    CHECK(clearance == 0);
+
+    float speed = 4;
+    auto scaled = kinetra::debug_number("MAX SPEED", speed, {1, 8, 1.25f, true});
+    scaled.increase();
+    CHECK(speed == 5);
+    scaled.decrease();
+    CHECK_MESSAGE(speed == 4, "a step up and a step down return to the same value");
+    scaled.decrease();
+    CHECK(speed == doctest::Approx(3.2f));
+    CHECK(scaled.value() == "3.2");
+    for (int i = 0; i < 20; ++i)
+        scaled.increase();
+    CHECK(speed == 8);
+}
+
+TEST_CASE("a debug count row steps by one within its limits") {
+    int hits = 2;
+    auto row = kinetra::debug_count("HITS", hits, 1, 3);
+    CHECK(row.value() == "2");
+    row.increase();
+    row.increase();
+    CHECK(hits == 3);
+    for (int i = 0; i < 5; ++i)
+        row.decrease();
+    CHECK(hits == 1);
+}
+
+TEST_CASE("debug number text keeps three significant digits") {
+    CHECK(kinetra::debug_number_text(2) == "2");
+    CHECK(kinetra::debug_number_text(0.6f) == "0.6");
+    CHECK(kinetra::debug_number_text(0.0512f) == "0.0512");
+    CHECK(kinetra::debug_number_text(1.953125f) == "1.95");
+    CHECK(kinetra::debug_number_text(123.456f) == "123");
+    CHECK_MESSAGE(kinetra::debug_number_text(12345.6f) == "12346", "no exponent from 1000 on");
+}
+
+TEST_CASE("invalid debug number steps are rejected") {
+    float value = 1;
+    int count = 1;
+    CHECK_THROWS_AS(kinetra::debug_number("X", value, {2, 1, 0.1f}), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::debug_number("X", value, {0, 1, 0}), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::debug_number("X", value, {0, 1, 1, true}), std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::debug_number("X", value, {0, std::numeric_limits<float>::infinity(), 1}),
+                    std::invalid_argument);
+    CHECK_THROWS_AS(kinetra::debug_count("X", count, 3, 1), std::invalid_argument);
 }
