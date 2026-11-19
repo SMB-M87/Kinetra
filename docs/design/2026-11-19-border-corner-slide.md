@@ -1,6 +1,6 @@
 # Border corner slide
 
-Status: accepted · Branch: `fix/border-corner-slide` · Related: [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/feat/i4sim-h-crossing-motion/docs/design/2026-11-19-i4sim-h-crossing-motion.md), [navigation](../engine/navigation.md#weighted-grids-and-priority-steering)
+Status: implemented · Branch: `fix/border-corner-slide` · Related: [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/feat/i4sim-h-crossing-motion/docs/design/2026-11-19-i4sim-h-crossing-motion.md), [navigation](../engine/navigation.md#weighted-grids-and-priority-steering)
 
 `constrain_borders` stops a box that slides flush along one wall when its corner meets the end of another wall at a convex corner. The box then stands still for good. Kinetra-Lab's i4sim needs movers that steer straight at their goal without a route ("path planning off"), and in its H-shaped hall every such mover stuck on a convex corner of the middle bar. This change picks the constrained face beside a segment's end the way a swept-box test does.
 
@@ -75,15 +75,42 @@ The new case failed before the fix: the near-corner acceleration was -0.6 instea
 
 ## Review
 
-To be filled in after the review.
+Reviewed as its own diff, next to the Lab change that needs it: only the corner region changes; inside a segment's span and in an overlap the old rule stays; a body at rest or approaching exactly diagonally keeps the old choice (larger gap); the result stays one bounded step per segment, so the acceleration bound and the existing braking cases are unchanged. No findings.
 
 ## Verification
 
-To be filled in after verification.
+Full level (a public header comment changed).
+
+| Command | Result |
+| --- | --- |
+| `cmake --workflow --preset ci` | Passed: 223 of 223 tests, no compiler warnings |
+| `cmake --workflow --preset headless` | Passed: 201 of 201 tests |
+| External consumer (`tests/consumer`, `CONSUMER_GRAPHICS=ON`) | Builds and runs |
+| `python3 tools/check_docs.py` | All links resolve |
+| `clang-format --dry-run --Werror` on the changed sources | Clean |
+| New case without the fix | Fails: near-corner acceleration -0.6 instead of 0.2; the box stops 57 units from its goal |
+| Kinetra-Lab against this commit (`ci`, `headless`, `graphics`) | See the [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/feat/i4sim-h-crossing-motion/docs/design/2026-11-19-i4sim-h-crossing-motion.md#verification); its golden and pressure summaries are unchanged |
 
 ## Pull request
 
-To be filled in.
+Title: `fix(steering): let a box sliding along a wall pass a convex corner`
+
+**Summary.** `constrain_borders` stopped a box that slid flush along one wall when its corner met the end of a wall dropping away from it: it braked as if that wall stood in its way, and then stood still for good. Beside a segment's end it now constrains the face the box would reach last at its current velocity, as a swept-box test does. Kinetra-Lab needs this for i4sim movers that steer straight at their goal (path planning off).
+
+**Changes.**
+- Steering: the axis choice in the corner region of `constrain_borders`; inside a segment's span and in overlaps nothing changes.
+- Contract: `steering.h` and the navigation page name the corner rule.
+- Tests: a box sliding over a step passes its convex corner, both one unit before it and over 200 integration steps.
+
+**Design.** [docs/design/2026-11-19-border-corner-slide.md](docs/design/2026-11-19-border-corner-slide.md)
+
+**Verification.** `cmake --workflow --preset ci` (223/223), `headless` (201/201), the external consumer, docs check, clang-format. The new case fails without the fix. Kinetra-Lab's full suite, including its golden and pressure summaries, passes unchanged against this commit.
+
+**Review notes.** The velocity used is the current one, not the requested acceleration; the design document explains why the latter would keep the trap.
+
+**Dependencies and merge order.** None. Kinetra-Lab's `feat/i4sim-h-crossing-motion` points at this branch: merge this pull request first, with a merge commit, then move the Lab pointer to the merge commit.
+
+**Follow-up.** None.
 
 ## Open points
 
