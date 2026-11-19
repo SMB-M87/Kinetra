@@ -11,7 +11,7 @@ Contracts of the optional application shell: sessions and their requests, the la
 - [Presentation helpers](#presentation-helpers)
 - [Tests](#tests)
 
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+[Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Sessions and requests
 

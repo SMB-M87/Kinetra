@@ -10,7 +10,7 @@
 - [External consumers](#external-consumers)
 - [Verification and limits](#verification-and-limits)
 
-[Directory guide](README.md) · [Project overview](../../README.md) · [Documentation index](../README.md)
+[Project overview](../../README.md) · [Documentation index](../README.md)
 
 ## Lifecycle
 
@@ -40,11 +40,11 @@ Only one Runtime can exist at a time. Construction, calls and destruction belong
 | Contract | Behavior |
 | --- | --- |
 | `poll(close_on_escape = true)` | Updates held/pressed keys (including left/right Ctrl), mouse, held/clicked button and wheel; returns false on close or optionally Escape |
-| Focus loss | Clears held keyboard state |
+| Focus loss | Releases held keys and mouse buttons |
 | Camera viewport | Logical window pixels for picking; resize preserves center and zoom |
 | OpenGL viewport | Drawable pixels, refreshed by `begin()` for high-DPI rendering |
 | `circle`, `box`, `polygon`, `line` | Colored batched primitives between `begin` and `end` |
-| Text / overlays | Header-only public helpers use primitive drawing and logical-pixel camera conversion |
+| Text / overlays | Bitmap text, the debug menu and the help panel are header-only; `SettingsOverlay` is compiled into Runtime. All draw primitives through logical-pixel camera conversion |
 
 Application renderers cull scene content before submitting primitives. `polygon` accepts at least three finite convex ordered world-space vertices; the caller owns convexity validation. Runtime triangulates polygons, circles and quads, uploads one dynamic vertex batch and draws/presents it. Circles adapt their segment count to drawable size (24–256 segments) and fade alpha across a one-pixel edge for antialiasing without multisample buffers. Adaptive VSync is requested, with standard VSync as fallback; unavailable synchronization is logged. Repeated identical window titles are cached to avoid redundant window-manager requests. Primitive arguments must be finite with positive dimensions. GLAD and backend implementation remain in [runtime.cpp](../../src/engine/runtime.cpp) and generated `src/glad.c`.
 
@@ -56,7 +56,7 @@ Applications own pause and resume and their `FixedClock` instances, so each sele
 
 ## External consumers
 
-Headless integration is shown once in the [root README](../../README.md#using-kinetra). For runtime-only consumers, before adding Kinetra:
+Source consumers use `add_subdirectory` and link the public targets; headless integration is shown in the [root README](../../README.md#using-kinetra). Runtime consumers enable the runtime before adding Kinetra:
 
 ```cmake
 set(KINETRA_BUILD_RUNTIME ON CACHE BOOL "" FORCE)
@@ -64,8 +64,6 @@ set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/Kinetra)
 target_link_libraries(my_app PRIVATE Kinetra::Simulation Kinetra::Runtime)
 ```
-
-Source consumers use `add_subdirectory` and link the public targets; see the [README](../../README.md#using-kinetra).
 
 Applications and the bundled launcher executable are built in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab), which consumes a Kinetra source checkout. The core has no dependency on Lab.
 

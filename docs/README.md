@@ -1,26 +1,44 @@
 # Documentation
 
-Start with the architecture map, then follow the subsystem contract relevant to your change. Source and behavioral tests define the detailed API.
+Where each question about Kinetra is answered. Module guides explain the code they sit next to; the pages in this directory cover what spans modules: architecture, engine contracts, decisions, design documents and the way of working.
 
 ## Table of contents
 
+- [Modules](#modules)
+- [Engine contracts](#engine-contracts)
 - [Design and workflows](#design-and-workflows)
 - [Applications](#applications)
 - [Decisions](#decisions)
 
-[Parent guide](../README.md)
+[Project overview](../README.md)
 
-Directory guides: [decisions](decisions/README.md), [design](design/README.md), [engine](engine/README.md).
+Directory guides: [decisions](decisions/README.md), [design](design/README.md).
+
+## Modules
+
+| Question | Authoritative page |
+| --- | --- |
+| What does the headless simulation contain, and how does it work? | [Simulation](../src/simulation/README.md) |
+| How do the window, sessions, overlays and launcher work? | [Runtime and launcher](../src/engine/README.md) |
+| Which test suites exist, and how does the external consumer work? | [Core tests](../tests/README.md) |
+| What exactly does one function promise? | The `///` summary in its header in [include/kinetra](../include/kinetra/) |
+| What depends on what? Who owns objects? | [Architecture](architecture.md) |
+
+## Engine contracts
+
+The detailed behavior of each subsystem: units, limits, edge cases and the reasons behind them.
+
+| Question | Authoritative page |
+| --- | --- |
+| What are the geometry and physics contracts? | [Math and physics](engine/math-physics.md) |
+| How do pathfinding, steering, avoidance and traffic admission cooperate? | [Navigation](engine/navigation.md) |
+| How do window, input, rendering and timing work? | [Runtime](engine/runtime.md) |
+| How do sessions, the launcher and the overlays work? | [Launcher, sessions and overlays](engine/launcher-overlays.md) |
 
 ## Design and workflows
 
 | Question | Authoritative page |
 | --- | --- |
-| Where are public interfaces and implementations? | [Headers](../include/README.md) and [sources](../src/README.md) |
-| How are tests organized? | [Tests](../tests/README.md) and [consumer fixture](../tests/consumer/README.md) |
-| Where are subsystem contracts indexed? | [Engine contracts](engine/README.md) |
-| How are historical decisions organized? | [Decision guide](decisions/README.md) |
-| What depends on what? Who owns objects? | [Architecture](architecture.md) |
 | How does a change move from idea to commit? | [Workflow](workflow.md) |
 | How is C++ and CMake written here? | [Conventions](conventions.md) |
 | What do I test, and which checks does a change need? | [Testing](testing.md) |
@@ -28,10 +46,6 @@ Directory guides: [decisions](decisions/README.md), [design](design/README.md), 
 | What does CI check on a pull request? | [Testing: continuous integration](testing.md#continuous-integration) |
 | How are READMEs, diagrams and `///` comments written? | [Documentation guide](documentation.md) |
 | What is being changed now, and why? | [Design documents](design/README.md) |
-| What are the geometry and physics contracts? | [Math and physics](engine/math-physics.md) |
-| How do pathfinding and steering cooperate? | [Navigation](engine/navigation.md) |
-| How do window/input/rendering and sessions work? | [Runtime](engine/runtime.md) |
-| How do sessions, the launcher and the overlays work? | [Launcher, sessions and overlays](engine/launcher-overlays.md) |
 | What rules must agents follow? | [AGENTS](../AGENTS.md) and [agent skills](../.agents/skills/README.md) |
 | Which skill fits my situation, and what will it do? | [Skills overview](../.agents/skills/README.md) and each skill's README ([template](documentation.md#skill-readme-template)) |
 | Which development scripts exist? | [Tools](../tools/README.md) |
@@ -42,23 +56,4 @@ Application behavior, concrete launcher registration and application tests are d
 
 ## Decisions
 
-ADRs record historical context, including applications formerly in this repository. [0009](decisions/0009-core-and-lab.md) defines the current Core/Lab boundary; earlier application decisions do not describe the current core layout.
-
-| ADR | Decision |
-| --- | --- |
-| [0001](decisions/0001-independent-2d-foundation.md) | Independent 2D foundation |
-| [0002](decisions/0002-camera-driven-terrain.md) | Seeded terrain residency |
-| [0003](decisions/0003-sandbox-navigation-and-population.md) | Original application-owned planner; ownership superseded by 0008 |
-| [0004](decisions/0004-sandbox-application-boundaries.md) | Sandbox policy/input/presentation boundaries |
-| [0005](decisions/0005-sandbox-agent-lifecycle.md) | Cohesive agent lifecycle |
-| [0006](decisions/0006-variants-and-dotio-port.md) | Original variant/port boundary; session ownership amended by 0008 |
-| [0007](decisions/0007-module-tests-and-streamed-dotio.md) | Streamed Dotio window and module tests |
-| [0009](decisions/0009-core-and-lab.md) | Core/Lab split and source integration |
-| [0010](decisions/0010-generic-launcher-in-core.md) | Generic launcher ownership in Kinetra |
-| [0008](decisions/0008-public-engine-and-consumers.md) | Public navigation, optional launcher and external consumers |
-| [0013](decisions/0013-settings-overlay-in-kinetra.md) | Settings overlay in Kinetra, built from application rows |
-| [0014](decisions/0014-session-navigation-requests.md) | Session navigation requests and configurable launcher bindings; amends 0010 |
-
-Weighted navigation and priority steering ownership: [ADR 0011](decisions/0011-weighted-navigation-and-priority-steering.md).
-
-Occupancy-aware traffic admission ownership: [ADR 0012](decisions/0012-traffic-admission.md).
+Why a boundary exists is recorded in an ADR. The [decision index](decisions/README.md#decision-index) lists every ADR with its status and the decisions that superseded or amended it.

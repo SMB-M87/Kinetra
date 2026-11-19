@@ -31,7 +31,8 @@ Read only what the task needs; the pages are written to stand on their own.
 | Write or review C++ or CMake | [Conventions](docs/conventions.md) |
 | Add tests or pick a verification level | [Testing](docs/testing.md); build options in [development](docs/development.md) |
 | Write READMEs, diagrams or `///` comments | [Documentation guide](docs/documentation.md) |
-| Understand dependencies and ownership | [Architecture](docs/architecture.md), [engine contracts](docs/engine/README.md) |
+| Work on one module | Its guide: [simulation](src/simulation/README.md), [runtime and launcher](src/engine/README.md), [tests](tests/README.md) |
+| Understand dependencies and ownership | [Architecture](docs/architecture.md), [engine contracts](docs/README.md#engine-contracts) |
 | Find out why a boundary exists | [Decisions](docs/decisions/README.md) |
 | See current and planned work | [Design documents](docs/design/README.md) |
 
@@ -131,7 +132,7 @@ The code must explain itself to a reader who has not seen the design.
 - End a page with **Open points** when known gaps or questions exist. Replace outdated text instead of appending to it.
 - Write documentation and comments in English; talk to the user in Dutch.
 
-*Why:* the earlier rule requiring a README in every directory produced navigation without insight. Depth now lives where the reader looks for it.
+*Why:* a README in every directory produces navigation without insight. Depth belongs where the reader looks for it.
 
 ## Skills
 
@@ -147,7 +148,7 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `adr` | Record an architecture decision |
 | `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request) |
 
-- Each skill directory has a `SKILL.md` for the agent and a `README.md` that explains the skill to people with use cases ([skill README template](docs/documentation.md#skill-readme-template)). The [skills overview](.agents/skills/README.md) lists all skills.
+- Each skill directory holds a `SKILL.md` for the agent and gets a `README.md` that explains the skill to people with use cases ([skill README template](docs/documentation.md#skill-readme-template)); the READMEs are still being written ([open point](.agents/skills/README.md#open-points)). The [skills overview](.agents/skills/README.md) lists all skills.
 - A change that adds or changes a skill updates its README and the overview in the same commit.
 
 *Why:* `SKILL.md` is written as instructions for an agent. A person choosing a skill, or reviewing what it did, needs examples of when to use it and what it changes.
