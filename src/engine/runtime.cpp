@@ -11,6 +11,23 @@ namespace {
 
 bool runtime_active = false;
 
+#include "window_icon.inc"
+
+/// Gives `window` the Kinetra icon. A missing icon is cosmetic, so failure is logged, not thrown.
+void set_window_icon(SDL_Window *window) {
+    constexpr int bytes_per_pixel = 4; // window_icon.inc holds RGBA bytes
+    // SDL_SetWindowIcon copies the pixels, so the surface may borrow the constant data.
+    SDL_Surface *icon = SDL_CreateRGBSurfaceWithFormatFrom(
+        const_cast<unsigned char *>(window_icon_rgba), window_icon_size, window_icon_size,
+        bytes_per_pixel * 8, window_icon_size * bytes_per_pixel, SDL_PIXELFORMAT_RGBA32);
+    if (!icon) {
+        SDL_Log("Window icon unavailable: %s", SDL_GetError());
+        return;
+    }
+    SDL_SetWindowIcon(window, icon);
+    SDL_FreeSurface(icon);
+}
+
 std::optional<Key> key(SDL_Keycode code) {
     switch (code) {
     case SDLK_w:
@@ -150,6 +167,7 @@ Runtime::Runtime(const std::string &text, int width, int height) : impl_(std::ma
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!impl_->window)
         throw std::runtime_error(SDL_GetError());
+    set_window_icon(impl_->window);
     impl_->context = SDL_GL_CreateContext(impl_->window);
     if (!impl_->context)
         throw std::runtime_error(SDL_GetError());
