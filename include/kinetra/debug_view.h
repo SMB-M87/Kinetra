@@ -9,7 +9,7 @@
 
 namespace kinetra {
 /// One row of the debug menu. Set `enabled` for a check box or `action` for a button; the
-/// other fields add read-only content to the row.
+/// other fields add read-only content to the row, and `decrease` and `increase` add buttons.
 struct DebugOption {
     /// Row text; the viewed characters must outlive the menu's draw() calls.
     std::string_view label;
@@ -24,14 +24,39 @@ struct DebugOption {
     /// Optional custom drawing next to the row: runtime, top-left screen position of the
     /// row text, and the menu scale.
     std::function<void(Runtime &, Vec2, float)> visualization{};
+    /// Optional `[-]` button at the right edge of the row, called when it is clicked
+    /// instead of the row. With a button, keep the row text within 21 characters, so it
+    /// ends before the button.
+    std::function<void()> decrease{};
+    /// Optional `[+]` button at the right edge of the row; see `decrease`.
+    std::function<void()> increase{};
 };
 
 /// Shared screen-space debug controls. Layout is identical for drawing and picking;
 /// all pointer input inside the panel is consumed, including held fire.
 ///
-/// Positions are logical window pixels. The panel is 182 panel pixels wide, with a 22-pixel
-/// heading and 16 pixels per option, scaled by scale().
+/// Positions are logical window pixels. The layout constants below are panel pixels, which
+/// scale() converts to screen pixels.
 struct DebugMenu {
+    /// Width of the panel, in panel pixels.
+    static constexpr float panel_width = 182;
+    /// Height of the "DEBUG MENU" heading above the first row, in panel pixels.
+    static constexpr float heading_height = 22;
+    /// Height of one row, in panel pixels.
+    static constexpr float row_height = 16;
+    /// Distance from the panel's left edge, and from the top of a row, to its text, in
+    /// panel pixels.
+    static constexpr float text_margin = 4;
+    /// Distance from the viewport's top-right corner to the default panel position, in
+    /// panel pixels.
+    static constexpr float screen_margin = 8;
+    /// Width of a `[-]` or `[+]` button: three glyph cells, in panel pixels.
+    static constexpr float stepper_width = 18;
+    /// Left edge of the `[+]` button, flush with the right text margin, in panel pixels.
+    static constexpr float increase_left = panel_width - text_margin - stepper_width;
+    /// Left edge of the `[-]` button, one glyph cell before `[+]`, in panel pixels.
+    static constexpr float decrease_left = increase_left - 6 - stepper_width;
+
     /// Whether the panel shows.
     bool visible{};
     /// Last pointer position, used for hover highlighting in draw().
@@ -42,10 +67,14 @@ struct DebugMenu {
     /// corner by default.
     Vec2 origin(Vec2 viewport) const {
         const float size = scale(viewport);
-        return screen_origin.x < 0 ? Vec2{viewport.x - 190 * size, 8 * size} : screen_origin;
+        return screen_origin.x < 0
+                   ? Vec2{viewport.x - (panel_width + screen_margin) * size, screen_margin * size}
+                   : screen_origin;
     }
     /// Screen pixels per panel pixel for a viewport, at most 1.5.
     static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 260.f}); }
+    /// Top edge of row `row` below the panel's top, in panel pixels.
+    static float row_top(std::size_t row) { return heading_height + static_cast<float>(row) * row_height; }
     /// Applies one frame of input: `toggle` shows or hides the panel, and a click on a row
     /// toggles its flag or runs its action. Returns true when the pointer is over the
     /// visible panel, so the caller must ignore that pointer input.
@@ -56,14 +85,24 @@ struct DebugMenu {
             visible = !visible;
         const float size = scale(viewport);
         const Vec2 point = (input.mouse - origin(viewport)) / size;
-        const bool captured = visible && point.x >= 0 && point.x <= 182 && point.y >= 0 &&
-                              point.y < static_cast<float>(22 + options.size() * 16);
-        if (captured && input.clicked && point.y >= 22) {
-            const auto row = std::size_t((point.y - 22) / 16);
-            if (options[row].enabled)
-                *options[row].enabled = !*options[row].enabled;
-            else if (options[row].action)
-                options[row].action();
+        const bool captured = visible && point.x >= 0 && point.x <= panel_width && point.y >= 0 &&
+                              point.y < row_top(options.size());
+        if (captured && input.clicked && point.y >= heading_height) {
+            auto &option = options[std::size_t((point.y - heading_height) / row_height)];
+            switch (part_at(option, point.x)) {
+            case RowPart::decrease:
+                option.decrease();
+                break;
+            case RowPart::increase:
+                option.increase();
+                break;
+            case RowPart::label:
+                if (option.enabled)
+                    *option.enabled = !*option.enabled;
+                else if (option.action)
+                    option.action();
+                break;
+            }
         }
         return captured;
     }
@@ -73,10 +112,10 @@ struct DebugMenu {
             return;
         const float size = scale(runtime.camera.viewport);
         const Vec2 origin = this->origin(runtime.camera.viewport);
-        const Vec2 half{91 * size, static_cast<float>(22 + options.size() * 16) * size / 2};
+        const Vec2 half = Vec2{panel_width, row_top(options.size())} * size / 2;
         runtime.box(runtime.camera.screen_to_world(origin + half), half / runtime.camera.pixels_per_unit, 0,
                     {0.04f, 0.07f, 0.12f});
-        draw_text(runtime, "DEBUG MENU", origin + Vec2{4, 6} * size, size, {1, 1, 1});
+        draw_text(runtime, "DEBUG MENU", origin + Vec2{text_margin, 6} * size, size, {1, 1, 1});
         const Vec2 point = (pointer - origin) / size;
         for (std::size_t row = 0; row < options.size(); ++row) {
             const auto &option = options[row];
@@ -86,15 +125,42 @@ struct DebugMenu {
                 text += " " + option.text();
             if (option.number)
                 text += " " + std::to_string(option.number());
-            const bool hovered = (option.enabled || option.action) && point.x >= 0 && point.x <= 182 &&
-                                 point.y >= 22 + static_cast<float>(row) * 16.f &&
-                                 point.y < 38 + static_cast<float>(row) * 16.f;
-            draw_text(runtime, text, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size, size,
-                      hovered ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.9f, 1});
+            const bool on_row = point.x >= 0 && point.x <= panel_width && point.y >= row_top(row) &&
+                                point.y < row_top(row + 1);
+            const RowPart hovered = part_at(option, point.x);
+            const auto color = [&](RowPart part, bool clickable) {
+                return on_row && clickable && hovered == part ? highlight_color : text_color;
+            };
+            const float top = row_top(row) + text_margin;
+            const Vec2 text_position = origin + Vec2{text_margin, top} * size;
+            draw_text(runtime, text, text_position, size,
+                      color(RowPart::label, option.enabled || option.action));
+            if (option.decrease)
+                draw_text(runtime, "[-]", origin + Vec2{decrease_left, top} * size, size,
+                          color(RowPart::decrease, true));
+            if (option.increase)
+                draw_text(runtime, "[+]", origin + Vec2{increase_left, top} * size, size,
+                          color(RowPart::increase, true));
             if (option.visualization)
-                option.visualization(runtime, origin + Vec2{4, 26 + static_cast<float>(row) * 16.f} * size,
-                                     size);
+                option.visualization(runtime, text_position, size);
         }
+    }
+
+  private:
+    /// Text color of a clickable row or button under the pointer, and of everything else.
+    static constexpr Color highlight_color{0.25f, 0.65f, 1.f}, text_color{0.8f, 0.9f, 1};
+    /// The part of a row a click or the pointer is on.
+    enum class RowPart { label, decrease, increase };
+    /// The part of `option`'s row at panel x coordinate `x`. The gap between the two buttons
+    /// is split between them and the `[+]` zone runs to the panel edge, so a near miss still
+    /// hits the button it is closest to. A row without a button keeps that zone as label.
+    static RowPart part_at(const DebugOption &option, float x) {
+        const float gap = increase_left - (decrease_left + stepper_width);
+        if (option.increase && x >= increase_left - gap / 2)
+            return RowPart::increase;
+        if (option.decrease && x >= decrease_left - gap / 2 && x < increase_left - gap / 2)
+            return RowPart::decrease;
+        return RowPart::label;
     }
 };
 
