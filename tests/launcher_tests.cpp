@@ -101,87 +101,137 @@ TEST_CASE("session host isolates transitions and releases sessions") {
     CHECK_MESSAGE((!host.session() && destroyed == 1), "return did not release session");
 }
 
-TEST_CASE("a debug menu action runs and captures the click") {
-    DebugMenu debug;
-    debug.visible = true;
-    int actions = 0;
-    DebugOption action{"RESET", nullptr, [&] { ++actions; }};
-    Input click;
-    click.clicked = true;
-    click.mouse = {1280 - 180 * DebugMenu::scale({1280, 800}), 36 * DebugMenu::scale({1280, 800})};
-    CHECK(debug.update(click, {1280, 800}, {&action, 1}));
-    CHECK(actions == 1);
-}
-
 namespace {
+const Vec2 menu_viewport{1280, 800};
+
 /// A left click at panel position `point` (panel pixels from the menu's top-left corner)
 /// in a 1280 × 800 viewport.
 Input click_in_debug_menu(const DebugMenu &menu, Vec2 point) {
-    const Vec2 viewport{1280, 800};
     Input click;
     click.clicked = true;
-    click.mouse = menu.origin(viewport) + point * DebugMenu::scale(viewport);
+    click.mouse = menu.origin(menu_viewport) + point * DebugMenu::scale(menu_viewport);
     return click;
 }
 
-/// The vertical middle of the first row, in panel pixels.
-constexpr float first_row_middle = DebugMenu::heading_height + DebugMenu::row_height / 2;
+/// The vertical middle of row `row`, in panel pixels.
+constexpr float row_middle(std::size_t row) {
+    return DebugMenu::heading_height + (static_cast<float>(row) + 0.5f) * DebugMenu::row_height;
+}
+
+/// A menu that shows, with the entries it is tested with.
+struct Menu {
+    DebugMenu debug;
+    std::vector<DebugEntry> entries;
+    explicit Menu(std::vector<DebugEntry> rows) : entries(std::move(rows)) { debug.visible = true; }
+    /// Clicks panel position {x, middle of `row`}; returns whether the menu captured it.
+    bool click(float x, std::size_t row = 0) {
+        return debug.update(click_in_debug_menu(debug, {x, row_middle(row)}), menu_viewport, entries);
+    }
+};
 } // namespace
 
+TEST_CASE("a debug menu action runs and captures the click") {
+    int actions = 0;
+    Menu menu({{.label = "RESET", .action = [&] { ++actions; }}});
+    CHECK(menu.click(DebugMenu::panel_width / 2));
+    CHECK(actions == 1);
+}
+
+TEST_CASE("a click reaches the row it is on") {
+    int first = 0, second = 0, third = 0;
+    Menu menu({{.label = "FIRST", .action = [&] { ++first; }},
+               {.label = "SECOND", .action = [&] { ++second; }, .depth = 1},
+               {.label = "THIRD", .action = [&] { ++third; }, .depth = 2}});
+    menu.click(DebugMenu::label_left(1), 1);
+    menu.click(DebugMenu::label_left(2), 2);
+    menu.click(DebugMenu::label_left(2), 2);
+    CHECK(first == 0);
+    CHECK(second == 1);
+    CHECK(third == 2);
+}
+
+TEST_CASE("the title bar and the space below the last row capture without acting") {
+    int actions = 0;
+    Menu menu({{.label = "RESET", .action = [&] { ++actions; }}});
+    Input click =
+        click_in_debug_menu(menu.debug, {DebugMenu::panel_width / 2, DebugMenu::heading_height / 2});
+    CHECK(menu.debug.update(click, menu_viewport, menu.entries));
+    click = click_in_debug_menu(menu.debug, {DebugMenu::panel_width / 2, DebugMenu::height(1) - 1});
+    CHECK(menu.debug.update(click, menu_viewport, menu.entries));
+    click = click_in_debug_menu(menu.debug, {DebugMenu::panel_width / 2, DebugMenu::height(1) + 1});
+    CHECK_FALSE(menu.debug.update(click, menu_viewport, menu.entries));
+    CHECK(actions == 0);
+}
+
+TEST_CASE("a hidden debug menu captures nothing") {
+    int actions = 0;
+    Menu menu({{.label = "RESET", .action = [&] { ++actions; }}});
+    menu.debug.visible = false;
+    CHECK_FALSE(menu.click(DebugMenu::panel_width / 2));
+    CHECK(actions == 0);
+}
+
 TEST_CASE("a debug menu stepper runs the button under the click") {
-    DebugMenu debug;
-    debug.visible = true;
     int actions = 0, value = 0;
-    DebugOption option{"SPEED", nullptr, [&] { ++actions; }};
-    option.decrease = [&] { --value; };
-    option.increase = [&] { ++value; };
+    Menu menu({{.label = "SPEED",
+                .action = [&] { ++actions; },
+                .decrease = [&] { --value; },
+                .increase = [&] { ++value; }}});
     const float decrease_middle = DebugMenu::decrease_left + DebugMenu::stepper_width / 2;
     const float increase_middle = DebugMenu::increase_left + DebugMenu::stepper_width / 2;
-    CHECK(debug.update(click_in_debug_menu(debug, {increase_middle, first_row_middle}), {1280, 800},
-                       {&option, 1}));
+    CHECK(menu.click(increase_middle));
     CHECK(value == 1);
-    debug.update(click_in_debug_menu(debug, {decrease_middle, first_row_middle}), {1280, 800}, {&option, 1});
-    debug.update(click_in_debug_menu(debug, {decrease_middle, first_row_middle}), {1280, 800}, {&option, 1});
+    menu.click(decrease_middle);
+    menu.click(decrease_middle);
     CHECK(value == -1);
     CHECK_MESSAGE(actions == 0, "a button click does not also run the row");
     // The gap between the buttons is split between them, and the [+] zone runs to the edge.
     const float gap_left = DebugMenu::decrease_left + DebugMenu::stepper_width;
-    debug.update(click_in_debug_menu(debug, {DebugMenu::increase_left - 1, first_row_middle}), {1280, 800},
-                 {&option, 1});
+    menu.click(DebugMenu::increase_left - 0.5f);
     CHECK(value == 0);
-    debug.update(click_in_debug_menu(debug, {gap_left + 1, first_row_middle}), {1280, 800}, {&option, 1});
+    menu.click(gap_left + 0.5f);
     CHECK(value == -1);
-    debug.update(click_in_debug_menu(debug, {DebugMenu::panel_width - 0.5f, first_row_middle}), {1280, 800},
-                 {&option, 1});
+    menu.click(DebugMenu::panel_width - 0.5f);
     CHECK(value == 0);
     CHECK(actions == 0);
 }
 
 TEST_CASE("a click beside the stepper buttons still runs the row") {
-    DebugMenu debug;
-    debug.visible = true;
     bool enabled = false;
     int steps = 0;
-    DebugOption option{"WORKLOAD", &enabled};
-    option.increase = [&] { ++steps; };
-    debug.update(click_in_debug_menu(debug, {DebugMenu::text_margin, first_row_middle}), {1280, 800},
-                 {&option, 1});
+    auto row = debug_check("WORKLOAD", enabled);
+    row.increase = [&] { ++steps; };
+    Menu menu({row});
+    menu.click(DebugMenu::label_left(1));
     CHECK(enabled);
     CHECK(steps == 0);
     // Without a [-] button its zone is part of the row.
-    debug.update(click_in_debug_menu(debug, {DebugMenu::decrease_left + 1, first_row_middle}), {1280, 800},
-                 {&option, 1});
+    menu.click(DebugMenu::decrease_left + 1);
     CHECK_FALSE(enabled);
     CHECK(steps == 0);
 }
 
 TEST_CASE("a row without stepper buttons takes clicks across its full width") {
-    DebugMenu debug;
-    debug.visible = true;
     int actions = 0;
-    DebugOption option{"RESET", nullptr, [&] { ++actions; }};
+    Menu menu({{.label = "RESET", .action = [&] { ++actions; }}});
     for (const float x :
          {0.5f, DebugMenu::decrease_left + 1, DebugMenu::increase_left + 1, DebugMenu::panel_width - 0.5f})
-        CHECK(debug.update(click_in_debug_menu(debug, {x, first_row_middle}), {1280, 800}, {&option, 1}));
+        CHECK(menu.click(x));
     CHECK(actions == 4);
+}
+
+TEST_CASE("a row without an action captures the click and does nothing") {
+    float speed = 2;
+    Menu menu({debug_number("SPEED", speed, {1, 4, 1})});
+    CHECK(menu.click(DebugMenu::label_left(1)));
+    CHECK(speed == 2);
+}
+
+TEST_CASE("the debug menu scale shrinks with a low or narrow window and is at most one and a half") {
+    CHECK(DebugMenu::scale({1280, 800}) == 1.5f);
+    CHECK(DebugMenu::scale({3840, 2160}) == 1.5f);
+    CHECK(DebugMenu::scale({960, 540}) == doctest::Approx(540 / 420.f));
+    CHECK(DebugMenu::scale({240, 800}) == doctest::Approx(240 / 300.f));
+    // Twenty-two rows fit a 540-pixel window below the toolbar.
+    CHECK(32 + DebugMenu::height(22) * DebugMenu::scale({960, 540}) <= 540);
 }

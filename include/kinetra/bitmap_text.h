@@ -69,25 +69,35 @@ constexpr Glyph glyph(char c) {
     }
 }
 
+/// Width of `text` in font pixels at scale 1: six per character, less the gap after the last.
+constexpr float text_width(std::string_view text) {
+    return text.empty() ? 0 : static_cast<float>(text.size()) * 6 - 1;
+}
+
+/// Draws the bitmap `rows` in logical screen pixels, independent of the world camera.
+///
+/// `origin` is the top-left corner of the glyph cell; every font pixel is a square of `scale`
+/// screen pixels.
+inline void draw_glyph(Runtime &runtime, const Glyph &rows, Vec2 origin, float scale, Color color) {
+    for (int y = 0; y < 7; ++y)
+        for (int x = 0; x < 5; ++x)
+            if (rows[static_cast<std::size_t>(y)] & (1 << (4 - x))) {
+                const Vec2 center = origin + Vec2{(static_cast<float>(x) + 0.5f) * scale,
+                                                  (static_cast<float>(y) + 0.5f) * scale};
+                runtime.box(runtime.camera.screen_to_world(center),
+                            Vec2{scale / 2, scale / 2} / runtime.camera.pixels_per_unit, 0, color);
+            }
+}
+
 /// Draws `text` with the built-in bitmap font in logical screen pixels, independent of the
 /// world camera.
 ///
 /// `origin` is the top-left corner of the first character in screen pixels; each character
 /// cell is 6 × 7 font pixels of `scale` screen pixels. Characters are mapped by glyph().
 inline void draw_text(Runtime &runtime, std::string_view text, Vec2 origin, float scale, Color color) {
-    for (std::size_t column = 0; column < text.size(); ++column) {
-        const Glyph rows = glyph(text[column]);
-        for (int y = 0; y < 7; ++y)
-            for (int x = 0; x < 5; ++x)
-                if (rows[static_cast<std::size_t>(y)] & (1 << (4 - x))) {
-                    const Vec2 center =
-                        origin +
-                        Vec2{(static_cast<float>(column * 6 + static_cast<std::size_t>(x)) + 0.5f) * scale,
-                             (static_cast<float>(y) + 0.5f) * scale};
-                    runtime.box(runtime.camera.screen_to_world(center),
-                                Vec2{scale / 2, scale / 2} / runtime.camera.pixels_per_unit, 0, color);
-                }
-    }
+    for (std::size_t column = 0; column < text.size(); ++column)
+        draw_glyph(runtime, glyph(text[column]), origin + Vec2{static_cast<float>(column * 6) * scale, 0},
+                   scale, color);
 }
 
 } // namespace kinetra

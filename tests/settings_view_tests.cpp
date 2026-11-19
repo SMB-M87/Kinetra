@@ -1,18 +1,20 @@
-// Window-free tests for kinetra::SettingsOverlay (include/kinetra/settings_view.h).
-// The layout cases pin the coordinates Kinetra-Lab's own panel used before the overlay
-// moved here (ADR 0013). Every layout case runs with a Demo-like row set (four sim-control
-// lines) and a Dotio-like one (three lines), at a large and a tiny viewport.
+// Window-free tests for kinetra::SettingsOverlay (include/kinetra/settings_view.h): layout,
+// rows, the Ctrl and Shift+Ctrl shortcuts, and the debug menu it shows and hides. Every
+// layout case runs with a row set of four help lines and one of three, at a large and a
+// tiny viewport.
 #include <kinetra/settings_view.h>
 
 #include <doctest/doctest.h>
 
-#include <array>
 #include <cstddef>
 #include <functional>
+#include <initializer_list>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+using kinetra::DebugEntry;
+using kinetra::DebugMenu;
 using kinetra::HelpSection;
 using kinetra::Key;
 using kinetra::SessionRequest;
@@ -24,7 +26,25 @@ using kinetra::ZoomRow;
 
 namespace {
 constexpr std::size_t zoom_row = 0, statistics_row = 1, debug_row = 2, sim_row = 3, debug_controls_row = 4;
-constexpr float button_column_x = 92;
+/// A panel x coordinate on the label of every row, and one beside the zoom buttons.
+constexpr float label_x = 60;
+/// Distance from a row's position, the top of its text, to a point well inside its band.
+constexpr float into_row = 3;
+
+/// Input with `keys` going down this frame and staying down.
+kinetra::Input pressing(std::initializer_list<Key> keys, std::initializer_list<Key> already_held = {}) {
+    kinetra::Input input;
+    for (const Key key : keys)
+        input.pressed[static_cast<std::size_t>(key)] = input.held[static_cast<std::size_t>(key)] = true;
+    for (const Key key : already_held)
+        input.held[static_cast<std::size_t>(key)] = true;
+    return input;
+}
+
+/// Input with `keys` held, none of them newly pressed.
+kinetra::Input holding(std::initializer_list<Key> keys) {
+    return pressing({}, keys);
+}
 
 /// One overlay with its camera and the flags its rows borrow, for one layout.
 /// Not copyable: the overlay holds pointers to the flags.
@@ -59,7 +79,11 @@ struct Harness {
         return update(input);
     }
 
-    bool press(Key key) {
+    /// Clicks the label of row `index`.
+    bool click_row(std::size_t index) { return click(label_x, overlay.row_y(index) + into_row); }
+
+    /// A key that goes down and up within one frame, as scripted input sends it.
+    bool tap(Key key) {
         kinetra::Input input;
         input.pressed[static_cast<std::size_t>(key)] = true;
         return update(input);
@@ -84,26 +108,49 @@ void for_each_layout(const std::function<void(Harness &)> &check) {
             check(harness);
         }
 }
+
+/// An overlay with a debug flag and a debug menu of one check row, for the shortcut cases.
+struct DebugHarness {
+    bool debug = false;
+    bool layer = false;
+    Vec2 viewport{1280, 800};
+    kinetra::Camera2D camera;
+    SettingsOverlay overlay{{ToggleRow{"DEBUG MODE", &debug}}, &debug};
+    DebugMenu menu;
+    std::vector<DebugEntry> entries{kinetra::debug_check("LAYER", layer, 0)};
+
+    DebugHarness() { camera.viewport = viewport; }
+    DebugHarness(const DebugHarness &) = delete;
+    DebugHarness &operator=(const DebugHarness &) = delete;
+
+    /// One frame as a session runs it: the panel first, then the debug menu. Returns whether
+    /// the debug menu or its button captured the pointer.
+    bool frame(const kinetra::Input &input) {
+        overlay.update(input, camera);
+        return overlay.update_debug(input, viewport, menu, entries);
+    }
+};
 } // namespace
 
-TEST_CASE("rows take the coordinates of the former Lab panel") {
+TEST_CASE("rows are evenly spaced and help sections follow a gap") {
     for_each_layout([](Harness &h) {
-        CHECK(h.overlay.row_y(zoom_row) == 40);
-        CHECK(h.overlay.row_y(statistics_row) == 68);
-        CHECK(h.overlay.row_y(debug_row) == 96);
+        CHECK(h.overlay.row_y(zoom_row) == 33);
+        CHECK(h.overlay.row_y(statistics_row) == 51);
+        CHECK(h.overlay.row_y(debug_row) == 69);
         INFO("a 4-pixel gap separates the first help section from the rows");
-        CHECK(h.overlay.row_y(sim_row) == 128);
-        CHECK(h.overlay.row_y(debug_controls_row) == 156);
-        CHECK(h.overlay.actions_y() == 184);
-        CHECK(h.overlay.half_extent().x == 92);
-        CHECK(h.overlay.half_extent().y == (184 + 50) / 2.f);
+        CHECK(h.overlay.row_y(sim_row) == 91);
+        CHECK(h.overlay.row_y(debug_controls_row) == 109);
+        CHECK(h.overlay.actions_y() == 139);
+        CHECK(h.overlay.half_extent().x == SettingsOverlay::panel_width / 2);
+        CHECK(h.overlay.half_extent().y == (139 + 22) / 2.f);
     });
 }
 
 TEST_CASE("the scale depends only on the viewport") {
-    CHECK(SettingsOverlay::scale({1280, 800}) == 800 / 418.f);
-    CHECK(SettingsOverlay::scale({4000, 4000}) == 2);
-    CHECK(SettingsOverlay::scale({160, 120}) == 120 / 418.f);
+    CHECK(SettingsOverlay::scale({1280, 800}) == 2);
+    CHECK(SettingsOverlay::scale({960, 540}) == 540 / 315.f);
+    CHECK(SettingsOverlay::scale({160, 120}) == 120 / 315.f);
+    CHECK(SettingsOverlay::scale({200, 800}) == 200 / 228.f);
 }
 
 TEST_CASE("gameplay keys do not open settings") {
@@ -118,6 +165,7 @@ TEST_CASE("gameplay keys do not open settings") {
         input = {};
         input.pressed[static_cast<std::size_t>(Key::h)] = true;
         input.pressed[static_cast<std::size_t>(Key::escape)] = true;
+        input.pressed[static_cast<std::size_t>(Key::backquote)] = true;
         CHECK_FALSE(h.update(input));
     });
 }
@@ -131,50 +179,69 @@ TEST_CASE("the settings button opens the panel with every section collapsed") {
     });
 }
 
-TEST_CASE("help sections expand and collapse independently with fixed spacing") {
+TEST_CASE("help sections expand and collapse independently and push later rows down") {
     for_each_layout([](Harness &h) {
         REQUIRE(h.open_with_button());
         const auto collapsed = h.overlay.half_extent();
-        const float lines_height = 14.f * static_cast<float>(h.sim_lines - 1);
+        // Every line takes 12 pixels, and 4 more separate the last one from the next row.
+        const float lines_height = 12.f * static_cast<float>(h.sim_lines) + 4;
 
-        h.click(button_column_x, h.overlay.row_y(sim_row));
+        h.click_row(sim_row);
         CHECK(h.overlay.expanded(sim_row));
-        INFO("expanded lines push the next section down by (lines - 1) * 14");
-        CHECK(h.overlay.row_y(debug_controls_row) == 156 + lines_height);
+        CHECK(h.overlay.row_y(debug_controls_row) == 109 + lines_height);
         CHECK(h.overlay.half_extent().y == collapsed.y + lines_height / 2);
 
-        h.click(button_column_x, h.overlay.row_y(sim_row));
+        h.click_row(sim_row);
         CHECK_FALSE(h.overlay.expanded(sim_row));
+        CHECK(h.overlay.half_extent().y == collapsed.y);
 
-        h.click(button_column_x, h.overlay.row_y(debug_controls_row));
+        h.click_row(debug_controls_row);
         CHECK(h.overlay.expanded(debug_controls_row));
         CHECK_FALSE(h.overlay.expanded(sim_row));
 
-        h.click(button_column_x, h.overlay.row_y(sim_row));
+        h.click_row(sim_row);
         CHECK(h.overlay.expanded(sim_row));
         CHECK(h.overlay.expanded(debug_controls_row));
-        const float last_sim_y = 128 + 14.f * static_cast<float>(h.sim_lines);
-        CHECK_MESSAGE(h.overlay.row_y(debug_controls_row) - last_sim_y == 14,
-                      "sim lines end one line before the next section");
-        CHECK_MESSAGE(h.overlay.actions_y() - (h.overlay.row_y(debug_controls_row) + 28) == 28,
-                      "the last line keeps the spacing before the action row");
+        CHECK_MESSAGE(h.overlay.actions_y() == 139 + lines_height + 2 * 12 + 4,
+                      "both sections' lines sit above the action row");
 
-        h.click(button_column_x, h.overlay.row_y(debug_controls_row));
+        h.click_row(debug_controls_row);
         CHECK_FALSE(h.overlay.expanded(debug_controls_row));
         CHECK_MESSAGE(h.overlay.expanded(sim_row), "collapsing one section keeps the other open");
+    });
+}
+
+TEST_CASE("a row is clickable across the panel within its band") {
+    for_each_layout([](Harness &h) {
+        REQUIRE(h.open_with_button());
+        const float y = h.overlay.row_y(statistics_row);
+        h.click(2, y - 4);
+        CHECK(h.statistics);
+        h.click(SettingsOverlay::panel_width - 2, y + 12);
+        CHECK_FALSE(h.statistics);
+        INFO("one pixel above the band belongs to the row before it, the zoom row");
+        h.click(label_x, y - 6);
+        CHECK_FALSE(h.statistics);
+        INFO("a click beside the panel is captured and does nothing");
+        CHECK(h.click(-4, y));
+        CHECK_FALSE(h.statistics);
     });
 }
 
 TEST_CASE("zoom buttons stay within the limits") {
     for_each_layout([](Harness &h) {
         REQUIRE(h.open_with_button());
-        CHECK(h.click(56, 46));
+        const float y = h.overlay.row_y(zoom_row) + into_row;
+        CHECK(h.click(SettingsOverlay::zoom_in_x, y));
         CHECK(h.camera.pixels_per_unit > 25);
         for (int i = 0; i < 30; ++i)
-            h.click(56, 46);
+            h.click(SettingsOverlay::zoom_in_x, y);
+        CHECK(h.camera.pixels_per_unit == 50);
+        INFO("the label is not a button");
+        h.click(label_x, y);
         CHECK(h.camera.pixels_per_unit == 50);
         for (int i = 0; i < 30; ++i)
-            h.click(124, 46);
+            h.click(SettingsOverlay::zoom_out_x, y);
         CHECK(h.camera.pixels_per_unit == 25);
     });
 }
@@ -189,8 +256,9 @@ TEST_CASE("zoom limits are read at click time") {
     REQUIRE(overlay.update(open, camera));
     kinetra::Input zoom_out;
     zoom_out.clicked = true;
-    zoom_out.mouse = camera.viewport / 2 +
-                     (Vec2{124, 46} - overlay.half_extent()) * SettingsOverlay::scale(camera.viewport);
+    zoom_out.mouse = camera.viewport / 2 + (Vec2{SettingsOverlay::zoom_out_x, overlay.row_y(0) + into_row} -
+                                            overlay.half_extent()) *
+                                               SettingsOverlay::scale(camera.viewport);
     overlay.update(zoom_out, camera);
     CHECK(camera.pixels_per_unit == 17);
     debug = true;
@@ -201,11 +269,11 @@ TEST_CASE("zoom limits are read at click time") {
 TEST_CASE("toggle rows flip their borrowed flags") {
     for_each_layout([](Harness &h) {
         REQUIRE(h.open_with_button());
-        h.click(40, 74);
-        h.click(40, 102);
+        h.click_row(statistics_row);
+        h.click_row(debug_row);
         CHECK(h.statistics);
         CHECK(h.debug);
-        h.click(40, 74);
+        h.click_row(statistics_row);
         CHECK_FALSE(h.statistics);
     });
 }
@@ -213,7 +281,7 @@ TEST_CASE("toggle rows flip their borrowed flags") {
 TEST_CASE("resume closes the panel and captures the click") {
     for_each_layout([](Harness &h) {
         REQUIRE(h.open_with_button());
-        CHECK(h.click(106, h.overlay.actions_y()));
+        CHECK(h.click(SettingsOverlay::resume_x, h.overlay.actions_y() + into_row));
         CHECK_FALSE(h.overlay.visible());
         CHECK(h.overlay.request() == SessionRequest::none);
     });
@@ -221,10 +289,15 @@ TEST_CASE("resume closes the panel and captures the click") {
 
 TEST_CASE("launcher and exit buttons raise their requests") {
     for_each_layout([](Harness &h) {
-        REQUIRE(h.press(Key::control));
-        h.click(50, h.overlay.actions_y());
+        REQUIRE(h.tap(Key::control));
+        INFO("the space between two buttons is not a button");
+        h.click((SettingsOverlay::launcher_x + SettingsOverlay::resume_x) / 2,
+                h.overlay.actions_y() + into_row);
+        CHECK(h.overlay.request() == SessionRequest::none);
+        CHECK(h.overlay.visible());
+        h.click(SettingsOverlay::launcher_x, h.overlay.actions_y() + into_row);
         CHECK(h.overlay.request() == SessionRequest::menu);
-        h.click(146, h.overlay.actions_y());
+        h.click(SettingsOverlay::exit_x, h.overlay.actions_y() + into_row);
         CHECK(h.overlay.request() == SessionRequest::exit);
     });
 }
@@ -233,59 +306,177 @@ TEST_CASE("the settings button does not overlap the debug menu") {
     for_each_layout([](Harness &h) {
         kinetra::Input input;
         input.clicked = true;
-        const float debug_scale = kinetra::DebugMenu::scale(h.viewport);
+        const float debug_scale = DebugMenu::scale(h.viewport);
         input.mouse = {h.viewport.x - 180 * debug_scale, 36 * debug_scale};
         CHECK_FALSE(h.update(input));
         CHECK_FALSE(h.overlay.visible());
     });
 }
 
-TEST_CASE("ctrl toggles settings and captures the frames it is open") {
+TEST_CASE("a ctrl tap toggles settings and captures the frames it is open") {
     for_each_layout([](Harness &h) {
-        CHECK(h.press(Key::control));
+        CHECK(h.tap(Key::control));
         CHECK(h.overlay.visible());
-        CHECK_MESSAGE(h.press(Key::control), "the closing frame is still captured");
+        CHECK_MESSAGE(h.tap(Key::control), "the closing frame is still captured");
         CHECK_FALSE(h.overlay.visible());
-        CHECK_FALSE(h.press(Key::space));
+        CHECK_FALSE(h.tap(Key::space));
     });
 }
 
-TEST_CASE("the debug button opens captures and closes the debug menu") {
+TEST_CASE("a held ctrl opens settings when it is released") {
+    for_each_layout([](Harness &h) {
+        CHECK_FALSE(h.update(pressing({Key::control})));
+        CHECK_FALSE(h.update(holding({Key::control})));
+        CHECK_FALSE(h.overlay.visible());
+        CHECK(h.update({}));
+        CHECK(h.overlay.visible());
+        CHECK_MESSAGE(h.update({}), "one release toggles once");
+        CHECK(h.overlay.visible());
+    });
+}
+
+TEST_CASE("ctrl with shift never opens settings in either order") {
+    for_each_layout([](Harness &h) {
+        // Shift first.
+        h.update(pressing({Key::shift}));
+        h.update(pressing({Key::control}, {Key::shift}));
+        h.update(holding({Key::shift}));
+        h.update({});
+        CHECK_FALSE(h.overlay.visible());
+        // Ctrl first, then Shift joins while Ctrl is still down.
+        h.update(pressing({Key::control}));
+        h.update(pressing({Key::shift}, {Key::control}));
+        h.update(holding({Key::shift}));
+        h.update({});
+        CHECK_FALSE(h.overlay.visible());
+        // Both in one frame.
+        h.update(pressing({Key::shift, Key::control}));
+        h.update({});
+        CHECK_FALSE(h.overlay.visible());
+        INFO("ctrl alone still works afterwards");
+        CHECK(h.tap(Key::control));
+        CHECK(h.overlay.visible());
+    });
+}
+
+TEST_CASE("the debug chord is the frame the second key goes down") {
+    CHECK_FALSE(kinetra::debug_chord({}));
+    CHECK_FALSE(kinetra::debug_chord(pressing({Key::control})));
+    CHECK_FALSE(kinetra::debug_chord(pressing({Key::shift})));
+    CHECK(kinetra::debug_chord(pressing({Key::control}, {Key::shift})));
+    CHECK(kinetra::debug_chord(pressing({Key::shift}, {Key::control})));
+    CHECK(kinetra::debug_chord(pressing({Key::shift, Key::control})));
+    CHECK_MESSAGE(!kinetra::debug_chord(holding({Key::shift, Key::control})), "holding both does not repeat");
+    kinetra::Input tapped;
+    tapped.pressed[static_cast<std::size_t>(Key::shift)] =
+        tapped.pressed[static_cast<std::size_t>(Key::control)] = true;
+    CHECK_MESSAGE(kinetra::debug_chord(tapped), "keys pressed and released within the frame count");
+}
+
+TEST_CASE("shift ctrl switches the debug mode on and shows the menu then hides it") {
+    DebugHarness h;
+    h.frame(pressing({Key::shift}));
+    CHECK_FALSE(h.menu.visible);
+    h.frame(pressing({Key::control}, {Key::shift}));
+    CHECK(h.debug);
+    CHECK(h.menu.visible);
+    CHECK_FALSE(h.overlay.visible());
+    h.frame(holding({Key::shift, Key::control}));
+    CHECK_MESSAGE(h.menu.visible, "holding the keys does not repeat the toggle");
+    h.frame({});
+    h.frame(pressing({Key::shift}, {Key::control}));
+    CHECK_FALSE(h.menu.visible);
+    CHECK_MESSAGE(h.debug, "hiding the menu leaves the debug mode on");
+}
+
+TEST_CASE("shift ctrl shows a hidden menu when the debug mode is already on") {
+    DebugHarness h;
+    h.debug = true;
+    h.frame(pressing({Key::shift, Key::control}));
+    CHECK(h.menu.visible);
+    CHECK(h.debug);
+}
+
+TEST_CASE("the debug menu is hidden while the debug mode is off") {
+    DebugHarness h;
+    h.debug = true;
+    h.menu.visible = true;
+    kinetra::Input over_menu;
+    over_menu.mouse = Vec2{8, 32} + Vec2{20, DebugMenu::row_top(0) + 4} * DebugMenu::scale(h.viewport);
+    CHECK(h.frame(over_menu));
+    h.debug = false;
+    CHECK_FALSE(h.frame(over_menu));
+    CHECK_FALSE(h.menu.visible);
+    INFO("the DEBUG button is not there either");
+    kinetra::Input on_button;
+    on_button.clicked = true;
+    on_button.mouse = {80, 12};
+    CHECK_FALSE(h.frame(on_button));
+    CHECK_FALSE(h.menu.visible);
+}
+
+TEST_CASE("the settings panel hides the debug menu and takes its shortcut") {
+    DebugHarness h;
+    h.debug = true;
+    h.menu.visible = true;
+    kinetra::Input open;
+    open.pressed[static_cast<std::size_t>(Key::control)] = true;
+    CHECK_FALSE(h.frame(open));
+    CHECK(h.overlay.visible());
+    CHECK_FALSE(h.menu.visible);
+    h.frame(pressing({Key::shift, Key::control}));
+    CHECK_MESSAGE(!h.menu.visible, "the shortcut does nothing behind the panel");
+    CHECK(h.overlay.visible());
+}
+
+TEST_CASE("an overlay without a debug flag has no debug menu") {
     SettingsOverlay overlay({});
-    const Vec2 viewport{160, 120};
-    kinetra::DebugMenu menu;
-    bool enabled = false;
-    std::array<kinetra::DebugOption, 1> options{{{"TEST", &enabled}}};
+    kinetra::Camera2D camera;
+    DebugMenu menu;
+    menu.visible = true;
+    std::vector<DebugEntry> entries;
+    const auto chord = pressing({Key::shift, Key::control});
+    overlay.update(chord, camera);
+    CHECK_FALSE(overlay.update_debug(chord, camera.viewport, menu, entries));
+    CHECK_FALSE(menu.visible);
+}
+
+TEST_CASE("the debug button opens captures and closes the debug menu") {
+    DebugHarness h;
+    h.debug = true;
+    h.viewport = {160, 120};
+    h.camera.viewport = h.viewport;
     kinetra::Input input;
     input.clicked = input.mouse_down = true;
     input.mouse = {80, 12};
-    CHECK(overlay.update_debug(input, viewport, menu, options));
-    CHECK(menu.visible);
-    CHECK_FALSE(enabled);
+    CHECK(h.frame(input));
+    CHECK(h.menu.visible);
+    CHECK_FALSE(h.layer);
 
     INFO("the debug menu leaves room for the toolbar");
-    CHECK(menu.origin(viewport).x == 8);
-    CHECK(menu.origin(viewport).y == 32);
+    CHECK(h.menu.origin(h.viewport).x == 8);
+    CHECK(h.menu.origin(h.viewport).y == 32);
 
     input.clicked = false;
-    CHECK(overlay.update_debug(input, viewport, menu, options));
-    CHECK_MESSAGE(menu.visible, "holding the button must not repeat the toggle");
+    CHECK(h.frame(input));
+    CHECK_MESSAGE(h.menu.visible, "holding the button must not repeat the toggle");
 
     input.clicked = true;
-    input.mouse = menu.origin(viewport) + Vec2{10, 28} * kinetra::DebugMenu::scale(viewport);
-    CHECK(overlay.update_debug(input, viewport, menu, options));
-    CHECK_MESSAGE(enabled, "picking follows the upper-left menu");
+    input.mouse = h.menu.origin(h.viewport) +
+                  Vec2{DebugMenu::label_left(0), DebugMenu::row_top(0) + 6} * DebugMenu::scale(h.viewport);
+    CHECK(h.frame(input));
+    CHECK_MESSAGE(h.layer, "picking follows the upper-left menu");
 
     input.mouse = {110, 12};
-    CHECK(overlay.update_debug(input, viewport, menu, options));
-    CHECK_FALSE(menu.visible);
+    CHECK(h.frame(input));
+    CHECK_FALSE(h.menu.visible);
 }
 
 TEST_CASE("a panel without help sections puts the action row after the last row") {
     bool flag = false;
     SettingsOverlay overlay({ZoomRow{[] { return ZoomLimits{1, 2}; }}, ToggleRow{"FLAG", &flag}});
-    CHECK(overlay.row_y(1) == 68);
-    CHECK(overlay.actions_y() == 96);
+    CHECK(overlay.row_y(1) == 51);
+    CHECK(overlay.actions_y() == 81);
 }
 
 TEST_CASE("invalid rows are rejected") {
