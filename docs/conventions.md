@@ -5,6 +5,7 @@ How code in Kinetra and Kinetra-Lab is written and structured. The rules apply t
 ## Table of contents
 
 - [Files and formatting](#files-and-formatting)
+- [Directory layout](#directory-layout)
 - [Naming](#naming)
 - [Headers and includes](#headers-and-includes)
 - [Ownership and lifetime](#ownership-and-lifetime)
@@ -24,6 +25,30 @@ How code in Kinetra and Kinetra-Lab is written and structured. The rules apply t
 - Code compiles without warnings under `KINETRA_WARNINGS` (`-Wall -Wextra -Wpedantic -Wshadow -Wconversion`). CI enforces this for Kinetra with `-Werror`. Make conversions explicit (`static_cast<float>(count)`) instead of silencing the warning.
 - `.clang-format` in the repository root is authoritative: LLVM-based, 4-space indent, 110 columns. Format the files you change (`clang-format -i <files>`). A repository-wide reformat is a separate `chore` commit.
 - One main type or cohesive group of functions per header and `.cpp` pair; file names are `snake_case`.
+
+## Directory layout
+
+The same rule holds in Kinetra and in every Kinetra-Lab module ([ADR 0015](decisions/0015-include-layout.md)).
+
+```text
+<module>/
+  include/<name>/        every header of the module; <name> is also the namespace
+    <topic>/             topic folders once a layer holds more than about twelve headers
+      detail/            headers that no public header reaches
+  src/                   only .cpp (and generated .inc); folders mirror include/<name>/
+  tests/
+    include/<name>/testing/   helper headers for the tests
+    *_tests.cpp
+  CMakeLists.txt  README.md
+```
+
+- **A `.h` never sits outside an include root.** Not in `src/`, not loose in `tests/`.
+- **One include root per module**, named after the module, so every include starts with it: `<i4sim/simulation/simulation.h>`, `<kinetra/view/camera.h>`. Never `"../"`, never a bare `"session.h"` that another module also has.
+- **Layers before topics.** A presentation layer gets a `presentation/` folder; Kinetra's layers are `simulation/`, `view/` and `runtime/`.
+- **Topic folders** group related headers once a layer would hold more than about twelve. A folder for one file is not a topic: fold it into its neighbour.
+- **`detail/`** inside a topic holds internal headers: those that no header outside `detail/` includes. Code outside the module does not include them.
+- **`src/` mirrors `include/<name>/`**, apart from `detail/`: an implementation sits in the folder of its public header.
+- **Test helpers** live in `tests/include/<name>/testing/`, linked only to test targets.
 
 ## Naming
 
