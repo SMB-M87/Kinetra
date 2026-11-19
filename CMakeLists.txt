@@ -7,6 +7,7 @@ option(KINETRA_WARNINGS "Compile Kinetra targets with the extended warning set" 
 option(KINETRA_WARNINGS_AS_ERRORS "Treat Kinetra warnings as errors (requires KINETRA_WARNINGS)" OFF)
 include(CTest)
 include(cmake/KinetraWarnings.cmake)
+include(cmake/KinetraIcon.cmake)
 
 # Do not change an embedding project's output paths.
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
