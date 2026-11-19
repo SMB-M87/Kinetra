@@ -161,9 +161,9 @@ Not run: builds and tests, because the Docs level does not need them.
 - Module guides: `src/simulation/README.md` rewritten (concepts, structure, mechanisms and trade-offs, invariants, recipes, suites); `src/engine/README.md` gains the header table; `tests/README.md` gains build targets, the consumer fixture and an *Adding a suite* recipe; the root README gets a module table.
 - Removed: `include/README.md`, `include/kinetra/README.md`, `src/README.md`, `docs/engine/README.md`, `tests/consumer/README.md`.
 - Decisions: index in `docs/decisions/README.md`, in number order with status and supersessions; status lines of 0009, 0010, 0013 and 0014; the `adr` skill points to the new index.
-- Stale facts: the Runtime/Simulation edge, the session request in the frame sequence, `SettingsOverlay`'s target, the CI presets, build targets versus CTest prefixes, physics limits and history wording ([table](docs/design/2026-11-19-docs-cleanup.md#stale-facts)).
+- Stale facts: the Runtime/Simulation edge, the session request in the frame sequence, `SettingsOverlay`'s target, the CI presets, build targets versus CTest prefixes, physics limits and history wording ([table](#stale-facts)).
 
-**Design.** [docs/design/2026-11-19-docs-cleanup.md](docs/design/2026-11-19-docs-cleanup.md).
+**Design.** [docs/design/2026-11-19-docs-cleanup.md](2026-11-19-docs-cleanup.md).
 
 **Verification.** Docs check in Kinetra and in Lab against this branch: all links resolve. A comment-stripped comparison shows the headers' code is unchanged, and clang-format is clean. No build: Docs level.
 
