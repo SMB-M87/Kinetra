@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="resources/kinetra-icon.png" alt="Kinetra icon" width="128" height="128">
+</p>
+
 # Kinetra
 
 Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
