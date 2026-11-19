@@ -1,6 +1,6 @@
 # Documentation cleanup
 
-Status: accepted · Branch: `docs/cleanup` · Related: [Lab quality roadmap: documentation cleanup](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-quality-roadmap.md#documentation-cleanup), [documentation guide](../documentation.md)
+Status: implemented · Branch: `docs/cleanup` · Related: [Lab quality roadmap: documentation cleanup](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-quality-roadmap.md#documentation-cleanup), [documentation guide](../documentation.md)
 
 Kinetra's code is documented in three places that drifted apart: public headers with partial `///` summaries, navigation-only READMEs that repeat each other, and an ADR index split over two pages. This branch gives every public header a contract, folds the thin READMEs into the module READMEs they repeat, moves the ADR index next to the ADRs, and fixes stale facts found in a fresh audit. It is the "Kinetra cross-cutting fixes" row of the Lab roadmap, scheduled after the phase 3 branch.
 
@@ -88,7 +88,23 @@ flowchart TD
 
 ### Stale facts
 
-Filled in from the audit before the fixes are committed.
+A read-only audit on 2026-11-19 compared the remaining pages with CMake, the presets, CI and the sources. Corrected:
+
+| Page | Was | Now |
+| --- | --- | --- |
+| `README.md` | "Physics is discrete and fast bodies can tunnel" | Continuous detection for circles and nonrotating convex pairs; rotating boxes and polygons stay discrete |
+| `README.md` | Copy of Lab's build-override commands and a link to a Lab README anchor that only forwards | One paragraph linking Lab's `external/README.md` and the workflow |
+| `docs/conventions.md` | Layer diagram with `Kinetra::Runtime --> Kinetra::Simulation`; overlays under the launcher | Runtime does not link Simulation; overlays in Runtime |
+| `docs/architecture.md` | Frame sequence always renders; `SettingsOverlay` missing; `RuntimeImpl` | `alt` on the session request; `SettingsOverlay` in Runtime; the private `Runtime::Impl` |
+| `docs/testing.md` | One "targets / regex" column holding CTest prefixes (`--target kinetra_behavior` fails); Full level `ci` only | Separate build-target and regex columns; Full runs `ci` and `headless`, as CI does |
+| `docs/development.md` | `compile_commands.json` and ccache shown for some presets only | Stated once for all presets |
+| `docs/engine/runtime.md` | Overlays "header-only"; focus loss clears keys only | `SettingsOverlay` compiled into Runtime; focus loss also releases mouse buttons |
+| `docs/engine/*.md`, `AGENTS.md`, `docs/testing.md` | History wording ("former", "original", "remains compatible", "the earlier rule") | Present-tense descriptions; `tangent_steer` moved out of *Verification* |
+| `src/engine/README.md` | "`SessionHost` destroys the old session before creating the next one" | `run_launcher` starts sessions only from the menu; `start` keeps the old session until the factory succeeds |
+| `AGENTS.md`, `.agents/skills/README.md` | "Each skill directory has a README.md" | The READMEs are still to be written (open point) |
+| ADRs 0013, 0014 | "accepted, not yet implemented" | "accepted" |
+
+Left as is: the skill table in both `AGENTS.md` and the skills overview, and the verification table in `AGENTS.md`, `testing.md` and the `verify` skill. `AGENTS.md` is the agent's entry point and keeps short summaries that link to the authoritative pages.
 
 ## Affected areas
 
@@ -111,16 +127,54 @@ Docs level: only Markdown and comments change.
 
 ## Review
 
-To be filled in after the review.
+`/code-review` (high) on `main...docs/cleanup`:
+
+| Finding | Resolution |
+| --- | --- |
+| The simulation README promised validation before any state change, but `Navigation::rebuild` replaces its area and obstacle copy before validating the bodies | Invariant reworded; `rebuild`'s `///` says a failed rebuild leaves the instance half updated; recorded as an open point (code change for another branch) |
+| The `Body` summary said every function validates its bodies, while `local_extents`, `bounding_radius` and `bounds` do not | Summary names the three exceptions |
+| `DebugOption::label` lifetime named `update()`, which never reads it | Narrowed to `draw()` |
+| Design document sections still placeholders | Filled in |
 
 ## Verification
 
-To be filled in.
+Docs level; no code, CMake or test file changed.
+
+| Command | Result |
+| --- | --- |
+| `python3 tools/check_docs.py` | All links resolve in 49 Markdown files |
+| `python3 external/Kinetra/tools/check_docs.py` in Lab, with the submodule on this branch | All links resolve in 36 Markdown files |
+| Comment-stripped comparison of every `include/kinetra/*.h` with `main` | Code identical |
+| `git diff --name-only main -- '*.cpp' '*.txt' '*.cmake' '*.json' '*.yml'` | Empty |
+| `clang-format --dry-run --Werror include/kinetra/*.h` (clang-format 23.1.5) | Clean |
+
+Not run: builds and tests, because the Docs level does not need them.
 
 ## Pull request
 
-To be filled in.
+**Title:** `docs: header contracts, module guides and one ADR index`
+
+**Summary.** Every public header in `include/kinetra/` now states its contract in `///` summaries. The five navigation-only READMEs are folded into the module guides. The simulation guide is rewritten from the module template, the ADR index moves next to the ADRs, and stale facts found in an audit are corrected. Docs and comments only.
+
+**Changes.**
+- Headers: `///` contracts for every public type, function and field in the simulation and runtime headers, checked against the implementation. Comments only; the code is identical.
+- Module guides: `src/simulation/README.md` rewritten (concepts, structure, mechanisms and trade-offs, invariants, recipes, suites); `src/engine/README.md` gains the header table; `tests/README.md` gains build targets, the consumer fixture and an *Adding a suite* recipe; the root README gets a module table.
+- Removed: `include/README.md`, `include/kinetra/README.md`, `src/README.md`, `docs/engine/README.md`, `tests/consumer/README.md`.
+- Decisions: index in `docs/decisions/README.md`, in number order with status and supersessions; status lines of 0009, 0010, 0013 and 0014; the `adr` skill points to the new index.
+- Stale facts: the Runtime/Simulation edge, the session request in the frame sequence, `SettingsOverlay`'s target, the CI presets, build targets versus CTest prefixes, physics limits and history wording ([table](docs/design/2026-11-19-docs-cleanup.md#stale-facts)).
+
+**Design.** [docs/design/2026-11-19-docs-cleanup.md](docs/design/2026-11-19-docs-cleanup.md).
+
+**Verification.** Docs check in Kinetra and in Lab against this branch: all links resolve. A comment-stripped comparison shows the headers' code is unchanged, and clang-format is clean. No build: Docs level.
+
+**Review notes.** Check the header contracts that describe behavior beyond the old comments, for example `World::body` reference lifetime, `SessionHost::start` atomicity and `Navigation::rebuild` on an invalid body. The Full level for Kinetra now names `headless` next to `ci`, because CI runs both.
+
+**Dependencies and merge order.** None. Lab links none of the removed pages; its pointer moves with a later Lab branch. Merge with a merge commit, as usual.
+
+**Follow-up.** Make `Navigation::rebuild` validate before it mutates. Write the skill READMEs (`docs/skill-readmes`).
 
 ## Open points
 
-To be filled in.
+- `Navigation::rebuild` changes its area and obstacle copy before validating the bodies; an invalid body leaves the instance half updated. Fix on a code branch, with a test.
+- Skill READMEs are still missing (roadmap row `docs/skill-readmes`).
+- Lab's submodule pointer still names the commit before this branch; move it in the next Lab branch.
