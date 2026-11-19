@@ -121,7 +121,9 @@ steering and braking. This function can also constrain another steering profile.
 It assumes one semi-implicit integration step per call. Its stopping bound includes
 the next step's travel; lookahead provides additional damping. Only penetration
 requests a smooth bounded outward recovery, so a stationary body touching a wall
-is not repelled. `border_distance` and `border_strength` tune penetration recovery;
+is not repelled. Beside the end of a segment, the face the body would reach last at
+its current velocity applies, as in a swept-box test, so a body sliding flush along
+one wall passes the convex corner where another wall begins. `border_distance` and `border_strength` tune penetration recovery;
 `border_lookahead` tunes inward approach speed. Conflicting constraints in overlaps
 receive bounded recovery, not a collision-free guarantee. `SteeringForces::border`
 reports the applied acceleration correction (at most twice the acceleration cap),

@@ -77,6 +77,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 | Date | Document | Status |
 | --- | --- | --- |
 | 2026-11-19 | [README icon](2026-11-19-readme-icon.md): the Kinetra icon at the top of the README | implemented |
+| 2026-11-19 | [Border corner slide](2026-11-19-border-corner-slide.md): `constrain_borders` lets a box sliding along a wall pass a convex corner | implemented |
 | 2026-11-19 | [Debug menu steppers](2026-11-19-debug-menu-steppers.md): `[-]` and `[+]` buttons on a `DebugMenu` row | implemented |
 | 2026-11-19 | [Frame times and interpolation helpers](2026-11-19-frame-times.md): `Runtime::frame_times()`, a frame-time graph, `lerp_angle` | implemented |
 | 2026-11-19 | [Window icon](2026-11-19-window-icon.md): a generated Kinetra icon on every window and in Windows executables | implemented |

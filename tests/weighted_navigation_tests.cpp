@@ -229,6 +229,29 @@ TEST_CASE("a corner approach brakes on both axes") {
     CHECK(constrained.y >= 0);
 }
 
+TEST_CASE("a body sliding along a wall passes the convex corner where the wall ends") {
+    // A step: the floor y = 0 ends at x = 0, where the wall drops away along x = 0. The box
+    // rides flush on the floor (its bottom at y = 0) toward a goal below the step, so its
+    // corner meets the end of the drop exactly; that touch must not block the slide.
+    const Segment step[] = {{{-100, 0}, {0, 0}}, {{0, 0}, {0, 100}}};
+    const auto settings = steering_settings();
+    // One unit before the corner, close enough that a wall ahead would brake.
+    const auto near = constrain_borders(cruiser_at({-6, -5}, {2, 0}), {.2f, .2f}, step, settings);
+    CHECK_MESSAGE(near.x == doctest::Approx(.2f), "The end of the drop braked the slide");
+    CHECK_MESSAGE(near.y <= 0, "The slide pushed into the floor");
+    auto sliding = cruiser_at({-20, -5}, {2, 0});
+    const Vec2 goal{30, 40};
+    for (int tick = 0; tick < 200; ++tick) {
+        const Vec2 desired = limited(goal - sliding.position - sliding.velocity, settings.max_acceleration);
+        sliding.velocity = limited(sliding.velocity + constrain_borders(sliding, desired, step, settings),
+                                   settings.max_speed);
+        sliding.position += sliding.velocity;
+        REQUIRE_MESSAGE((sliding.position.y <= -5 + 1e-4f || sliding.position.x >= 5 - 1e-4f),
+                        "The box cut the corner of the step");
+    }
+    CHECK_MESSAGE(distance(sliding.position, goal) < 1, "The box stuck at the corner of the step");
+}
+
 TEST_CASE("an approaching collision is predicted") {
     const auto neighbor = cruiser_at({40, 20}, {-2, 0});
     const auto forces =
