@@ -335,6 +335,20 @@ TEST_CASE("a held ctrl opens settings when it is released") {
     });
 }
 
+TEST_CASE("ctrl that a focus loss released does not open settings") {
+    for_each_layout([](Harness &h) {
+        h.update(pressing({Key::control}));
+        // The runtime releases every key when the window loses focus.
+        kinetra::Input unfocused;
+        unfocused.focus_lost = true;
+        CHECK_FALSE(h.update(unfocused));
+        CHECK_FALSE(h.update({}));
+        CHECK_FALSE(h.overlay.visible());
+        INFO("the next tap works again");
+        CHECK(h.tap(Key::control));
+    });
+}
+
 TEST_CASE("ctrl with shift never opens settings in either order") {
     for_each_layout([](Harness &h) {
         // Shift first.

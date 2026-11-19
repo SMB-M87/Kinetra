@@ -143,7 +143,9 @@ inline DebugEntry debug_number(std::string label, float &value, DebugStep step, 
     const auto stepped = [step](float current, bool up) {
         const float next = step.geometric ? (up ? current * step.amount : current / step.amount)
                                           : (up ? current + step.amount : current - step.amount);
-        return std::clamp(next, step.minimum, step.maximum);
+        // Rounded to four decimals, so a step up and a step down return to the same value
+        // instead of leaving the last bits of a float product behind.
+        return std::clamp(std::round(next * 10000) / 10000, step.minimum, step.maximum);
     };
     return {.label = std::move(label),
             .value = [&value] { return debug_number_text(value); },

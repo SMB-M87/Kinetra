@@ -140,7 +140,9 @@ bool SettingsOverlay::update(const Input &input, Camera2D &camera) {
     const bool shift = input.down(Key::shift) || input.hit(Key::shift);
     if (input.hit(Key::control))
         control_armed_ = !shift;
-    else if (shift)
+    else if (shift || input.focus_lost)
+        // A window that loses focus releases Ctrl without the user letting go of it, as when
+        // a system shortcut that starts with Ctrl takes the focus away.
         control_armed_ = false;
     const bool tapped = control_armed_ && !input.down(Key::control);
     if (tapped)

@@ -62,7 +62,8 @@ class SettingsOverlay {
 
     /// Applies one frame of input. The SETTINGS toolbar button or Ctrl opens and closes the
     /// panel; Ctrl acts when it is released, and not at all when Shift was down while it
-    /// was held, because Shift+Ctrl is the debug shortcut. Clicks inside the open panel
+    /// was held, because Shift+Ctrl is the debug shortcut, or when the window lost focus
+    /// while it was held. Clicks inside the open panel
     /// apply rows and actions. Returns true while input is captured: when the panel is
     /// open, or was open at the start of the frame.
     bool update(const Input &input, Camera2D &camera);

@@ -63,6 +63,9 @@ struct Input {
     bool right_clicked{}, right_mouse_down{};
     /// Wheel notches this frame; positive scrolls away from the user. Can be fractional.
     float wheel{};
+    /// The window lost focus since the previous poll. The keys and buttons that are no longer
+    /// held were released by that, not by the user.
+    bool focus_lost{};
     /// Whether `key` is held. Throws std::out_of_range for Key::count.
     bool down(Key key) const { return held.at(static_cast<std::size_t>(key)); }
     /// Whether `key` went down this frame. Throws std::out_of_range for Key::count.

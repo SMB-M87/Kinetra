@@ -277,6 +277,7 @@ bool Runtime::poll(bool close_on_escape) {
     in.wheel = 0;
     in.clicked = false;
     in.right_clicked = false;
+    in.focus_lost = false;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT)
@@ -285,6 +286,7 @@ bool Runtime::poll(bool close_on_escape) {
             in.held.fill(false);
             in.mouse_down = false;
             in.right_mouse_down = false;
+            in.focus_lost = true;
         }
         if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
             if (const auto k = key(event.key.keysym.sym)) {

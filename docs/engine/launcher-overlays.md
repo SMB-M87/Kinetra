@@ -72,7 +72,7 @@ LAUNCHER sets `request()` to `menu`, EXIT to `exit`, and RESUME closes the panel
 | Input | Effect |
 | --- | --- |
 | SETTINGS button | Opens the panel |
-| Ctrl | Opens or closes the panel when the key is released, unless Shift was down while it was held. A press whose key is not held, as scripted input sends it, acts at once |
+| Ctrl | Opens or closes the panel when the key is released, unless Shift was down while it was held or the window lost focus (`Input::focus_lost`). A press whose key is not held, as scripted input sends it, acts at once |
 | Shift+Ctrl (`debug_chord`) | On the frame the second key goes down, in either order: sets the borrowed debug flag and shows the debug menu, or hides a showing menu. Nothing while the panel is open |
 | DEBUG button | Shows or hides the debug menu |
 
@@ -102,7 +102,7 @@ Zoom and toggle rows must come before help sections; the constructor throws `std
   | `DebugEntry` | One row: `label`, `kind`, `action`, `active`, `value`, `decrease` / `increase`, `depth`, `swatch`, `rule_above` |
   | `DebugEntryKind` | `button` (a command), `check` (on or off), `choice` (one value of a list), `group` (a heading that opens rows) |
   | `DebugFolds` | Keeps one section and one list open and makes their heading rows; a list closes with its section |
-  | `debug_check`, `debug_number`, `debug_count` | Rows over a borrowed `bool`, `float` or `int`; a number steps by an amount or a factor within limits |
+  | `debug_check`, `debug_number`, `debug_count` | Rows over a borrowed `bool`, `float` or `int`; a number steps by an amount or a factor within limits, rounded to four decimals so a step up and down returns to the same value |
   | `debug_number_text` | Three significant digits, short enough to end before the buttons |
 
   Rows are rebuilt for every update and every draw, because open sections, open lists and current settings decide which rows exist. The functions in a row borrow the object that made it.

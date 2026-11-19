@@ -262,6 +262,7 @@ TEST_CASE("a debug number row steps by an amount or a factor and stops at its li
     scaled.increase();
     CHECK(speed == 5);
     scaled.decrease();
+    CHECK_MESSAGE(speed == 4, "a step up and a step down return to the same value");
     scaled.decrease();
     CHECK(speed == doctest::Approx(3.2f));
     CHECK(scaled.value() == "3.2");
