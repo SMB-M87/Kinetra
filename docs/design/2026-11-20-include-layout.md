@@ -1,6 +1,6 @@
 # Include layout
 
-Status: accepted · Branch: `refactor/include-layout` · Related: [ADR 0015](../decisions/0015-include-layout.md), [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-20-include-layout.md), [conventions](../conventions.md#directory-layout)
+Status: implemented · Branch: `refactor/include-layout` · Related: [ADR 0015](../decisions/0015-include-layout.md), [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-20-include-layout.md), [conventions](../conventions.md#directory-layout)
 
 Kinetra's 21 public headers sit side by side in `include/kinetra/`, so the include path does not show which layer a header belongs to. Lab's logic layer includes `camera.h` and `debug_menu.h` headless, and through `debug_menu.h` also `engine.h`, which declares `Runtime`. This change groups the headers by layer, moves the plain input types out of `engine.h`, and writes the directory rule into the shared conventions. Kinetra-Lab applies the same rule to its modules on its own branch.
 
@@ -105,15 +105,34 @@ A refactor: no new tests, no changed assertions. Lab verifies the new pointer on
 
 ## Review
 
-To be filled in after implementation.
+The full diff was read as a reviewer would, apart from the 21 pure renames.
+
+- **Include order.** The new paths change the sorted include blocks; `clang-format` reordered them and nothing else. No header relied on the old order.
+- **`view/` stays headless.** `view/input.h` includes only `simulation/math.h` and the standard library; `debug_menu.h` now includes `view/input.h` instead of `runtime/engine.h`. `engine.h` includes `view/input.h`, so every former user of `Key`, `Input` or `Color` through `engine.h` still compiles.
+- **Docs.** Module guides, the README module table, `AGENTS.md` and the architecture page describe the layers; historical design documents and ADRs keep their text and only had link targets updated.
+- **Deviation.** `timing.h` stays in `runtime/`, as planned (open point).
 
 ## Verification
 
-To be filled in after implementation.
+- `cmake --workflow --preset ci` (warnings as errors): 251/251 passed.
+- `cmake --workflow --preset graphics`: 263/264; the one failure is `kinetra_engine_graphics: input drawing and resizing reach SDL and OpenGL`, the known WSLg mouse-input failure that also fails on `main`.
+- `python3 tools/check_docs.py`: all links resolve.
+- `clang-format --dry-run --Werror` on every changed `.h` and `.cpp`: clean.
+- No old path remains: `grep -rn '<kinetra/[a-z_]*\.h>'` over the code and current docs of Kinetra and Lab is empty (historical design documents and ADRs keep their text).
+- Lab on this branch: `ci` 268/268, `headless` 241/241, `graphics` 283/283, `windows` 257/257 (see the [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/refactor/include-layout/docs/design/2026-11-20-include-layout.md#verification)).
 
 ## Pull request
 
-To be filled in after implementation.
+**refactor(layout): group the public headers by layer**
+
+Summary: the 21 public headers move from `include/kinetra/` into `simulation/`, `view/` and `runtime/`, so an include line shows its layer; `Key`, `Input` and `Color` move from `engine.h` to `view/input.h`, so headless logic no longer reaches `Runtime` through `debug_menu.h`. `conventions.md` gains the directory rule both repositories follow (ADR 0015). No behavior changes; every consumer path changes once, without forwarding headers.
+
+Changes:
+- `include/kinetra/{simulation,view,runtime}/`, `src/engine/` → `src/runtime/`, new `view/input.h`.
+- Every include in `include/`, `src/`, `tests/` and the consumer test.
+- Docs: conventions (Directory layout), ADR 0015, README, AGENTS.md, architecture, runtime and simulation guides.
+
+Merge order: this pull request first, with a merge commit; the Lab pull request then records its merge commit.
 
 ## Open points
 

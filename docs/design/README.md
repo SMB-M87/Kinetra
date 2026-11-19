@@ -76,7 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
-| 2026-11-20 | [Include layout](2026-11-20-include-layout.md): headers grouped as `simulation/`, `view/` and `runtime/`, one directory rule for Kinetra and Lab | accepted |
+| 2026-11-20 | [Include layout](2026-11-20-include-layout.md): headers grouped as `simulation/`, `view/` and `runtime/`, one directory rule for Kinetra and Lab | implemented |
 | 2026-11-19 | [Debug workbench](2026-11-19-debug-workbench.md): `DebugEntry` tree menu, restyled overlays, Shift+Ctrl, frame pacing without VSync | implemented |
 | 2026-11-19 | [README icon](2026-11-19-readme-icon.md): the Kinetra icon at the top of the README | implemented |
 | 2026-11-19 | [Border corner slide](2026-11-19-border-corner-slide.md): `constrain_borders` lets a box sliding along a wall pass a convex corner | implemented |
