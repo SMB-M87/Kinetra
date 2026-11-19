@@ -9,7 +9,7 @@ namespace kinetra {
 /// One row of the debug menu. Set `enabled` for a check box or `action` for a button; the
 /// other fields add read-only content to the row.
 struct DebugOption {
-    /// Row text; the viewed characters must outlive the menu's update() and draw() calls.
+    /// Row text; the viewed characters must outlive the menu's draw() calls.
     std::string_view label;
     /// Check box state, toggled by a click. Borrowed; must outlive update/draw.
     bool *enabled{};

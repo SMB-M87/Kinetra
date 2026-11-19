@@ -18,8 +18,9 @@ enum class Motion { fixed, controlled, dynamic };
 /// counterclockwise.
 ///
 /// A value type: World stores copies, and the free functions below take bodies by reference
-/// without keeping them. validate() states the accepted ranges; every function that takes a
-/// Body validates it and throws std::invalid_argument when it is out of range.
+/// without keeping them. validate() states the accepted ranges; the functions below validate
+/// their bodies and throw std::invalid_argument, except local_extents(), bounding_radius()
+/// and bounds().
 struct Body {
     /// Which geometry field applies.
     Shape shape{Shape::circle};
