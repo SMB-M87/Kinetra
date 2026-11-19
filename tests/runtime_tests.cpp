@@ -10,6 +10,7 @@
 
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <memory>
@@ -279,14 +280,19 @@ TEST_CASE("presented frames are timed and the frame-time graph draws them") {
     // Read the bar area's bottom row, just above the bars' base, from the presented frame.
     const Vec2 origin = FrameTimeGraph::origin(runtime.camera.viewport);
     const int row = int(runtime.camera.viewport.y - (origin.y + FrameTimeGraph::height - 2));
-    std::vector<unsigned char> pixels(240 * 3);
-    glReadBuffer(GL_FRONT);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(int(origin.x), row, 240, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+    // The front buffer is undefined after a swap on some drivers; count the better buffer.
     int green = 0;
-    for (std::size_t i = 0; i < pixels.size(); i += 3)
-        if (pixels[i] < 120 && pixels[i + 1] > 180 && pixels[i + 2] < 140)
-            ++green;
+    for (const auto buffer : {GL_FRONT, GL_BACK}) {
+        std::vector<unsigned char> pixels(240 * 3);
+        glReadBuffer(buffer);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadPixels(int(origin.x), row, 240, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+        int count = 0;
+        for (std::size_t i = 0; i < pixels.size(); i += 3)
+            if (pixels[i] < 120 && pixels[i + 1] > 180 && pixels[i + 2] < 140)
+                ++count;
+        green = std::max(green, count);
+    }
     CHECK_MESSAGE(green > 200, "Short frames were not drawn as green bars");
     CHECK(glGetError() == GL_NO_ERROR);
 }

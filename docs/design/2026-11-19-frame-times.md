@@ -40,7 +40,7 @@ The user sees short freezes and uneven motion in WSL and on a Linux desktop that
 | Where the graph is switched on | A FRAME TIMES row in each Lab settings panel, off by default | User's choice; Lab adds the row |
 | What is measured | Wall-clock time between successive `end()` calls, after the swap returns | A late frame shows wherever it was held: simulation, drawing, a blocking VSync, the driver or the compositor |
 | Storage | `FrameTimes`, a fixed ring of 240 frames (4 s at 60 fps) in `timing.h` | Header-only and testable without a window, like `RateCounter` |
-| Graph placement | Top center of the window | Lab's toolbar is top left, the debug menu top right and the statistics at the bottom |
+| Graph placement | Top-right corner of the window | Lab keeps its toolbar and debug menu top left and its statistics at the bottom. (First placed at the top center, where the open debug menu overlapped it on narrow windows; found in review) |
 | Bar colors | Green up to one 60 Hz refresh, yellow up to two, red beyond, each with 5 % allowance for timer jitter | Matches what a viewer perceives as on time, one dropped frame, or a stall |
 | Angle interpolation | `lerp_angle`, the shorter way around | Bodies near ±pi would otherwise spin a full turn for one frame |
 
@@ -109,7 +109,7 @@ Title: `feat(runtime): record frame times and add interpolation helpers`
 
 **Verification.** `ci` 219/219; `graphics` 228/229 (the known WSLg input failure, also on `main`); docs check; Lab integration in the Lab pull request.
 
-**Review notes.** The graph sits at the top center; Lab's overlays leave that free.
+**Review notes.** The graph sits in the top-right corner; Lab's overlays leave that free.
 
 **Dependencies and merge order.** Merge before the Lab pull request, with a merge commit. Independent of the window-icon pull request; whichever Kinetra branch merges second needs no change, but the Lab pointer then moves to the merge commit that holds both.
 

@@ -149,8 +149,9 @@ struct FrameTimeGraph {
     static constexpr float one_refresh_ms = 1000.f / 60, two_refreshes_ms = 2000.f / 60;
     /// Width of the graph: one pixel per frame held.
     static constexpr float width = float(FrameTimes::capacity);
-    /// Top-left corner for `viewport`: centered at the top edge, where no Lab overlay draws.
-    static Vec2 origin(Vec2 viewport) { return {viewport.x / 2 - width / 2, 8}; }
+    /// Top-left corner for `viewport`: the top-right corner, 12 pixels in. Kinetra-Lab keeps
+    /// its toolbar and debug menu on the left and its statistics at the bottom.
+    static Vec2 origin(Vec2 viewport) { return {viewport.x - width - 12, 8}; }
 };
 
 /// Draws `times` as a bar graph, newest on the right, with lines at 16.7 and 33.3 ms and the
