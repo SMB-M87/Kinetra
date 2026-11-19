@@ -1,6 +1,6 @@
 # Debug workbench: tree menu, restyled overlays, Shift+Ctrl and frame pacing
 
-Status: accepted · Branch: `feat/debug-workbench` · Related: [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/feat/debug-workbench/docs/design/2026-11-19-debug-workbench.md), [launcher and overlays](../engine/launcher-overlays.md), [runtime guide](../engine/runtime.md), [debug menu steppers](2026-11-19-debug-menu-steppers.md)
+Status: implemented · Branch: `feat/debug-workbench` · Related: [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/feat/debug-workbench/docs/design/2026-11-19-debug-workbench.md), [launcher and overlays](../engine/launcher-overlays.md), [runtime guide](../engine/runtime.md), [debug menu steppers](2026-11-19-debug-menu-steppers.md)
 
 The user wants every Lab application to offer what i4sim's debug menu offers: sections, lists, numbers with buttons and a color legend, so settings can be changed while a scene runs. The structure of that menu lives in i4sim today, as strings handed to a flat engine menu. This change moves the structure into the engine as plain data, redraws the debug menu and the settings panel, replaces Backquote by Shift+Ctrl, and paces frames when the platform has no VSync.
 
@@ -157,11 +157,45 @@ Public headers, runtime behavior and several modules change: Full level, with gr
 
 ## Verification
 
-Filled in after verification.
+| Command | Result |
+| --- | --- |
+| `git ls-files -- '*.h' '*.cpp' \| grep -v -E '^(include/glad\|include/KHR\|third_party)/' \| xargs clang-format --dry-run --Werror` | Clean |
+| `python3 tools/check_docs.py` | All links resolve |
+| `cmake --workflow --preset ci` (warnings as errors) | 251/251 passed |
+| `cmake --workflow --preset graphics` (offscreen SDL, software OpenGL) | 263/264. The one failure is `kinetra_engine_graphics:input drawing and resizing reach SDL and OpenGL`, which loses its injected mouse input here and fails the same way on `main` ([testing](../testing.md#open-points)) |
+| `build-graphics/kinetra_engine_runtime_tests -tc="without vsync*,the debug menu draws*,the settings panel*,presented frames*"` against a real WSLg window, where SDL refuses a swap interval | 4/4 passed; the limiter's frames average 16.667 ms |
+| 600 frames of each Lab application in a WSLg window, release build | Before: 5.7 ms (Dotio), 8.3 ms (Demo) and 6.0 ms (i4sim) per frame. After: 300 frames at 18.5 to 18.7 ms including start-up, with `pacing frames at 60 per second` in the log |
+| Lab's `ci`, `headless`, `graphics` and `windows` workflows against this branch | In the [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/feat/debug-workbench/docs/design/2026-11-19-debug-workbench.md#verification) |
+
+Not verified: whether the paced frames look smooth on the user's screen in WSLg. That needs eyes on the display; the measurements only show that frames are now evenly spaced.
 
 ## Pull request
 
-Filled in when the branch is complete.
+Title: `feat(overlays): tree debug menu, restyled panels, Shift+Ctrl and frame pacing`
+
+**Summary.** A debug menu is now data: `DebugEntry` rows with a kind, state, value, buttons, nesting depth and swatch, built without a window and drawn by `DebugMenu` in a style it shares with the settings panel. Shift+Ctrl opens the debug menu and switches the debug mode on. Where the platform has no VSync (WSLg), `Runtime` paces frames at the display's refresh rate instead of looping two to three times per refresh.
+
+**Changes.**
+- `kinetra/debug_menu.h` (new, headless): `DebugEntry`, `DebugEntryKind`, `DebugFolds`, `debug_check`, `debug_number`, `debug_count`.
+- `kinetra/overlay_style.h` (new): colors, marks and panel pieces for both overlays.
+- `DebugMenu`: draws entries (arrows, check boxes, radio marks, right-aligned values, swatches, a rule), wider panel, new scale. `DebugOption` and the Backquote binding are removed.
+- `SettingsOverlay`: restyled, left-aligned rows, outlined action buttons, public button centers. Ctrl acts on release; `update_debug` handles Shift+Ctrl, sets the borrowed debug flag and hides the menu while the panel is open or the debug mode is off.
+- `Runtime`: `FramePacing`, `pacing()`, `limit_frames()`, `frame_interval()`; `FrameLimiter` in `timing.h`; `Input::focus_lost`; the frame-time graph names the pacing.
+- Docs: launcher and overlays, runtime guide, engine README.
+
+**Design.** [docs/design/2026-11-19-debug-workbench.md](2026-11-19-debug-workbench.md).
+
+**Verification.** `ci` 251/251 with warnings as errors; `graphics` 263/264, the one failure being the injected-mouse case that also fails on `main` in this environment; format and docs checks clean. Against a real WSLg window the pacing and drawing cases pass and frames average 16.667 ms; before, the Lab applications ran at 5.7 to 8.3 ms per frame there.
+
+**Review notes.**
+- Breaking for consumers of `DebugOption` and of `SettingsOverlay::update_debug`; Lab is the only one and moves in its own pull request.
+- Ctrl now opens the settings panel on release, so Ctrl followed by Shift is the debug shortcut. Scripted input that presses without holding still acts at once.
+- The limiter cannot lock to the compositor's phase. Whether WSLg looks smooth with it is for the user to judge; FRAME LIMIT in Lab's settings panel switches it off for comparison.
+- The WSLg title bar shows WSLg's own icon for every window; that is the compositor's doing and only documented here.
+
+**Dependencies and merge order.** None before this one. Merge with a merge commit; the Lab pull request records this branch and moves to the merge commit afterwards.
+
+**Follow-up.** Scrolling for a menu taller than the window.
 
 ## Open points
 
