@@ -51,7 +51,7 @@ The user wants every Lab application to offer what i4sim's debug menu offers: se
 | `ZoomRow` | Kept and restyled | Lab stops using it (zoom moves to the debug menu), but it is a tested public row type; removing it is not needed for this change |
 | Frame pacing | A limiter in `Runtime::end()` at the display's refresh rate, only when no swap interval could be set, on by default | Measured: without it WSLg runs two to three frames per refresh. The user accepted this as an assumption, with a switch to compare |
 | Wait method | Sleep until 1.5 ms before the deadline, then yield until it | A plain sleep overshoots by the timer slack; a busy wait for the whole interval would keep a core occupied, which is the load the limiter removes |
-| Menu taller than the window | The scale shrinks to fit, down to 1; below that the menu is cut off | The Lab menus fit a 1280 × 800 window at full scale. Scrolling is an open point |
+| Menu taller than the window | Cut off; the scale already shrinks with the window's height (1.29 at 540 pixels), so about as many rows fit a low window | A scale that depends on the row count would move every row when a section opens, and scripts that click rows by number could not find them. Scrolling is an open point |
 
 ## Design
 
@@ -64,7 +64,7 @@ The user wants every Lab application to offer what i4sim's debug menu offers: se
 | `DebugEntryKind` | `button` (a command), `check` (on/off), `choice` (one value of a list), `group` (a heading that opens and closes rows) |
 | `DebugEntry` | One row: `label`, `action`, `kind`, `active`, `value`, `decrease`, `increase`, `depth`, `swatch`, `rule_above` |
 | `DebugFolds` | Remembers the open section and the open list, and makes their heading rows: one section at a time, a list closes when its section does |
-| `debug_check`, `debug_number` | Rows over a borrowed `bool` or `float`; a number steps by a factor or an amount within limits |
+| `debug_check`, `debug_number`, `debug_count` | Rows over a borrowed `bool`, `float` or `int`; a number steps by a factor or an amount within limits |
 | `debug_number_text` | A float in three significant digits, short enough to end before the buttons |
 
 Entries are rebuilt for every update and every draw, because which rows exist depends on what is open. The functions in an entry borrow the object that made them.
@@ -84,11 +84,11 @@ flowchart LR
 
 `DebugMenu` keeps its role and its public layout constants, with new values for the wider panel:
 
-- **Panel.** 216 panel pixels wide, a 20-pixel title bar ("DEBUG" and the `SHIFT+CTRL` hint), rows of 16. A one-pixel border, a translucent body.
+- **Panel.** 216 panel pixels wide, a 20-pixel title bar ("DEBUG" and the `SHIFT+CTRL` hint), rows of 16, a one-pixel outline.
 - **Row.** Indented 10 pixels per `depth`; then the mark of its kind: an arrow for a group (right when closed, down when open), a box for a check (filled when active), a ring for a choice (with a dot when active), nothing for a button. The value is right-aligned before the buttons or the swatch. `rule_above` draws a line across the panel above the row.
 - **Pointer.** The row under the pointer gets a band when a click would do something; a stepper button lights up alone, as before.
 - **Clicks.** Unchanged in meaning: a button zone runs `decrease` or `increase`, the rest of the row runs `action`.
-- **Scale.** `scale(viewport, rows)`: as before at most 1.5, and smaller when `rows` rows would not fit below the origin, down to 1.
+- **Scale.** `scale(viewport)`: at most 1.5 as before, and `viewport.y / 420` on a low window (it was `/ 260`), so 22 rows fit below the toolbar of a 540-pixel window.
 
 ### Settings overlay
 
@@ -118,7 +118,8 @@ stateDiagram-v2
 
 - New: [`include/kinetra/debug_menu.h`](../../include/kinetra/debug_menu.h).
 - [`include/kinetra/debug_view.h`](../../include/kinetra/debug_view.h): `DebugMenu` draws `DebugEntry`; `DebugOption` removed; `debug_chord`; pacing caption.
-- [`include/kinetra/bitmap_text.h`](../../include/kinetra/bitmap_text.h): screen-space rectangle and text-width helpers shared by the overlays.
+- [`include/kinetra/bitmap_text.h`](../../include/kinetra/bitmap_text.h): `draw_glyph` and `text_width`.
+- New: [`include/kinetra/overlay_style.h`](../../include/kinetra/overlay_style.h): the colors, marks and panel pieces both overlays draw with.
 - [`include/kinetra/settings_view.h`](../../include/kinetra/settings_view.h), [`src/engine/settings_view.cpp`](../../src/engine/settings_view.cpp): style, Ctrl on release, chord, gating.
 - [`include/kinetra/engine.h`](../../include/kinetra/engine.h), [`src/engine/runtime.cpp`](../../src/engine/runtime.cpp): `FramePacing`, `pacing()`, `limit_frames()`, the limiter.
 - Tests: [launcher](../../tests/launcher_tests.cpp), [settings view](../../tests/settings_view_tests.cpp), [presentation](../../tests/presentation_tests.cpp), [runtime](../../tests/runtime_tests.cpp), the [consumer](../../tests/consumer/).
@@ -131,7 +132,7 @@ stateDiagram-v2
 | `DebugFolds`: one section open, a second click closes it, a list closes with its section | `kinetra_presentation`: debug folds cases | Targeted |
 | `debug_check` and `debug_number`: flag flips; a number steps by factor or amount and stops at its limits; value text has three significant digits | `kinetra_presentation`: debug row cases | Targeted |
 | Clicks: row action, `[-]`, `[+]`, the split gap, a row without buttons across its full width, a row without action captures but does nothing | `kinetra_launcher`: debug menu cases (rewritten for `DebugEntry`) | Targeted |
-| The scale shrinks for a tall menu and never below 1 | `kinetra_launcher` | Targeted |
+| The scale shrinks with a low or narrow window and is at most 1.5; 22 rows fit a 540-pixel window | `kinetra_launcher` | Targeted |
 | Ctrl opens settings on release; Ctrl with Shift does not; a press without a held key acts at once | `kinetra_settings_view` | Targeted |
 | Shift+Ctrl in either order shows the menu and sets the debug flag; again hides it; nothing happens while the panel is open | `kinetra_settings_view` | Targeted |
 | `update_debug` hides the menu and captures nothing while the debug mode is off | `kinetra_settings_view` | Targeted |
@@ -156,5 +157,5 @@ Filled in when the branch is complete.
 
 ## Open points
 
-- A menu taller than the window at scale 1 is cut off; scrolling with the wheel would solve it.
+- A menu taller than the window is cut off; scrolling with the wheel would solve it.
 - The limiter cannot lock to the compositor's phase. A frame is occasionally shown twice or skipped when the two clocks drift past each other; only real VSync avoids that.

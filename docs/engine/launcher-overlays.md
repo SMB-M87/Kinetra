@@ -56,40 +56,60 @@ The window title names what is on screen, nothing more: `launcher_window_title` 
 
 | Row | Shows | On click |
 | --- | --- | --- |
-| `ZoomRow` | ZOOM IN and ZOOM OUT | Multiplies or divides `pixels_per_unit` by `zoom_factor` (1.1), clamped to the limits the row's function returns at that moment |
-| `ToggleRow` | `[X] LABEL` or `[ ] LABEL` | Flips the borrowed flag |
-| `HelpSection` | `SHOW LABEL` or `HIDE LABEL`, and its lines while expanded | Expands or collapses; each section keeps its own state and starts collapsed |
+| `ZoomRow` | ZOOM with a `[-]` and a `[+]` button | Zooms by one `zoom_factor` step (1.1), clamped to the limits the row's function returns at that moment |
+| `ToggleRow` | A check box and the label | Flips the borrowed flag |
+| `HelpSection` | An arrow and the label, and its lines while expanded | Expands or collapses; each section keeps its own state and starts collapsed |
 
 Kinetra supplies the rest:
-- the SETTINGS title;
-- the closed-state toolbar: SETTINGS at screen pixels `x 0–64`, and DEBUG at `64–112` while the borrowed debug flag is true, both at `y 0–24`;
-- the LAUNCHER / RESUME / EXIT row;
-- the `CTRL  SETTINGS` hint.
+- the title bar: SETTINGS and the `CTRL` hint;
+- the closed-state toolbar: SETTINGS at screen pixels `x 0–64`, and DEBUG at `64–112` while the borrowed debug flag is true, both at `y 0–24`. DEBUG is lit while the debug menu shows;
+- the LAUNCHER / RESUME / EXIT buttons.
 
 LAUNCHER sets `request()` to `menu`, EXIT to `exit`, and RESUME closes the panel. A session returns the overlay's request from its own `request()`.
 
-**Input.** Ctrl or the SETTINGS button opens and closes the panel. `update()` returns true while input is captured: whenever the panel is open, including the frame of the click that closes it. Sessions then ignore gameplay input. `update_debug()` handles the DEBUG button and places the `DebugMenu` at screen pixels `(8, 32)`, below the toolbar.
+**Input.** A session calls `update()` and then `update_debug()` every frame.
+
+| Input | Effect |
+| --- | --- |
+| SETTINGS button | Opens the panel |
+| Ctrl | Opens or closes the panel when the key is released, unless Shift was down while it was held. A press whose key is not held, as scripted input sends it, acts at once |
+| Shift+Ctrl (`debug_chord`) | On the frame the second key goes down, in either order: sets the borrowed debug flag and shows the debug menu, or hides a showing menu. Nothing while the panel is open |
+| DEBUG button | Shows or hides the debug menu |
+
+`update()` returns true while the panel captures input: whenever it is open, including the frame of the click that closes it. Sessions then ignore gameplay input. `update_debug()` places the `DebugMenu` at screen pixels `(8, 32)`, below the toolbar, and returns true while the pointer is on the menu or its button. It hides the menu and captures nothing while the panel is open or the debug flag is false, so a session needs no conditions around it. An overlay without a debug flag has no debug menu.
 
 **Layout.** All positions are logical panel pixels and are shared by picking and drawing:
 
 | Element | Position |
 | --- | --- |
-| Panel | 184 wide, centered; scale `min(2, viewport.x / 204, viewport.y / 418)`, so expanding a section never rescales it |
-| Title | `y = 12` |
-| Zoom and toggle rows | first at `y = 40`, then every 28 |
-| Help sections | 4 pixels below where the next row would be; a collapsed section takes 28 |
-| Expanded help lines | every 14, starting 14 below their toggle; the next section toggle follows 14 below the last line |
-| Action row | 28 below the last row or help line |
-| Hint | 28 below the action row; the panel ends 50 below the action row |
-| Click band | from 4 above to 18 below a row's `y`, inside the column `x 10–174` |
+| Panel | 208 wide, centered; scale `min(2, viewport.x / 228, viewport.y / 315)`, so expanding a section never rescales it |
+| Title bar | 22 high |
+| Rows | `row_y()` is the top edge of a row's text: the first at 33, then every 18 |
+| Help sections | 4 below where the next row would be; a collapsed section takes 18 |
+| Expanded help lines | every 12, the first 18 below their heading; the next row follows 4 below the last line |
+| Action row | `actions_y()`: 12 below where the next row would be; the panel ends 22 below it |
+| Buttons | LAUNCHER, RESUME and EXIT around `launcher_x`, `resume_x` and `exit_x`; the zoom buttons around `zoom_out_x` and `zoom_in_x` |
+| Click band | across the whole panel, from 5 above to 13 below a row's `y` |
 
-Zoom and toggle rows must come before help sections; the constructor throws `std::invalid_argument` otherwise, and for a toggle without a flag or a zoom row without limits. `row_y()`, `actions_y()`, `half_extent()` and `expanded()` expose the layout for tests and for callers that place things next to the panel.
+Zoom and toggle rows must come before help sections; the constructor throws `std::invalid_argument` otherwise, and for a toggle without a flag or a zoom row without limits. `row_y()`, `actions_y()`, `half_extent()`, `expanded()` and the button centers expose the layout for tests and for callers that click or place things by it.
 
 ## Debug menu, help and text
 
-- **[DebugMenu](../../include/kinetra/debug_view.h)** accepts labels, borrowed flags, actions and read-only getters (`text`, `number`, `visualization`). Applications keep the referenced state alive through `update` and `draw`, and suppress gameplay pointer input while the menu captures it. Backquote is the default toggle. Clickable rows turn blue under the pointer; read-only rows keep their color. A row with `decrease` or `increase` ends in `[-]` and `[+]` buttons: a click on a button runs only that function and lights up only that button, and the rest of the row behaves as before. The gap between the buttons is split between them and the `[+]` zone runs to the panel edge; a row with buttons keeps its text within 21 characters. `screen_origin` fixes the menu origin in screen pixels; a negative x keeps it right-aligned. The layout constants (`panel_width`, `row_height`, `row_top()` and the button edges) are public, in panel pixels, for applications that draw beside a row and for tests that click one.
+- **Debug entries.** [`kinetra/debug_menu.h`](../../include/kinetra/debug_menu.h) describes a menu as plain data, without `Runtime`, so an application's logic layer builds and tests its menu headless.
+
+  | Piece | Role |
+  | --- | --- |
+  | `DebugEntry` | One row: `label`, `kind`, `action`, `active`, `value`, `decrease` / `increase`, `depth`, `swatch`, `rule_above` |
+  | `DebugEntryKind` | `button` (a command), `check` (on or off), `choice` (one value of a list), `group` (a heading that opens rows) |
+  | `DebugFolds` | Keeps one section and one list open and makes their heading rows; a list closes with its section |
+  | `debug_check`, `debug_number`, `debug_count` | Rows over a borrowed `bool`, `float` or `int`; a number steps by an amount or a factor within limits |
+  | `debug_number_text` | Three significant digits, short enough to end before the buttons |
+
+  Rows are rebuilt for every update and every draw, because open sections, open lists and current settings decide which rows exist. The functions in a row borrow the object that made it.
+- **[DebugMenu](../../include/kinetra/debug_view.h)** draws those rows and maps clicks to them. A row is indented 10 panel pixels per `depth`; its mark (an arrow for a group, a box for a check, a ring for a choice) sits in a 10-pixel column before the label; the value is right-aligned before the `[-]` and `[+]` buttons or the swatch. The row under the pointer gets a band when a click would run its action, and a button lights up on its own. A click on a button runs only `decrease` or `increase`; the gap between the buttons is split between them and the `[+]` zone runs to the panel edge. The menu has no key of its own: `SettingsOverlay::update_debug` shows and hides it, and so may any other owner through `visible`. `screen_origin` fixes the origin in screen pixels; a negative x keeps the menu right-aligned. The scale is `min(1.5, viewport.x / 300, viewport.y / 420)`. The layout constants (`panel_width`, `heading_height`, `row_height`, `row_top()`, `label_left()`, `height()` and the button edges) are public, in panel pixels, for tests that click a row.
+- **[Overlay style](../../include/kinetra/overlay_style.h)** holds what the panels share: the colors, the mark glyphs, `draw_rectangle` with edges rounded to whole pixels, `draw_panel` (body, title bar, outline) and the two button drawings.
 - **[HelpOverlay](../../include/kinetra/help_view.h)** and `draw_help` draw application-owned help text in an application-owned style. Help never captures input.
-- **[Bitmap text](../../include/kinetra/bitmap_text.h).** `draw_text` draws a 5×7 bitmap font with runtime primitives, in logical screen pixels. `glyph(char)` returns the bitmap. It covers `A`–`Z`, `0`–`9` and `/ + [ ] : - _ . , *`; lowercase letters use the uppercase glyphs and every other character is blank.
+- **[Bitmap text](../../include/kinetra/bitmap_text.h).** `draw_text` draws a 5×7 bitmap font with runtime primitives, in logical screen pixels; `draw_glyph` draws one bitmap, and `text_width` measures a text. `glyph(char)` returns the bitmap. It covers `A`–`Z`, `0`–`9` and `/ + [ ] : - _ . , *`; lowercase letters use the uppercase glyphs and every other character is blank.
 
 ## Presentation helpers
 
@@ -101,9 +121,9 @@ Header-only helpers for the glue every interactive session needs:
 
 | Behavior | Suite | Needs a window |
 | --- | --- | --- |
-| Menu paging and configuration, `SessionHost` transitions, debug actions | `kinetra_launcher` ([launcher_tests.cpp](../../tests/launcher_tests.cpp)) | No |
-| Overlay layout, rows, capture and actions | `kinetra_settings_view` ([settings_view_tests.cpp](../../tests/settings_view_tests.cpp)) | No |
-| Glyph table, zoom stepping, rate counter | `kinetra_presentation` ([presentation_tests.cpp](../../tests/presentation_tests.cpp)) | No |
-| `run_session` and `run_launcher` requests, menu key and Escape policy | `kinetra_engine_graphics` ([runtime_tests.cpp](../../tests/runtime_tests.cpp)) | Yes |
+| Menu paging and configuration, `SessionHost` transitions, debug-menu clicks, buttons and scale | `kinetra_launcher` ([launcher_tests.cpp](../../tests/launcher_tests.cpp)) | No |
+| Overlay layout, rows, capture and actions, Ctrl and Shift+Ctrl, showing and hiding the debug menu | `kinetra_settings_view` ([settings_view_tests.cpp](../../tests/settings_view_tests.cpp)) | No |
+| Glyph table, zoom stepping, rate counter, frame limiter, debug folds and rows | `kinetra_presentation` ([presentation_tests.cpp](../../tests/presentation_tests.cpp)) | No |
+| `run_session` and `run_launcher` requests, menu key and Escape policy; the drawn panels; frame pacing | `kinetra_engine_graphics` ([runtime_tests.cpp](../../tests/runtime_tests.cpp)) | Yes |
 
 The external consumer links the public launcher, session and overlay API. Commands are in [testing](../testing.md).
