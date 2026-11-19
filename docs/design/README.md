@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-19 | [Documentation cleanup](2026-11-19-docs-cleanup.md): header contracts, module READMEs, ADR index | accepted |
 | 2026-11-18 | [Skill documentation](2026-11-18-skill-documentation.md): a README with use cases for every skill | implemented |
 | 2026-11-18 | [Tooling and CI](2026-11-18-tooling-and-ci.md) | implemented |
 | 2026-11-18 | [Development process and agent rules](2026-11-18-development-process.md) | implemented |
