@@ -82,7 +82,8 @@ struct Color {
 /// uploads, draws and presents.
 class Runtime {
   public:
-    /// Opens a resizable window of `width` x `height` logical pixels. Throws
+    /// Opens a resizable window of `width` x `height` logical pixels with the Kinetra icon
+    /// (not shown where the platform ignores window icons, such as native Wayland). Throws
     /// std::invalid_argument for nonpositive dimensions and std::runtime_error when another
     /// Runtime is active or SDL, the OpenGL 3.3 context or the shaders fail.
     explicit Runtime(const std::string &title = "Kinetra", int width = 1280, int height = 800);
