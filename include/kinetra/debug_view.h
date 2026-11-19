@@ -75,12 +75,14 @@ struct DebugMenu {
     /// so about as many rows fit a 540-pixel window as an 800-pixel one.
     static float scale(Vec2 viewport) { return std::min({1.5f, viewport.x / 300.f, viewport.y / 420.f}); }
     /// Top edge of row `row` below the panel's top, in panel pixels.
-    static float row_top(std::size_t row) { return heading_height + static_cast<float>(row) * row_height; }
+    static constexpr float row_top(std::size_t row) {
+        return heading_height + static_cast<float>(row) * row_height;
+    }
     /// Height of a panel with `rows` rows, in panel pixels.
-    static float height(std::size_t rows) { return row_top(rows) + bottom_padding; }
+    static constexpr float height(std::size_t rows) { return row_top(rows) + bottom_padding; }
     /// Left edge of the label of a row at nesting level `depth`, in panel pixels. The state
     /// mark sits `mark_width` before it.
-    static float label_left(int depth) {
+    static constexpr float label_left(int depth) {
         return text_margin + static_cast<float>(std::max(depth, 0)) * indent + mark_width;
     }
 
@@ -140,12 +142,14 @@ struct DebugMenu {
             const float label = label_left(entry.depth);
             const bool active = entry.active && entry.active();
             draw_mark(runtime, entry.kind, active, at(label - mark_width, top + text_top), size);
+            // Dim text is for a row that only shows something; a row with buttons is live.
+            const bool adjustable = entry.increase || entry.decrease;
             draw_text(runtime, entry.label, at(label, top + text_top), size,
-                      lit || heading ? overlay::bright_color
-                      : entry.action ? overlay::text_color
-                                     : overlay::dim_color);
+                      lit || heading               ? overlay::bright_color
+                      : entry.action || adjustable ? overlay::text_color
+                                                   : overlay::dim_color);
             float right = panel_width - text_margin;
-            if (entry.increase || entry.decrease) {
+            if (adjustable) {
                 const Vec2 button{stepper_width * size, (row_height - 4) * size};
                 if (entry.decrease)
                     overlay::draw_sign_button(runtime, at(decrease_left, top + 2), button, '-', size,
