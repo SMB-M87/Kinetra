@@ -1,5 +1,7 @@
 # Generic launcher in Kinetra
 
+Status: accepted; amended by [0014](0014-session-navigation-requests.md). Kinetra owns the generic launcher menu, host and loop.
+
 ## Table of contents
 
 - [Decision](#decision)

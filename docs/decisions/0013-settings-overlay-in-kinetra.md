@@ -1,6 +1,6 @@
 # 0013: Settings overlay in Kinetra
 
-Status: accepted, not yet implemented. Kinetra owns the modal settings panel; applications supply its rows.
+Status: accepted. Kinetra owns the modal settings panel; applications supply its rows.
 
 ## Table of contents
 

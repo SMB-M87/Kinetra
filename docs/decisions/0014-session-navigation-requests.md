@@ -1,6 +1,6 @@
 # 0014: Session navigation requests
 
-Status: accepted, not yet implemented. Amends [0010](0010-generic-launcher-in-core.md): the standard launcher loop honors session requests and configurable bindings.
+Status: accepted. Amends [0010](0010-generic-launcher-in-core.md): the standard launcher loop honors session requests and configurable bindings.
 
 ## Table of contents
 
