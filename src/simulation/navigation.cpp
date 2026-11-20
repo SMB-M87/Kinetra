@@ -21,15 +21,19 @@ void Navigation::rebuild(kinetra::Aabb bounds, const std::vector<kinetra::Body> 
     const int new_height = int(std::floor((bounds.max.y - bounds.min.y) / spacing)) + 1;
     if (std::int64_t(new_width) * new_height > 262144)
         throw std::invalid_argument("Navigation view exceeds 262144 cells; zoom in");
+    // Validate every body before the first member changes: the caches below are sized by
+    // width and height and filled from geometry, so a throw after assigning those would
+    // leave path() indexing old caches with the new size.
+    std::vector<kinetra::Aabb> boxes;
+    boxes.reserve(obstacles.size());
+    for (const auto &body : obstacles) {
+        kinetra::validate(body);
+        boxes.push_back(kinetra::bounds(body));
+    }
     area = bounds;
     width = new_width;
     height = new_height;
     geometry = obstacles;
-    std::vector<kinetra::Aabb> boxes;
-    for (const auto &body : geometry) {
-        kinetra::validate(body);
-        boxes.push_back(kinetra::bounds(body));
-    }
     index.rebuild(boxes);
     blocked.assign(width * height, false);
     for (int id = 0; id < int(blocked.size()); ++id)

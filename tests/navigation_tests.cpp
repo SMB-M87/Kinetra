@@ -55,6 +55,23 @@ TEST_CASE("an occupied goal is projected to a clear endpoint") {
     CHECK(navigation.clear(projected.back(), projected.back()));
 }
 
+TEST_CASE("a rebuild with an invalid body throws and keeps the previous snapshot") {
+    auto navigation = around_box();
+    const Vec2 start{-2, 0}, goal{2.123f, 0.123f};
+    const auto before = navigation.path(start, goal);
+    REQUIRE_FALSE(before.empty());
+    Body invalid;
+    invalid.position = {std::numeric_limits<float>::quiet_NaN(), 0};
+    // A smaller area and a different obstacle list: if either were stored before the
+    // throw, the goal would fall outside the area or the box would no longer block.
+    CHECK_THROWS_AS(navigation.rebuild({{-1, -1}, {1, 1}}, {Body{}, invalid}), std::invalid_argument);
+    const auto after = navigation.path(start, goal);
+    REQUIRE(after.size() == before.size());
+    for (std::size_t i = 0; i < after.size(); ++i)
+        CHECK(distance(after[i], before[i]) == 0);
+    CHECK_FALSE(navigation.clear({-2, 0}, {2, 0}));
+}
+
 TEST_CASE("a NaN goal yields no path") {
     CHECK(around_box().path({-2, 0}, {std::numeric_limits<float>::quiet_NaN(), 0}).empty());
 }
