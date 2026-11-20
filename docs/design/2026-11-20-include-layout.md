@@ -43,7 +43,7 @@ Kinetra's 21 public headers sit side by side in `include/kinetra/`, so the inclu
 | Compatibility | Hard break, no forwarding headers | User's choice; the only consumers are Kinetra-Lab and the consumer test, both updated in the same round |
 | Merge order | Kinetra first with a merge commit, then Lab records it | Lab AGENTS.md pointer rule |
 | Directory rule | In [conventions.md](../conventions.md#directory-layout), shared with Lab | One authoritative place |
-| Topic folders | When a layer holds more than about twelve headers; never a folder for one file | User's choice for i4sim, Dotio, Demo and the engine; the one-file rule follows the user's objection to Dotio's `gmath` |
+| Topic folders | Always: only the module's entry headers stay at the top; a topic holds at least two files; a module too small for that stays flat. In Kinetra the layers are the topics *(changed after the first review: first written as "past about twelve headers", which did not match Demo's topics)* | User's choice for i4sim, Dotio, Demo and the capture tool; the one-file rule follows the user's objection to Dotio's `gmath` |
 | Internal headers | `include/<name>/.../detail/` when no public header reaches them | User's choice; common C++ practice, one include root per module |
 | ADR | [0015](../decisions/0015-include-layout.md) | The include path is public API, and the split is hard to reverse |
 
@@ -80,7 +80,7 @@ flowchart BT
 - The new **Directory layout** section in [conventions.md](../conventions.md#directory-layout) states the rule for both repositories:
   - every module has one `include/<name>/` and one `src/`; a `.h` never sits outside an include root;
   - `src/` mirrors the folders of `include/<name>/`;
-  - topic folders once a layer holds more than about twelve headers, never for one file;
+  - topic folders for every header that is not an entry of the module, at least two files per topic;
   - internal headers in a `detail/` folder within their topic;
   - test helper headers in `tests/include/<name>/testing/`;
   - includes always start with the module name (`"i4sim/simulation/simulation.h"`, `<kinetra/view/camera.h>`), never `../`.

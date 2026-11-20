@@ -18,7 +18,7 @@ All 21 public headers sat in `include/kinetra/`. The layer rule (logic depends o
 
 - Group the public headers by layer: `simulation/` (`Kinetra::Simulation`), `view/` (header-only camera, menu-row and input types usable headless) and `runtime/` (`Kinetra::Runtime` and `Kinetra::Launcher`). `src/engine/` becomes `src/runtime/`.
 - Move `Key`, `Input` and `Color` from `engine.h` to `view/input.h`.
-- Write one [directory rule](../conventions.md#directory-layout) for both repositories: one `include/<name>/` and one `src/` per module, topic folders past about twelve headers, internal headers in `detail/`, test helpers in `tests/include/<name>/testing/`.
+- Write one [directory rule](../conventions.md#directory-layout) for both repositories: one `include/<name>/` and one `src/` per module, topic folders for every header that is not an entry of the module, internal headers in `detail/`, test helpers in `tests/include/<name>/testing/`.
 - Break the old paths once, without forwarding headers.
 
 Rejected alternatives:
