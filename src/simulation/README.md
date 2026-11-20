@@ -128,7 +128,7 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 
 - **Headless.** No source here includes SDL, OpenGL or a Lab header; the external consumer builds this target without the runtime.
 - **Determinism.** No function uses randomness or global mutable state, so equal inputs give equal outputs on one machine. Cross-machine bitwise equality is not promised.
-- **Validation at the boundary.** Public entry points validate their input and throw `std::invalid_argument` (or `std::out_of_range` for indices), in almost all cases before changing state. The exception is `Navigation::rebuild`, which replaces its area before it validates the obstacles (see [open points](#open-points)). `local_extents`, `bounding_radius` and `bounds` do not validate. The header summaries say which functions throw what.
+- **Validation at the boundary.** Public entry points validate their input and throw `std::invalid_argument` (or `std::out_of_range` for indices), before changing state. `Navigation::rebuild`, for example, checks the area and every obstacle before it replaces its snapshot, so a rejected rebuild leaves the previous one in use. `local_extents`, `bounding_radius` and `bounds` do not validate. The header summaries say which functions throw what.
 - **Values, not references.** `World` and `Navigation` copy the bodies they are given. `CollisionGrid` is the one borrowed view: its cell span must outlive the query.
 - **Stable indices.** A `World` body keeps its index until `clear()`; there is no removal.
 - **Steering never integrates.** Every steering and avoidance function returns an acceleration (and `avoid_collisions` also a velocity); the caller owns the clock and the integration step.
@@ -163,6 +163,5 @@ Not covered here: behavior over long application runs and real crowds. Lab's i4s
 
 ## Open points
 
-- `Navigation::rebuild` stores the new area and obstacle copy before validating the bodies, so an invalid body leaves the instance half updated. Validating first would make a failed rebuild leave the old snapshot intact; that is a code change for its own branch.
 - Rotating boxes and polygons are swept without rotation, so they can still tunnel ([limits](../../docs/engine/math-physics.md#limits-and-verification)).
 - `tangent_steer` is experimental, and its defaults, like those of `PrioritySteering`, are i4sim's millimeter-per-tick values. The Lab roadmap's phase 8 decides whether the four steering models share one interface and moves these defaults out of the engine.

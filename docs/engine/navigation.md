@@ -47,7 +47,7 @@ A direct clear segment bypasses A*. Route calculation and following share the sa
 | Interface | Responsibility |
 | --- | --- |
 | [Navigation](../../include/kinetra/simulation/navigation.h) | Configurable positive finite grid resolution and circular envelope; owns a snapshot of obstacle bodies |
-| `rebuild(bounds, obstacles)` | Validates geometry, caches grid occupancy, swept neighbor links and connected-region labels |
+| `rebuild(bounds, obstacles)` | Validates the bounds and every body first, then caches grid occupancy, swept neighbor links and connected-region labels; a rejected rebuild keeps the previous snapshot |
 | `path(start, goal)` | Returns waypoints excluding start; empty means failure; free endpoints retain exact coordinates |
 | `clear(a,b)` | Swept-circle clearance against stored geometry; does not enforce navigation bounds |
 | `route_target(position, route, navigation)` | Consumes visible intermediate waypoints and supplies corner lookahead |

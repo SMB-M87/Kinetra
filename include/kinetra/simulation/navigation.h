@@ -20,8 +20,9 @@ class Navigation {
     explicit Navigation(float resolution = 1, float radius = 0.85f);
     /// Copies `obstacles`, then caches grid occupancy, swept neighbor links and connected
     /// regions for the area `bounds`. Throws std::invalid_argument for invalid bounds, more
-    /// than 262,144 grid points, or an invalid body. After an invalid body the instance is
-    /// half updated: rebuild again before planning.
+    /// than 262,144 grid points, or an invalid body; it validates all of them before
+    /// changing anything, so after such a throw path() and clear() still answer from the
+    /// previous snapshot.
     void rebuild(kinetra::Aabb bounds, const std::vector<kinetra::Body> &obstacles);
 
     /// Exact free goals are retained. Occupied goals resolve to the closest reachable
