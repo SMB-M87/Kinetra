@@ -60,6 +60,7 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 3. Write the description from the design document's **Pull request** section to a file in the session scratchpad. It covers Summary, Changes, Design, Verification, Review notes, Dependencies and merge order, and Follow-up.
 4. Run `gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>`. For a Lab pull request with a pointer change, link the Kinetra pull request and state that it merges first, with a merge commit.
 5. Run `gh pr view <number> --json url,mergeable` and report conflicts; never merge.
+6. Wait for the pull request's checks (`gh pr checks <number>`): they are the CI half of the Full level. Fix a red check on the branch before handing over; report checks that are still running as pending.
 
 ## 10. Hand over (in Dutch)
 
