@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ICO_PATH = ROOT / "resources" / "kinetra.ico"
 PNG_PATH = ROOT / "resources" / "kinetra-icon.png"
-INC_PATH = ROOT / "src" / "engine" / "window_icon.inc"
+INC_PATH = ROOT / "src" / "runtime" / "window_icon.inc"
 
 ICO_SIZES = (16, 24, 32, 48, 64, 128, 256)
 WINDOW_SIZE = 64
