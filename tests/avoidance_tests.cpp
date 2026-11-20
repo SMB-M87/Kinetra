@@ -1,7 +1,7 @@
-// Contract tests for kinetra::avoid_collisions (include/kinetra/avoidance.h): motion limits,
+// Contract tests for kinetra::avoid_collisions (include/kinetra/simulation/avoidance.h): motion limits,
 // infeasibility, deterministic IDs, time units, rectangular constraints, and seeded crowd
 // scenarios that must arrive without physical overlap.
-#include <kinetra/avoidance.h>
+#include <kinetra/simulation/avoidance.h>
 
 #include <doctest/doctest.h>
 

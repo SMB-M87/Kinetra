@@ -1,6 +1,6 @@
 #include <chrono>
-#include <kinetra/bitmap_text.h>
-#include <kinetra/launcher.h>
+#include <kinetra/runtime/bitmap_text.h>
+#include <kinetra/runtime/launcher.h>
 #include <stdexcept>
 
 namespace kinetra {

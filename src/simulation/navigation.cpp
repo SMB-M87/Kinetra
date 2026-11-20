@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <functional>
-#include <kinetra/navigation.h>
+#include <kinetra/simulation/navigation.h>
 #include <limits>
 #include <queue>
 #include <stdexcept>

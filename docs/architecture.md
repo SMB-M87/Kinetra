@@ -1,6 +1,6 @@
 # Architecture
 
-The public API is under `include/kinetra/`. Three core CMake targets express linking boundaries; directories are not separate libraries.
+The public API is under `include/kinetra/`, in one folder per layer: `simulation/` for `Kinetra::Simulation`, `view/` for the header-only camera, input and debug-menu types that headless logic may use, and `runtime/` for `Kinetra::Runtime` and `Kinetra::Launcher` ([ADR 0015](decisions/0015-include-layout.md)). Three core CMake targets express linking boundaries; directories are not separate libraries.
 
 ## Table of contents
 

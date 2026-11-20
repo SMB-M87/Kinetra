@@ -1,15 +1,15 @@
-#include <kinetra/avoidance.h>
-#include <kinetra/camera.h>
-#include <kinetra/navigation.h>
-#include <kinetra/steering.h>
-#include <kinetra/timing.h>
-#include <kinetra/traffic.h>
-#include <kinetra/weighted_grid.h>
+#include <kinetra/runtime/timing.h>
+#include <kinetra/simulation/avoidance.h>
+#include <kinetra/simulation/navigation.h>
+#include <kinetra/simulation/steering.h>
+#include <kinetra/simulation/traffic.h>
+#include <kinetra/simulation/weighted_grid.h>
+#include <kinetra/view/camera.h>
 
 #ifdef CONSUMER_GRAPHICS
-#include <kinetra/launcher.h>
-#include <kinetra/session.h>
-#include <kinetra/settings_view.h>
+#include <kinetra/runtime/launcher.h>
+#include <kinetra/runtime/session.h>
+#include <kinetra/runtime/settings_view.h>
 auto consumer_run_launcher = &kinetra::run_launcher;
 // Retain a relocation to a compiled Runtime entry point without opening a window.
 auto consumer_run_session = &kinetra::run_session;

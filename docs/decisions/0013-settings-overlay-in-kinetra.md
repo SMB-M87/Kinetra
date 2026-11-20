@@ -18,7 +18,7 @@ Kinetra-Lab's Demo, Dotio and i4sim share a centered settings panel with these p
 - collapsible help;
 - Launcher, Resume and Exit actions.
 
-The panel lives in Lab twice: `lab::Settings` and a near-identical `i4sim::FactorySettings`. A `bool dotio` argument selects help lines, and a height field must match them by hand. The panel contains no game rules. It is input capture, a layout shared by picking and drawing, and drawing, which is the kind of mechanism [DebugMenu](../../include/kinetra/debug_view.h) and [HelpOverlay](../../include/kinetra/help_view.h) already provide in Kinetra. Evidence and the full design: [settings overlay, glyphs and session navigation](../design/2026-11-18-overlay-glyphs-navigation.md).
+The panel lives in Lab twice: `lab::Settings` and a near-identical `i4sim::FactorySettings`. A `bool dotio` argument selects help lines, and a height field must match them by hand. The panel contains no game rules. It is input capture, a layout shared by picking and drawing, and drawing, which is the kind of mechanism [DebugMenu](../../include/kinetra/runtime/debug_view.h) and [HelpOverlay](../../include/kinetra/runtime/help_view.h) already provide in Kinetra. Evidence and the full design: [settings overlay, glyphs and session navigation](../design/2026-11-18-overlay-glyphs-navigation.md).
 
 ## Decision
 

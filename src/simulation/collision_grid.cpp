@@ -1,4 +1,4 @@
-#include <kinetra/collision_grid.h>
+#include <kinetra/simulation/collision_grid.h>
 #include <limits>
 #include <stdexcept>
 

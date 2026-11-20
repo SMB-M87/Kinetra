@@ -15,7 +15,7 @@ Contracts of the optional application shell: sessions and their requests, the la
 
 ## Sessions and requests
 
-A [Session](../../include/kinetra/session.h) is the application behind a window: `advance`, `render` and `title`. After every advance the host reads `request()` ([ADR 0014](../decisions/0014-session-navigation-requests.md)):
+A [Session](../../include/kinetra/runtime/session.h) is the application behind a window: `advance`, `render` and `title`. After every advance the host reads `request()` ([ADR 0014](../decisions/0014-session-navigation-requests.md)):
 
 | `SessionRequest` | `run_session` (direct launch) | `run_launcher` |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ A request is state, not an event: the host acts on it once, and a menu request d
 
 ## Launcher
 
-[`kinetra/launcher.h`](../../include/kinetra/launcher.h) is the `Kinetra::Launcher` target, built with `KINETRA_BUILD_RUNTIME`. It publicly links Runtime. Consumers may use it or call `run_session` directly.
+[`kinetra/runtime/launcher.h`](../../include/kinetra/runtime/launcher.h) is the `Kinetra::Launcher` target, built with `KINETRA_BUILD_RUNTIME`. It publicly links Runtime. Consumers may use it or call `run_session` directly.
 
 - **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and status line let applications reuse the menu for their own resource selection.
 - **`SessionHost`** owns one session. A factory that throws leaves the current session and camera untouched. The first advance after a transition gets zero elapsed time and empty input, so the selecting click and the construction time never reach the new session.
@@ -52,7 +52,7 @@ The window title names what is on screen, nothing more: `launcher_window_title` 
 
 ## Settings overlay
 
-[`SettingsOverlay`](../../include/kinetra/settings_view.h) is a modal settings panel ([ADR 0013](../decisions/0013-settings-overlay-in-kinetra.md)). Applications supply rows in display order:
+[`SettingsOverlay`](../../include/kinetra/runtime/settings_view.h) is a modal settings panel ([ADR 0013](../decisions/0013-settings-overlay-in-kinetra.md)). Applications supply rows in display order:
 
 | Row | Shows | On click |
 | --- | --- | --- |
@@ -95,7 +95,7 @@ Zoom and toggle rows must come before help sections; the constructor throws `std
 
 ## Debug menu, help and text
 
-- **Debug entries.** [`kinetra/debug_menu.h`](../../include/kinetra/debug_menu.h) describes a menu as plain data, without `Runtime`, so an application's logic layer builds and tests its menu headless.
+- **Debug entries.** [`kinetra/view/debug_menu.h`](../../include/kinetra/view/debug_menu.h) describes a menu as plain data, without `Runtime`, so an application's logic layer builds and tests its menu headless.
 
   | Piece | Role |
   | --- | --- |
@@ -106,16 +106,16 @@ Zoom and toggle rows must come before help sections; the constructor throws `std
   | `debug_number_text` | Three significant digits, short enough to end before the buttons |
 
   Rows are rebuilt for every update and every draw, because open sections, open lists and current settings decide which rows exist. The functions in a row borrow the object that made it.
-- **[DebugMenu](../../include/kinetra/debug_view.h)** draws those rows and maps clicks to them. A row is indented 10 panel pixels per `depth`; its mark (an arrow for a group, a box for a check, a ring for a choice) sits in a 10-pixel column before the label; the value is right-aligned before the `[-]` and `[+]` buttons or the swatch. The row under the pointer gets a band when a click would run its action, and a button lights up on its own. A click on a button runs only `decrease` or `increase`; the gap between the buttons is split between them and the `[+]` zone runs to the panel edge. The menu has no key of its own: `SettingsOverlay::update_debug` shows and hides it, and so may any other owner through `visible`. `screen_origin` fixes the origin in screen pixels; a negative x keeps the menu right-aligned. The scale is `min(1.5, viewport.x / 300, viewport.y / 420)`. The layout constants (`panel_width`, `heading_height`, `row_height`, `row_top()`, `label_left()`, `height()` and the button edges) are public, in panel pixels, for tests that click a row.
-- **[Overlay style](../../include/kinetra/overlay_style.h)** holds what the panels share: the colors, the mark glyphs, `draw_rectangle` with edges rounded to whole pixels, `draw_panel` (body, title bar, outline) and the two button drawings.
-- **[HelpOverlay](../../include/kinetra/help_view.h)** and `draw_help` draw application-owned help text in an application-owned style. Help never captures input.
-- **[Bitmap text](../../include/kinetra/bitmap_text.h).** `draw_text` draws a 5×7 bitmap font with runtime primitives, in logical screen pixels; `draw_glyph` draws one bitmap, and `text_width` measures a text. `glyph(char)` returns the bitmap. It covers `A`–`Z`, `0`–`9` and `/ + [ ] : - _ . , *`; lowercase letters use the uppercase glyphs and every other character is blank.
+- **[DebugMenu](../../include/kinetra/runtime/debug_view.h)** draws those rows and maps clicks to them. A row is indented 10 panel pixels per `depth`; its mark (an arrow for a group, a box for a check, a ring for a choice) sits in a 10-pixel column before the label; the value is right-aligned before the `[-]` and `[+]` buttons or the swatch. The row under the pointer gets a band when a click would run its action, and a button lights up on its own. A click on a button runs only `decrease` or `increase`; the gap between the buttons is split between them and the `[+]` zone runs to the panel edge. The menu has no key of its own: `SettingsOverlay::update_debug` shows and hides it, and so may any other owner through `visible`. `screen_origin` fixes the origin in screen pixels; a negative x keeps the menu right-aligned. The scale is `min(1.5, viewport.x / 300, viewport.y / 420)`. The layout constants (`panel_width`, `heading_height`, `row_height`, `row_top()`, `label_left()`, `height()` and the button edges) are public, in panel pixels, for tests that click a row.
+- **[Overlay style](../../include/kinetra/runtime/overlay_style.h)** holds what the panels share: the colors, the mark glyphs, `draw_rectangle` with edges rounded to whole pixels, `draw_panel` (body, title bar, outline) and the two button drawings.
+- **[HelpOverlay](../../include/kinetra/runtime/help_view.h)** and `draw_help` draw application-owned help text in an application-owned style. Help never captures input.
+- **[Bitmap text](../../include/kinetra/runtime/bitmap_text.h).** `draw_text` draws a 5×7 bitmap font with runtime primitives, in logical screen pixels; `draw_glyph` draws one bitmap, and `text_width` measures a text. `glyph(char)` returns the bitmap. It covers `A`–`Z`, `0`–`9` and `/ + [ ] : - _ . , *`; lowercase letters use the uppercase glyphs and every other character is blank.
 
 ## Presentation helpers
 
 Header-only helpers for the glue every interactive session needs:
-- `zoom(camera, steps, limits)` ([camera.h](../../include/kinetra/camera.h)) applies `zoom_factor` per wheel step and clamps to `ZoomLimits`. Zero steps still clamp, so new limits take effect at once.
-- `RateCounter` ([timing.h](../../include/kinetra/timing.h)) turns counted frames, updates or decisions into a per-second rate over fixed windows (0.5 s by default).
+- `zoom(camera, steps, limits)` ([camera.h](../../include/kinetra/view/camera.h)) applies `zoom_factor` per wheel step and clamps to `ZoomLimits`. Zero steps still clamp, so new limits take effect at once.
+- `RateCounter` ([timing.h](../../include/kinetra/runtime/timing.h)) turns counted frames, updates or decisions into a per-second rate over fixed windows (0.5 s by default).
 
 ## Tests
 

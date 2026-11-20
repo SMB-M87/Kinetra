@@ -23,7 +23,7 @@ Lab consumes public Kinetra source targets with `add_subdirectory`. Its build de
 
 ## Consequences
 
-The core no longer exports `Kinetra::Launcher` or owns `kinetra/launcher.h`; Lab preserves both names for its launcher consumers. Simulation and Runtime APIs are unchanged. Former bundled application options and executables move out of the core build. Clean build directories avoid stale application binaries.
+The core no longer exports `Kinetra::Launcher` or owns `kinetra/runtime/launcher.h`; Lab preserves both names for its launcher consumers. Simulation and Runtime APIs are unchanged. Former bundled application options and executables move out of the core build. Clean build directories avoid stale application binaries.
 
 Source integration provides `Kinetra::Simulation` and optional `Kinetra::Runtime`. Install/export rules and repository-check scripts are removed; core behavioral tests and the external-consumer fixture remain. There is no saved-data migration or binary ABI promise. Historical ADRs remain in core for traceability, with links to relocated source.
 

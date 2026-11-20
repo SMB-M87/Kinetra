@@ -21,8 +21,8 @@ The window title of a Kinetra application carries status text ("Kinetra | Start 
 
 ## Problem
 
-- `run_launcher` titles the menu "Kinetra | Start menu" ([launcher.cpp](../../src/engine/launcher.cpp), in the title refresh of `run_launcher`).
-- `Session::title()` is documented only as "Window title for the running session" ([session.h](../../include/kinetra/session.h)), so applications use it as a status line. Lab's titles run past the window's width and change every 500 ms.
+- `run_launcher` titles the menu "Kinetra | Start menu" ([launcher.cpp](../../src/runtime/launcher.cpp), in the title refresh of `run_launcher`).
+- `Session::title()` is documented only as "Window title for the running session" ([session.h](../../include/kinetra/runtime/session.h)), so applications use it as a status line. Lab's titles run past the window's width and change every 500 ms.
 
 ## Goals and non-goals
 
@@ -47,9 +47,9 @@ The window title of a Kinetra application carries status text ("Kinetra | Start 
 
 ## Affected areas
 
-- [include/kinetra/launcher.h](../../include/kinetra/launcher.h): new constant.
-- [include/kinetra/session.h](../../include/kinetra/session.h): `title()` contract.
-- [src/engine/launcher.cpp](../../src/engine/launcher.cpp): menu title, title on the first frame.
+- [include/kinetra/runtime/launcher.h](../../include/kinetra/runtime/launcher.h): new constant.
+- [include/kinetra/runtime/session.h](../../include/kinetra/runtime/session.h): `title()` contract.
+- [src/runtime/launcher.cpp](../../src/runtime/launcher.cpp): menu title, title on the first frame.
 - [tests/runtime_tests.cpp](../../tests/runtime_tests.cpp): new graphics case.
 - [docs/engine/launcher-overlays.md](../engine/launcher-overlays.md): what the title shows.
 - Lab: every session's `title()` and the tests that read state from it (Lab design document).

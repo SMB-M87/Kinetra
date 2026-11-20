@@ -32,11 +32,11 @@ Surveyed on 2026-11-18, on Kinetra `main` at `13d7913` and Kinetra-Lab `main` at
 | --- | --- |
 | Settings overlay outside the engine | Lab carries the modal settings panel twice: `lab::Settings` (`labs/settings.h:14-128`) and `i4sim::FactorySettings` (`labs/i4sim/include/factory_settings.h`). The copies differ only in namespace and help lines. The panel has no game rules: modal capture, layout shared by picking and drawing, a SETTINGS/DEBUG toolbar. By Lab's scope rule, such a mechanism belongs in Kinetra. |
 | Flag argument and hand-kept height | `Settings::draw(..., bool dotio)` (`labs/settings.h:71`) switches three help lines. `sim_controls_height` must match the number of those lines by hand; Dotio overrides it to 28 (`labs/dotio/include/application.h:43`). |
-| Blank glyphs | `draw_text` (`include/kinetra/bitmap_text.h:32-48`) draws `A`–`Z`, `0`–`9`, `/ + [ ] :` and leaves every other character blank. That hides `.` and `-` in `DebugOption::number` values (`std::to_string` in `include/kinetra/debug_view.h:64-65`), negative numbers, and lowercase text such as blueprint names (`Kuka`, `Staubli`) and exception messages passed as `LaunchMenu` status. |
+| Blank glyphs | `draw_text` (`include/kinetra/runtime/bitmap_text.h:32-48`) draws `A`–`Z`, `0`–`9`, `/ + [ ] :` and leaves every other character blank. That hides `.` and `-` in `DebugOption::number` values (`std::to_string` in `include/kinetra/runtime/debug_view.h:64-65`), negative numbers, and lowercase text such as blueprint names (`Kuka`, `Staubli`) and exception messages passed as `LaunchMenu` status. |
 | Glyph patch in i4sim | `factory_text` (`labs/i4sim/src/session.cpp:16-27`, 10 call sites) uppercases and draws `.`, `_` and `-` over `draw_text`. `,` and `*` stay blank even there: `"MOVER BUSY, BLOCKED"` (`:288`), `"GOAL x,y"` (`:475`), `"HEAT A*"` (`:79`). |
-| No menu request | `Session` (`include/kinetra/session.h:6-14`) only has `exit_requested()`. Lab adds `lab::Session::return_to_menu()` (`labs/settings.h:6-11`) and runs its own loop (`launcher/src/session.cpp:21-61`) to honor it. |
-| Fixed launcher bindings | `run_launcher` (`src/engine/launcher.cpp:180-223`) returns to the menu on M (`:196`) and closes on Escape (`runtime.poll()` at `:191`), ignoring `Session::close_on_escape()`. It never reads `exit_requested()`, so a session cannot end the program. Lab wants neither binding. |
-| Dead LAUNCHER action | `run_session` (`src/engine/session.cpp:16`) checks only `exit_requested()`. The LAUNCHER button of standalone Demo and Dotio sets a flag that nobody reads. i4sim wraps its session to map the request to exit (`labs/i4sim/src/main.cpp:74-87`). |
+| No menu request | `Session` (`include/kinetra/runtime/session.h:6-14`) only has `exit_requested()`. Lab adds `lab::Session::return_to_menu()` (`labs/settings.h:6-11`) and runs its own loop (`launcher/src/session.cpp:21-61`) to honor it. |
+| Fixed launcher bindings | `run_launcher` (`src/runtime/launcher.cpp:180-223`) returns to the menu on M (`:196`) and closes on Escape (`runtime.poll()` at `:191`), ignoring `Session::close_on_escape()`. It never reads `exit_requested()`, so a session cannot end the program. Lab wants neither binding. |
+| Dead LAUNCHER action | `run_session` (`src/runtime/session.cpp:16`) checks only `exit_requested()`. The LAUNCHER button of standalone Demo and Dotio sets a flag that nobody reads. i4sim wraps its session to map the request to exit (`labs/i4sim/src/main.cpp:74-87`). |
 
 ## Goals and non-goals
 
@@ -68,7 +68,7 @@ Settled with the user on 2026-11-18. All choices follow the agent's recommendati
 | Launcher bindings | Trailing `LauncherBindings` parameter: `menu_key` (default M, `std::nullopt` disables it) and `escape_closes_menu` (default true). During a run, Escape follows `Session::close_on_escape()` | Existing callers keep their behavior; Lab passes `{std::nullopt, false}`. Honoring `close_on_escape()` fixes a contract that `run_launcher` ignores today. Rejected: removing M (changes behavior for other launchers) |
 | Glyph set | Add `.`, `_`, `-`, `,` and `*`; draw `a`–`z` with the uppercase glyphs; expose `glyph(char)` | Covers every blank character in today's Lab text, so `factory_text` goes without visible loss |
 | Overlay actions | The overlay reports its Launcher and Exit buttons as a `SessionRequest` | The overlay and the session use one vocabulary; a session returns the overlay's request |
-| Placement | `include/kinetra/settings_view.h` and `src/engine/settings_view.cpp` in `Kinetra::Runtime`; `SessionRequest` in `session.h`; `glyph` in `bitmap_text.h` | Next to `debug_view.h` and `help_view.h`. Non-trivial bodies belong in the `.cpp` ([conventions](../conventions.md#headers-and-includes)) |
+| Placement | `include/kinetra/runtime/settings_view.h` and `src/runtime/settings_view.cpp` in `Kinetra::Runtime`; `SessionRequest` in `session.h`; `glyph` in `bitmap_text.h` | Next to `debug_view.h` and `help_view.h`. Non-trivial bodies belong in the `.cpp` ([conventions](../conventions.md#headers-and-includes)) |
 | Delivery | This branch carries only this document and the ADRs. The code follows on one Kinetra branch after phase 2 merges | The code would conflict with phase 2's formatting commit; the decisions do not |
 
 ## Design
@@ -251,12 +251,12 @@ The implementation follows the sketches, with these additions and deviations:
 
 **The implementation branch (Kinetra):**
 
-- **Sessions.** `include/kinetra/session.h` and `src/engine/session.cpp`: `SessionRequest`, `request()`, and `run_session`'s handling of it.
-- **Launcher.** `include/kinetra/launcher.h` and `src/engine/launcher.cpp`: `LauncherBindings`, plus `run_launcher`'s request and Escape handling.
-- **Overlay.** `include/kinetra/settings_view.h` and `src/engine/settings_view.cpp` (both new), and the Runtime sources in `CMakeLists.txt`.
-- **Glyphs.** `include/kinetra/bitmap_text.h`: `glyph(char)`, the five characters and lowercase.
+- **Sessions.** `include/kinetra/runtime/session.h` and `src/runtime/session.cpp`: `SessionRequest`, `request()`, and `run_session`'s handling of it.
+- **Launcher.** `include/kinetra/runtime/launcher.h` and `src/runtime/launcher.cpp`: `LauncherBindings`, plus `run_launcher`'s request and Escape handling.
+- **Overlay.** `include/kinetra/runtime/settings_view.h` and `src/runtime/settings_view.cpp` (both new), and the Runtime sources in `CMakeLists.txt`.
+- **Glyphs.** `include/kinetra/runtime/bitmap_text.h`: `glyph(char)`, the five characters and lowercase.
 - **Tests.** A new overlay and glyph test, `tests/launcher_tests.cpp`, `tests/runtime_tests.cpp` and `tests/consumer/main.cpp`.
-- **Docs.** `docs/engine/launcher-overlays.md`, `docs/engine/runtime.md`, `docs/architecture.md`, and `src/engine/README.md` (its loop diagram reads `exit_requested`).
+- **Docs.** `docs/engine/launcher-overlays.md`, `docs/engine/runtime.md`, `docs/architecture.md`, and `src/runtime/README.md` (its loop diagram reads `exit_requested`).
 
 **Lab (its phase 3 branch):** `labs/settings.h`, `labs/i4sim/include/factory_settings.h`, the three sessions, Dotio `application.h` and `presentation.cpp`, `launcher/`, `labs/i4sim/src/main.cpp`, the settings and menu tests, and `docs/launcher-overlays.md`.
 

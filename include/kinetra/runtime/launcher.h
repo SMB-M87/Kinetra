@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <kinetra/session.h>
+#include <kinetra/runtime/session.h>
 #include <optional>
 #include <string>
 #include <string_view>

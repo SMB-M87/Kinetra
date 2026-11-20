@@ -34,7 +34,7 @@ Draws the Kinetra application icon from a few vector shapes and writes the three
 | --- | --- |
 | `resources/kinetra.ico` (16 to 256 px) | The Windows executable resource, through `kinetra_executable_icon(<target>)` in [KinetraIcon.cmake](../cmake/KinetraIcon.cmake) |
 | `resources/kinetra-icon.png` (256 px) | Documentation and desktop files |
-| `src/engine/window_icon.inc` (64 px RGBA) | `Runtime`, which sets it as the window icon |
+| `src/runtime/window_icon.inc` (64 px RGBA) | `Runtime`, which sets it as the window icon |
 
 ```sh
 python3 tools/make_icon.py          # regenerate

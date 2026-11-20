@@ -3,11 +3,11 @@
 // exist at a time; each case owns its own and closes it before the next case starts.
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
-#include <kinetra/debug_view.h>
-#include <kinetra/engine.h>
-#include <kinetra/launcher.h>
-#include <kinetra/session.h>
-#include <kinetra/settings_view.h>
+#include <kinetra/runtime/debug_view.h>
+#include <kinetra/runtime/engine.h>
+#include <kinetra/runtime/launcher.h>
+#include <kinetra/runtime/session.h>
+#include <kinetra/runtime/settings_view.h>
 
 #include <doctest/doctest.h>
 

@@ -1,8 +1,8 @@
 // Contract tests for weighted grid planning and priority steering
-// (include/kinetra/weighted_grid.h, include/kinetra/steering.h): weighted detours, blocked
-// corners, footprint clearance, merged borders, safety priority and wall braking.
-#include <kinetra/steering.h>
-#include <kinetra/weighted_grid.h>
+// (include/kinetra/simulation/weighted_grid.h, include/kinetra/simulation/steering.h): weighted detours,
+// blocked corners, footprint clearance, merged borders, safety priority and wall braking.
+#include <kinetra/simulation/steering.h>
+#include <kinetra/simulation/weighted_grid.h>
 
 #include <doctest/doctest.h>
 

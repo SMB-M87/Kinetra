@@ -1,7 +1,7 @@
-// Contract tests for kinetra::TrafficGate (include/kinetra/traffic.h).
+// Contract tests for kinetra::TrafficGate (include/kinetra/simulation/traffic.h).
 // This file is the doctest pattern for converting the other suites: one TEST_CASE
 // per behavior, named after the expected outcome.
-#include <kinetra/traffic.h>
+#include <kinetra/simulation/traffic.h>
 
 #include <doctest/doctest.h>
 

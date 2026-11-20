@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include <kinetra/engine.h>
+#include <kinetra/runtime/engine.h>
 #include <string_view>
 
 namespace kinetra {

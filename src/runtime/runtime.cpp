@@ -2,7 +2,7 @@
 #include <chrono>
 #include <cmath>
 #include <glad/glad.h>
-#include <kinetra/engine.h>
+#include <kinetra/runtime/engine.h>
 #include <optional>
 #include <stdexcept>
 #include <thread>

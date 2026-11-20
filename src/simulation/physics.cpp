@@ -1,5 +1,5 @@
 #include <array>
-#include <kinetra/physics.h>
+#include <kinetra/simulation/physics.h>
 #include <limits>
 #include <stdexcept>
 

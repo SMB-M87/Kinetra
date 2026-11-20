@@ -2,7 +2,7 @@
 // What a debug menu shows, as plain data. No drawing and no window: an application's logic
 // layer builds these rows and tests them headless; DebugMenu (debug_view.h) draws them.
 
-#include "engine.h"
+#include <kinetra/view/input.h>
 
 #include <algorithm>
 #include <cmath>

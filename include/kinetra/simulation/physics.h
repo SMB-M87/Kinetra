@@ -1,6 +1,6 @@
 #pragma once
 
-#include "spatial_grid.h"
+#include <kinetra/simulation/spatial_grid.h>
 #include <optional>
 
 namespace kinetra {

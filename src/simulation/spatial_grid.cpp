@@ -1,4 +1,4 @@
-#include <kinetra/spatial_grid.h>
+#include <kinetra/simulation/spatial_grid.h>
 #include <stdexcept>
 
 namespace kinetra {

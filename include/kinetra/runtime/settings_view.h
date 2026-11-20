@@ -1,8 +1,8 @@
 #pragma once
 
-#include <kinetra/camera.h>
-#include <kinetra/debug_view.h>
-#include <kinetra/session.h>
+#include <kinetra/runtime/debug_view.h>
+#include <kinetra/runtime/session.h>
+#include <kinetra/view/camera.h>
 
 #include <cstddef>
 #include <functional>

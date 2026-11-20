@@ -1,8 +1,8 @@
 #pragma once
 
-#include "math.h"
 #include <algorithm>
 #include <cmath>
+#include <kinetra/simulation/math.h>
 #include <stdexcept>
 
 namespace kinetra {

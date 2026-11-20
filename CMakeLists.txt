@@ -40,16 +40,16 @@ if(KINETRA_BUILD_RUNTIME)
     find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
     add_library(kinetra_runtime
-        src/engine/runtime.cpp
-        src/engine/session.cpp
-        src/engine/settings_view.cpp
+        src/runtime/runtime.cpp
+        src/runtime/session.cpp
+        src/runtime/settings_view.cpp
         src/glad.c)
     add_library(Kinetra::Runtime ALIAS kinetra_runtime)
     target_compile_features(kinetra_runtime PUBLIC cxx_std_20)
     target_include_directories(kinetra_runtime PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(kinetra_runtime PRIVATE SDL2::SDL2 OpenGL::GL)
-    add_library(kinetra_launcher src/engine/launcher.cpp)
+    add_library(kinetra_launcher src/runtime/launcher.cpp)
     add_library(Kinetra::Launcher ALIAS kinetra_launcher)
     target_compile_features(kinetra_launcher PUBLIC cxx_std_20)
     target_link_libraries(kinetra_launcher PUBLIC Kinetra::Runtime)

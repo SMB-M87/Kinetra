@@ -1,5 +1,5 @@
 #pragma once
-#include "bitmap_text.h"
+#include <kinetra/runtime/bitmap_text.h>
 #include <span>
 #include <string_view>
 

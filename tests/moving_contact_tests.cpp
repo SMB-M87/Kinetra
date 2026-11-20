@@ -1,7 +1,7 @@
-// Contract tests for moving-pair sweeps and swept world contacts (include/kinetra/physics.h):
+// Contract tests for moving-pair sweeps and swept world contacts (include/kinetra/simulation/physics.h):
 // relative queries, fast pairs, crossing and overtaking, chronological chains, captured
 // regression geometry and the observable swept-event budget.
-#include <kinetra/physics.h>
+#include <kinetra/simulation/physics.h>
 
 #include <doctest/doctest.h>
 

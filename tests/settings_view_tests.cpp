@@ -1,8 +1,8 @@
-// Window-free tests for kinetra::SettingsOverlay (include/kinetra/settings_view.h): layout,
+// Window-free tests for kinetra::SettingsOverlay (include/kinetra/runtime/settings_view.h): layout,
 // rows, the Ctrl and Shift+Ctrl shortcuts, and the debug menu it shows and hides. Every
 // layout case runs with a row set of four help lines and one of three, at a large and a
 // tiny viewport.
-#include <kinetra/settings_view.h>
+#include <kinetra/runtime/settings_view.h>
 
 #include <doctest/doctest.h>
 
