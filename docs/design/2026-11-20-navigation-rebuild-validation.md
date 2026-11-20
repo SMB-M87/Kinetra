@@ -99,7 +99,7 @@ Title: `fix(navigation): validate every body before a rebuild changes state`
 
 **Changes.** `navigation.cpp`: validation before the first assignment. `navigation.h`: the contract states the guarantee. A reproduction test. The simulation guide and the navigation contract table, whose open point this closes.
 
-**Design.** [docs/design/2026-11-20-navigation-rebuild-validation.md](docs/design/2026-11-20-navigation-rebuild-validation.md)
+**Design.** `docs/design/2026-11-20-navigation-rebuild-validation.md`
 
 **Verification.** See the design document: graphics 264/265 (the known WSLg input failure, also on `main`), Lab `main` against this branch 295/295, format and docs clean.
 
