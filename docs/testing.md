@@ -112,16 +112,19 @@ ctest --preset dev -R '<module regex>'
 
 ### Full
 
-Kinetra standalone:
+The Full level is split between the machine and the pull request: locally runs only what CI cannot, and the pull request's CI runs the rest.
+
+**Locally**, in Kinetra and, when a Lab checkout is available, in Kinetra-Lab:
 
 ```sh
-cmake --workflow --preset ci
-cmake --workflow --preset headless
+cmake --workflow --preset graphics
 ```
 
-These are the two configurations CI runs; `headless` proves that `Kinetra::Simulation` builds without SDL2 and OpenGL. For runtime or launcher changes, also run `cmake --workflow --preset graphics` and report the backend. For public header or target changes, also run the [external consumer](development.md#external-consumers).
+It builds everything and runs every suite, the graphics cases included, which CI only compiles because it has no GPU. Report the backend. In Lab, also run the bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
 
-Kinetra-Lab (engine plus applications), from the Lab root: `cmake --workflow --preset ci` and `cmake --workflow --preset headless`, which is what Lab's CI runs, or `./build.sh`, which builds and tests Kinetra in `build-core` and Lab in `build`. Lab's [AGENTS.md](https://github.com/SMB-M87/Kinetra-Lab/blob/main/AGENTS.md) adds the graphics workflow for runtime, presentation and launcher changes.
+**In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors), the [external consumer](development.md#external-consumers) and, in Lab, the native Windows build. A change is verified when the local graphics run passed **and** the pull request's checks are green; until then, report it as pushed, not verified.
+
+*Why:* running `ci` and `headless` locally repeated exactly what the pipeline runs on every push and again after the merge, at minutes per round (more than ten for the Windows cross build in Lab). The graphics run is the one check only a local machine can do. Run `ci`, `headless` or `windows` locally only to reproduce a CI failure.
 
 ## Choosing targeted tests
 
@@ -150,7 +153,7 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 | `cmake --workflow --preset ci` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a non-graphics test fails |
 | External consumer with `CONSUMER_GRAPHICS=ON` | The public headers or targets no longer work for an outside project |
 
-The workflow name `CI` and its job `checks` are a required status check on `main`, so they must keep these names. Graphics tests are compiled in CI but not run, because there is no GPU. The CI result does not replace the local graphics checks and playtests that the Full level requires for runtime changes.
+The workflow name `CI` and its job `checks` are a required status check on `main`, so they must keep these names. Graphics tests are compiled in CI but not run, because there is no GPU. The CI result does not replace the local graphics run and playtests of the Full level; the local graphics run does not replace the CI result either.
 
 ## Reporting
 

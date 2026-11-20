@@ -61,7 +61,7 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 | --- | --- | --- |
 | Docs | Only Markdown, comments, skills or agent rules changed | `python3 tools/check_docs.py`; no build |
 | Targeted | Code inside one module; no public header, CMake or dependency change | Incremental build of the affected targets in the existing build directory, plus their CTest entries |
-| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Full core build and tests, the Lab integration build (`./build.sh` in Lab), and graphics checks for runtime changes |
+| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Locally `cmake --workflow --preset graphics` (in Lab too when available); then the pull request's CI (format, docs, `headless`, `ci`, consumer). Verified only when both pass ([testing](docs/testing.md#full)) |
 
 - Report the exact commands, results and blockers. Never call a check passed that did not run.
 - A failed configure or build means verification is incomplete.

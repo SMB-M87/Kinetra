@@ -48,10 +48,10 @@ Pick targets and tests from the mapping tables: Kinetra in [testing](../../../do
 
 **Full.**
 
-- Kinetra only: `cmake --workflow --preset ci` and `cmake --workflow --preset headless`, the two configurations CI runs. Then run Lab's Full level when a Lab checkout is available.
-- Lab: `cmake --workflow --preset ci` and `cmake --workflow --preset headless` from the Lab root (or `./build.sh`).
-- Runtime, launcher or presentation changes: also `cmake --workflow --preset graphics` (it sets `SDL_VIDEODRIVER=offscreen` and software Mesa), plus bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
-- Public header or target changes: also the external consumer fixture.
+- Locally only `cmake --workflow --preset graphics` (it sets `SDL_VIDEODRIVER=offscreen` and software Mesa): in Kinetra, and in Lab when a Lab checkout is available. It builds everything and runs every suite, the graphics cases included.
+- In Lab, also bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
+- Do not run `ci`, `headless` or `windows` locally: the pull request's CI runs them on every push (with format, docs and the external consumer). Run one locally only to reproduce a CI failure.
+- After pushing, read the pull request's checks (`gh pr checks <number>`). The change is verified when the local graphics run passed and the checks are green; until then report "pushed, CI pending".
 
 ## 4. Report
 
