@@ -34,7 +34,7 @@ Read only what the task needs; the pages are written to stand on their own.
 | Work on one module | Its guide: [simulation](src/simulation/README.md), [runtime and launcher](src/runtime/README.md), [tests](tests/README.md) |
 | Understand dependencies and ownership | [Architecture](docs/architecture.md), [engine contracts](docs/README.md#engine-contracts) |
 | Find out why a boundary exists | [Decisions](docs/decisions/README.md) |
-| See current and planned work | [Design documents](docs/design/README.md) |
+| See current and planned work, or record an idea | [Roadmap](docs/roadmap.md) and [design documents](docs/design/README.md) |
 
 ## Identity and scope
 
@@ -50,6 +50,7 @@ Every change follows the full cycle in the [workflow](docs/workflow.md): **under
 - Settle open, load-bearing decisions with the user before implementing; use the `grilling` skill when there are several.
 - Record hard-to-reverse, surprising trade-offs as an ADR (`adr` skill).
 - Separate refactoring commits from behavior changes.
+- Keep the [roadmap](docs/roadmap.md) current: a branch moves its item to *Now* when it starts and removes it when it finishes, and follow-ups and the user's ideas become items (`roadmap` skill).
 
 *Why:* the code grew feature by feature without recorded design or reasons. The cycle leaves a trail, so the next reader understands both what changed and why.
 
@@ -125,7 +126,7 @@ The code must explain itself to a reader who has not seen the design.
 
 - Each module has one README with real content: purpose, concepts, a diagram, key types, data flow, invariants, how to change it, tests and open points. Modules are engine subsystems, applications, the launcher and test suites. Use the [module template](docs/documentation.md#module-readme-template).
 - A subdirectory gets its own README only when it has content worth reading on its own. Third-party wrappers keep their provenance READMEs.
-- `docs/` holds cross-module material: architecture, contracts, decisions and design documents.
+- `docs/` holds cross-module material: architecture, contracts, decisions, design documents and the [roadmap](docs/roadmap.md) of planned work ([format](docs/documentation.md#roadmap)).
 - Every concept has one authoritative place; link to it for depth. A link never replaces an explanation the local reader needs.
 - Diagrams show implemented code only; each one states its takeaway.
 - Layout, table of contents and navigation follow the [documentation guide](docs/documentation.md#page-layout).
@@ -147,6 +148,7 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `refactor` | Behavior-preserving restructuring in named, tested steps (on request) |
 | `adr` | Record an architecture decision |
 | `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request) |
+| `roadmap` | Keep the backlog in `docs/roadmap.md`: brainstorm ideas, pick up, close items (on request or from `feature` and `grilling`) |
 
 - Each skill directory holds a `SKILL.md` for the agent and gets a `README.md` that explains the skill to people with use cases ([skill README template](docs/documentation.md#skill-readme-template)); the READMEs are still being written ([open point](.agents/skills/README.md#open-points)). The [skills overview](.agents/skills/README.md) lists all skills.
 - A change that adds or changes a skill updates its README and the overview in the same commit.

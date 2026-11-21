@@ -58,7 +58,7 @@ Recompute the frontier and ask the next round. When every answer matched your re
 ## 4. Finish
 
 - Stop when the frontier is empty, or immediately when the user says stop ("stop", "klaar", "doe maar"). Unresolved branches then become stated assumptions.
-- When the scope is too big for one change, propose splitting it into phases and grill only the first phase in detail.
+- When the scope is too big for one change, propose splitting it into phases and grill only the first phase in detail. The later phases, and branches of the tree the user deferred, become roadmap items (`roadmap` skill), so they are not lost.
 - Record every decision in the design document's **Decisions** table: decision, choice, why. Note which choices differed from the recommendation.
 - Ask one final form to confirm the shared understanding, then start the work. Irreversible or outward-facing actions keep their own confirmation rules.
 

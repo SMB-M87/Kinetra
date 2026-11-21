@@ -24,6 +24,7 @@ Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agents
 | [refactor](refactor/SKILL.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/SKILL.md) | Record an architecture decision | When a decision qualifies |
 | [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, a reply per comment | On request (`/pr-feedback`) |
+| [roadmap](roadmap/README.md) | Keep the backlog in `docs/roadmap.md`: ideas from a brainstorm, items to pick up, items closed on merge | On request (`/roadmap`, a brainstorm), or from `feature` and `grilling` |
 
 The user's global skill set (book references such as refactoring, clean architecture and a philosophy of software design, plus `teach`, `grill-me` and `code-review`) is installed per machine and is not copied here.
 
@@ -40,9 +41,12 @@ flowchart LR
     D --> V
     F --> P[pr-feedback]
     P --> V
+    F --> RM[roadmap]
+    G --> RM
+    RM -->|item picked up| F
 ```
 
-`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own.
+`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it.
 
 ## Maintenance
 
@@ -53,4 +57,4 @@ flowchart LR
 
 ## Open points
 
-- The skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch, as planned in the Kinetra-Lab quality roadmap (documentation cleanup).
+- Apart from `roadmap`, the skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch, as planned in the Kinetra-Lab quality roadmap (documentation cleanup).

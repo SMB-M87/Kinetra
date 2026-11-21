@@ -12,13 +12,14 @@ This skill carries out [docs/workflow.md](../../../docs/workflow.md). (In Kinetr
 
 1. Determine the repositories involved: Kinetra only, Lab only, or both (engine mechanism plus application use).
 2. In each repository: `git status --short` and `git branch --show-current`. Report unrelated changes and leave them alone. If the current branch is not `main` and not an obvious branch for this topic, ask the user before continuing.
-3. Read `AGENTS.md`, the routing-table pages for this task, the module README, and the code and tests involved. For a broad survey, dispatch a read-only sub-agent with a narrow brief.
+3. Read `AGENTS.md`, the routing-table pages for this task, the module README, and the code and tests involved. Check `docs/roadmap.md` of each repository for an item on this topic: it carries the agreed scope and questions. For a broad survey, dispatch a read-only sub-agent with a narrow brief.
 
 ## 2. Branch and design document
 
 1. Create a branch in each repository involved: `git switch -c <type>/<topic>` (types in the [workflow](../../../docs/workflow.md#branches-and-commits)).
 2. Copy the [template](../../../docs/design/README.md#template) to `docs/design/YYYY-MM-DD-<topic>.md` and add it to the index with status `draft`.
 3. Fill in Problem, with evidence such as `path:line` and measurements, plus Goals and non-goals, Design and Affected areas.
+4. If the change has a roadmap item, move it to **Now** with the branch and the design document (`roadmap` skill). Non-goals that the user still wants become roadmap items.
 
 ## 3. Decisions
 
@@ -49,6 +50,7 @@ Review `git diff main...HEAD` with `/code-review` (Claude Code) or the global `c
 
 - Update the module README (with the `doc-module` skill if it is thin), contract pages, diagrams and indexes.
 - Set the design document's status to `implemented`, and fill **Pull request** with the title and description.
+- Update the roadmap with the `roadmap` skill: remove the item this branch finishes, and add the open points someone intends to act on as items.
 - Run the docs check, then make the final commit.
 
 ## 9. Push and open pull requests
@@ -67,5 +69,5 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 - What changed and why, in a few lines.
 - The pull-request links, and the commits per repository.
 - Verification commands and results, and anything not run, with the reason.
-- Remaining risks and open points.
+- Remaining risks and open points, and the roadmap items added or removed.
 - The merge order (Kinetra before Lab).
