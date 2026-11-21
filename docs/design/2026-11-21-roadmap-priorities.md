@@ -69,7 +69,7 @@ Checked every item against its source and against Lab's roadmap: each shared ite
 - **Changes:** roadmap (stale contact-tests item out; review skill, graphics tests in CI, inspector overlay, Linux beyond Arch, engine performance and a documentation-site idea in; shared passing to Later); skills overview open point.
 - **Design:** `docs/design/2026-11-21-roadmap-priorities.md`.
 - **Verification:** Docs level, green.
-- **Dependencies and merge order:** stacked on `docs/stacked-pull-requests`; merge that first, then this, both with a merge commit. The Kinetra-Lab pull request on `ccr-cc3e854a-v10cnx` records this branch and merges last.
+- **Dependencies and merge order:** top of a stack of three: `ci/archive-mirrors` (#22), `docs/stacked-pull-requests` (#20), then this, each with a merge commit. The Kinetra-Lab pull request on `ccr-cc3e854a-v10cnx` records this branch and merges last.
 - **Follow-up:** the order is the agent's proposal; the user's answer may reorder it in a later commit.
 
 ## Open points
