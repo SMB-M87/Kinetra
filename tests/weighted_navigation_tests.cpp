@@ -6,6 +6,7 @@
 
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <span>
 #include <stdexcept>
@@ -94,6 +95,83 @@ TEST_CASE("a diagonal step does not cut a blocked corner") {
 
 TEST_CASE("a start outside the grid yields no path") {
     CHECK(blocked_corridor().path({-1, 5}, {15, 15}).empty());
+}
+
+TEST_CASE("a search ends at the center of the accepted cell nearest by route cost") {
+    // From cell 0, cell 10 (two rows down) costs 20 and cell 4 (four columns across) 40.
+    const auto grid = corridor_grid();
+    const auto route = grid.search({5, 5}, [](int cell) { return cell == 4 || cell == 10; });
+    REQUIRE_FALSE(route.empty());
+    CHECK(grid.cell(route.back()) == 10);
+    CHECK(distance(route.back(), grid.center(10)) == 0);
+    for (std::size_t i = 0; i + 1 < route.size(); ++i)
+        CHECK(distance(route[i], grid.center(grid.cell(route[i]))) == 0);
+}
+
+TEST_CASE("a search offers every reachable cell once in nondecreasing route cost, the start first") {
+    const auto grid = corridor_grid();
+    std::vector<int> offered;
+    CHECK(grid.search({5, 5},
+                      [&](int cell) {
+                          offered.push_back(cell);
+                          return false;
+                      })
+              .empty());
+    REQUIRE(offered.size() == 15u);
+    CHECK(offered.front() == 0);
+    // An open grid: the route cost of a cell is its octile distance from cell 0, in cells.
+    const auto cost = [](int cell) {
+        const int x = cell % 5, y = cell / 5;
+        return 10.f * (float(std::max(x, y)) + (std::sqrt(2.f) - 1) * float(std::min(x, y)));
+    };
+    for (std::size_t i = 0; i + 1 < offered.size(); ++i)
+        CHECK(cost(offered[i]) <= cost(offered[i + 1]) + 1e-4f);
+    std::vector<int> sorted = offered;
+    std::sort(sorted.begin(), sorted.end());
+    CHECK(std::adjacent_find(sorted.begin(), sorted.end()) == sorted.end());
+}
+
+TEST_CASE("a search counts accepted cells in route order, as a counting predicate expects") {
+    // Accept the third cell of the bottom row that the search reaches: cell 12.
+    const auto grid = corridor_grid();
+    int seen = 0;
+    const auto route = grid.search({5, 25}, [&](int cell) { return cell >= 10 && ++seen == 3; });
+    REQUIRE_FALSE(route.empty());
+    CHECK(grid.cell(route.back()) == 12);
+}
+
+TEST_CASE("a search enters only admitted cells and fails when none leads to an accepted one") {
+    const auto grid = corridor_grid();
+    // Column 2 is closed to the route, so cell 4 cannot be reached from cell 0.
+    const auto outside_column_2 = [](int cell) { return cell % 5 != 2; };
+    CHECK(grid.search({5, 5}, [](int cell) { return cell == 4; }, outside_column_2).empty());
+    const auto route = grid.search({5, 5}, [](int cell) { return cell == 11; }, outside_column_2);
+    REQUIRE_FALSE(route.empty());
+    for (const auto point : route)
+        CHECK(grid.cell(point) % 5 != 2);
+}
+
+TEST_CASE("a search follows weights and blocked corners like path") {
+    const auto blocked = blocked_corridor();
+    CHECK(blocked.search({5, 5}, [](int cell) { return cell == 6; }).empty());
+    auto grid = corridor_grid();
+    grid.weights(congestion());
+    for (const auto point : grid.search({5, 15}, [](int cell) { return cell == 9; }))
+        CHECK(grid.cell(point) != 7);
+}
+
+TEST_CASE("a search whose start cell is accepted goes to that cell's center") {
+    const auto grid = corridor_grid();
+    const auto route = grid.search({2, 3}, [](int) { return true; });
+    REQUIRE(route.size() == 1u);
+    CHECK(distance(route.front(), {5, 5}) == 0);
+}
+
+TEST_CASE("a search from a blocked or outside start is empty and negative extents throw") {
+    const auto grid = blocked_corridor();
+    CHECK(grid.search({15, 5}, [](int) { return true; }).empty());
+    CHECK(grid.search({-1, 5}, [](int) { return true; }).empty());
+    CHECK_THROWS_AS(grid.search({5, 5}, [](int) { return true; }, {}, {-1, 0}), std::invalid_argument);
 }
 
 TEST_CASE("blocked cells produce free-space borders") {

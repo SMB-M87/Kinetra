@@ -1,4 +1,6 @@
 #include <kinetra/simulation/weighted_grid.h>
+
+#include <algorithm>
 #include <limits>
 #include <queue>
 #include <stdexcept>
@@ -88,16 +90,9 @@ bool WeightedGrid::clear(Vec2 start, Vec2 goal, Vec2 extent) const {
         }
     return true;
 }
-std::vector<Vec2> WeightedGrid::path(Vec2 start, Vec2 goal, Vec2 extent) const {
-    if (!finite(start) || !finite(goal))
-        return {};
-    const int first = cell(start), last = cell(goal);
-    if (!clear(start, start, extent) || !clear(goal, goal, extent))
-        return {};
-    if (first == last)
-        return clear(start, goal, extent) ? std::vector<Vec2>{goal} : std::vector<Vec2>{};
-    auto point = [&](int id) { return id == first ? start : id == last ? goal : center(id); };
-    auto heuristic = [&](int id) { return double(distance(point(id), goal)); };
+template <typename Point, typename Heuristic, typename Accept, typename Enter>
+std::vector<Vec2> WeightedGrid::expand(int first, Vec2 extent, Point point, Heuristic heuristic,
+                                       Accept accept, Enter enter) const {
     using Entry = std::pair<double, int>;
     std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> open;
     std::vector<double> cost(blocked_.size(), std::numeric_limits<double>::infinity());
@@ -108,11 +103,12 @@ std::vector<Vec2> WeightedGrid::path(Vec2 start, Vec2 goal, Vec2 extent) const {
     while (!open.empty()) {
         const int current = open.top().second;
         open.pop();
+        // A cell can be queued several times; only its cheapest entry settles it.
         if (closed[current])
             continue;
-        if (current == last) {
-            std::vector<Vec2> route{goal};
-            for (int id = last; id != first;) {
+        if (accept(current)) {
+            std::vector<Vec2> route{point(current)};
+            for (int id = current; id != first;) {
                 id = previous[id];
                 if (id != first)
                     route.push_back(center(id));
@@ -127,7 +123,8 @@ std::vector<Vec2> WeightedGrid::path(Vec2 start, Vec2 goal, Vec2 extent) const {
                 if ((!dx && !dy) || x + dx < 0 || x + dx >= width_ || y + dy < 0 || y + dy >= height_)
                     continue;
                 const int next = (y + dy) * width_ + x + dx;
-                if (blocked(next) || (dx && dy && (blocked(current + dx) || blocked(current + dy * width_))))
+                if (blocked(next) ||
+                    (dx && dy && (blocked(current + dx) || blocked(current + dy * width_))) || !enter(next))
                     continue;
                 if (!clear(point(current), point(next), extent))
                     continue;
@@ -141,6 +138,37 @@ std::vector<Vec2> WeightedGrid::path(Vec2 start, Vec2 goal, Vec2 extent) const {
             }
     }
     return {};
+}
+std::vector<Vec2> WeightedGrid::path(Vec2 start, Vec2 goal, Vec2 extent) const {
+    if (!finite(start) || !finite(goal))
+        return {};
+    const int first = cell(start), last = cell(goal);
+    if (!clear(start, start, extent) || !clear(goal, goal, extent))
+        return {};
+    if (first == last)
+        return clear(start, goal, extent) ? std::vector<Vec2>{goal} : std::vector<Vec2>{};
+    const auto point = [&](int id) { return id == first ? start : id == last ? goal : center(id); };
+    const auto heuristic = [&](int id) { return double(distance(point(id), goal)); };
+    return expand(
+        first, extent, point, heuristic, [last](int id) { return id == last; }, [](int) { return true; });
+}
+std::vector<Vec2> WeightedGrid::search(Vec2 start, const std::function<bool(int)> &accept,
+                                       const std::function<bool(int)> &enter, Vec2 extent) const {
+    if (!finite(extent) || extent.x < 0 || extent.y < 0)
+        throw std::invalid_argument("Grid search requires nonnegative half extents");
+    if (!finite(start) || !clear(start, start, extent))
+        return {};
+    const int first = cell(start);
+    // Without a goal there is no distance to estimate: the expansion is Dijkstra's, which
+    // settles cells in nondecreasing route cost, the order the contract promises `accept`.
+    const auto point = [&](int id) { return id == first ? start : center(id); };
+    const auto heuristic = [](int) { return 0.0; };
+    const auto admitted = [&](int id) { return !enter || enter(id); };
+    if (accept(first))
+        return clear(start, center(first), extent) ? std::vector<Vec2>{center(first)} : std::vector<Vec2>{};
+    // The start cell was offered above; offering it again would break "once each".
+    return expand(
+        first, extent, point, heuristic, [&](int id) { return id != first && accept(id); }, admitted);
 }
 std::vector<Segment> WeightedGrid::borders() const {
     std::vector<Segment> result;

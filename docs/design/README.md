@@ -77,6 +77,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 | Date | Document | Status |
 | --- | --- | --- |
 | 2026-11-21 | [Roadmap as a backlog](2026-11-21-roadmap-backlog.md): `docs/roadmap.md`, its format and the `roadmap` skill | implemented |
+| 2026-11-21 | [Weighted grid search](2026-11-21-weighted-grid-search.md): `WeightedGrid::search`, the cheapest route to the nearest cell a predicate accepts | implemented |
 | 2026-11-20 | [Navigation rebuild validates first](2026-11-20-navigation-rebuild-validation.md): a rejected `Navigation::rebuild` keeps the previous snapshot | implemented |
 | 2026-11-20 | [Include layout](2026-11-20-include-layout.md): headers grouped as `simulation/`, `view/` and `runtime/`, one directory rule for Kinetra and Lab | implemented |
 | 2026-11-20 | [Local verification runs only graphics](2026-11-20-verify-locally-graphics.md): `ci`, `headless` and Windows from the pull request's CI | implemented |
