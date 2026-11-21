@@ -16,10 +16,11 @@ This skill carries out [docs/workflow.md](../../../docs/workflow.md). (In Kinetr
 
 ## 2. Branch and design document
 
-1. Create a branch in each repository involved: `git switch -c <type>/<topic>` (types in the [workflow](../../../docs/workflow.md#branches-and-commits)).
-2. Copy the [template](../../../docs/design/README.md#template) to `docs/design/YYYY-MM-DD-<topic>.md` and add it to the index with status `draft`.
-3. Fill in Problem, with evidence such as `path:line` and measurements, plus Goals and non-goals, Design and Affected areas.
-4. If the change has a roadmap item, move it to **Now** with the branch and the design document (`roadmap` skill). Non-goals that the user still wants become roadmap items.
+1. Decide whether the goal is one pull request or a stack. When it splits into steps that can each be reviewed on their own, plan a [stack](../../../docs/workflow.md#stacked-pull-requests): one pull request per step, each based on the step below. Propose the cut into steps to the user with the design.
+2. Create a branch in each repository involved: `git switch -c <type>/<topic>` from up-to-date `main`, or from the branch of the step below in a stack (types in the [workflow](../../../docs/workflow.md#branches-and-commits)).
+3. Copy the [template](../../../docs/design/README.md#template) to `docs/design/YYYY-MM-DD-<topic>.md` and add it to the index with status `draft`. A stack shares the document of its first branch; list the steps with their branches in it.
+4. Fill in Problem, with evidence such as `path:line` and measurements, plus Goals and non-goals, Design and Affected areas.
+5. If the change has a roadmap item, move it to **Now** with the branch and the design document (`roadmap` skill). Non-goals that the user still wants become roadmap items.
 
 ## 3. Decisions
 
@@ -60,7 +61,7 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 1. Check that `git status --short` shows no stray files. Run a final `git log --oneline main..HEAD` and make sure every commit belongs to this change.
 2. Push each branch: Kinetra before Lab. Run `git push -u origin <branch>`; if SSH is unavailable, use the HTTPS fallback from `AGENTS.md`.
 3. Write the description from the design document's **Pull request** section to a file in the session scratchpad. It covers Summary, Changes, Design, Verification, Review notes, Dependencies and merge order, and Follow-up.
-4. Run `gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>`. For a Lab pull request with a pointer change, link the Kinetra pull request and state that it merges first, with a merge commit.
+4. Run `gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>`; for a step of a stack, use the branch below as `--base`, open the pull requests bottom-up, and start each description with the step's place in the stack and "merge after #<n>". For a Lab pull request with a pointer change, link the Kinetra pull request and state that it merges first, with a merge commit.
 5. Run `gh pr view <number> --json url,mergeable` and report conflicts; never merge.
 6. Wait for the pull request's checks (`gh pr checks <number>`): they are the CI half of the Full level. Fix a red check on the branch before handing over; report checks that are still running as pending.
 
@@ -70,4 +71,4 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 - The pull-request links, and the commits per repository.
 - Verification commands and results, and anything not run, with the reason.
 - Remaining risks and open points, and the roadmap items added or removed.
-- The merge order (Kinetra before Lab).
+- The merge order: Kinetra before Lab, and each stack bottom-up.

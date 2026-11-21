@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-21 | [Stacked pull requests](2026-11-21-stacked-pull-requests.md): agents deliver a goal as small pull requests stacked on each other | implemented |
 | 2026-11-21 | [Contact response tests](2026-11-21-contact-response-tests.md): the Demo's engine-only contact cases move from Kinetra-Lab | implemented |
 | 2026-11-21 | [Roadmap as a backlog](2026-11-21-roadmap-backlog.md): `docs/roadmap.md`, its format and the `roadmap` skill | implemented |
 | 2026-11-21 | [Weighted grid search](2026-11-21-weighted-grid-search.md): `WeightedGrid::search`, the cheapest route to the nearest cell a predicate accepts | implemented |
