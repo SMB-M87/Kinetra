@@ -1,5 +1,7 @@
 #pragma once
 #include <kinetra/simulation/math.h>
+
+#include <functional>
 #include <span>
 #include <vector>
 
@@ -45,10 +47,31 @@ class WeightedGrid {
     /// is nonfinite, blocked or outside the grid, or no route exists. Throws
     /// std::invalid_argument for negative half extents.
     std::vector<Vec2> path(Vec2 start, Vec2 goal, Vec2 half_extents = {}) const;
+    /// Cheapest route from `start` to the nearest cell, by route cost, that `accept` takes:
+    /// a search for a cell with a property (cover, a free spot, an exit) rather than for a
+    /// known goal. Costs and moves are those of path().
+    ///
+    /// Cells are offered to `accept` once each, in nondecreasing route cost, the cell of
+    /// `start` first, so a predicate that counts the cells it sees is well defined. A route
+    /// enters only free cells that `enter` admits; an empty `enter` admits every free cell,
+    /// and the cell of `start` is always admitted. Returns waypoints after `start`: cell
+    /// centers, ending at the center of the accepted cell (only that center when the start's
+    /// own cell is accepted). Empty when `start` is nonfinite, blocked or outside the grid, or
+    /// no reachable admitted cell is accepted. Throws std::invalid_argument for negative half
+    /// extents. The predicates must not change the grid.
+    std::vector<Vec2> search(Vec2 start, const std::function<bool(int cell)> &accept,
+                             const std::function<bool(int cell)> &enter = {}, Vec2 half_extents = {}) const;
     /// Merged boundary edges of the free-cell union, including outer boundaries.
     std::vector<Segment> borders() const;
 
   private:
+    /// Best-first expansion shared by path() and search(): settles cells from `first` in
+    /// order of cost plus `heuristic`, and returns the route to the first settled cell that
+    /// `accept` takes, ending at `point` of that cell. Defined and used in the .cpp only.
+    template <typename Point, typename Heuristic, typename Accept, typename Enter>
+    std::vector<Vec2> expand(int first, Vec2 half_extents, Point point, Heuristic heuristic, Accept accept,
+                             Enter enter) const;
+
     int width_, height_;
     Vec2 cell_size_;
     std::vector<bool> blocked_;
