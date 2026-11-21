@@ -1,6 +1,6 @@
 # Stacked pull requests
 
-Status: implemented · Branch: `docs/stacked-pull-requests` · Related: [workflow](../workflow.md#stacked-pull-requests), [agent rules](../../AGENTS.md#git), design `2026-11-21-roadmap-priorities.md` (on `docs/roadmap-priorities`, stacked on this branch), Lab design `2026-11-21-roadmap-priorities.md`
+Status: implemented · Branch: `docs/stacked-pull-requests` (stacked on `ci/archive-mirrors`) · Related: [workflow](../workflow.md#stacked-pull-requests), [agent rules](../../AGENTS.md#git), design `2026-11-21-roadmap-priorities.md` (on `docs/roadmap-priorities`, stacked on this branch), Lab design `2026-11-21-roadmap-priorities.md`
 
 The user asked for a standing rule: work in stacked pull requests where possible, so a goal arrives as small increments that each can be reviewed and merged on their own. Several Lab phases already worked this way without a written rule. This change writes the rule into the agent rules, the workflow and the two skills that create and update pull requests.
 
@@ -76,7 +76,7 @@ Read the diff against the rules it touches: the force-push and rebase ban, the K
 - **Changes:** AGENTS.md Git rule; workflow section *Stacked pull requests* and links from steps 2 and 8; `feature` step 2 and 9; `pr-feedback` steps 1 and 5; skills overview.
 - **Design:** `docs/design/2026-11-21-stacked-pull-requests.md`.
 - **Verification:** Docs level, green.
-- **Dependencies and merge order:** bottom of a stack of two: merge this first, then `docs/roadmap-priorities`. The Kinetra-Lab pull request on `ccr-cc3e854a-v10cnx` records the top of this stack and merges after both, with merge commits.
+- **Dependencies and merge order:** second of a stack of three: `ci/archive-mirrors` (#22), then this, then `docs/roadmap-priorities` (#21). The Kinetra-Lab pull request on `ccr-cc3e854a-v10cnx` records the top of this stack and merges after both, with merge commits.
 - **Follow-up:** a skill that reviews pull requests (roadmap item *Pull request review skill*).
 
 ## Open points
