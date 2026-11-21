@@ -70,15 +70,28 @@ Verification level: Full (public header).
 
 ## Review
 
-Filled in after review.
+- A first draft also skipped already settled neighbors in the shared loop. With the consistent Euclidean heuristic that is equivalent, but floating-point ties could reorder equal routes, so it was dropped: `path()` keeps exactly its old relaxation.
+- `search()` offers the start cell before the loop and excludes it inside, so every cell is offered once.
 
 ## Verification
 
-Filled in after verification.
+| Check | Result |
+| --- | --- |
+| `cmake --build --preset dev --target kinetra_weighted_navigation_tests`, `ctest --preset dev -R '^kinetra_weighted_navigation'` | 34/34 passed (7 new) |
+| `cmake --workflow --preset graphics` | passed: 272 unit and 13 graphics cases |
+| Kinetra-Lab with this branch: Dotio suites and i4sim golden and pressure suites | passed, apart from i4sim's RVO golden case, which fails the same way in that Debug build with Kinetra `main` (a known platform-sensitive case, already excluded on Windows) |
+| `python3 tools/check_docs.py` | passed |
+| Pull request CI | see the pull request |
 
 ## Pull request
 
-Filled in when the pull request is opened.
+**Title:** `feat(navigation): search a weighted grid for the nearest accepted cell`
+
+**Summary.** `WeightedGrid::search(start, accept, enter, half_extents)` returns the cheapest route to the first cell, in order of route cost, that `accept` takes, through cells `enter` admits. Kinetra-Lab's Dotio uses it for its shelter search, so it can drop its own A*.
+
+**Changes.** The new function; a private expansion template shared with `path()`, whose results are unchanged; seven contract cases; the navigation guide; this document.
+
+**Dependencies and merge order.** Kinetra-Lab's `refactor/dotio-navigation` records this branch; this pull request merges first, with a merge commit.
 
 ## Open points
 
