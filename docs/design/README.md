@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-21 | [CI falls back to the archive's mirrors](2026-11-21-archive-mirrors.md): pinned packages from a mirror when `archive.archlinux.org` is down | implemented |
 | 2026-11-21 | [Contact response tests](2026-11-21-contact-response-tests.md): the Demo's engine-only contact cases move from Kinetra-Lab | implemented |
 | 2026-11-21 | [Roadmap as a backlog](2026-11-21-roadmap-backlog.md): `docs/roadmap.md`, its format and the `roadmap` skill | implemented |
 | 2026-11-21 | [Weighted grid search](2026-11-21-weighted-grid-search.md): `WeightedGrid::search`, the cheapest route to the nearest cell a predicate accepts | implemented |
