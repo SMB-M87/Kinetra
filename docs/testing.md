@@ -130,7 +130,7 @@ It builds everything and runs every suite, the graphics cases included, which CI
 
 | Changed area in Kinetra | Build targets | CTest regex |
 | --- | --- | --- |
-| Math, shapes, collision, physics (`physics.cpp`, `spatial_grid.cpp`, `collision_grid.cpp`) | `kinetra_tests kinetra_polygon_tests kinetra_sweep_tests kinetra_translation_sweep_tests kinetra_moving_contact_tests` | `^kinetra_(behavior\|polygons\|sweeps\|translation_sweeps\|moving_contacts)` |
+| Math, shapes, collision, physics (`physics.cpp`, `spatial_grid.cpp`, `collision_grid.cpp`) | `kinetra_tests kinetra_polygon_tests kinetra_sweep_tests kinetra_translation_sweep_tests kinetra_moving_contact_tests kinetra_contact_response_tests` | `^kinetra_(behavior\|polygons\|sweeps\|translation_sweeps\|moving_contacts\|contact_response)` |
 | Navigation and weighted grids (`navigation.cpp`, `weighted_grid.cpp`) | `kinetra_navigation_tests kinetra_weighted_navigation_tests` | `^kinetra_(navigation\|weighted_navigation)` |
 | Steering (`steering.cpp`, `priority_steering.cpp`) | `kinetra_tests kinetra_weighted_navigation_tests` | `^kinetra_(behavior\|weighted_navigation)` |
 | Avoidance (`avoidance.cpp`) | `kinetra_avoidance_tests` | `^kinetra_avoidance` |

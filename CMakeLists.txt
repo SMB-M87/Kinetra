@@ -73,6 +73,8 @@ if(BUILD_TESTING)
         SOURCES tests/avoidance_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_moving_contact_tests PREFIX kinetra_moving_contacts
         SOURCES tests/moving_contact_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_contact_response_tests PREFIX kinetra_contact_response
+        SOURCES tests/contact_response_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_translation_sweep_tests PREFIX kinetra_translation_sweeps
         SOURCES tests/translation_sweep_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_sweep_tests PREFIX kinetra_sweeps
