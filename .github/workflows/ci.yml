@@ -1,10 +1,11 @@
 # Checks every pull request and every push to main. See docs/testing.md#continuous-integration.
 #
 # The toolchain is pinned: a dated Arch Linux image plus the Arch Linux Archive
-# snapshot below, so compiler warnings (-Werror) and clang-format output cannot
-# change without a commit. The snapshot matches the Artix/Arch development
-# environment (gcc 16.2.1, clang/clang-format 23.1.5, CMake 4.5.0). Bump both
-# deliberately, in their own commit, and fix what the new toolchain reports.
+# snapshot below, fetched from the archive or one of its mirrors, so compiler
+# warnings (-Werror) and clang-format output cannot change without a commit.
+# The snapshot matches the Artix/Arch development environment (gcc 16.2.1,
+# clang/clang-format 23.1.5, CMake 4.5.0). Bump both deliberately, in their own
+# commit, and fix what the new toolchain reports.
 #
 # Graphics tests are compiled but not run (no GPU); run them locally with
 # `cmake --workflow --preset graphics`. The workflow name "CI" and job id
@@ -33,7 +34,11 @@ jobs:
     steps:
       - name: Install pinned toolchain and dependencies
         run: |
-          echo "Server = https://archive.archlinux.org/repos/${ARCH_SNAPSHOT}/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist
+          # The archive's mirrors serve the same dated snapshot. pacman moves on to the next
+          # server when one does not answer, so an outage of one host does not stop CI.
+          for host in archive.archlinux.org europe.archive.pkgbuild.com america.archive.pkgbuild.com asia.archive.pkgbuild.com; do
+            echo "Server = https://${host}/repos/${ARCH_SNAPSHOT}/\$repo/os/\$arch"
+          done > /etc/pacman.d/mirrorlist
           pacman -Syyuu --noconfirm --needed git python cmake ninja ccache clang sdl2-compat libglvnd mesa
           gcc --version | head -1; clang-format --version; cmake --version | head -1
 
