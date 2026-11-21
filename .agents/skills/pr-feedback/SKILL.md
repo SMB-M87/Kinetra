@@ -13,6 +13,7 @@ Feedback is part of the [review step](../../../docs/workflow.md#6-review) (in Ki
 - With an argument, use that pull request.
 - Without one, take the open pull requests for the current branch of each repository involved: `gh pr list --repo <owner>/<repo> --head <branch> --state open`.
 - Check out the pull request's branch locally and make sure it is up to date with the remote. Never work on `main`.
+- For a step of a [stack](../../../docs/workflow.md#stacked-pull-requests) (its base is another branch, or other pull requests are based on its branch), also fetch the branches below and above it. If a branch below moved, merge it in first.
 
 ## 2. Collect the feedback
 
@@ -51,7 +52,7 @@ Post the list in Dutch (item, kind, planned action). Wait for the user only when
 
 ## 5. Push and reply
 
-1. Push the branch (with the HTTPS fallback from `AGENTS.md` if SSH is unavailable).
+1. Push the branch (with the HTTPS fallback from `AGENTS.md` if SSH is unavailable). In a stack, then merge it into each branch above it, bottom-up (`git switch <above> && git merge --no-edit <below>`), resolve conflicts, verify at the level the merge needs, and push each branch. No rebase or force-push.
 2. Reply in the thread under each inline comment:
 
    ```sh
@@ -70,4 +71,4 @@ Post the list in Dutch (item, kind, planned action). Wait for the user only when
 
 - Per item: what was done, with the commit, or why not.
 - Verification commands and results.
-- Pull-request links. When a Lab pointer moved because Kinetra changed, say so, and repeat the merge order.
+- Pull-request links. When a Lab pointer moved because Kinetra changed, or the change was merged up a stack, say so, and repeat the merge order.
