@@ -16,28 +16,36 @@ The backlog of Kinetra: engine work that is wanted but not finished, from agreed
 
 Sections, item format and the moves between sections are defined in the [documentation guide](documentation.md#roadmap). The `roadmap` skill adds, shapes and closes items, for example during a brainstorm with the user ([skill](../.agents/skills/roadmap/README.md)). A merged item is removed; its design document is the record.
 
-Started on 2026-11-21. The Lab [quality roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-quality-roadmap.md) still runs phases 5 to 8; its engine parts are listed here.
+Started on 2026-11-21. Of the Lab [quality roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-quality-roadmap.md), the engine parts left are listed here: Demo's contact tests (phase 5) and the shared passing mechanism (phase 8).
 
 ## Now
 
-- **Navigation search for Dotio** · navigation, with Lab · added 2026-11-21
-  Lab quality-roadmap phase 6 replaces Dotio's own A* with `kinetra::Navigation`; Kinetra gets the search Dotio needs.
-  Where: the phase 6 branches (`refactor/dotio-navigation`), with their own design documents.
+Nothing in progress in Kinetra itself.
 
 ## Next
 
+- **Demo's contact tests in Kinetra** · tests, with Lab · added 2026-11-21
+  `labs/demo/tests/contact_tests.cpp` tests only `kinetra/simulation/physics.h`; it moves to Kinetra as the suite `kinetra_contact_response_tests`. Step 4 of Lab phase 5; its branches (Kinetra `test/contact-response-tests`, Lab `test/demo-contact-tests`) were committed in a session without Kinetra push access and are not on GitHub.
+  Next step: push them from that session, or redo the move from the plan. Where: [Demo restructuring, step 4](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-demo-restructuring.md#step-4-contact-tests-to-kinetra).
 - **Skill READMEs** · docs · added 2026-11-21
   `feature`, `grilling`, `verify`, `doc-module`, `refactor`, `adr` and `pr-feedback` still have only a `SKILL.md`; each gets a README from the [template](documentation.md#skill-readme-template), linked from the [skills overview](../.agents/skills/README.md).
   Next step: one branch `docs/skill-readmes` for all seven. Where: Lab quality roadmap, documentation cleanup.
+- **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
+  Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR. Decide whether the four steering models can share one agent-motion interface, and move i4sim-shaped defaults out of the engine.
+  Lab phases 5 to 7 are done, so it can start.
+  Next step: a design session (`grilling`); the i4sim MAKE WAY decision in Lab may shape it. Where: [Lab quality roadmap, phase 8](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-quality-roadmap.md#phase-8-shared-passing-mechanism).
 
 ## Later
 
-- **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
-  Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR. Decide whether the four steering models can share one agent-motion interface, and move i4sim-shaped defaults out of the engine.
-  Depends on: Lab phases 5, 6 and 7. Where: [Lab quality roadmap, phase 8](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-18-quality-roadmap.md#phase-8-shared-passing-mechanism).
 - **Frame read-back on `Runtime`** · runtime · added 2026-11-21
   A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
   Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).
+- **Headless timing outside `runtime/`** · include layout, with Lab · added 2026-11-21
+  `<kinetra/runtime/timing.h>` (`FixedClock`, `RateCounter`) is header-only and headless, yet sits under `runtime/`, and the Demo, Dotio and i4sim logic include it. Move it to `simulation/` or `view/`.
+  Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
+- **Raster route target** · navigation · added 2026-11-21
+  A `WeightedGrid` counterpart of `route_target`, so agents that follow a grid route cut corners that are already in sight; Dotio's pursuers would move more smoothly.
+  Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
 
 ## Ideas
 

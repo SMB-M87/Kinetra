@@ -29,14 +29,14 @@ Planned work had no fixed place. Follow-ups ended in the *Open points* of design
 
 - Goal: one backlog page per repository with a fixed format, and rules for when items move or leave.
 - Goal: skills that keep it current: `feature` reads and updates it, `grilling` sends deferred branches to it, and a new `roadmap` skill handles brainstorms and grooming.
-- Non-goal: replacing design documents or ADRs. Non-goal: closing the Lab quality roadmap; its phases 5 to 8 still run in other sessions.
+- Non-goal: replacing design documents or ADRs. Non-goal: closing the Lab quality roadmap; its phase 8 and Demo's contact tests (phase 5, step 4) are still open, and are items here.
 
 ## Decisions
 
 | Decision | Choice | Why |
 | --- | --- | --- |
 | One roadmap for both repositories, or one each | One each (user's choice) | Engine work and application work stay apart; an item that needs both appears in each, linked |
-| What happens to the quality roadmap | Left untouched; its engine parts are listed in the new roadmap (user's choice) | Phases 5 to 7 are being changed by other sessions; editing it would cause conflicts |
+| What happens to the quality roadmap | Left untouched; its engine parts are listed in the new roadmap (user's choice) | Other sessions were updating it for phases 5 to 7 when this started; editing it would cause conflicts |
 | Where the format is defined | The documentation guide, one section | Both repositories follow it; one authoritative place |
 | Done items | Removed, no done list | The design document is the record; a done list grows without being read |
 | Skill or only rules | A new `roadmap` skill, plus steps in `feature` and `grilling` | A brainstorm is not a feature; it needs its own trigger and steps |
