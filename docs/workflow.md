@@ -37,12 +37,13 @@ flowchart LR
     C --> M[User reviews and merges]
 ```
 
-The design document is the backbone. It is written first, it collects the decisions, test plan and review outcome, and it ends with the pull-request description. The `feature` skill runs the whole loop.
+Work starts from an item in the [roadmap](roadmap.md) or a request from the user, and ends by updating that roadmap. The design document is the backbone. It is written first, it collects the decisions, test plan and review outcome, and it ends with the pull-request description. The `feature` skill runs the whole loop.
 
 ## 1. Understand
 
 - Read [AGENTS.md](../AGENTS.md) and only the pages its routing table points to for this task.
 - Run `git status` in every repository you will touch, and note unrelated work so it stays untouched.
+- Check the [roadmap](roadmap.md) for an item on this topic; it holds the agreed scope and open questions.
 - Read the code, tests and docs around the change before proposing anything. Facts you can look up are your job; decisions are the user's.
 
 ## 2. Design
@@ -91,6 +92,7 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 
 - Update the module README, contract pages and diagrams the change affects.
 - Set the design document's status to `implemented`, or to `abandoned` with the reason.
+- Update the [roadmap](roadmap.md): remove the finished item, and add the follow-ups someone intends to act on ([format](documentation.md#roadmap)).
 - Add or update index entries: the design index and, for an ADR, the decision index.
 - Run the docs check.
 

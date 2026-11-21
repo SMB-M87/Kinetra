@@ -7,6 +7,7 @@ How Kinetra and Kinetra-Lab are documented. Documentation exists to give insight
 - [What goes where](#what-goes-where)
 - [Module README template](#module-readme-template)
 - [Skill README template](#skill-readme-template)
+- [Roadmap](#roadmap)
 - [Code comments](#code-comments)
 - [Diagrams](#diagrams)
 - [Page layout](#page-layout)
@@ -27,6 +28,7 @@ How Kinetra and Kinetra-Lab are documented. Documentation exists to give insight
 | What is the contract of an engine subsystem? | `docs/engine/*.md` |
 | Why was a boundary chosen? | ADR in `docs/decisions/` |
 | What was changed in a branch, and why? | Design document in `docs/design/` |
+| What still has to be done, and which ideas are waiting? | `docs/roadmap.md` ([format](#roadmap)) |
 | Which skill fits my situation, and what will it do? | The skill's `README.md` ([template](#skill-readme-template)); all skills in the [skills overview](../.agents/skills/README.md) |
 | How do we work? | `AGENTS.md`, [workflow](workflow.md), [conventions](conventions.md), [testing](testing.md) and this page |
 
@@ -110,6 +112,37 @@ changes, what it asks the user, and what it never does (merge, push to main).
 ## Related skills
 Which skills it calls, and which skills call it.
 ```
+
+## Roadmap
+
+Each repository keeps one backlog in `docs/roadmap.md`: work that is wanted but not finished, from agreed follow-ups to loose ideas. Kinetra's roadmap holds engine work; Kinetra-Lab's holds applications, tools and the build. Work that needs both gets an item in each, linked to the other. The `roadmap` skill adds, shapes and closes items.
+
+A roadmap and a design document divide the work by time. The roadmap holds what has not started or is waiting; once a branch starts, its design document holds the scope, decisions and history, and the roadmap item only links to it. A merged item is removed: its design document is the record.
+
+### Sections
+
+| Section | Holds | An item moves on when |
+| --- | --- | --- |
+| **Now** | Items with a branch or an open pull request | Its pull request merges: the item is removed |
+| **Next** | Agreed and shaped: the goal and a first step are clear, nothing blocks it | Someone starts it: it moves to Now with its branch and design document |
+| **Later** | Wanted, but large, blocked or not yet shaped | It is shaped and unblocked: it moves to Next |
+| **Ideas** | Brainstorm and wishes, not agreed. Raw notes and questions are fine | The user agrees to pursue it: it moves to Later or Next |
+
+### Item format
+
+One list item per piece of work, so the page stays easy to scan and reorder:
+
+```markdown
+- **<Short title>** · <area> · added YYYY-MM-DD
+  <What and why, in one to three sentences.>
+  Next step: <the first concrete action>. Depends on: <items or nothing>.
+  Where: <design document, branch, pull request or source of the idea>.
+```
+
+- *Area* names the module or theme (`i4sim`, `runtime`, `build`, `docs`, `3D`, …); for cross-repository work, also the other repository.
+- Leave out lines that have nothing to say. An idea may be only a title and a sentence.
+- Within a section, order by priority: the first item is picked up first.
+- Open points of a page stay on that page. They become roadmap items only when someone intends to act on them; the item then links the open point.
 
 ## Code comments
 
