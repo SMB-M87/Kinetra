@@ -14,10 +14,12 @@
 # job id "checks" are required status checks on main; keep them stable.
 #
 # The "ubuntu" job builds and tests on Ubuntu LTS with its own GCC and packages, so Linux
-# beyond Arch stays supported (docs/development.md#dependencies-and-options). The pinned Arch
-# job stays the reference: formatting and the docs checks run only there, and warnings are
-# errors only there, because another GCC warns about other things. Ubuntu's packages are
-# not pinned; the job follows the runner image.
+# beyond Arch stays supported (docs/development.md#dependencies-and-options). It puts
+# /usr/bin first on the path, so the runner image's newer CMake in /usr/local/bin does not
+# stand in for Ubuntu's. The pinned Arch job stays the reference: formatting, the docs
+# check and the icon check run only there, and warnings are errors only there, because
+# another GCC warns about other things; the ubuntu job shows them as annotations. Ubuntu's
+# packages are not pinned; the job follows the runner image.
 name: CI
 
 on:
@@ -92,17 +94,25 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build ccache \
             libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0
-          gcc --version | head -1; cmake --version | head -1; ldd --version | head -1
+          # Ubuntu's own tools, not the runner image's newer ones in /usr/local/bin.
+          echo /usr/bin >> "$GITHUB_PATH"
+
+      - name: Tool versions
+        run: |
+          command -v gcc cmake ctest ninja
+          gcc --version | head -1; cmake --version | head -1; ninja --version; ldd --version | head -1
 
       - uses: actions/checkout@v7
 
       - name: Headless build and test (no SDL2/OpenGL)
         run: cmake --workflow --preset headless
 
-      - name: Full build and test (runtime, warnings reported, graphics tests with software OpenGL)
+      - name: Full build and test (runtime, warnings as annotations, graphics tests with software OpenGL)
         run: |
+          set -o pipefail
           cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF
-          cmake --build --preset ci
+          cmake --build --preset ci 2>&1 | tee build-ci.log
+          grep -E 'warning: ' build-ci.log | sort -u | sed 's/^/::warning title=Compiler warning on Ubuntu::/' || true
           ctest --preset ci
 
       - name: External consumer
