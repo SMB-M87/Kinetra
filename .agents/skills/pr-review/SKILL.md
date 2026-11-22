@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session after every pull request, or by the user. Checks every goal of the roadmap item and design document, runs the built-in code review and the repository checklist (tests, verification, docs, roadmap, CI, merge order, review lessons), builds and runs what CI does not cover, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, resolves the threads it accepts, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and after opening a pull request.
-argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole stack) [low|medium|high|xhigh]"
+argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole stack) [code-review level: low|medium|high]"
 ---
 
 # PR review: an agent reviews a pull request
@@ -9,6 +9,25 @@ argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole s
 The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it: the author starts it in a separate session after opening the pull request, and the user can start it too. The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
 
 Everything on GitHub is in English: the inline comments, the summary and its conclusion. Only the hand-over in the chat (step 11) is in Dutch.
+
+## Levels
+
+The author sets both when it starts the review; the reviewer checks them against the diff and takes the higher level when the diff is riskier than the one passed.
+
+**The reviewer's session** runs on the most capable model available:
+
+| Pull request | Effort |
+| --- | --- |
+| Every pull request | `high` |
+| A large pull request with much logic: more than about 300 changed lines of `.h`/`.cpp` outside `tests/`, or a change of simulation behavior (golden, characterization or pressure outcomes), or a change across Kinetra and Lab at once | `xhigh` |
+
+**The built-in code review** (step 4) runs at:
+
+| The diff touches | Level |
+| --- | --- |
+| Only Markdown, skills and comments | `low` |
+| Code inside one module, tests, scripts | `medium` |
+| A public `include/kinetra/` header, simulation behavior, timing or threads, CMake, CI, the release, or a Lab pointer to a Kinetra range with engine sources | `high` |
 
 ## 0. Rules
 
@@ -41,7 +60,7 @@ List every goal of the roadmap item and of the design document's *Goals*. For ea
 
 ## 4. Correctness
 
-Run the built-in review on the pull request (Claude Code: `/code-review <level> <number>`; Codex: the global `code-review` skill) at the level from the argument, `medium` by default, **without** letting it post. Check every finding against the code yourself and keep only those that hold.
+Run the built-in review on the pull request (Claude Code: `/code-review <level> <number>`; Codex: the global `code-review` skill) at the level from the [Levels](#levels) table (or the argument, if it is higher), **without** letting it post. Check every finding against the code yourself and keep only those that hold.
 
 ## 5. Checklist
 

@@ -17,7 +17,7 @@ A second agent reviews every pull request, or a whole stack of them. The author 
 | --- | --- | --- |
 | An agent opened a pull request | Started by that agent, in a separate session | Goals, correctness and the checklist reviewed. Findings go to the author, two discussion rounds at most per point, then a merge by the author or a pull request waiting for you |
 | A stack of pull requests waits | "/pr-review de bovenste PR van de stack" | Each pull request of the stack reviewed bottom-up, each finding on the pull request it belongs to |
-| You want a deeper look at a risky change | "/pr-review Kinetra#25 high" | The same, with the built-in review at a higher level |
+| You want a deeper look than the levels give | "/pr-review Kinetra#25 high" | The same, with the built-in review at `high` even if the diff would get `low` or `medium` |
 
 ## When not to use it
 
@@ -44,6 +44,7 @@ flowchart LR
 
 - It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff.
 - It runs the built-in `/code-review` for correctness and checks every finding itself. Then it walks a checklist from the rules: tests, verification level, docs, roadmap, conventions, description and merge order.
+- Its depth follows the change: the reviewer's session runs at effort `high`, or `xhigh` for a large pull request with much logic, and the built-in review at `low` for docs, `medium` for code in one module, `high` for public headers, simulation behavior, CMake, CI and releases ([levels](SKILL.md#levels)).
 - It builds and runs what CI does not cover: graphics tests and, in Lab, a screenshot of the changed scene.
 - Everything it posts on GitHub, the conclusion included, is in English and starts with **Agent review**. It reports to you in the chat in Dutch.
 - It resolves the threads it accepts, and never approves, requests changes, pushes or merges.
