@@ -156,7 +156,7 @@ Title: `fix(simulation): round atan2 and asin the same on every C library`
 
 **Verification.** See the design document's *Verification*: the new case fails with `std::` on glibc 2.39 and passes with Kinetra's functions; Kinetra 280 of 280 and headless 230 of 230 on Ubuntu; Kinetra-Lab 316 of 316 plus the soak cases on Ubuntu with this commit and its own call sites. CI on Arch is the Full level.
 
-**Review notes.** On Arch, with glibc 2.42 or later, the results are the same as before, so no golden value in Kinetra or Lab moves. The test's `volatile` is load-bearing: without it the compiler folds the call and the test proves nothing.
+**Review notes.** On Arch, whose snapshot has glibc 2.41 or later, the results are the same as before, so no golden value in Kinetra or Lab moves. The test's `volatile` is load-bearing: without it the compiler folds the call and the test proves nothing.
 
 **Dependencies and merge order.** Merge before step 2 and before the Kinetra-Lab pull request, with a merge commit.
 
