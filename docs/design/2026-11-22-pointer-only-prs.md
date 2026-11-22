@@ -42,6 +42,8 @@ Settled with the user on 2026-11-22.
 | Separate pull request | Always; never a pointer commit on an open or reviewed pull request | The user's word: a reviewed pull request should not run CI again for one line |
 | CI | Skip build and tests when Kinetra changed only Markdown, `docs/` or `.agents/` between the two pointers (an identical tree included), run only the docs check then; otherwise full CI | The user's choice over always skipping: a pointer can bring engine code that only Lab's CI tests against Lab |
 | How CI skips | Jobs that start and are skipped by a condition, not a path filter on the workflow | `main` requires the `CI / checks` status; a filtered-out workflow never reports it, a skipped job reports success |
+| Scope of the ban | Only the move to the Kinetra merge commit goes in a pointer-only pull request; following a Kinetra branch during review stays a commit on the Lab branch | Found by the agent review of #27: the first wording also forbade the branch-pointer updates the stack rules need |
+| Squash | Still not allowed; if a Kinetra pull request was squashed anyway, the Lab pull request's pointer moves to the squashed commit before it merges, with CI run again | The branch commit can become unreachable, so the normal order breaks; decided by the agent after the review of #27 |
 
 ## Design
 
@@ -59,7 +61,8 @@ Documentation and skills only: the Docs level. The CI behavior is tested on Kine
 
 ## Review
 
-Searched every statement that each pull request gets an agent review, and every mention of the pointer order, and changed them together (the lesson of #26).
+- Self-review: searched for "every pull request gets" and the pointer order, and changed those copies (the lesson of #26), but with too narrow a search: the agent review found two more (the `pr-review` README, the `verify` table).
+- Agent review on c6b9104 (*Fix first*): the ban was wider than intended, the merge rule did not state the exception, the squash case was open, and two copies were missed. All addressed in the next commit, with a new lesson; the review also notes that the #26 lesson recurred, which makes it a candidate rule for the user.
 
 ## Verification
 

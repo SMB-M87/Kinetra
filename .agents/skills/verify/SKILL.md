@@ -26,7 +26,7 @@ A changed submodule pointer (`external/Kinetra` in Lab's diff) counts as an engi
 | `*.md`, `.agents/**`, `AGENTS.md`, `docs/**`, `tools/README.md` | Docs |
 | `.cpp` or private `.h` within one module, or comment-only edits in code | Targeted (comment-only edits: Docs) |
 | `include/kinetra/**`, any `CMakeLists.txt`, `build.sh`, `.clang-format`, `tools/*.py`, dependency files | Full |
-| Files in more than one module, the submodule pointer, runtime/launcher sources (`src/runtime/**`, `launcher/**`, presentation `session.cpp`) | Full |
+| Files in more than one module, the submodule pointer (unless its Kinetra range is only Markdown, docs or skills, see above), runtime/launcher sources (`src/runtime/**`, `launcher/**`, presentation `session.cpp`) | Full |
 | Last verification of a branch that changed code | Full |
 
 An explicit argument (`docs`, `targeted`, `full`) overrides the result, but never downward when code changed: say so if asked.
