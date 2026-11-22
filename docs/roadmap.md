@@ -24,9 +24,6 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-- **Graphics tests in CI** · tests, CI, with Lab · added 2026-11-21
-  CI compiles the graphics tests but does not run them, for want of a GPU ([testing](testing.md#continuous-integration)). The `graphics` preset already renders with SDL's offscreen driver and software Mesa ([development](development.md#graphics-execution)), which needs no GPU, so CI could run `kinetra_engine_graphics` on every pull request. Runtime and overlay changes would then be checked on GitHub, also when they come from a cloud session without a display.
-  Next step: run the `graphics` workflow in CI's Arch image and see which cases pass; the WSL2 mouse-input failure ([testing, open points](testing.md#open-points)) shows that injected input needs a look.
 - **Agent inspector overlay** · runtime, with Lab · added 2026-11-21
   A reusable overlay that shows the rows of one selected agent (a title, label–value rows in groups) beside it or in a corner, so the user sees an agent's motion settings, goal and state while it runs. Kinetra owns layout, drawing and input capture, as for every overlay; applications supply the selection and the rows as headless values, as `DebugEntry` does for the debug menu ([debug_view.h](../include/kinetra/runtime/debug_view.h)).
   Next step: design it with Lab's item of the same name, which starts with i4sim.
