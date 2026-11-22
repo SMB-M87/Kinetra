@@ -129,8 +129,9 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     send(event);
     runtime.poll();
     REQUIRE_MESSAGE(!runtime.input().down(Key::a), "Focus loss retained key");
-    // Fill the mouse events as SDL fills real ones: sdl2-compat converts a pushed SDL2
-    // event to SDL3 from preciseY and state, so a wheel event with only `y` arrives as 0.
+    // Fill the mouse events as SDL fills real ones, with whole notches in `y` and the exact
+    // delta in `preciseY`. sdl2-compat (Arch, WSL2) returns a pushed wheel event with `y`
+    // replaced by its `mouseY`, so only `preciseY` survives there.
     event = {};
     event.type = SDL_MOUSEWHEEL;
     event.wheel.y = 2;
@@ -145,6 +146,13 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     runtime.poll();
     REQUIRE_MESSAGE(runtime.input().clicked, "Mouse click lost");
     REQUIRE_MESSAGE(runtime.input().wheel == 2, "Mouse wheel lost");
+    event = {};
+    event.type = SDL_MOUSEWHEEL;
+    event.wheel.preciseY = 0.5f;
+    event.wheel.direction = SDL_MOUSEWHEEL_FLIPPED;
+    send(event);
+    runtime.poll();
+    REQUIRE_MESSAGE(runtime.input().wheel == -0.5f, "Smooth or flipped wheel step lost");
     runtime.poll();
     REQUIRE_MESSAGE((!runtime.input().clicked && runtime.input().mouse_down && runtime.input().wheel == 0),
                     "Held shooting input or mouse transitions lost");

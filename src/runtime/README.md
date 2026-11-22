@@ -147,5 +147,4 @@ The [external consumer](../../tests/README.md#external-consumer) links the publi
 
 ## Open points
 
-- `kinetra_engine_graphics` fails under WSL2 at the injected mouse-input check ([testing](../../docs/testing.md#open-points)); the session and launcher cases still run there.
 - The LAUNCHER button stays visible when an application runs without a launcher, where it ends the program.

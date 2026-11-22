@@ -42,6 +42,7 @@ CI compiled the graphics tests but did not run them, so the Full level asked for
 | Kinetra and Lab | Both, Kinetra first | The user's choice of 2026-11-22. The rule lives here and Lab copies it |
 | How CI runs them | The `ci` test preset runs everything, with the offscreen environment; a hidden `software-gl` test preset holds that environment for `graphics` and `ci` | No second build: `build-ci` already has the graphics tests. One step, and one preset that a developer can run to reproduce CI |
 | Desktop checks | A design document names a playtest by the user when a change depends on feel, a GPU driver or performance | Neither CI nor a local software run proves them |
+| The mouse-input case under `sdl2-compat` | `Runtime::poll` reads `wheel.preciseY`. The first CI run failed it with "Mouse input lost", as WSL2 did. The cause is in `sdl2-compat` 2.32.64's `Event2to3`: a pushed SDL2 wheel event reaches SDL3 with `integer_y` taken from the bytes of `mouseY`, and comes back with `y` equal to that, so 0. `preciseY` survives. | The user's choice of 2026-11-22. `Input::wheel` and `zoom` already promised fractional steps for smooth wheels; a notched wheel gives the same values as before |
 | The reviewer | `pr-review` reviews the code and comments, and builds, tests and runs nothing; the author starts it only once the pull request's CI is green, and after new commits it reviews only a green head. A screenshot of a changed scene is the author's; the reviewer checks it is there | The user's choice of 2026-11-22, during this pull request: CI and the author run everything, so a run by the reviewer only repeated it |
 
 ## Design
@@ -61,7 +62,7 @@ flowchart LR
 
 ## Affected areas
 
-`CMakePresets.json`, `.github/workflows/ci.yml`, `AGENTS.md`, `docs/testing.md`, `docs/development.md`, `docs/workflow.md`, `.agents/skills/verify/`, `.agents/skills/pr-review/` (`SKILL.md` and `README.md`), `.agents/skills/feature/SKILL.md`, `.agents/skills/README.md`, `tests/runtime_tests.cpp`, the roadmap item *Graphics tests in CI* (removed), this document and the design index.
+`CMakePresets.json`, `.github/workflows/ci.yml`, `AGENTS.md`, `docs/testing.md`, `docs/development.md`, `docs/workflow.md`, `.agents/skills/verify/`, `.agents/skills/pr-review/` (`SKILL.md` and `README.md`), `.agents/skills/feature/SKILL.md`, `.agents/skills/README.md`, `src/runtime/runtime.cpp`, `src/runtime/README.md`, `tests/runtime_tests.cpp`, the roadmap item *Graphics tests in CI* (removed), this document and the design index.
 
 ## Test plan
 
@@ -96,7 +97,8 @@ To be filled in after the agent review.
 - `ci.yml`: comment and step name.
 - `AGENTS.md`, testing, development, workflow, `verify` and `pr-review`: CI is the Full level; locally the targeted checks, graphics cases optional; a desktop playtest stays with the user.
 - `pr-review`, `feature`, workflow and `AGENTS.md`: the reviewer reviews code and comments only, and starts once CI is green; the author adds a screenshot of a changed scene.
-- `runtime_tests.cpp`: the mouse-input case fills its injected events as SDL does, and checks click and wheel separately.
+- `runtime.cpp`: `Runtime::poll` adds `wheel.preciseY` instead of the whole notches in `wheel.y`, so `Input::wheel` is fractional for smooth wheels, as its contract says.
+- `runtime_tests.cpp`: the mouse-input case fills its injected events as SDL does, checks click and wheel separately, and adds a flipped half step.
 - Roadmap item *Graphics tests in CI* removed.
 
 **Verification.** Local `ci` workflow in a cloud session: 278 of 278 cases, 13 graphics. The Arch result is this pull request's CI.
@@ -107,4 +109,5 @@ To be filled in after the agent review.
 
 ## Open points
 
-- `kinetra_engine_graphics` still fails under WSL2 ([testing, open points](../testing.md#open-points)); a cloud session passes it with SDL 2.30, which points at WSLg or `sdl2-compat` there rather than at the test.
+- Smooth wheels and touchpads now zoom in fractional steps (`Input::wheel` from `preciseY`); that is what the contracts of `Input::wheel` and `zoom` already said, but its feel on a desktop is the user's playtest.
+- `sdl2-compat` 2.32.64 copies a pushed wheel event's `mouseX`/`mouseY` into SDL3's `integer_x`/`integer_y` (`Event2to3`, a `memcpy` past the timestamp), and reads `y` back from `integer_y`. Real input is not affected. An upstream report would let a future test inject `y` again.

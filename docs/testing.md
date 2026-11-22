@@ -164,4 +164,4 @@ Report each check as: command, result (passed / failed / not run), and the reaso
 
 ## Open points
 
-- **`kinetra_engine_graphics` fails under WSL2.** Its first case fails at the injected mouse-input check, both with SDL offscreen and with the WSLg display; the other cases, including the session and launcher loops, pass there. Unchanged code shows the same result, so injected mouse events probably do not reach SDL (`sdl2-compat`) there. It needs a check on a real Linux desktop.
+None at the moment. The WSL2 mouse-input failure had the same cause as the first CI run with graphics: `sdl2-compat` loses `wheel.y` of an injected event, and the runtime now reads `wheel.preciseY` ([graphics tests in CI](design/2026-11-22-graphics-tests-in-ci.md)).
