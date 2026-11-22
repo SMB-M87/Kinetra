@@ -63,12 +63,12 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 | --- | --- | --- |
 | Docs | Only Markdown, comments, skills or agent rules changed | `python3 tools/check_docs.py`; no build |
 | Targeted | Code inside one module; no public header, CMake or dependency change | Incremental build of the affected targets in the existing build directory, plus their CTest entries |
-| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Locally `cmake --workflow --preset graphics` (in Lab too when available); then the pull request's CI (format, docs, `headless`, `ci`, consumer). Verified only when both pass ([testing](docs/testing.md#full)) |
+| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Locally the targeted builds and tests of every changed area; then the pull request's CI (format, docs, `headless`, `ci` with the graphics cases on software OpenGL, consumer). Verified only when CI passes ([testing](docs/testing.md#full)) |
 
 - Report the exact commands, results and blockers. Never call a check passed that did not run.
 - A failed configure or build means verification is incomplete.
 
-*Why:* a full build takes minutes and proves nothing for a README edit. Skipping compilation after a code change hides errors until much later.
+*Why:* a full build takes minutes and proves nothing for a README edit. Skipping compilation after a code change hides errors until much later. CI runs the graphics cases on the same software backend as a local run, so the local machine adds nothing to the Full level but a playtest on a desktop.
 
 ## Git
 
@@ -78,7 +78,7 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 - When the branch is complete (design document `implemented`, verification passed), push the branch and open a pull request against `main`, or against the branch below it in a stack. Use the design document's *Pull request* section as the description ([workflow](docs/workflow.md#8-commit-push-and-open-a-pull-request)).
 - Work in stacked pull requests where possible: when a goal splits into steps that can each be reviewed on their own, give every step its own branch and pull request, based on the step below it, so the user gets small increments toward the same goal. When a lower step changes, merge it into the branches above it; the stack merges bottom-up ([stacked pull requests](docs/workflow.md#stacked-pull-requests)).
 - Never push to `main`, force-push, rebase published history, tag or change remotes. Merge a pull request only under the merge rule below.
-- Every pull request gets an agent review, except a pointer-only one (below). After opening it, its author starts a separate session with the `pr-review` skill, and the pull request waits for that review's conclusion. The reviewer posts inline comments and a *comment* review marked **Agent review**, resolves the threads it accepts, and never approves, requests changes or pushes ([review loop](docs/workflow.md#6-review)).
+- Every pull request gets an agent review, except a pointer-only one (below). Once its CI is green, its author starts a separate session with the `pr-review` skill, and the pull request waits for that review's conclusion. The reviewer posts inline comments and a *comment* review marked **Agent review**, resolves the threads it accepts, and never approves, requests changes or pushes ([review loop](docs/workflow.md#6-review)).
 - The author follows its pull request and answers every finding with `pr-feedback`: it carries it out, or replies with its argument. Reviewer and author discuss a point for at most two rounds; a point still open after that stays open for the user.
 - **Merge rule.** The author's agent merges its own pull request only when nothing is open: the reviewer's latest conclusion is *Ready to merge* on the current head, every review thread is resolved, CI is green, GitHub reports no conflict, and every pull request below it in its stack is merged. It merges with a merge commit, bottom-up, Kinetra before Lab; the Lab pointer then moves to the Kinetra merge commit in a separate pointer-only pull request. These always wait for the user: changes to the agent rules (both `AGENTS.md` files, `.agents/skills/`, and the workflow, conventions, testing and documentation pages), to CI or releases (`.github/`, `tools/release/`, `CMakePresets.json`), and any pull request whose roadmap item or design document names a check by the user. A pointer-only pull request (below) needs no review conclusion and is not in this list, whatever its Kinetra range changes: that content was already reviewed and merged in Kinetra.
 - If `git push` over SSH is unavailable, push once over HTTPS with the GitHub CLI credentials: `git -c credential.helper= -c credential.helper='!gh auth git-credential' push https://github.com/<owner>/<repo>.git <branch>`. Never store credentials or change the remote or global git configuration for this.
@@ -155,7 +155,7 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `refactor` | Behavior-preserving restructuring in named, tested steps (on request) |
 | `adr` | Record an architecture decision |
 | `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request, and for agent reviews in the author's session) |
-| `pr-review` | Review a pull request or a whole stack: goals, the agent's code review and the repository checklist, a run of what CI does not cover, inline comments and a conclusion, discussion rounds, proposed lessons (started by the author after every pull request except a pointer-only one, or by the user) |
+| `pr-review` | Review a pull request or a whole stack: goals, the agent's code review and the repository checklist on the code, without running anything, inline comments and a conclusion, discussion rounds, proposed lessons (started by the author once a pull request's CI is green, for every pull request except a pointer-only one, or by the user) |
 | `roadmap` | Keep the backlog in `docs/roadmap.md`: brainstorm ideas, pick up, close items (on request or from `feature` and `grilling`) |
 
 - Each skill directory holds a `SKILL.md` for the agent and a `README.md` with use cases for contributors. Follow the [skill README template](docs/documentation.md#skill-readme-template) and link the guide from the [skills overview](.agents/skills/README.md).

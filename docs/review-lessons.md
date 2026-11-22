@@ -34,6 +34,9 @@ One list item per lesson, under the topic it belongs to:
 - **Scope a new ban to the case it targets, and check it against every procedure that still performs that action** · added 2026-11-22 · source: #27
   "Never push a pointer move onto an open pull request" was meant for the move to the merge commit, but read literally it also forbade the branch-pointer updates that the stack rules still need. Name the exact case in the rule, then search the rules for every step that does the forbidden thing.
 
+- **Search for copies of a changed step case-insensitively, on its key words, not on one copy's sentence** · added 2026-11-22 · source: #30
+  The search for "After opening it" matched only the sentence in `AGENTS.md`; the skills overview and the `pr-feedback` guide said "after opening a pull request" and "after every pull request". Use `grep -rni` with each key word of the step in lower case.
+
 ## CI and tooling
 
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22

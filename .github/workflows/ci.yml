@@ -8,9 +8,10 @@
 # clang/clang-format 23.1.5, CMake 4.5.0). Bump both deliberately, in their own
 # commit, and fix what the new toolchain reports.
 #
-# Graphics tests are compiled but not run (no GPU); run them locally with
-# `cmake --workflow --preset graphics`. The workflow name "CI" and job id
-# "checks" are required status checks on main; keep them stable.
+# The `ci` test preset runs every test, the graphics cases included: SDL's offscreen
+# driver with software Mesa (llvmpipe) gives them an OpenGL context without a GPU or
+# display, the same backend as the local `graphics` preset. The workflow name "CI" and
+# job id "checks" are required status checks on main; keep them stable.
 name: CI
 
 on:
@@ -67,7 +68,7 @@ jobs:
       - name: Headless build and test (no SDL2/OpenGL)
         run: cmake --workflow --preset headless
 
-      - name: Full build and test (runtime, graphics tests compiled, warnings as errors)
+      - name: Full build and test (runtime, warnings as errors, graphics tests with software OpenGL)
         run: cmake --workflow --preset ci
 
       - name: External consumer
