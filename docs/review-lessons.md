@@ -31,6 +31,9 @@ One list item per lesson, under the topic it belongs to:
 - **On a stacked branch, link only to files that exist on that branch** · added 2026-11-21 · source: #20
   Every pull request of a stack runs the docs check on its own tree; a link to a design document that only the branch above adds fails it. Name such a document in plain text, or link it from the branch above.
 
+- **When a change alters a procedure that more than one page states, find every copy and change them in the same commit** · added 2026-11-22 · source: #26
+  `feature` step 9.7 got the new way to start a review, while the workflow paragraph it cites kept the old one, so the authoritative page contradicted the skill. Search for the procedure's key words (`grep -rn`) before committing.
+
 ## CI and tooling
 
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22
