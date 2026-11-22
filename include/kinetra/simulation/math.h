@@ -75,9 +75,12 @@ inline bool finite(Vec2 v) {
 
 /// Angle in radians of the point (`x`, `y`), in [-pi, pi], with std::atan2's quadrants, signed
 /// zeros, infinities and NaN. Use it instead of std::atan2 on floats in simulation code: the
-/// result is the correctly rounded float on every C library, where `atan2f` differs in the
-/// last bit between, for example, glibc 2.39 and 2.41, and one bit changes a chaotic
-/// trajectory.
+/// result is the correctly rounded float on every C library, except in rare double-rounding
+/// cases (below), where `atan2f` differs in the last bit between, for example, glibc 2.39 and
+/// 2.41, and one bit changes a chaotic trajectory. Precondition: IEEE-conforming float
+/// semantics; `-ffast-math` or `-funsafe-math-optimizations` may let the compiler narrow the
+/// double call back to the C library's float function. The function is inline, so the flags
+/// are the caller's.
 inline float atan2(float y, float x) {
     // A double atan2 is accurate to about one double ulp on every C library, 29 bits beyond a
     // float, so one rounding to float gives the correctly rounded value except when the exact
@@ -85,7 +88,8 @@ inline float atan2(float y, float x) {
     return static_cast<float>(std::atan2(static_cast<double>(y), static_cast<double>(x)));
 }
 /// Arc sine of `x` in radians, in [-pi/2, pi/2]; NaN outside [-1, 1]. Correctly rounded on
-/// every C library, for the same reason and in the same way as atan2().
+/// every C library, for the same reason, in the same way and with the same exception and
+/// precondition as atan2(); GCC and Clang do narrow this one to `asinf` under `-ffast-math`.
 inline float asin(float x) {
     return static_cast<float>(std::asin(static_cast<double>(x)));
 }

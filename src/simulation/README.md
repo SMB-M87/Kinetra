@@ -127,7 +127,7 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 ## Invariants and contracts
 
 - **Headless.** No source here includes SDL, OpenGL or a Lab header; the external consumer builds this target without the runtime.
-- **Determinism.** No function uses randomness or global mutable state, so equal inputs give equal outputs on one machine. Cross-machine bitwise equality is not promised, but angles do not depend on the C library: simulation code calls `kinetra::atan2` and `kinetra::asin` from `math.h`, never `std::atan2` or `std::asin` on floats.
+- **Determinism.** No function uses randomness or global mutable state, so equal inputs give equal outputs on one machine. Cross-machine bitwise equality is not promised, but angles do not depend on the C library, except in rare double-rounding cases and under `-ffast-math`: simulation code calls `kinetra::atan2` and `kinetra::asin` from `math.h`, never `std::atan2` or `std::asin` on floats.
 - **Validation at the boundary.** Public entry points validate their input and throw `std::invalid_argument` (or `std::out_of_range` for indices), before changing state. `Navigation::rebuild`, for example, checks the area and every obstacle before it replaces its snapshot, so a rejected rebuild leaves the previous one in use. `local_extents`, `bounding_radius` and `bounds` do not validate. The header summaries say which functions throw what.
 - **Values, not references.** `World` and `Navigation` copy the bodies they are given. `CollisionGrid` is the one borrowed view: its cell span must outlive the query.
 - **Stable indices.** A `World` body keeps its index until `clear()`; there is no removal.
