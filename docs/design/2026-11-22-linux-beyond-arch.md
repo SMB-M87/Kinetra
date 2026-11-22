@@ -98,15 +98,56 @@ and the same for `asin`. *Why double:* a double `atan2` or `asin` is accurate to
 
 ## Review
 
-Filled in when each step is reviewed.
+### Step 1
+
+Self-review of `git diff main...fix/portable-atan2-asin`:
+
+- The first version of the reproduction test passed with `std::atan2`: GCC folds a call with constant arguments at compile time, through MPFR, and that result is correctly rounded. The inputs now pass through a `volatile`, and the test fails with `std::atan2` and `std::asin` on glibc 2.39 (4 of 4 checks) and passes with Kinetra's functions.
+- Every float `std::atan2` and `std::asin` in `src/simulation/` and `include/kinetra/simulation/` now calls Kinetra's (`grep -rn "std::atan2\|std::asin"` finds none). The runtime has no call.
+- No unqualified `atan2` or `asin` call exists in Kinetra or Kinetra-Lab, so the new names cannot make a call ambiguous today.
+- Copies: the determinism statements in [math and physics](../engine/math-physics.md#limits-and-verification) and the [simulation README](../../src/simulation/README.md#invariants-and-contracts) say the same; the README's "Cross-machine bitwise determinism is not promised" stays true.
 
 ## Verification
 
-Filled in when each step is verified.
+### Step 1
+
+On Ubuntu 24.04 (GCC 13.3, glibc 2.39), in the session that found the cause:
+
+| Command | Result |
+| --- | --- |
+| `./build-ci/kinetra_tests -tc='atan2*'` with `std::atan2` and `std::asin` in the new case | Fails: 4 of 4 checks of the rounding case |
+| `cmake --build build-ci` and `ctest --preset ci -j4` | Passes: 280 of 280, no warning under `-Werror` |
+| `cmake --workflow --preset headless` | Passes: 230 of 230 |
+| `clang-format --dry-run` (version 18) on the changed sources | Clean after formatting `priority_steering.cpp`; CI checks with the pinned version 23 |
+| Kinetra-Lab with this commit: `ctest --preset ci -j4 -LE soak`, `ctest --preset ci -L soak` and `cmake --workflow --preset headless`, after its Demo and Dotio calls moved to Kinetra's functions | Passes: 316 of 316, 5 of 5 and 259 of 259, the five fingerprints that failed before included, with the values recorded on Arch |
+
+CI on Arch is the Full level; the pull request reports it.
 
 ## Pull request
 
-Filled in per step.
+### Step 1
+
+Title: `fix(simulation): round atan2 and asin the same on every C library`
+
+**Stack:** step 1 of 2 (*Linux beyond Arch*); merge first. Step 2 is `build/linux-beyond-arch`.
+
+**Summary.** Kinetra-Lab's trajectory fingerprints fail on every Linux but CI's Arch, and the roadmap blamed GCC 13. Measured on Ubuntu 24.04, the cause is the C library: glibc 2.41 made `atan2f` and `asinf` correctly rounded, older glibc rounds about one call in twenty to the other neighbor, and a crowd turns one bit into another trajectory. `kinetra::atan2` and `kinetra::asin` compute in double and round once to float, which gives the correctly rounded value with every C library; Kinetra's simulation uses them.
+
+**Changes.**
+- `math.h`: `kinetra::atan2(float, float)` and `kinetra::asin(float)`, with contracts; `signed_angle` uses `atan2`.
+- `priority_steering.cpp`: `tangent_steer` uses both.
+- `simulation_tests.cpp`: a case with four inputs where glibc 2.39 rounds wrongly, pinned to the correctly rounded values, and a case for quadrants, signed zeros, infinities and NaN.
+- Docs: math and physics contract, simulation README invariants, this design document, the design index, the roadmap item in *Now*.
+
+**Design.** [Linux beyond Arch](docs/design/2026-11-22-linux-beyond-arch.md).
+
+**Verification.** See the design document's [verification](docs/design/2026-11-22-linux-beyond-arch.md#verification): the new case fails with `std::` on glibc 2.39 and passes with Kinetra's functions; Kinetra 280 of 280 and headless 230 of 230 on Ubuntu; Kinetra-Lab 316 of 316 plus the soak cases on Ubuntu with this commit and its own call sites. CI on Arch is the Full level.
+
+**Review notes.** On Arch, with glibc 2.42 or later, the results are the same as before, so no golden value in Kinetra or Lab moves. The test's `volatile` is load-bearing: without it the compiler folds the call and the test proves nothing.
+
+**Dependencies and merge order.** Merge before step 2 and before the Kinetra-Lab pull request, with a merge commit.
+
+**Follow-up.** Step 2 adds the Ubuntu CI job; Kinetra-Lab moves its own calls and enables its fingerprints on Ubuntu and, if they hold, Windows.
 
 ## Open points
 
