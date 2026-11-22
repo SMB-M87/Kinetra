@@ -20,7 +20,7 @@ Requirements:
 
 - **Always:** C++20 (GCC or Clang), CMake 3.16 or newer, and a build tool.
 - **Presets:** CMake 3.25 or newer and Ninja; ccache speeds up rebuilds.
-- **Runtime:** SDL2 (on Arch: `sdl2-compat`) and OpenGL development files, plus an OpenGL 3.3 context.
+- **Runtime:** SDL2 2.0.18 or newer (on Arch: `sdl2-compat`) and OpenGL development files, plus an OpenGL 3.3 context.
 
 On Arch/Artix: `pacman -S --needed base-devel cmake ninja ccache clang sdl2-compat libglvnd mesa`.
 
