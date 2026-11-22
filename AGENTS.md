@@ -155,7 +155,7 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `refactor` | Behavior-preserving restructuring in named, tested steps (on request) |
 | `adr` | Record an architecture decision |
 | `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request, and for agent reviews in the author's session) |
-| `pr-review` | Review a pull request or a whole stack: goals, the agent's code review and the repository checklist on the code, without running anything, inline comments and a conclusion, discussion rounds, proposed lessons (started by the author after every pull request except a pointer-only one, or by the user) |
+| `pr-review` | Review a pull request or a whole stack: goals, the agent's code review and the repository checklist on the code, without running anything, inline comments and a conclusion, discussion rounds, proposed lessons (started by the author once a pull request's CI is green, for every pull request except a pointer-only one, or by the user) |
 | `roadmap` | Keep the backlog in `docs/roadmap.md`: brainstorm ideas, pick up, close items (on request or from `feature` and `grilling`) |
 
 - Each skill directory holds a `SKILL.md` for the agent and a `README.md` with use cases for contributors. Follow the [skill README template](docs/documentation.md#skill-readme-template) and link the guide from the [skills overview](.agents/skills/README.md).

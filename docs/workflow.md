@@ -35,7 +35,8 @@ flowchart LR
     R -->|findings| I
     R --> Doc[Update docs and comments]
     Doc --> C[Final commit, push, pull request]
-    C --> AR[Agent review and discussion]
+    C --> CI[CI green]
+    CI --> AR[Agent review and discussion]
     AR -->|findings| I
     AR -->|nothing open| M[Author merges, or the user for rules, CI and own checks]
 ```
