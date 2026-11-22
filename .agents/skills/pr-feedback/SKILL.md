@@ -28,7 +28,7 @@ query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$r
 
 Also fetch review summaries (`gh api repos/<owner>/<repo>/pulls/<n>/reviews`) and conversation comments (`gh api repos/<owner>/<repo>/issues/<n>/comments`). Skip resolved threads, and comments you have already answered.
 
-In a cloud session without `gh`, the GitHub tools do the same (`pull_request_read` with `get_review_comments`, `get_reviews` and `get_comments`; replies with `add_reply_to_pull_request_comment` and `add_issue_comment`).
+Without `gh`, the GitHub tools the agent has do the same, for example those of the GitHub MCP server (`pull_request_read` with `get_review_comments`, `get_reviews` and `get_comments`; replies with `add_reply_to_pull_request_comment` and `add_issue_comment`).
 
 **Agent reviews:** comments and reviews that start with **Agent review** come from the `pr-review` skill, posted with the owner's account, and every pull request gets one. Process them at once, without waiting for a request. Treat them as the owner's feedback, with three differences: you answer a finding you disagree with by your argument and its evidence instead of asking the user; the discussion of a point ends after two rounds (the reviewer's finding and your answer, then one reply from each), after which it stays open for the user; and the review's *Lessons proposed* are added in step 4.
 
