@@ -134,7 +134,7 @@ The code must explain itself to a reader who has not seen the design.
 - A subdirectory gets its own README only when it has content worth reading on its own. Third-party wrappers keep their provenance READMEs.
 - `docs/` holds cross-module material: architecture, contracts, decisions, design documents and the [roadmap](docs/roadmap.md) of planned work ([format](docs/documentation.md#roadmap)).
 - Every concept has one authoritative place; link to it for depth. A link never replaces an explanation the local reader needs.
-- When a change alters a rule, procedure or term that more than one page states, search for its old wording and key words (`grep -rn` over the docs and skills; in Kinetra-Lab also `external/Kinetra`) and change every copy in the same commit. This was a review lesson; it became a rule after it came back in #26 and #27.
+- When a change alters a rule, procedure or term that more than one page states, search for its old wording and its key words (`grep -rn --include='*.md' --include='*.yml' '<old wording>' .` from the repository root, once for the old wording and once for each key word; in Kinetra-Lab this also covers `external/Kinetra`) and change every copy in the same commit, or in the fix commit when review finds a missed copy. Every copy then says the same. This was a review lesson from #26; it became a rule after it came back in #27.
 - Diagrams show implemented code only; each one states its takeaway.
 - Layout, table of contents and navigation follow the [documentation guide](docs/documentation.md#page-layout).
 - End a page with **Open points** when known gaps or questions exist. Replace outdated text instead of appending to it.

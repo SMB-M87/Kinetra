@@ -75,7 +75,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 | The roadmap item moved or left, and follow-ups were added | `docs/roadmap.md` |
 | Boundaries and conventions: layers, include layout, `.h`/`.cpp`, naming, no new warnings, refactoring and behavior in separate commits, commit format | AGENTS.md, conventions |
 | The description has its parts; a stacked step states its place and merge order; a Lab pointer change links the Kinetra pull request and records a commit on a Kinetra branch | The description, `external/Kinetra` |
-| Every copy of a changed rule, procedure or term was changed | `grep -rn` for the old wording over docs and skills (in Kinetra-Lab also `external/Kinetra`) |
+| Every copy of a changed rule, procedure or term was changed, and all copies say the same | `grep -rn --include='*.md' --include='*.yml' '<old wording>' .` from the repository root, once for the old wording and once for each key word; in Kinetra-Lab this also covers `external/Kinetra` |
 | The diff repeats no known lesson | The review lessons |
 
 ## 6. Run what CI does not cover

@@ -36,7 +36,8 @@ The review lesson "when a change alters a procedure that more than one page stat
 | --- | --- | --- |
 | Promote the lesson | Yes: the rule moves to AGENTS.md (*Repository documentation*), and the lesson leaves the lessons page | The user's word, as the lessons page's format asks for a lesson that recurs |
 | Where the search happens | The author's review (`feature` step 7, workflow step 6) and the agent review (`pr-review` checklist) | The author fixes it before the push; the reviewer catches what the author missed |
-| How to search | The old wording and its key words, `grep -rn` over docs and skills, in Kinetra-Lab also `external/Kinetra` | #27 showed that one exact phrase is too narrow |
+| How to search | The old wording and its key words, one command: `grep -rn --include='*.md' --include='*.yml'` from the repository root (in Kinetra-Lab that covers `external/Kinetra`) | #27 showed that one exact phrase is too narrow; the agent review of #29 asked what "docs and skills" covers, and a command leaves no doubt |
+| When a missed copy is fixed | In the same commit, or in the fix commit when review finds it | Review findings are fixed in new commits (`pr-feedback`), so "the same commit" alone could never be met |
 
 ## Design
 
@@ -52,7 +53,8 @@ Documentation and skills only: the Docs level.
 
 ## Review
 
-Applied the new rule to this change: searched for copies of the review checklist summary and found the `pr-review` description and README, both changed.
+- Self-review: applied the new rule to this change, searched for copies of the review checklist summary and found the `pr-review` description and README, both changed.
+- Agent review on 99c46f9 (*Fix first*): the four copies of the new rule did not say the same (the workflow and `pr-review` copies dropped the key words and the Lab scope), the scope of "docs and skills" was unclear, "before the final commit" disagreed with "in the same commit", and the source was "#26 and #27" instead of "from #26, back in #27". All four copies now carry the same command and wording.
 
 ## Verification
 
