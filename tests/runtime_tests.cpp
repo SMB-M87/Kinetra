@@ -129,22 +129,30 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     send(event);
     runtime.poll();
     REQUIRE_MESSAGE(!runtime.input().down(Key::a), "Focus loss retained key");
+    // Fill the mouse events as SDL fills real ones: sdl2-compat converts a pushed SDL2
+    // event to SDL3 from preciseY and state, so a wheel event with only `y` arrives as 0.
     event = {};
     event.type = SDL_MOUSEWHEEL;
     event.wheel.y = 2;
+    event.wheel.preciseY = 2.f;
     send(event);
     event = {};
     event.type = SDL_MOUSEBUTTONDOWN;
     event.button.button = SDL_BUTTON_LEFT;
+    event.button.state = SDL_PRESSED;
+    event.button.clicks = 1;
     send(event);
     runtime.poll();
-    REQUIRE_MESSAGE((runtime.input().clicked && runtime.input().wheel == 2), "Mouse input lost");
+    REQUIRE_MESSAGE(runtime.input().clicked, "Mouse click lost");
+    REQUIRE_MESSAGE(runtime.input().wheel == 2, "Mouse wheel lost");
     runtime.poll();
     REQUIRE_MESSAGE((!runtime.input().clicked && runtime.input().mouse_down && runtime.input().wheel == 0),
                     "Held shooting input or mouse transitions lost");
     event = {};
     event.type = SDL_MOUSEBUTTONUP;
     event.button.button = SDL_BUTTON_LEFT;
+    event.button.state = SDL_RELEASED;
+    event.button.clicks = 1;
     send(event);
     runtime.poll();
     REQUIRE_MESSAGE(!runtime.input().mouse_down, "Mouse release retained shooting");
