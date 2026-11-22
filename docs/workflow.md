@@ -93,7 +93,7 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section.
 
-**Agent review.** Every pull request gets one. After opening it, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist, builds and runs what CI does not (graphics tests, a screenshot), and posts inline comments and a summary with a conclusion, all marked **Agent review**. The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the point stays open for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git); pull requests on agent rules, CI or releases, or with a check by the user, wait for the user.
+**Agent review.** Every pull request gets one, except a pointer-only Lab pull request ([below](#changes-across-kinetra-and-lab)). After opening it, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist, builds and runs what CI does not (graphics tests, a screenshot), and posts inline comments and a summary with a conclusion, all marked **Agent review**. The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the point stays open for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git); pull requests on agent rules, CI or releases, or with a check by the user, wait for the user.
 
 ## 7. Document
 
@@ -201,11 +201,13 @@ sequenceDiagram
     L->>L: full Lab verification against that pointer
     L->>G: push branch, open Lab pull request (links Kinetra PR)
     U->>G: review and merge Kinetra first, then Lab
+    L->>G: pointer-only pull request to the Kinetra merge commit, merged by the agent
 ```
 
 - Reusable mechanisms change in Kinetra; application policy changes in Lab. When both change, each repository gets its own branch, design document and pull request. The Lab design document and pull request link to the Kinetra ones.
 - Push the Kinetra branch before the Lab branch, so the pointer is fetchable for anyone who checks out the Lab pull request.
 - Merge the Kinetra pull request with a merge commit, not a squash, so Lab's pointer stays reachable after the branch is deleted. After a squash, the pointer must first be moved to the merged commit in a follow-up Lab commit.
+- The Lab pull request merges with its pointer at the Kinetra branch commit it was verified with. Right after, a separate pointer-only pull request moves the pointer to the Kinetra merge commit on `main`: no agent review, and the agent merges it once its CI passes. Lab's CI skips the build and tests of such a pull request when Kinetra changed only Markdown, docs or skills between the two pointers (an identical tree included), and runs only the docs check then. Never push the pointer move onto a Lab pull request that is open or reviewed: its CI would run again for one line.
 
 ## Open points
 

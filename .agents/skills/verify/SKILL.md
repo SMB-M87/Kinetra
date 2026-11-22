@@ -17,7 +17,7 @@ git diff --name-only main...HEAD      # committed on this branch
 git status --short                    # uncommitted and untracked
 ```
 
-A changed submodule pointer (`external/Kinetra` in Lab's diff) counts as an engine change.
+A changed submodule pointer (`external/Kinetra` in Lab's diff) counts as an engine change, unless Kinetra changed only Markdown, docs or skills between the two pointers (`git -C external/Kinetra diff --name-only <old> <new>`): then it is the Docs level, and a pointer-only pull request runs only Lab's docs check in CI.
 
 ## 2. Classify each file; the highest level wins
 
