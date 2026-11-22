@@ -12,7 +12,7 @@ This skill carries out [docs/workflow.md](../../../docs/workflow.md). (In Kinetr
 
 1. Determine the repositories involved: Kinetra only, Lab only, or both (engine mechanism plus application use).
 2. In each repository: `git status --short` and `git branch --show-current`. Report unrelated changes and leave them alone. If the current branch is not `main` and not an obvious branch for this topic, ask the user before continuing.
-3. Read `AGENTS.md`, the routing-table pages for this task, the module README, and the code and tests involved. Check `docs/roadmap.md` of each repository for an item on this topic: it carries the agreed scope and questions. For a broad survey, dispatch a read-only sub-agent with a narrow brief.
+3. Read `AGENTS.md`, the routing-table pages for this task, the module README, and the code and tests involved. Check `docs/roadmap.md` of each repository for an item on this topic: it carries the agreed scope and questions. Read `docs/review-lessons.md` of each repository: mistakes earlier reviews found, which this change must not repeat. For a broad survey, dispatch a read-only sub-agent with a narrow brief.
 
 ## 2. Branch and design document
 
@@ -64,6 +64,7 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 4. Run `gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>`; for a step of a stack, use the branch below as `--base`, open the pull requests bottom-up, and start each description with the step's place in the stack and "merge after #<n>". For a Lab pull request with a pointer change, link the Kinetra pull request and state that it merges first, with a merge commit.
 5. Run `gh pr view <number> --json url,mergeable` and report conflicts; never merge.
 6. Wait for the pull request's checks (`gh pr checks <number>`): they are the CI half of the Full level. Fix a red check on the branch before handing over; report checks that are still running as pending.
+7. Follow the pull request: in a cloud session, subscribe to its activity, so CI results and review comments arrive in this session. Process review comments, also an agent review from `pr-review`, with `pr-feedback` as they come.
 
 ## 10. Hand over (in Dutch)
 
@@ -72,3 +73,4 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 - Verification commands and results, and anything not run, with the reason.
 - Remaining risks and open points, and the roadmap items added or removed.
 - The merge order: Kinetra before Lab, and each stack bottom-up.
+- That the user can ask for an agent review with `/pr-review`.

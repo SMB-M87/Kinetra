@@ -28,6 +28,7 @@ Read only what the task needs; the pages are written to stand on their own.
 | --- | --- |
 | Every task | This file |
 | Start, plan, review or hand over a change | [Workflow](docs/workflow.md) |
+| Build or review a change, so known mistakes are not repeated | [Review lessons](docs/review-lessons.md) |
 | Write or review C++ or CMake | [Conventions](docs/conventions.md) |
 | Add tests or pick a verification level | [Testing](docs/testing.md); build options in [development](docs/development.md) |
 | Write READMEs, diagrams or `///` comments | [Documentation guide](docs/documentation.md) |
@@ -77,6 +78,7 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 - When the branch is complete (design document `implemented`, verification passed), push the branch and open a pull request against `main`, or against the branch below it in a stack. Use the design document's *Pull request* section as the description ([workflow](docs/workflow.md#8-commit-push-and-open-a-pull-request)).
 - Work in stacked pull requests where possible: when a goal splits into steps that can each be reviewed on their own, give every step its own branch and pull request, based on the step below it, so the user gets small increments toward the same goal. When a lower step changes, merge it into the branches above it; the stack merges bottom-up ([stacked pull requests](docs/workflow.md#stacked-pull-requests)).
 - Never push to `main`, merge pull requests, force-push, rebase published history, tag or change remotes. The user reviews and merges.
+- On the user's request, an agent reviews a pull request with the `pr-review` skill: it posts inline comments and a review of type *comment*, each marked **Agent review**, and never approves, requests changes, resolves threads, pushes or merges. The session that opened the pull request follows it and processes the comments with `pr-feedback`.
 - If `git push` over SSH is unavailable, push once over HTTPS with the GitHub CLI credentials: `git -c credential.helper= -c credential.helper='!gh auth git-credential' push https://github.com/<owner>/<repo>.git <branch>`. Never store credentials or change the remote or global git configuration for this.
 - Kinetra-Lab tracks Kinetra as a submodule. For an engine change used by Lab, commit and open the Kinetra pull request first, then commit the pointer in Lab. The Lab pull request links the Kinetra one and states that Kinetra merges first.
 
@@ -148,7 +150,8 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `doc-module` | Write or deepen a module README and its header `///` summaries |
 | `refactor` | Behavior-preserving restructuring in named, tested steps (on request) |
 | `adr` | Record an architecture decision |
-| `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request) |
+| `pr-feedback` | Process review feedback on an open pull request: commits, push, a reply per comment (on request, and for agent reviews in the author's session) |
+| `pr-review` | Review a pull request or a whole stack: built-in code review plus the repository checklist, inline comments and a summary, proposed lessons (on request) |
 | `roadmap` | Keep the backlog in `docs/roadmap.md`: brainstorm ideas, pick up, close items (on request or from `feature` and `grilling`) |
 
 - Each skill directory holds a `SKILL.md` for the agent and gets a `README.md` that explains the skill to people with use cases ([skill README template](docs/documentation.md#skill-readme-template)); the READMEs are still being written ([open point](.agents/skills/README.md#open-points)). The [skills overview](.agents/skills/README.md) lists all skills.
