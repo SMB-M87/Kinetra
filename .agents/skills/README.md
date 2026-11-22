@@ -2,7 +2,7 @@
 
 Procedures that agents (Claude Code, Codex) load on demand. This page is the overview of all repository skills. Codex reads `.agents/skills/` and Claude Code reads `.claude/skills/`, which is a symlink to this directory. Kinetra-Lab links to the same directory, so both repositories use one set of skills.
 
-Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agentskills.io) format, which the agent follows, and a `README.md` that explains the skill to people with use cases ([template](../../docs/documentation.md#skill-readme-template)); the READMEs are not written yet (see [open points](#open-points)). The README is not part of the agent's instructions.
+Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agentskills.io) format, which the agent follows, and a `README.md` that explains the skill to people with use cases ([template](../../docs/documentation.md#skill-readme-template)); most READMEs are not written yet (see [open points](#open-points)). The README is not part of the agent's instructions.
 
 ## Table of contents
 
@@ -23,7 +23,8 @@ Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agents
 | [doc-module](doc-module/SKILL.md) | Write a module README and `///` header summaries | On request, or from `feature` |
 | [refactor](refactor/SKILL.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/SKILL.md) | Record an architecture decision | When a decision qualifies |
-| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply per comment | On request (`/pr-feedback`) |
+| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply per comment, lessons added | On request (`/pr-feedback`), and in the author's session for an agent review |
+| [pr-review](pr-review/README.md) | A second agent reviews a pull request or a stack: built-in code review plus the repository checklist, inline comments and a summary with a conclusion, proposed lessons | On request (`/pr-review`) |
 | [roadmap](roadmap/README.md) | Keep the backlog in `docs/roadmap.md`: ideas from a brainstorm, items to pick up, items closed on merge | On request (`/roadmap`, a brainstorm), or from `feature` and `grilling` |
 
 The user's global skill set (book references such as refactoring, clean architecture and a philosophy of software design, plus `teach`, `grill-me` and `code-review`) is installed per machine and is not copied here.
@@ -41,12 +42,13 @@ flowchart LR
     D --> V
     F --> P[pr-feedback]
     P --> V
+    PR[pr-review] -->|comments| P
     F --> RM[roadmap]
     G --> RM
     RM -->|item picked up| F
 ```
 
-`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it.
+`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it. `pr-review` stands outside the cycle of one change: the user calls it on an open pull request, and the author's session answers its comments with `pr-feedback`.
 
 ## Maintenance
 
@@ -57,4 +59,4 @@ flowchart LR
 
 ## Open points
 
-- Apart from `roadmap`, the skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch ([roadmap](../../docs/roadmap.md#next), *Skill READMEs*).
+- Apart from `roadmap` and `pr-review`, the skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch ([roadmap](../../docs/roadmap.md#next), *Skill READMEs*).

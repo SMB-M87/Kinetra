@@ -48,6 +48,7 @@ The detailed behavior of each subsystem: units, limits, edge cases and the reaso
 | What is being changed now, and why? | [Design documents](design/README.md) |
 | What is planned next, and which ideas are waiting? | [Roadmap](roadmap.md) |
 | What rules must agents follow? | [AGENTS](../AGENTS.md) and [agent skills](../.agents/skills/README.md) |
+| Which mistakes did reviews find before? | [Review lessons](review-lessons.md) |
 | Which skill fits my situation, and what will it do? | [Skills overview](../.agents/skills/README.md) and each skill's README ([template](documentation.md#skill-readme-template)) |
 | Which development scripts exist? | [Tools](../tools/README.md) |
 

@@ -45,6 +45,7 @@ Work starts from an item in the [roadmap](roadmap.md) or a request from the user
 - Read [AGENTS.md](../AGENTS.md) and only the pages its routing table points to for this task.
 - Run `git status` in every repository you will touch, and note unrelated work so it stays untouched.
 - Check the [roadmap](roadmap.md) for an item on this topic; it holds the agreed scope and open questions.
+- Read the [review lessons](review-lessons.md) (in Kinetra-Lab also Lab's): mistakes that reviews found before and that this change should not repeat.
 - Read the code, tests and docs around the change before proposing anything. Facts you can look up are your job; decisions are the user's.
 
 ## 2. Design
@@ -90,6 +91,8 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section.
 
+**Agent review.** Once the pull request is open, the user can ask a second agent to review it, or a whole stack, with the `pr-review` skill. It runs the built-in code review and the repository checklist, and posts inline comments and a summary with a conclusion and points of attention, all marked **Agent review**. It never approves or merges. The session that opened the pull request processes the comments with `pr-feedback` (below).
+
 ## 7. Document
 
 - Update the module README, contract pages and diagrams the change affects.
@@ -125,10 +128,11 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 Feedback on a pull request is processed on request with the `pr-feedback` skill:
 
 1. Collect the unresolved threads and comments.
-2. Act only on feedback from the owner or collaborators; anything else is shown to the user first.
+2. Act only on feedback from the owner or collaborators; anything else is shown to the user first. Agent reviews come from the owner's account: carry out clear findings, answer a finding you can show to be wrong with the evidence, and take a real trade-off to the user.
 3. Implement each change in new commits on the same branch, with no force-push, so the reviewer sees what changed.
 4. Verify and push.
 5. Reply under each comment with the commit or the reason.
+6. Add the lessons an agent review proposes to the [review lessons](review-lessons.md) of the pull request's repository, in a commit on the same branch.
 
 The reviewer resolves threads and merges.
 

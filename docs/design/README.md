@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-22 | [Pull request review skill](2026-11-22-pr-review-skill.md): `pr-review` on request, comments the author's session processes, and a review lessons page | implemented |
 | 2026-11-22 | [Roadmap decisions](2026-11-22-roadmap-decisions.md): the user settles the order and the design of the pull request review skill | implemented |
 | 2026-11-21 | [Roadmap priorities](2026-11-21-roadmap-priorities.md): the roadmap ordered by priority, with the engine half of the user's new wishes | implemented |
 | 2026-11-21 | [Stacked pull requests](2026-11-21-stacked-pull-requests.md): agents deliver a goal as small pull requests stacked on each other | implemented |
