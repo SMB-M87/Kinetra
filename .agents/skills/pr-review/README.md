@@ -43,6 +43,7 @@ flowchart LR
 
 - It reads the rules, the review lessons and the design document before it judges the diff.
 - It runs the built-in `/code-review` for correctness and checks every finding itself, then walks a checklist from the rules: design document, tests, verification level, docs, roadmap, conventions, description and merge order.
+- Everything it posts on GitHub, the conclusion included, is in English; it reports to you in the chat in Dutch.
 - Every comment starts with **Agent review**, so you and the author's session can tell it from your own comments. It never approves, requests changes, resolves threads or merges.
 - A finding that shows a kind of mistake that can recur becomes a proposed lesson; a lesson that keeps coming back is proposed to you as a rule.
 

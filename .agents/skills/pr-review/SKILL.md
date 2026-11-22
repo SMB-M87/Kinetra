@@ -6,7 +6,7 @@ argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole s
 
 # PR review: an agent reviews a pull request
 
-The review step of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`), done by a second agent on the user's request. The session that opened the pull request answers it with `pr-feedback`. Write on GitHub in English; hand over to the user in Dutch.
+The review step of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`), done by a second agent on the user's request. The session that opened the pull request answers it with `pr-feedback`. Everything on GitHub is in English: the inline comments, the summary and its conclusion. Only the hand-over to the user in the chat (step 8) is in Dutch.
 
 Run it, where you can, in a session that did not write the pull request: a fresh session sees what the author missed.
 
@@ -80,6 +80,6 @@ Give each kept finding one severity: **blocking** (a bug, a broken rule, a faili
 - Check the page first. If the diff repeats an existing lesson, say so in the summary; a lesson that keeps coming back is a candidate rule: propose it to the user, who decides.
 - Do not edit the page yourself: the author adds the lesson in a commit on the reviewed pull request (`pr-feedback`).
 
-## 8. Hand over (in Dutch)
+## 8. Hand over in the chat (in Dutch)
 
-Per pull request: the conclusion, the number of findings by severity, the link to the review, the lessons proposed and any rule candidates. Say which checks could not run, and why.
+This is the only part in Dutch; GitHub already has the English summary. Per pull request: the conclusion, the number of findings by severity, the link to the review, the lessons proposed and any rule candidates. Say which checks could not run, and why.
