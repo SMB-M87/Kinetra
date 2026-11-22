@@ -268,18 +268,19 @@ struct FrameTimeGraph {
 
 /// Draws `times` as a bar graph, newest on the right, with lines at 16.7 and 33.3 ms, and
 /// below it the average and worst frame and how `runtime` paces frames (Runtime::pacing()),
-/// in screen space at `origin` (logical pixels). Bars up to one 60 Hz refresh (plus 5 % timer
-/// jitter) are green, up to two yellow, longer ones red.
-inline void draw_frame_times(Runtime &runtime, const FrameTimes &times, Vec2 origin) {
+/// in screen space at `origin` (logical pixels). A positive `scale` sizes the entire graph.
+/// Bars up to one 60 Hz refresh (plus 5 % timer jitter) are green, up to two yellow, longer ones red.
+inline void draw_frame_times(Runtime &runtime, const FrameTimes &times, Vec2 origin, float scale = 1) {
     const auto &camera = runtime.camera;
     const float pixels_per_ms = FrameTimeGraph::height / FrameTimeGraph::ceiling_ms;
     // Screen-space rectangle from its top-left corner and size, like draw_text.
     const auto rectangle = [&](Vec2 corner, Vec2 size, Color color) {
+        corner = origin + corner * scale;
+        size = size * scale;
         runtime.box(camera.screen_to_world(corner + size / 2), size / 2 / camera.pixels_per_unit, 0, color);
     };
-    rectangle(origin - Vec2{4, 4}, {FrameTimeGraph::width + 8, FrameTimeGraph::total_height},
-              {0, 0, 0, 0.55f});
-    const float bottom = origin.y + FrameTimeGraph::height;
+    rectangle({-4, -4}, {FrameTimeGraph::width + 8, FrameTimeGraph::total_height}, {0, 0, 0, 0.55f});
+    const float bottom = FrameTimeGraph::height;
     const float first = FrameTimeGraph::width - float(times.size());
     for (std::size_t i = 0; i < times.size(); ++i) {
         const float ms = float(times[i] * 1000);
@@ -287,14 +288,14 @@ inline void draw_frame_times(Runtime &runtime, const FrameTimes &times, Vec2 ori
         const Color color = ms <= FrameTimeGraph::one_refresh_ms * 1.05f     ? Color{0.3f, 0.9f, 0.4f}
                             : ms <= FrameTimeGraph::two_refreshes_ms * 1.05f ? Color{1, 0.85f, 0.2f}
                                                                              : Color{1, 0.3f, 0.25f};
-        rectangle({origin.x + first + float(i), bottom - bar}, {1, bar}, color);
+        rectangle({first + float(i), bottom - bar}, {1, bar}, color);
     }
     for (const float ms : {FrameTimeGraph::one_refresh_ms, FrameTimeGraph::two_refreshes_ms})
-        rectangle({origin.x, bottom - ms * pixels_per_ms}, {FrameTimeGraph::width, 1}, {1, 1, 1, 0.45f});
+        rectangle({0, bottom - ms * pixels_per_ms}, {FrameTimeGraph::width, 1}, {1, 1, 1, 0.45f});
     char text[64];
     std::snprintf(text, sizeof text, "FRAME AVG %.1f MS WORST %.1f MS", times.average() * 1000,
                   times.worst() * 1000);
-    draw_text(runtime, text, {origin.x, bottom + 4}, 1, {1, 1, 1});
+    draw_text(runtime, text, origin + Vec2{0, bottom + 4} * scale, scale, {1, 1, 1});
     // What spaces the frames decides how to read the bars: VSync gives even ones, a limiter
     // nearly even ones, and uncapped frames are as short as drawing allows.
     const int rate = static_cast<int>(std::lround(1 / runtime.frame_interval()));
@@ -309,7 +310,7 @@ inline void draw_frame_times(Runtime &runtime, const FrameTimes &times, Vec2 ori
         std::snprintf(text, sizeof text, "PACING UNCAPPED");
         break;
     }
-    draw_text(runtime, text, {origin.x, bottom + 16}, 1, {0.7f, 0.8f, 1});
+    draw_text(runtime, text, origin + Vec2{0, bottom + 16} * scale, scale, {0.7f, 0.8f, 1});
 }
 
 /// Draws the frame-time graph at its default top-right position.

@@ -408,17 +408,18 @@ TEST_CASE("the debug menu and inspector stay interactive with the graph below th
     const Aabb area{{340, 8}, {632, 300}};
     const auto box = inspector.bounds(snapshot, area);
     const Vec2 graph{FrameTimeGraph::origin(runtime.camera.viewport).x, box.max.y + 12};
+    constexpr float graph_scale = 0.75f;
     FrameTimes times;
     for (std::size_t i = 0; i < FrameTimes::capacity; ++i)
         times.record(0.010);
     runtime.begin({0, 0, 0});
     menu.draw(runtime, entries);
     inspector.draw(runtime, snapshot, area);
-    draw_frame_times(runtime, times, graph);
+    draw_frame_times(runtime, times, graph, graph_scale);
     runtime.end();
     CHECK(presented(runtime, {box.max.x - 12, box.min.y + 6}, overlay::button_color));
-    CHECK(presented(runtime, graph + Vec2{8, FrameTimeGraph::height - 3}, {0.3f, 0.9f, 0.4f}));
-    CHECK(presented(runtime, graph + Vec2{0, FrameTimeGraph::height + 4}, {1, 1, 1}));
+    CHECK(presented(runtime, graph + Vec2{8, FrameTimeGraph::height - 3} * graph_scale, {0.3f, 0.9f, 0.4f}));
+    CHECK(presented(runtime, graph + Vec2{0, FrameTimeGraph::height + 4} * graph_scale, {1, 1, 1}));
 
     Input click;
     click.clicked = true;
