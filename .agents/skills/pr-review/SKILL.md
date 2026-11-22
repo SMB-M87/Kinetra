@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session after every pull request except a pointer-only one, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, roadmap, CI, merge order, review lessons), builds and runs what CI does not cover, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, resolves the threads it accepts, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and after opening a pull request.
+description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session after every pull request except a pointer-only one, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, every copy of a changed rule, roadmap, CI, merge order, review lessons), builds and runs what CI does not cover, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, resolves the threads it accepts, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and after opening a pull request.
 argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole stack) [code-review depth: low|medium|high, or higher on request]"
 ---
 
@@ -75,6 +75,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 | The roadmap item moved or left, and follow-ups were added | `docs/roadmap.md` |
 | Boundaries and conventions: layers, include layout, `.h`/`.cpp`, naming, no new warnings, refactoring and behavior in separate commits, commit format | AGENTS.md, conventions |
 | The description has its parts; a stacked step states its place and merge order; a Lab pointer change links the Kinetra pull request and records a commit on a Kinetra branch | The description, `external/Kinetra` |
+| Every copy of a changed rule, procedure or term was changed | `grep -rn` for the old wording over docs and skills (in Kinetra-Lab also `external/Kinetra`) |
 | The diff repeats no known lesson | The review lessons |
 
 ## 6. Run what CI does not cover

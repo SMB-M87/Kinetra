@@ -90,6 +90,7 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 - **Tests.** Every changed behavior is covered, and no test was weakened.
 - **Readability.** Names, function size, flag arguments, magic numbers, duplication.
 - **Documentation.** `///` contracts, module README, diagrams and links still match the code.
+- **Copies.** For every rule, procedure or term the branch changes, search for the old wording (`grep -rn` over docs and skills) and change every copy ([rule](../AGENTS.md#repository-documentation)).
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section.
 

@@ -45,7 +45,7 @@ Run the `verify` skill on the whole branch diff. A branch with code changes ends
 
 ## 7. Review
 
-Review `git diff main...HEAD` with `/code-review` (Claude Code) or the global `code-review` skill (Codex), and check the list in the [workflow](../../../docs/workflow.md#6-review). Fix the findings in new commits, re-verify, and record findings and resolutions in **Review**.
+Review `git diff main...HEAD` with `/code-review` (Claude Code) or the global `code-review` skill (Codex), and check the list in the [workflow](../../../docs/workflow.md#6-review). For every rule, procedure or term the branch changes, search for the old wording and its key words (`grep -rn` over docs and skills; in Lab also `external/Kinetra`) and change every copy before the final commit. Fix the findings in new commits, re-verify, and record findings and resolutions in **Review**.
 
 ## 8. Document
 
