@@ -57,4 +57,4 @@ flowchart LR
 
 ## Open points
 
-- Apart from `roadmap`, the skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch, as planned in the Kinetra-Lab quality roadmap (documentation cleanup).
+- Apart from `roadmap`, the skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch ([roadmap](../../docs/roadmap.md#next), *Skill READMEs*).
