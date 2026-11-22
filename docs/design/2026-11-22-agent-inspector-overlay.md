@@ -26,14 +26,20 @@ The first consumer is i4sim. Its CLI reads the same snapshot directly. The engin
 
 Drawing and hit testing share the same bounds. Round the available rectangle inward before layout so fractional positions cannot leak clicks from painted edges. The title and close button stay in place while wrapped rows scroll. Tests now observe a visible continuation and reset the scroll position for a shorter selection. The consumer calls the public layout and input API without a window.
 
+### Review of `06bdf68`
+
+In `1b7aeec`, the resize test starts at the scroll limit, enlarges the view and checks the visible continuation and final label before clicking close. The combined layout test draws the debug menu, inspector, graph bars and caption, then picks both controls. A separate presentation test verifies string ownership, order and formatted units with the runtime disabled.
+
 ## Verification
 
 - `cmake --workflow --preset graphics` passed all 280 tests with SDL offscreen and software Mesa.
 - The external graphics consumer built and ran with `CONSUMER_GRAPHICS=ON`.
 - `python3 tools/check_docs.py` resolved every link.
+- `cmake --build --preset graphics --target kinetra_engine_runtime_tests kinetra_presentation_tests` and `ctest --preset graphics -R 'inspector|frame.time graph' --output-on-failure` passed all five targeted cases after review.
+- `cmake -S . -B /tmp/kinetra-inspector-headless -G Ninja -DKINETRA_BUILD_RUNTIME=OFF` and `cmake --build /tmp/kinetra-inspector-headless --target kinetra_presentation_tests` built the snapshot test without the runtime. `ctest --test-dir /tmp/kinetra-inspector-headless -R 'headless inspector snapshots' --output-on-failure` passed it.
 
 ## Pull request
 
 **Title** `feat(runtime): add a shared agent inspector overlay`
 
-Add a headless model for grouped diagnostic rows and a scrollable runtime view with a close action. Applications own selection and pause behavior. Lab adds the three consumers in its own changes.
+Add a headless model for grouped diagnostic rows and a scrollable runtime view with a close action. Applications own selection and pause behavior. Lab adds the three consumers, beginning with [i4sim in Lab #74](https://github.com/SMB-M87/Kinetra-Lab/pull/74).
