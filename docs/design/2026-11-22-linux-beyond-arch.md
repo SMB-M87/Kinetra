@@ -139,9 +139,9 @@ Title: `fix(simulation): round atan2 and asin the same on every C library`
 - `simulation_tests.cpp`: a case with four inputs where glibc 2.39 rounds wrongly, pinned to the correctly rounded values, and a case for quadrants, signed zeros, infinities and NaN.
 - Docs: math and physics contract, simulation README invariants, this design document, the design index, the roadmap item in *Now*.
 
-**Design.** [Linux beyond Arch](docs/design/2026-11-22-linux-beyond-arch.md).
+**Design.** `docs/design/2026-11-22-linux-beyond-arch.md`.
 
-**Verification.** See the design document's [verification](docs/design/2026-11-22-linux-beyond-arch.md#verification): the new case fails with `std::` on glibc 2.39 and passes with Kinetra's functions; Kinetra 280 of 280 and headless 230 of 230 on Ubuntu; Kinetra-Lab 316 of 316 plus the soak cases on Ubuntu with this commit and its own call sites. CI on Arch is the Full level.
+**Verification.** See the design document's *Verification*: the new case fails with `std::` on glibc 2.39 and passes with Kinetra's functions; Kinetra 280 of 280 and headless 230 of 230 on Ubuntu; Kinetra-Lab 316 of 316 plus the soak cases on Ubuntu with this commit and its own call sites. CI on Arch is the Full level.
 
 **Review notes.** On Arch, with glibc 2.42 or later, the results are the same as before, so no golden value in Kinetra or Lab moves. The test's `volatile` is load-bearing: without it the compiler folds the call and the test proves nothing.
 
