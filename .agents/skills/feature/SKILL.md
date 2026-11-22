@@ -62,9 +62,10 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 2. Push each branch: Kinetra before Lab. Run `git push -u origin <branch>`; if SSH is unavailable, use the HTTPS fallback from `AGENTS.md`.
 3. Write the description from the design document's **Pull request** section to a file in the session scratchpad. It covers Summary, Changes, Design, Verification, Review notes, Dependencies and merge order, and Follow-up.
 4. Run `gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>`; for a step of a stack, use the branch below as `--base`, open the pull requests bottom-up, and start each description with the step's place in the stack and "merge after #<n>". For a Lab pull request with a pointer change, link the Kinetra pull request and state that it merges first, with a merge commit.
-5. Run `gh pr view <number> --json url,mergeable` and report conflicts; never merge.
+5. Run `gh pr view <number> --json url,mergeable` and report conflicts. Do not merge before the agent review (step 7).
 6. Wait for the pull request's checks (`gh pr checks <number>`): they are the CI half of the Full level. Fix a red check on the branch before handing over; report checks that are still running as pending.
-7. Follow the pull request: in a cloud session, subscribe to its activity, so CI results and review comments arrive in this session. Process review comments, also an agent review from `pr-review`, with `pr-feedback` as they come.
+7. Start the agent review: in a cloud session, create a new session with the prompt `/pr-review <pull request url>`; elsewhere, a fresh sub-agent that gets only the link. The pull request waits for its conclusion.
+8. Follow the pull request: in a cloud session, subscribe to its activity, so CI results and review comments arrive in this session. Answer the agent review's findings, and other review comments, with `pr-feedback` as they come. When nothing is open and the [merge rule](../../../AGENTS.md#git) allows it, merge; otherwise the pull request waits for the user.
 
 ## 10. Hand over (in Dutch)
 
@@ -73,4 +74,4 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 - Verification commands and results, and anything not run, with the reason.
 - Remaining risks and open points, and the roadmap items added or removed.
 - The merge order: Kinetra before Lab, and each stack bottom-up.
-- That the user can ask for an agent review with `/pr-review`.
+- The agent review's conclusion, the points still open for the user, and whether you merged or the pull request waits for the user (and why).

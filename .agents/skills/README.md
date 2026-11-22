@@ -23,8 +23,8 @@ Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agents
 | [doc-module](doc-module/SKILL.md) | Write a module README and `///` header summaries | On request, or from `feature` |
 | [refactor](refactor/SKILL.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/SKILL.md) | Record an architecture decision | When a decision qualifies |
-| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply per comment, lessons added | On request (`/pr-feedback`), and in the author's session for an agent review |
-| [pr-review](pr-review/README.md) | A second agent reviews a pull request or a stack: built-in code review plus the repository checklist, inline comments and a summary with a conclusion, proposed lessons | On request (`/pr-review`) |
+| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply or argument per comment, lessons added, merge under the merge rule | In the author's session for every agent review; otherwise on request (`/pr-feedback`) |
+| [pr-review](pr-review/README.md) | A second agent reviews a pull request or a stack: goals, built-in code review and the repository checklist, a run of what CI does not cover, inline comments and a conclusion, two discussion rounds, proposed lessons | By the author after every pull request, in a separate session; or `/pr-review` |
 | [roadmap](roadmap/README.md) | Keep the backlog in `docs/roadmap.md`: ideas from a brainstorm, items to pick up, items closed on merge | On request (`/roadmap`, a brainstorm), or from `feature` and `grilling` |
 
 The user's global skill set (book references such as refactoring, clean architecture and a philosophy of software design, plus `teach`, `grill-me` and `code-review`) is installed per machine and is not copied here.
@@ -42,13 +42,15 @@ flowchart LR
     D --> V
     F --> P[pr-feedback]
     P --> V
-    PR[pr-review] -->|comments| P
+    F -->|after the pull request| PR[pr-review]
+    PR -->|findings| P
+    P -->|answers| PR
     F --> RM[roadmap]
     G --> RM
     RM -->|item picked up| F
 ```
 
-`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it. `pr-review` stands outside the cycle of one change: the user calls it on an open pull request, and the author's session answers its comments with `pr-feedback`.
+`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it. `feature` starts `pr-review` in a separate session after opening a pull request; the author's session answers its findings with `pr-feedback`, and merges under the merge rule when nothing is open.
 
 ## Maintenance
 

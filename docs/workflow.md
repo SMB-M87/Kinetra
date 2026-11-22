@@ -35,7 +35,9 @@ flowchart LR
     R -->|findings| I
     R --> Doc[Update docs and comments]
     Doc --> C[Final commit, push, pull request]
-    C --> M[User reviews and merges]
+    C --> AR[Agent review and discussion]
+    AR -->|findings| I
+    AR -->|nothing open| M[Author merges, or the user for rules, CI and own checks]
 ```
 
 Work starts from an item in the [roadmap](roadmap.md) or a request from the user, and ends by updating that roadmap. The design document is the backbone. It is written first, it collects the decisions, test plan and review outcome, and it ends with the pull-request description. The `feature` skill runs the whole loop.
@@ -91,7 +93,7 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section.
 
-**Agent review.** Once the pull request is open, the user can ask a second agent to review it, or a whole stack, with the `pr-review` skill. It runs the built-in code review and the repository checklist, and posts inline comments and a summary with a conclusion and points of attention, all marked **Agent review**. It never approves or merges. The session that opened the pull request processes the comments with `pr-feedback` (below).
+**Agent review.** Every pull request gets one. After opening it, the author starts a separate session with the `pr-review` skill (in a cloud session a new session with `/pr-review <url>`; elsewhere a fresh sub-agent that gets only the link), and the pull request waits for its conclusion. The reviewer checks every goal of the roadmap item and the design document, runs the built-in code review and the repository checklist, builds and runs what CI does not (graphics tests, a screenshot), and posts inline comments and a summary with a conclusion, all marked **Agent review**. The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the point stays open for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git); pull requests on agent rules, CI or releases, or with a check by the user, wait for the user.
 
 ## 7. Document
 
@@ -121,20 +123,21 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 
   Write the body to a scratch file, never into the repository.
 - Check the result with `gh pr view <number> --json mergeable,url`, and report a conflict instead of resolving it on `main`.
-- Report to the user in Dutch: what changed, the commits and pull-request links, the verification commands and results, remaining risks, and the merge order. Never merge yourself.
+- Start the agent review (step 6) and follow the pull request.
+- Report to the user in Dutch: what changed, the commits and pull-request links, the verification commands and results, remaining risks, the merge order, and whether the pull request waits for the user or may be merged under the [merge rule](../AGENTS.md#git).
 
 ### Review feedback
 
-Feedback on a pull request is processed on request with the `pr-feedback` skill:
+Feedback on a pull request is processed with the `pr-feedback` skill: for an agent review at once, in the session that opened the pull request; for other feedback on request.
 
 1. Collect the unresolved threads and comments.
-2. Act only on feedback from the owner or collaborators; anything else is shown to the user first. Agent reviews come from the owner's account: carry out clear findings, answer a finding you can show to be wrong with the evidence, and take a real trade-off to the user.
+2. Act only on feedback from the owner or collaborators; anything else is shown to the user first. Agent reviews come from the owner's account: carry out clear findings, and answer a finding you disagree with by your argument and its evidence. Reviewer and author discuss a point for at most two rounds; after that it stays open for the user.
 3. Implement each change in new commits on the same branch, with no force-push, so the reviewer sees what changed.
 4. Verify and push.
 5. Reply under each comment with the commit or the reason.
 6. Add the lessons an agent review proposes to the [review lessons](review-lessons.md) of the pull request's repository, in a commit on the same branch.
 
-The reviewer resolves threads and merges.
+The reviewer resolves the threads it accepts. The author merges only under the [merge rule](../AGENTS.md#git); otherwise the user merges.
 
 ## Branches and commits
 
@@ -149,7 +152,7 @@ Agents commit only on the feature branch. They push that branch and open a pull 
 
 ## Stacked pull requests
 
-Work toward one goal is delivered in small increments where possible: one pull request per step, each step based on the one below it. The user reviews and merges a few hundred lines at a time instead of one large diff, and the order of dependent steps stays visible.
+Work toward one goal is delivered in small increments where possible: one pull request per step, each step based on the one below it. Each pull request is reviewed a few hundred lines at a time instead of one large diff, and the order of dependent steps stays visible.
 
 ```mermaid
 flowchart LR
@@ -180,7 +183,7 @@ flowchart LR
 
 - Review feedback on a step is committed on that step's branch (`pr-feedback` skill). Then merge that branch into each branch above it, bottom-up (`git switch <above> && git merge --no-edit <below>`), resolve conflicts there, verify at the level the merge needs and push each branch. Never rebase or force-push a pushed step: review comments stay attached to their commits.
 - Before new work on a stacked branch, pull it and the branches below it, and merge up whatever moved (`git log --oneline <above>..<below>` shows what is missing).
-- The user merges bottom-up, with a merge commit. When a merged step's branch is deleted, GitHub moves the next pull request's base to `main`; while the branch still exists, change the base yourself (`gh pr edit <n> --base main`). Then merge `main` into the next branch when GitHub reports a conflict, and push it.
+- The stack merges bottom-up, with merge commits: by the author under the [merge rule](../AGENTS.md#git), otherwise by the user. When a merged step's branch is deleted, GitHub moves the next pull request's base to `main`; while the branch still exists, change the base yourself (`gh pr edit <n> --base main`). Then merge `main` into the next branch when GitHub reports a conflict, and push it.
 - Across repositories, each repository has its own stack. A Lab branch records the Kinetra commit of the Kinetra step it needs; when that Kinetra branch moves, update the pointer on the Lab branch and merge it up the Lab stack.
 
 ## Changes across Kinetra and Lab
