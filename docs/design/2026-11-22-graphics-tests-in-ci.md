@@ -30,6 +30,7 @@ CI compiled the graphics tests but did not run them, so the Full level asked for
 - Goal: CI runs every test, the graphics cases included, on every pull request and push to `main`.
 - Goal: the rules say that CI is the Full level; locally only the targeted checks, and graphics cases as optional quick feedback.
 - Goal: every copy of the old rule changes: `AGENTS.md`, testing, development, workflow, and the `verify` and `pr-review` skills.
+- Goal: the reviewer only reviews code and comments, and starts once CI is green.
 - Non-goal: Windows. Lab's native Windows job keeps skipping graphics; a software OpenGL 3.3 context on the Windows runner would be a change of its own.
 - Non-goal: desktop feel, real GPU drivers and performance. Software rendering cannot prove them; they stay a playtest by the user.
 
@@ -41,6 +42,7 @@ CI compiled the graphics tests but did not run them, so the Full level asked for
 | Kinetra and Lab | Both, Kinetra first | The user's choice of 2026-11-22. The rule lives here and Lab copies it |
 | How CI runs them | The `ci` test preset runs everything, with the offscreen environment; a hidden `software-gl` test preset holds that environment for `graphics` and `ci` | No second build: `build-ci` already has the graphics tests. One step, and one preset that a developer can run to reproduce CI |
 | Desktop checks | A design document names a playtest by the user when a change depends on feel, a GPU driver or performance | Neither CI nor a local software run proves them |
+| The reviewer | `pr-review` reviews the code and comments, and builds, tests and runs nothing; the author starts it only once the pull request's CI is green, and after new commits it reviews only a green head. A screenshot of a changed scene is the author's; the reviewer checks it is there | The user's choice of 2026-11-22, during this pull request: CI and the author run everything, so a run by the reviewer only repeated it |
 
 ## Design
 
@@ -59,7 +61,7 @@ flowchart LR
 
 ## Affected areas
 
-`CMakePresets.json`, `.github/workflows/ci.yml`, `AGENTS.md`, `docs/testing.md`, `docs/development.md`, `docs/workflow.md`, `.agents/skills/verify/` and `.agents/skills/pr-review/` (`SKILL.md` and `README.md`), the roadmap item *Graphics tests in CI* (removed), this document and the design index.
+`CMakePresets.json`, `.github/workflows/ci.yml`, `AGENTS.md`, `docs/testing.md`, `docs/development.md`, `docs/workflow.md`, `.agents/skills/verify/`, `.agents/skills/pr-review/` (`SKILL.md` and `README.md`), `.agents/skills/feature/SKILL.md`, `.agents/skills/README.md`, `tests/runtime_tests.cpp`, the roadmap item *Graphics tests in CI* (removed), this document and the design index.
 
 ## Test plan
 
@@ -93,6 +95,8 @@ To be filled in after the agent review.
 - `CMakePresets.json`: hidden test preset `software-gl` with the offscreen environment; `graphics` and `ci` inherit it.
 - `ci.yml`: comment and step name.
 - `AGENTS.md`, testing, development, workflow, `verify` and `pr-review`: CI is the Full level; locally the targeted checks, graphics cases optional; a desktop playtest stays with the user.
+- `pr-review`, `feature`, workflow and `AGENTS.md`: the reviewer reviews code and comments only, and starts once CI is green; the author adds a screenshot of a changed scene.
+- `runtime_tests.cpp`: the mouse-input case fills its injected events as SDL does, and checks click and wheel separately.
 - Roadmap item *Graphics tests in CI* removed.
 
 **Verification.** Local `ci` workflow in a cloud session: 278 of 278 cases, 13 graphics. The Arch result is this pull request's CI.
