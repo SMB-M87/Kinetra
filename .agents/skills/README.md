@@ -2,14 +2,13 @@
 
 Procedures that agents (Claude Code, Codex) load on demand. This page is the overview of all repository skills. Codex reads `.agents/skills/` and Claude Code reads `.claude/skills/`, which is a symlink to this directory. Kinetra-Lab links to the same directory, so both repositories use one set of skills.
 
-Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agentskills.io) format, which the agent follows, and a `README.md` that explains the skill to people with use cases ([template](../../docs/documentation.md#skill-readme-template)); most READMEs are not written yet (see [open points](#open-points)). The README is not part of the agent's instructions.
+Choose a skill below to see example requests and expected results. Each guide links to the agent's procedure in its sibling `SKILL.md`, which follows the [Agent Skills format](https://agentskills.io). [Skill README template](../../docs/documentation.md#skill-readme-template)
 
 ## Table of contents
 
 - [Skills](#skills)
 - [How they fit the cycle](#how-they-fit-the-cycle)
 - [Maintenance](#maintenance)
-- [Open points](#open-points)
 
 [Agent rules](../../AGENTS.md) · [Project overview](../../README.md) · [Documentation index](../../docs/README.md)
 
@@ -17,13 +16,13 @@ Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agents
 
 | Skill | Use | Invoked |
 | --- | --- | --- |
-| [feature](feature/SKILL.md) | Run a change through the full development cycle, up to an open pull request or a stack of them | At the start of every change, or `/feature` |
-| [grilling](grilling/SKILL.md) | Settle open decisions with the user in rounds of forms | On request, or from `feature` |
-| [verify](verify/SKILL.md) | Choose and run the verification level for the diff | After changes, before committing |
-| [doc-module](doc-module/SKILL.md) | Write a module README and `///` header summaries | On request, or from `feature` |
-| [refactor](refactor/SKILL.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
-| [adr](adr/SKILL.md) | Record an architecture decision | When a decision qualifies |
-| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply or argument per comment, lessons added, merge under the merge rule | In the author's session for every agent review; otherwise on request (`/pr-feedback`) |
+| [feature](feature/README.md) | Run a change through the full development cycle, up to an open pull request or a stack of them | At the start of every change, or `/feature` |
+| [grilling](grilling/README.md) | Settle open decisions with the user in rounds of forms | On request, or from `feature` |
+| [verify](verify/README.md) | Choose and run the verification level for the diff | After changes, before committing |
+| [doc-module](doc-module/README.md) | Write a module README and `///` header summaries | On request, or from `feature` |
+| [refactor](refactor/README.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
+| [adr](adr/README.md) | Record an architecture decision | When a decision qualifies |
+| [pr-feedback](pr-feedback/README.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply or argument per comment, lessons added, merge under the merge rule | In the author's session for every agent review; otherwise on request (`/pr-feedback`) |
 | [pr-review](pr-review/README.md) | A second agent reviews a pull request or a stack: goals, the agent's code review and the repository checklist, a run of what CI does not cover, inline comments and a conclusion, two discussion rounds, proposed lessons | By the author after every pull request, in a separate session; or `/pr-review` |
 | [roadmap](roadmap/README.md) | Keep the backlog in `docs/roadmap.md`: ideas from a brainstorm, items to pick up, items closed on merge | On request (`/roadmap`, a brainstorm), or from `feature` and `grilling` |
 
@@ -59,7 +58,3 @@ flowchart LR
 - Skills stay agent-neutral, so Claude Code, Codex and other agents can follow them: they name no model, and a step that uses one agent's command or tool names it as an example next to a description of the action, or gives the equivalent for the others.
 - A skill that reaches outside the repository (push, PR, network) needs an explicit rule in AGENTS.md first.
 - A change that adds or changes a skill updates its `README.md` and the table on this page in the same commit.
-
-## Open points
-
-- Apart from `roadmap` and `pr-review`, the skills have no `README.md` yet; the table links their `SKILL.md` until then. The READMEs follow on their own branch ([roadmap](../../docs/roadmap.md#next), *Skill READMEs*).

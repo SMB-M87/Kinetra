@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-22 | [Skill READMEs](2026-11-22-skill-readmes.md) for the seven skills that lacked a user guide | implemented |
 | 2026-11-22 | [Review depth by the kind of change](2026-11-22-pr-review-levels.md): reviewer session at effort `high` or `xhigh`, code review at `low`, `medium` or `high` | implemented |
 | 2026-11-22 | [Review loop and merges by agents](2026-11-22-pr-review-loop.md): every pull request waits for an agent review; the author merges when nothing is open, except rules, CI, releases and the user's checks | implemented |
 | 2026-11-22 | [Pull request review skill](2026-11-22-pr-review-skill.md): `pr-review` on request, comments the author's session processes, and a review lessons page | implemented |

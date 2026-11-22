@@ -156,7 +156,7 @@ Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/
 | `pr-review` | Review a pull request or a whole stack: goals, the agent's code review and the repository checklist, a run of what CI does not cover, inline comments and a conclusion, discussion rounds, proposed lessons (started by the author after every pull request, or by the user) |
 | `roadmap` | Keep the backlog in `docs/roadmap.md`: brainstorm ideas, pick up, close items (on request or from `feature` and `grilling`) |
 
-- Each skill directory holds a `SKILL.md` for the agent and gets a `README.md` that explains the skill to people with use cases ([skill README template](docs/documentation.md#skill-readme-template)); the READMEs are still being written ([open point](.agents/skills/README.md#open-points)). The [skills overview](.agents/skills/README.md) lists all skills.
+- Each skill directory holds a `SKILL.md` for the agent and a `README.md` with use cases for contributors. Follow the [skill README template](docs/documentation.md#skill-readme-template) and link the guide from the [skills overview](.agents/skills/README.md).
 - A change that adds or changes a skill updates its README and the overview in the same commit.
 
 *Why:* `SKILL.md` is written as instructions for an agent. A person choosing a skill, or reviewing what it did, needs examples of when to use it and what it changes.
