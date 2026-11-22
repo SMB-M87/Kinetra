@@ -20,9 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Linux beyond Arch** · build, docs, CI, with Lab · added 2026-11-21
-  Kinetra names Artix/Linux its desktop target and documents only `pacman`. Support Linux in general: `kinetra::atan2` and `kinetra::asin`, which round the same on every C library so Lab's golden fingerprints hold on other distributions; dependency commands per distribution family (Arch and Artix, Debian and Ubuntu, Fedora); and a second CI job on Ubuntu LTS (the user's choice of 2026-11-22), while the pinned Arch toolchain stays the reference for warnings and formatting. Fedora gets documented commands but no CI job.
-  Where: [design](design/2026-11-22-linux-beyond-arch.md), a stack of `fix/portable-atan2-asin` and `build/linux-beyond-arch`; Lab item of the same name.
+Nothing in progress in Kinetra itself.
 
 ## Next
 

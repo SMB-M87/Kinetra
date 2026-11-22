@@ -1,6 +1,6 @@
 # Linux beyond Arch
 
-Status: accepted · Branches: `fix/portable-atan2-asin`, `build/linux-beyond-arch` · Related: [roadmap item](../roadmap.md#now), Kinetra-Lab design *Linux beyond Arch and golden tests on every toolchain* (`docs/design/2026-11-22-linux-beyond-arch.md` in Kinetra-Lab)
+Status: implemented · Branches: `fix/portable-atan2-asin`, `build/linux-beyond-arch` · Related: Kinetra roadmap item *Linux beyond Arch* (removed by step 2), Kinetra-Lab design *Linux beyond Arch and golden tests on every toolchain* (`docs/design/2026-11-22-linux-beyond-arch.md` in Kinetra-Lab)
 
 Kinetra builds and passes its tests on Ubuntu 24.04, but its float angles depend on the C library: `atan2f` and `asinf` round differently in glibc before 2.41 than on CI's Arch toolchain, which moves Kinetra-Lab's golden fingerprints on every other Linux. This stack makes those two functions round the same everywhere, then adds an Ubuntu LTS job to CI and dependency commands per distribution family, so Linux in general is supported and the docs say what is tested.
 
@@ -107,6 +107,15 @@ Self-review of `git diff main...fix/portable-atan2-asin`:
 - No unqualified `atan2` or `asin` call exists in Kinetra or Kinetra-Lab, so the new names cannot make a call ambiguous today.
 - Copies: the determinism statements in [math and physics](../engine/math-physics.md#limits-and-verification) and the [simulation README](../../src/simulation/README.md#invariants-and-contracts) say the same; the README's "Cross-machine bitwise determinism is not promised" stays true.
 
+### Step 2
+
+Self-review of `git diff fix/portable-atan2-asin...build/linux-beyond-arch`:
+
+- Package names: every Debian and Ubuntu package was checked with `apt-cache policy` on Ubuntu 24.04 before it went into the job and the docs, following the [review lesson](../review-lessons.md#ci-and-tooling) on names from memory. The Fedora names could not be checked: every Fedora host was refused by this session's network, and no container runtime was available. The command is marked as not checked on the page itself, and the pull request asks the user to check it.
+- The job installs `cmake` from Ubuntu, but the runner image also has a newer CMake in `/usr/local/bin`, which comes first on the path; the job prints the version it uses. Both meet the presets' 3.25.
+- Copies of "Linux is supported; Artix/Linux is the desktop target": the README and AGENTS.md changed together; the Full level's list of CI checks changed in AGENTS.md and the `verify` skill; `grep -rni "artix\|pacman\|desktop target"` finds no other statement of what is tested. The skill's README names no CI check, so it needs no change.
+- The job is not a required status: `CI / checks` stays the one required check, and making `CI / ubuntu` required is the user's choice.
+
 ## Verification
 
 ### Step 1
@@ -122,6 +131,10 @@ On Ubuntu 24.04 (GCC 13.3, glibc 2.39), in the session that found the cause:
 | Kinetra-Lab with this commit: `ctest --preset ci -j4 -LE soak`, `ctest --preset ci -L soak` and `cmake --workflow --preset headless`, after its Demo and Dotio calls moved to Kinetra's functions | Passes: 316 of 316, 5 of 5 and 259 of 259, the five fingerprints that failed before included, with the values recorded on Arch |
 
 CI on Arch is the Full level; the pull request reports it.
+
+### Step 2
+
+The `ubuntu` job's steps, run in a clean worktree of this branch on Ubuntu 24.04 with the job's packages installed: `cmake --workflow --preset headless` passes 230 of 230; `cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF`, `cmake --build --preset ci` and `ctest --preset ci` build without a warning and pass 280 of 280, the graphics cases included; the external consumer builds and runs. `python3 tools/check_docs.py` passes. The job itself runs first in this pull request's CI.
 
 ## Pull request
 
@@ -149,6 +162,30 @@ Title: `fix(simulation): round atan2 and asin the same on every C library`
 
 **Follow-up.** Step 2 adds the Ubuntu CI job; Kinetra-Lab moves its own calls and enables its fingerprints on Ubuntu and, if they hold, Windows.
 
+### Step 2
+
+Title: `build(ci): test Kinetra on Ubuntu LTS and document Linux per distribution`
+
+**Stack:** step 2 of 2 (*Linux beyond Arch*); merge after step 1 (`fix/portable-atan2-asin`).
+
+**Summary.** Kinetra supported Linux in name but documented and tested only Arch. CI gets a second job on Ubuntu 24.04 LTS with that distribution's own GCC, glibc and SDL2, while the pinned Arch job stays the reference for warnings and formatting; the development page gives a dependency command per distribution family and says which are tested.
+
+**Changes.**
+- CI: job `ubuntu` on `ubuntu-24.04`: apt packages, headless workflow, `ci` preset with warnings reported instead of errors, its tests with the graphics cases on software OpenGL, the external consumer.
+- Docs: dependency commands for Arch and Artix, Debian and Ubuntu, and Fedora (not tested, names not yet checked) in development; the CI section of testing; the platform line of the README; the identity line and the Full level of AGENTS.md; the `verify` skill's list of CI checks.
+- This design document `implemented`; the roadmap item removed.
+
+**Design.** `docs/design/2026-11-22-linux-beyond-arch.md`.
+
+**Verification.** The job's steps passed in a clean worktree on Ubuntu 24.04 (230 and 280 of 280 tests, the consumer); the docs check passes. The job's own first run is in this pull request's CI.
+
+**Review notes.** Warnings on Ubuntu are not errors, by design: Arch's pinned GCC is the reference. `CI / ubuntu` is not a required status; the user decides whether to make it one. Please check the Fedora command, which this session could not reach Fedora to verify.
+
+**Dependencies and merge order.** After step 1, with a merge commit; before the Kinetra-Lab pull request. Changes CI and the agent rules, so it waits for the user.
+
+**Follow-up.** Kinetra-Lab adds its own Ubuntu job and docs. Making `CI / ubuntu` a required check, and a Fedora job, stay with the user.
+
 ## Open points
 
+- The Fedora command is not checked against Fedora's repositories; the user checks it, or a session that can reach Fedora's package hosts.
 - Windows' C runtime may still differ in `sinf`, `cosf`, `expf`, `powf` or `hypot`; Kinetra-Lab's pull request tries its Windows-skipped golden cases and records what still differs.
