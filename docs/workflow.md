@@ -35,7 +35,8 @@ flowchart LR
     R -->|findings| I
     R --> Doc[Update docs and comments]
     Doc --> C[Final commit, push, pull request]
-    C --> AR[Agent review and discussion]
+    C --> CI[CI green]
+    CI --> AR[Agent review and discussion]
     AR -->|findings| I
     AR -->|nothing open| M[Author merges, or the user for rules, CI and own checks]
 ```
@@ -94,7 +95,7 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section.
 
-**Agent review.** Every pull request gets one, except a pointer-only Lab pull request ([below](#changes-across-kinetra-and-lab)). After opening it, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist, builds and runs what CI does not (graphics tests, a screenshot), and posts inline comments and a summary with a conclusion, all marked **Agent review**. The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the point stays open for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git); pull requests on agent rules, CI or releases, or with a check by the user, wait for the user.
+**Agent review.** Every pull request gets one, except a pointer-only Lab pull request ([below](#changes-across-kinetra-and-lab)). Once its CI is green, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist on the code, and posts inline comments and a summary with a conclusion, all marked **Agent review**. The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the point stays open for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git); pull requests on agent rules, CI or releases, or with a check by the user, wait for the user.
 
 ## 7. Document
 
@@ -124,7 +125,7 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 
   Write the body to a scratch file, never into the repository.
 - Check the result with `gh pr view <number> --json mergeable,url`, and report a conflict instead of resolving it on `main`.
-- Start the agent review (step 6) and follow the pull request.
+- Wait for the pull request's CI and fix a red check; once it is green, start the agent review (step 6) and follow the pull request.
 - Report to the user in Dutch: what changed, the commits and pull-request links, the verification commands and results, remaining risks, the merge order, and whether the pull request waits for the user or may be merged under the [merge rule](../AGENTS.md#git).
 
 ### Review feedback
@@ -177,7 +178,7 @@ flowchart LR
 - The stack shares one design document, written on the first branch. Its *Decisions* or *Design* section lists the steps with their branches and pull requests; each branch fills in its own step, verification and review.
 - Create each branch from the branch below: `git switch -c <type>/<topic> <branch below>`.
 - Open each pull request with the branch below as its base, so its diff is only that step. The description starts with the stack: the step's place, the pull requests below and above it, and "merge after #<n>".
-- CI checks every pull request in the stack on its own. Run the local Full level on the top of the stack, and also on a lower branch that changes behavior CI does not run (graphics, desktop runs).
+- CI checks every pull request in the stack on its own, graphics cases included. A step that changes what only a desktop shows (feel, performance) names the user's playtest in the design document.
 - Open the pull requests bottom-up, so each base exists on GitHub before the pull request that uses it.
 
 **Keeping the stack current**

@@ -70,7 +70,7 @@
     },
     {
       "name": "ci",
-      "displayName": "CI: Release, everything compiled, warnings as errors",
+      "displayName": "CI: Release, warnings as errors, every test including graphics (offscreen SDL, software Mesa)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -107,12 +107,13 @@
     { "name": "headless", "configurePreset": "headless", "inherits": "base" },
     { "name": "asan", "configurePreset": "asan", "inherits": "base" },
     {
-      "name": "graphics",
-      "configurePreset": "graphics",
+      "name": "software-gl",
+      "hidden": true,
       "inherits": "base",
       "environment": { "SDL_VIDEODRIVER": "offscreen", "LIBGL_ALWAYS_SOFTWARE": "1" }
     },
-    { "name": "ci", "configurePreset": "ci", "inherits": "no-graphics" }
+    { "name": "graphics", "configurePreset": "graphics", "inherits": "software-gl" },
+    { "name": "ci", "configurePreset": "ci", "inherits": "software-gl" }
   ],
   "workflowPresets": [
     {

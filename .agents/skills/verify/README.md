@@ -17,7 +17,7 @@ Use `verify` to find out which checks a change needs and what actually passed. T
 | --- | --- | --- |
 | Only a skill README changed | “/verify Controleer de links van de nieuwe skillgids.” | The Docs check reports broken file links and heading anchors or confirms that they resolve. |
 | One private simulation implementation changed mid-branch | “/verify Controleer de wijziging in de gewogen zoekroutine.” | A targeted build and the relevant CTest cases, provided the rest of the diff also qualifies. |
-| A public navigation header changed | “/verify Controleer de branch met de gewijzigde navigatie-API.” | Full verification covers the local graphics workflow, Lab when available and the pull request's CI results. |
+| A public navigation header changed | “/verify Controleer de branch met de gewijzigde navigatie-API.” | Targeted builds and tests of the changed areas locally, then the pull request's CI results, graphics cases included. |
 
 ## When not to use it
 

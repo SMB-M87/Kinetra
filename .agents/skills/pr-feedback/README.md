@@ -31,4 +31,4 @@ Use `pr-review` to inspect a pull request as its independent reviewer. Use `feat
 
 ## Related skills
 
-[Feature](../feature/README.md) starts an independent [pr-review](../pr-review/README.md) after opening a pull request. The author processes that review immediately with this skill and uses [verify](../verify/README.md) for the resulting changes.
+[Feature](../feature/README.md) starts an independent [pr-review](../pr-review/README.md) once the pull request's CI is green. The author processes that review immediately with this skill and uses [verify](../verify/README.md) for the resulting changes.

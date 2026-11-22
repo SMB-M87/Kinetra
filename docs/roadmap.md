@@ -24,9 +24,6 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-- **Graphics tests in CI** · tests, CI, with Lab · added 2026-11-21
-  CI compiles the graphics tests but does not run them, for want of a GPU ([testing](testing.md#continuous-integration)). The `graphics` preset already renders with SDL's offscreen driver and software Mesa ([development](development.md#graphics-execution)), which needs no GPU, so CI could run `kinetra_engine_graphics` on every pull request. Runtime and overlay changes would then be checked on GitHub, also when they come from a cloud session without a display.
-  Next step: run the `graphics` workflow in CI's Arch image and see which cases pass; the WSL2 mouse-input failure ([testing, open points](testing.md#open-points)) shows that injected input needs a look.
 - **Agent inspector overlay** · runtime, with Lab · added 2026-11-21
   A reusable overlay that shows the rows of one selected agent (a title, label–value rows in groups) beside it or in a corner, so the user sees an agent's motion settings, goal and state while it runs. Kinetra owns layout, drawing and input capture, as for every overlay; applications supply the selection and the rows as headless values, as `DebugEntry` does for the debug menu ([debug_view.h](../include/kinetra/runtime/debug_view.h)).
   Next step: design it with Lab's item of the same name, which starts with i4sim.
@@ -45,6 +42,9 @@ Nothing in progress in Kinetra itself.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
   CI installs the pinned toolchain from the Arch Linux Archive in every run, and falls back to the current packages when the archive does not answer ([CI falls back to current Arch packages](design/2026-11-21-ci-mirror-fallback.md)). An image with the pinned packages already installed, published to GitHub's container registry, would make CI independent of the archive and faster. It can only be built while the archive answers.
   Next step: a design: who builds and publishes the image, and how a snapshot bump updates it.
+- **Report the injected wheel event to sdl2-compat** · runtime, tests · added 2026-11-22
+  `sdl2-compat` 2.32.64 returns an event pushed through `SDL_PushEvent` with `wheel.y` taken from the bytes of `mouseY`, and `preciseY` set from the whole `y` (`Event2to3` and `Event3to2`); real input is not affected. So no graphics test can inject a fractional wheel step, and the WSL2 failure probably had this cause ([graphics tests in CI](design/2026-11-22-graphics-tests-in-ci.md)). An upstream report or patch is the user's call: it goes out under their account.
+  Next step: the user decides whether to report it.
 - **Frame read-back on `Runtime`** · runtime · added 2026-11-21
   A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
   Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).

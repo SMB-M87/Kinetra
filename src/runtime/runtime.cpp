@@ -308,8 +308,12 @@ bool Runtime::poll(bool close_on_escape) {
             in.right_mouse_down = false;
         if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT)
             in.mouse_down = false;
+        // preciseY, not the whole notches in `y`: Input::wheel is fractional for smooth wheels
+        // and touchpads, and it equals `y` for a notched wheel. sdl2-compat returns an event
+        // pushed through SDL_PushEvent with `y` lost and preciseY set from its whole `y`, so
+        // preciseY is also the field that carries an injected step.
         if (event.type == SDL_MOUSEWHEEL)
-            in.wheel += float(event.wheel.y) * (event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1.f : 1.f);
+            in.wheel += event.wheel.preciseY * (event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1.f : 1.f);
     }
     int x, y, w, h;
     SDL_GetMouseState(&x, &y);
