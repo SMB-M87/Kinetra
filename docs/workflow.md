@@ -14,6 +14,7 @@ How a change moves from idea to commit in Kinetra and Kinetra-Lab. Every change 
 - [7. Document](#7-document)
 - [8. Commit, push and open a pull request](#8-commit-push-and-open-a-pull-request)
 - [Branches and commits](#branches-and-commits)
+- [Stacked pull requests](#stacked-pull-requests)
 - [Changes across Kinetra and Lab](#changes-across-kinetra-and-lab)
 - [Open points](#open-points)
 
@@ -54,6 +55,7 @@ Create `docs/design/YYYY-MM-DD-<topic>.md` from the [template](design/README.md#
 - **Diagram.** Include one when structure or interaction changes; the [documentation guide](documentation.md#diagrams) says which kind.
 - **ADR.** Write one when the decision is hard to reverse, surprising without context, *and* the result of a real trade-off (`adr` skill). The design document links to it.
 - **Size.** A typo fix needs a few lines per section; a subsystem change needs a page. Several small related fixes may share one branch and one design document.
+- **Steps.** When the goal needs several changes that can each be reviewed on their own, plan them as a [stack of pull requests](#stacked-pull-requests): one design document for the goal, with a table of its steps and their branches.
 
 ## 3. Test plan
 
@@ -108,10 +110,10 @@ Fix the findings, re-verify at the right level and record the outcome in the des
   - **Dependencies and merge order**.
   - **Follow-up**.
 - Push the branch (`git push -u origin <branch>`). If SSH is unavailable, use the HTTPS fallback in [AGENTS.md](../AGENTS.md#git).
-- Open the pull request against `main`:
+- Open the pull request against `main`, or, for a step of a [stack](#stacked-pull-requests), against the branch of the step below:
 
   ```sh
-  gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>
+  gh pr create --repo <owner>/<repo> --base <main or branch below> --head <branch> --title "<type(scope): summary>" --body-file <file>
   ```
 
   Write the body to a scratch file, never into the repository.
@@ -134,12 +136,48 @@ The reviewer resolves threads and merges.
 
 | Item | Rule | Example |
 | --- | --- | --- |
-| Branch | `<type>/<topic>`, from up-to-date `main` | `refactor/i4sim-mover-state` |
+| Branch | `<type>/<topic>`, from up-to-date `main`, or from the branch below it in a [stack](#stacked-pull-requests) | `refactor/i4sim-mover-state` |
 | Commit subject | `type(scope): imperative summary`, English, at most about 72 characters | `refactor(i4sim): replace mover flags with MoverState` |
 | Commit body | Optional: why, and the observable effect; no file lists | |
 | Types | `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`, `perf` | |
 
 Agents commit only on the feature branch. They push that branch and open a pull request, but never push to `main` or merge; see [AGENTS.md](../AGENTS.md#git).
+
+## Stacked pull requests
+
+Work toward one goal is delivered in small increments where possible: one pull request per step, each step based on the one below it. The user reviews and merges a few hundred lines at a time instead of one large diff, and the order of dependent steps stays visible.
+
+```mermaid
+flowchart LR
+    M[main] --> S1["step 1<br/>base: main"]
+    S1 --> S2["step 2<br/>base: step 1"]
+    S2 --> S3["step 3<br/>base: step 2"]
+    S1 -. "feedback on step 1:<br/>merge up" .-> S2
+    S2 -. "merge up" .-> S3
+```
+
+*Takeaway:* every pull request shows only its own step; changes flow up the stack by merging, and the stack merges bottom-up.
+
+**When to stack**
+
+- A goal splits into steps that each compile, pass their tests and make sense on their own: a safety net before a refactor, a mechanism before its use, an engine change before the application that needs it, a refactor in named steps. Each step answers one question.
+- Changes that do not depend on each other get their own branches from `main`, so one can merge without the other. Stack them anyway when they edit the same lines (an index, a roadmap section), so they merge without conflicts.
+- A step that grows past a few hundred changed lines, or mixes refactoring and behavior, is split into two steps.
+
+**How**
+
+- The stack shares one design document, written on the first branch. Its *Decisions* or *Design* section lists the steps with their branches and pull requests; each branch fills in its own step, verification and review.
+- Create each branch from the branch below: `git switch -c <type>/<topic> <branch below>`.
+- Open each pull request with the branch below as its base, so its diff is only that step. The description starts with the stack: the step's place, the pull requests below and above it, and "merge after #<n>".
+- CI checks every pull request in the stack on its own. Run the local Full level on the top of the stack, and also on a lower branch that changes behavior CI does not run (graphics, desktop runs).
+- Open the pull requests bottom-up, so each base exists on GitHub before the pull request that uses it.
+
+**Keeping the stack current**
+
+- Review feedback on a step is committed on that step's branch (`pr-feedback` skill). Then merge that branch into each branch above it, bottom-up (`git switch <above> && git merge --no-edit <below>`), resolve conflicts there, verify at the level the merge needs and push each branch. Never rebase or force-push a pushed step: review comments stay attached to their commits.
+- Before new work on a stacked branch, pull it and the branches below it, and merge up whatever moved (`git log --oneline <above>..<below>` shows what is missing).
+- The user merges bottom-up, with a merge commit. When a merged step's branch is deleted, GitHub moves the next pull request's base to `main`; while the branch still exists, change the base yourself (`gh pr edit <n> --base main`). Then merge `main` into the next branch when GitHub reports a conflict, and push it.
+- Across repositories, each repository has its own stack. A Lab branch records the Kinetra commit of the Kinetra step it needs; when that Kinetra branch moves, update the pointer on the Lab branch and merge it up the Lab stack.
 
 ## Changes across Kinetra and Lab
 

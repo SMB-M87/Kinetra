@@ -17,13 +17,13 @@ Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agents
 
 | Skill | Use | Invoked |
 | --- | --- | --- |
-| [feature](feature/SKILL.md) | Run a change through the full development cycle, up to an open pull request | At the start of every change, or `/feature` |
+| [feature](feature/SKILL.md) | Run a change through the full development cycle, up to an open pull request or a stack of them | At the start of every change, or `/feature` |
 | [grilling](grilling/SKILL.md) | Settle open decisions with the user in rounds of forms | On request, or from `feature` |
 | [verify](verify/SKILL.md) | Choose and run the verification level for the diff | After changes, before committing |
 | [doc-module](doc-module/SKILL.md) | Write a module README and `///` header summaries | On request, or from `feature` |
 | [refactor](refactor/SKILL.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/SKILL.md) | Record an architecture decision | When a decision qualifies |
-| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, a reply per comment | On request (`/pr-feedback`) |
+| [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply per comment | On request (`/pr-feedback`) |
 | [roadmap](roadmap/README.md) | Keep the backlog in `docs/roadmap.md`: ideas from a brainstorm, items to pick up, items closed on merge | On request (`/roadmap`, a brainstorm), or from `feature` and `grilling` |
 
 The user's global skill set (book references such as refactoring, clean architecture and a philosophy of software design, plus `teach`, `grill-me` and `code-review`) is installed per machine and is not copied here.

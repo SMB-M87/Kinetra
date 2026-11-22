@@ -74,12 +74,13 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 - Work on a branch named `<type>/<topic>`, using the conventional-commit types (`feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`). Never commit to `main`.
 - Commit freely on that branch, in small logical steps. Use the message format `type(scope): imperative summary` in English, with an optional body explaining why.
 - Stage explicit paths. Never use `git add -A`; preserve unrelated work and inspect `git status` before and after.
-- When the branch is complete (design document `implemented`, verification passed), push the branch and open a pull request against `main`. Use the design document's *Pull request* section as the description ([workflow](docs/workflow.md#8-commit-push-and-open-a-pull-request)).
+- When the branch is complete (design document `implemented`, verification passed), push the branch and open a pull request against `main`, or against the branch below it in a stack. Use the design document's *Pull request* section as the description ([workflow](docs/workflow.md#8-commit-push-and-open-a-pull-request)).
+- Work in stacked pull requests where possible: when a goal splits into steps that can each be reviewed on their own, give every step its own branch and pull request, based on the step below it, so the user gets small increments toward the same goal. When a lower step changes, merge it into the branches above it; the stack merges bottom-up ([stacked pull requests](docs/workflow.md#stacked-pull-requests)).
 - Never push to `main`, merge pull requests, force-push, rebase published history, tag or change remotes. The user reviews and merges.
 - If `git push` over SSH is unavailable, push once over HTTPS with the GitHub CLI credentials: `git -c credential.helper= -c credential.helper='!gh auth git-credential' push https://github.com/<owner>/<repo>.git <branch>`. Never store credentials or change the remote or global git configuration for this.
 - Kinetra-Lab tracks Kinetra as a submodule. For an engine change used by Lab, commit and open the Kinetra pull request first, then commit the pointer in Lab. The Lab pull request links the Kinetra one and states that Kinetra merges first.
 
-*Why:* pull requests make agent work reviewable on GitHub, with the reasons attached. Merging stays a human decision.
+*Why:* pull requests make agent work reviewable on GitHub, with the reasons attached. Small stacked pull requests are reviewed faster and more carefully than one large diff, and each can be verified on its own. Merging stays a human decision.
 
 ## Engineering rules
 
