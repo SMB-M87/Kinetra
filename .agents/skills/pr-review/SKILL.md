@@ -1,12 +1,12 @@
 ---
 name: pr-review
-description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session after every pull request, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, roadmap, CI, merge order, review lessons), builds and runs what CI does not cover, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, resolves the threads it accepts, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and after opening a pull request.
+description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session after every pull request except a pointer-only one, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, roadmap, CI, merge order, review lessons), builds and runs what CI does not cover, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, resolves the threads it accepts, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and after opening a pull request.
 argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole stack) [code-review depth: low|medium|high, or higher on request]"
 ---
 
 # PR review: an agent reviews a pull request
 
-The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it: the author starts it in a separate session after opening the pull request, and the user can start it too. The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
+The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a pointer-only Lab pull request: the author starts it in a separate session after opening the pull request, and the user can start it too. The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
 
 Everything on GitHub is in English: the inline comments, the summary and its conclusion. Only the hand-over in the chat (step 11) is in Dutch.
 

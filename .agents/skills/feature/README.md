@@ -28,6 +28,7 @@ Use `roadmap` to save an idea for later. For an existing branch that only needs 
 1. The agent reads the roadmap, review lessons, affected code and tests, then records the scope and test plan. It asks you about choices that affect the design or its contracts.
 2. It implements the design on a topic branch or stack, checks the diff and opens the pull requests. An independent reviewer checks the result and the author answers the findings.
 3. The author can merge an eligible pull request once review and checks are complete. Changes to skills, agent rules, CI or releases, and checks reserved for you, wait for your decision. [Merge rule](../../../AGENTS.md#git)
+4. In Kinetra-Lab, the move of the submodule pointer to the Kinetra merge commit follows in a separate pointer-only pull request, without review, which the agent merges once CI passes.
 
 ## Related skills
 
