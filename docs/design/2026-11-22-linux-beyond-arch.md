@@ -113,7 +113,7 @@ Self-review of `git diff fix/portable-atan2-asin...build/linux-beyond-arch`:
 
 - Package names: every Debian and Ubuntu package was checked with `apt-cache policy` on Ubuntu 24.04 before it went into the job and the docs, following the [review lesson](../review-lessons.md#ci-and-tooling) on names from memory. The Fedora names could not be checked: every Fedora host was refused by this session's network, and no container runtime was available. The command is marked as not checked on the page itself, and the pull request asks the user to check it.
 - The job installs `cmake` from Ubuntu, but the runner image also has a newer CMake in `/usr/local/bin`, which comes first on the path; the job prints the version it uses. Both meet the presets' 3.25.
-- Copies of "Linux is supported; Artix/Linux is the desktop target": the README and AGENTS.md changed together; the Full level's list of CI checks changed in AGENTS.md and the `verify` skill; `grep -rni "artix\|pacman\|desktop target"` finds no other statement of what is tested. The skill's README names no CI check, so it needs no change.
+- Copies of "Linux is supported; Artix/Linux is the desktop target": the README and AGENTS.md changed together; the Full level's list of CI checks changed in AGENTS.md and the `verify` skill, and its third copy, under *In CI* in [testing](../testing.md#full), was found in Kinetra-Lab's review and fixed in a later commit; `grep -rni "artix\|pacman\|desktop target"` finds no other statement of what is tested. The skill's README names no CI check, so it needs no change.
 - The job is not a required status: `CI / checks` stays the one required check, and making `CI / ubuntu` required is the user's choice.
 
 ## Verification
