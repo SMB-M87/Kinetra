@@ -156,6 +156,37 @@ Push pushed_crate() {
 }
 } // namespace
 
+// The inputs are cases where glibc before 2.41 rounds atan2f and asinf to the wrong neighbor
+// of the exact result (found on Ubuntu 24.04, glibc 2.39). The expected values are the
+// correctly rounded floats, which glibc 2.41 and later also return. The inputs pass through
+// a volatile, because a compiler folds a call with constant arguments at compile time and
+// rounds it correctly whatever the C library does.
+TEST_CASE("atan2 and asin return the correctly rounded float on every C library") {
+    const auto at_run_time = [](float value) {
+        volatile float copy = value;
+        return float{copy};
+    };
+    CHECK(kinetra::atan2(at_run_time(0x1.05ebb8p+5f), at_run_time(-0x1.ed77fp+3f)) == 0x1.0167eap+1f);
+    CHECK(kinetra::atan2(at_run_time(-0x1.5adep+4f), at_run_time(0x1.5483ap+6f)) == -0x1.feb26ap-3f);
+    CHECK(kinetra::asin(at_run_time(-0x1.a1be34p-1f)) == -0x1.e898e2p-1f);
+    CHECK(kinetra::asin(at_run_time(-0x1.2e06f8p-1f)) == -0x1.43096ap-1f);
+}
+
+TEST_CASE("atan2 and asin keep the standard quadrants and special values") {
+    constexpr float pi = 3.14159265358979f, infinity = std::numeric_limits<float>::infinity();
+    CHECK(kinetra::atan2(0.f, 1.f) == 0.f);
+    CHECK(kinetra::atan2(1.f, 0.f) == doctest::Approx(pi / 2));
+    CHECK(kinetra::atan2(0.f, -1.f) == pi);
+    CHECK(kinetra::atan2(-0.f, -1.f) == -pi);
+    CHECK(std::signbit(kinetra::atan2(-0.f, 1.f)));
+    CHECK(kinetra::atan2(-1.f, -1.f) == doctest::Approx(-3 * pi / 4));
+    CHECK(kinetra::atan2(infinity, infinity) == doctest::Approx(pi / 4));
+    CHECK(std::isnan(kinetra::atan2(std::nanf(""), 1.f)));
+    CHECK(kinetra::asin(1.f) == doctest::Approx(pi / 2));
+    CHECK(std::signbit(kinetra::asin(-0.f)));
+    CHECK(std::isnan(kinetra::asin(1.5f)));
+}
+
 TEST_CASE("touching circles collide with zero penetration along the center line") {
     const auto c = collide(circle({0, 0}), circle({1, 0}));
     REQUIRE(c);

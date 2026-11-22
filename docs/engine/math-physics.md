@@ -15,7 +15,7 @@ Headless mechanisms use world units, seconds and radians. Positive rotation is c
 
 | API | Contract |
 | --- | --- |
-| [math.h](../../include/kinetra/simulation/math.h) | Vec2 arithmetic, dot/cross, normalization, rotation, signed angle, interpolation, distances, bounds and shape values |
+| [math.h](../../include/kinetra/simulation/math.h) | Vec2 arithmetic, dot/cross, normalization, rotation, signed angle, `atan2` and `asin` that round the same on every C library, interpolation, distances, bounds and shape values |
 | [physics.h](../../include/kinetra/simulation/physics.h) | Body state, contacts, integration, impulses and World |
 | [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) | Rebuildable AABB index; sorted unique overlapping input indices |
 | [collision_grid.h](../../include/kinetra/simulation/collision_grid.h) | Row-major occupancy collision and first blocked segment fraction |
@@ -69,6 +69,6 @@ Application-specific math adapters and pixel/world coordinate conversions remain
 
 ## Limits and verification
 
-The solver uses a representative contact point. Continuous detection covers circle and nonrotating box/polygon pairs, including moving/moving contacts. Pairs containing rotating boxes/polygons remain discrete and can tunnel. If an impact imparts angular velocity to a dynamic box/polygon, subsequent pairs containing that body also use discrete detection; the translation sweep is not rotational CCD. There are no joints, robust stacking manifolds or cross-machine bitwise determinism. Segment queries are not a complete scene raycasting API.
+The solver uses a representative contact point. Continuous detection covers circle and nonrotating box/polygon pairs, including moving/moving contacts. Pairs containing rotating boxes/polygons remain discrete and can tunnel. If an impact imparts angular velocity to a dynamic box/polygon, subsequent pairs containing that body also use discrete detection; the translation sweep is not rotational CCD. There are no joints, robust stacking manifolds or cross-machine bitwise determinism. `kinetra::atan2` and `kinetra::asin` close the gap that moved trajectories between glibc versions: they return the correctly rounded float, where `atan2f` and `asinf` differ in the last bit between glibc 2.39 and 2.41 ([design](../design/2026-11-22-linux-beyond-arch.md#problem)). Simulation code uses them instead of `std::atan2` and `std::asin` on floats; `sin`, `cos`, `exp`, `pow` and `hypot` still come from the C library. Segment queries are not a complete scene raycasting API.
 
 [Simulation tests](../../tests/simulation_tests.cpp) cover shape boundaries, containment, momentum, rotation, material response, mixed modes, invalid inputs, grid queries and a 400-body workload. [Navigation tests](../../tests/navigation_tests.cpp) also exercise zero vectors, degenerate segments, finite-value checks and exact endpoints. Which suites to run for a change is in [testing](../testing.md#choosing-targeted-tests); every suite is listed in the [test map](../../tests/README.md#test-map).

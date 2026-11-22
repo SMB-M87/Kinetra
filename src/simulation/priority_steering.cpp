@@ -155,12 +155,13 @@ Vec2 tangent_steer(const Body &a, Vec2 target, std::span<const Body> neighbors, 
         const float d = length(offset);
         if (d >= safety + speed * horizon || d < 0.00001f)
             continue;
-        const float angle = std::atan2(offset.y, offset.x) + std::asin(std::clamp(safety / d, -1.f, 1.f));
+        const float angle =
+            kinetra::atan2(offset.y, offset.x) + kinetra::asin(std::clamp(safety / d, -1.f, 1.f));
         const Vec2 tangent = other.position + Vec2{std::cos(angle), std::sin(angle)} * safety;
         const Vec2 away = a.position - tangent;
         if (length(away) < 0.00001f)
             continue;
-        const float alpha = std::atan2(-away.y, -away.x) - std::atan2(desired.y, desired.x);
+        const float alpha = kinetra::atan2(-away.y, -away.x) - kinetra::atan2(desired.y, desired.x);
         const float wrapped = std::remainder(alpha, 6.283185307f);
         repulsion += normalized(away) * (std::exp(.1f * wrapped) * .1f * (safety + radius - length(away)));
     }

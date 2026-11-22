@@ -73,6 +73,23 @@ inline bool finite(Vec2 v) {
     return std::isfinite(v.x) && std::isfinite(v.y);
 }
 
+/// Angle in radians of the point (`x`, `y`), in [-pi, pi], with std::atan2's quadrants, signed
+/// zeros, infinities and NaN. Use it instead of std::atan2 on floats in simulation code: the
+/// result is the correctly rounded float on every C library, where `atan2f` differs in the
+/// last bit between, for example, glibc 2.39 and 2.41, and one bit changes a chaotic
+/// trajectory.
+inline float atan2(float y, float x) {
+    // A double atan2 is accurate to about one double ulp on every C library, 29 bits beyond a
+    // float, so one rounding to float gives the correctly rounded value except when the exact
+    // angle lies within that ulp of the midpoint between two floats.
+    return static_cast<float>(std::atan2(static_cast<double>(y), static_cast<double>(x)));
+}
+/// Arc sine of `x` in radians, in [-pi/2, pi/2]; NaN outside [-1, 1]. Correctly rounded on
+/// every C library, for the same reason and in the same way as atan2().
+inline float asin(float x) {
+    return static_cast<float>(std::asin(static_cast<double>(x)));
+}
+
 /// Euclidean distance between two points.
 inline float distance(Vec2 a, Vec2 b) {
     return length(a - b);
@@ -85,7 +102,7 @@ inline float distance_to_segment(Vec2 p, Vec2 a, Vec2 b) {
 }
 /// Angle in radians from `a` to `b`, in [-pi, pi]; positive is counterclockwise.
 inline float signed_angle(Vec2 a, Vec2 b) {
-    return std::atan2(cross(a, b), dot(a, b));
+    return kinetra::atan2(cross(a, b), dot(a, b));
 }
 /// Linear interpolation: `a` at `t` = 0, `b` at `t` = 1. `t` is not clamped.
 inline Vec2 lerp(Vec2 a, Vec2 b, float t) {
