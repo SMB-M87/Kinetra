@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-22 | [Agent inspector overlay](2026-11-22-agent-inspector-overlay.md) | implemented |
 | 2026-11-22 | [Every copy of a changed rule](2026-11-22-copies-rule.md): a recurring review lesson becomes a rule and a review step | implemented |
 | 2026-11-22 | [Pointer-only pull requests](2026-11-22-pointer-only-prs.md): no review, merged by the agent, always separate, CI only for engine changes | implemented |
 | 2026-11-22 | [Skill READMEs](2026-11-22-skill-readmes.md) for the seven skills that lacked a user guide | implemented |

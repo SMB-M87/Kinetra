@@ -8,6 +8,7 @@ Contracts of the optional application shell: sessions and their requests, the la
 - [Launcher](#launcher)
 - [Settings overlay](#settings-overlay)
 - [Debug menu, help and text](#debug-menu-help-and-text)
+- [Agent inspector](#agent-inspector)
 - [Presentation helpers](#presentation-helpers)
 - [Tests](#tests)
 
@@ -110,6 +111,12 @@ Zoom and toggle rows must come before help sections; the constructor throws `std
 - **[Overlay style](../../include/kinetra/runtime/overlay_style.h)** holds what the panels share: the colors, the mark glyphs, `draw_rectangle` with edges rounded to whole pixels, `draw_panel` (body, title bar, outline) and the two button drawings.
 - **[HelpOverlay](../../include/kinetra/runtime/help_view.h)** and `draw_help` draw application-owned help text in an application-owned style. Help never captures input.
 - **[Bitmap text](../../include/kinetra/runtime/bitmap_text.h).** `draw_text` draws a 5×7 bitmap font with runtime primitives, in logical screen pixels; `draw_glyph` draws one bitmap, and `text_width` measures a text. `glyph(char)` returns the bitmap. It covers `A`–`Z`, `0`–`9` and `/ + [ ] : - _ . , *`; lowercase letters use the uppercase glyphs and every other character is blank.
+
+## Agent inspector
+
+An application supplies one `InspectorSnapshot` with a title and ordered groups of display rows. The value type owns all strings and is available to headless callers. Units belong to the row value. [Snapshot model](../../include/kinetra/view/inspector.h)
+
+`InspectorView` anchors the snapshot to the top right of the available area. The view wraps rows to fit, scrolls them with the wheel and keeps the close button fixed. Use the same area when drawing and handling input. An input result with `captured` tells the caller to suppress pointer actions in the world. A result with `close` also asks the caller to clear its selection. Reset the view's scroll position on a selection change. [Runtime view](../../include/kinetra/runtime/inspector_view.h)
 
 ## Presentation helpers
 

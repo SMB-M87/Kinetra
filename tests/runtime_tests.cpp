@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 #include <kinetra/runtime/debug_view.h>
 #include <kinetra/runtime/engine.h>
+#include <kinetra/runtime/inspector_view.h>
 #include <kinetra/runtime/launcher.h>
 #include <kinetra/runtime/session.h>
 #include <kinetra/runtime/settings_view.h>
@@ -317,6 +318,45 @@ bool presented(const Runtime &runtime, Vec2 point, Color expected) {
     return false;
 }
 } // namespace
+
+TEST_CASE("the inspector scrolls wrapped values while its close button stays in place") {
+    Runtime runtime("Kinetra inspector", 640, 480);
+    InspectorView view;
+    const Aabb area{{340, 8}, {632, 65}};
+    const InspectorSnapshot snapshot{
+        "MOVER", {{"DETAILS", {{"FIRST", std::string(96, 'A')}, {"LAST", "LAST VALUE"}}}}};
+    const auto box = view.bounds(snapshot, area);
+    CHECK(box.max.x == area.max.x);
+    CHECK(box.min.y == area.min.y);
+    CHECK(box.max.y <= area.max.y);
+    Input outside;
+    outside.mouse = {box.min.x - 1, box.min.y + 10};
+    outside.wheel = -10;
+    CHECK_FALSE(view.update(outside, snapshot, area).captured);
+    const auto draw = [&] {
+        runtime.begin({0, 0, 0});
+        view.draw(runtime, snapshot, area);
+        runtime.end();
+    };
+    draw();
+    CHECK(presented(runtime, {box.max.x - 12, box.min.y + 6}, overlay::button_color));
+    CHECK(presented(runtime, {box.min.x + 8, box.min.y + 28}, overlay::bright_color));
+    Input scroll;
+    scroll.mouse = {box.max.x - 10, box.max.y - 1};
+    scroll.wheel = -100;
+    CHECK(view.update(scroll, snapshot, area).captured);
+    draw();
+    CHECK(presented(runtime, {box.min.x + 8, box.min.y + 28}, overlay::text_color));
+
+    const Aabb resized{{420, 12}, {620, 95}};
+    const auto smaller = view.bounds(snapshot, resized);
+    Input close;
+    close.mouse = {smaller.max.x - 12, smaller.min.y + 12};
+    close.clicked = true;
+    const auto result = view.update(close, snapshot, resized);
+    CHECK(result.captured);
+    CHECK(result.close);
+}
 
 TEST_CASE("the debug menu draws its panel, section band, marks and swatch") {
     Runtime runtime("Kinetra debug menu", 640, 480);
