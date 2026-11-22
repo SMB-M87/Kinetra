@@ -39,11 +39,13 @@ Read each guide against its sibling instructions, check the overview links for e
 
 Compared all seven guides with their sibling procedures, including who agrees to a refactoring plan and who resolves review threads or merges. Updated a historical reference to the retired open point in the design for stacked pull requests.
 
+The independent review requested reproducible commands in the pull request description. The description below lists both commands and their results. [Review finding](https://github.com/SMB-M87/Kinetra/pull/28#discussion_r4657788145)
+
 ## Verification
 
 - `python3 tools/check_docs.py` resolved all relative links and heading anchors in 84 Markdown files.
 - The overview linked to all nine skill READMEs. All seven new guides had the template sections, a link to the sibling instructions and three example requests with results.
-- `git diff --check` passed for the branch.
+- `git diff --check 6e2ccb1...HEAD` found no whitespace errors in the branch diff.
 
 ## Pull request
 
@@ -55,7 +57,7 @@ Compared all seven guides with their sibling procedures, including who agrees to
 
 **Design.** [Skill READMEs](2026-11-22-skill-readmes.md)
 
-**Verification.** The documentation check passed for 84 files, the overview covers all nine skills and each new guide has three use cases.
+**Verification.** `python3 tools/check_docs.py` resolved all links in 84 Markdown files. `git diff --check 6e2ccb1...HEAD` found no whitespace errors. The overview links all nine skills and each new guide has three use cases.
 
 **Review notes.** The examples reflect the current workflow, including independent review and the author's role in handling feedback.
 
