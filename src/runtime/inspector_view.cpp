@@ -33,6 +33,9 @@ std::size_t wrapped_lines(std::size_t characters, std::size_t columns) {
 }
 
 Layout layout(const InspectorSnapshot &snapshot, Aabb area) {
+    // Align inward so the same logical pixels are available to both input and painting.
+    area.min = {std::ceil(area.min.x), std::ceil(area.min.y)};
+    area.max = {std::floor(area.max.x), std::floor(area.max.y)};
     Layout result;
     result.bounds = {area.max, area.max};
     const float width = std::min(max_width, area.max.x - area.min.x);

@@ -343,6 +343,12 @@ TEST_CASE("the inspector scrolls wrapped values while its close button stays in 
     CHECK(presented(runtime, {box.min.x + 8, box.min.y + 28}, overlay::bright_color));
     Input scroll;
     scroll.mouse = {box.max.x - 10, box.max.y - 1};
+    scroll.wheel = -1;
+    CHECK(view.update(scroll, snapshot, area).captured);
+    draw();
+    // The first visible line here is a continuation of the long value, without its label.
+    CHECK(presented(runtime, {box.min.x + 8, box.min.y + 28}, overlay::panel_color));
+    CHECK(presented(runtime, {box.min.x + 153, box.min.y + 28}, overlay::value_color));
     scroll.wheel = -100;
     CHECK(view.update(scroll, snapshot, area).captured);
     draw();
@@ -356,6 +362,13 @@ TEST_CASE("the inspector scrolls wrapped values while its close button stays in 
     const auto result = view.update(close, snapshot, resized);
     CHECK(result.captured);
     CHECK(result.close);
+
+    const InspectorSnapshot replacement{"NEXT MOVER", {{"DETAILS", {{"SHORT", "ONE VALUE"}}}}};
+    view.reset();
+    runtime.begin({0, 0, 0});
+    view.draw(runtime, replacement, area);
+    runtime.end();
+    CHECK(presented(runtime, {box.min.x + 8, box.min.y + 28}, overlay::bright_color));
 }
 
 TEST_CASE("the debug menu draws its panel, section band, marks and swatch") {

@@ -24,11 +24,11 @@ The first consumer is i4sim. Its CLI reads the same snapshot directly. The engin
 
 ## Review
 
-Drawing and hit testing share the same bounds. The title and close button stay in place while wrapped rows scroll. The consumer calls the public layout and input API without a window.
+Drawing and hit testing share the same bounds. Round the available rectangle inward before layout so fractional positions cannot leak clicks from painted edges. The title and close button stay in place while wrapped rows scroll. Tests now observe a visible continuation and reset the scroll position for a shorter selection. The consumer calls the public layout and input API without a window.
 
 ## Verification
 
-- `cmake --workflow --preset graphics` passed all 279 tests with SDL offscreen and software Mesa.
+- `cmake --workflow --preset graphics` passed all 280 tests with SDL offscreen and software Mesa.
 - The external graphics consumer built and ran with `CONSUMER_GRAPHICS=ON`.
 - `python3 tools/check_docs.py` resolved every link.
 
