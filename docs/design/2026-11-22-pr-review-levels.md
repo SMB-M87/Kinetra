@@ -28,7 +28,8 @@ The first agent review ran its built-in code review at `medium`, the default the
 
 - Goal: the reviewer's session runs on the most capable model, at effort `high`, and at `xhigh` for a large pull request with much logic.
 - Goal: the code-review level follows the kind of change.
-- Non-goal: naming a model in the repository. The harness does not allow model identifiers in pushed files, so the rules say "the most capable model available"; the agent that starts a review passes the model explicitly.
+- Goal: agent-neutral wording, so Codex and other agents can follow the rules as well as Claude Code (the user's request): no model names, depth instead of product settings, and agent-specific commands only as examples.
+- Non-goal: naming a model in the repository; the agent that starts a review picks the most capable model it offers.
 
 ## Decisions
 
@@ -38,14 +39,15 @@ The first agent review ran its built-in code review at `medium`, the default the
 | "Large, with much logic" | More than about 300 changed lines of `.h`/`.cpp` outside `tests/`, a change of simulation behavior (golden, characterization or pressure outcomes), or a change across Kinetra and Lab at once | Proposed by the agent: measurable from the diff, and the cases where a missed bug costs most |
 | Code-review level | `low` for Markdown, skills and comments; `medium` for code in one module, tests and scripts; `high` for public headers, simulation behavior, timing or threads, CMake, CI, the release, or a Lab pointer to engine sources | The user's request, with the agent's split; `max` stays reserved for an explicit request, as the built-in review asks |
 | Who sets them | The author, when it starts the review; the reviewer takes the higher level if the diff is riskier | The author knows the diff first; the reviewer is the check |
+| Agent-neutral wording | The levels describe depth (high reasoning effort, one level higher where the agent has one; code review `low`, `medium`, `high` with their meaning); starting the review says what to do (a new session or task, else a fresh sub-agent, else ask the user); the footer names the agent that wrote it; Claude Code's commands appear only as examples. AGENTS.md and the skills overview make this a rule for all skills | The user's request: the rules must work for Codex too, and must not name a model |
 
 ## Design
 
-`pr-review` gains a *Levels* section with both tables, and step 4 uses it. `feature` step 9.7 starts the review with that model, effort and level, and the workflow's agent review paragraph names them. The skill's README explains the depth.
+`pr-review` gains a *Levels* section with both tables, and step 4 uses it. `feature` step 9.7 starts the review with that depth, and the workflow's agent review paragraph names it. The skill's README explains the depth. A second commit makes the wording agent-neutral (the footer, the GitHub tools, following a pull request, starting the review) and adds the rule to AGENTS.md and the skills overview.
 
 ## Affected areas
 
-`.agents/skills/pr-review/SKILL.md` and `README.md`, `.agents/skills/feature/SKILL.md`, `docs/workflow.md`, this document and the design index.
+`.agents/skills/pr-review/SKILL.md` and `README.md`, `.agents/skills/feature/SKILL.md`, `.agents/skills/README.md`, `docs/workflow.md`, `AGENTS.md` (Skills), this document and the design index.
 
 ## Test plan
 
@@ -63,7 +65,7 @@ The thresholds are the agent's proposal; the user can adjust them on this pull r
 
 **feat(skills): review depth by the kind of change**
 
-- **Summary:** the reviewer's session runs on the most capable model at effort `high` (`xhigh` for a large pull request with much logic), and the built-in code review at `low`, `medium` or `high` by the kind of change.
+- **Summary:** the reviewer's session runs on the most capable model at high reasoning effort (one level higher for a large pull request with much logic), and the code review at `low`, `medium` or `high` by the kind of change; skills and rules stay agent-neutral.
 - **Changes:** *Levels* in `pr-review` with step 4 using it; `feature` step 9.7; the workflow's agent review; the skill's README.
 - **Design:** `docs/design/2026-11-22-pr-review-levels.md`.
 - **Verification:** Docs level.

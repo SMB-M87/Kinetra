@@ -142,7 +142,7 @@ The code must explain itself to a reader who has not seen the design.
 
 ## Skills
 
-Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/skills` links there. The global skill set may add book-based references (refactoring, clean architecture, …), `teach` and `code-review`. Repository skills do not duplicate them.
+Repository skills live in [.agents/skills/](.agents/skills/README.md); `.claude/skills` links there. The global skill set may add book-based references (refactoring, clean architecture, …), `teach` and `code-review`. Repository skills do not duplicate them. Skills and these rules stay agent-neutral: no model names, and an agent-specific command or tool only as an example next to the action it performs, so Codex and other agents can follow them as well as Claude Code.
 
 | Skill | Use |
 | --- | --- |

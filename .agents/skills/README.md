@@ -56,6 +56,7 @@ flowchart LR
 
 - Skills follow the rules in [AGENTS.md](../../AGENTS.md) and link to the docs pages instead of copying them, so a rule changes in one place.
 - Skill names must not collide with the global skills or with Claude Code built-ins (`code-review`, `simplify`, `init`, …).
+- Skills stay agent-neutral, so Claude Code, Codex and other agents can follow them: they name no model, and a step that uses one agent's command or tool names it as an example next to a description of the action, or gives the equivalent for the others.
 - A skill that reaches outside the repository (push, PR, network) needs an explicit rule in AGENTS.md first.
 - A change that adds or changes a skill updates its `README.md` and the table on this page in the same commit.
 
