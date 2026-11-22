@@ -40,10 +40,11 @@ flowchart LR
         RT["runtime.cpp<br/>Runtime"]
         SE["session.cpp<br/>run_session"]
         SV["settings_view.cpp<br/>SettingsOverlay"]
+        IV["inspector_view.cpp<br/>InspectorView"]
         HDR["header-only:<br/>bitmap_text, overlay_style,<br/>debug_view, help_view"]
     end
     subgraph View["include/kinetra/view (header-only, headless)"]
-        VW["camera, input,<br/>debug_menu"]
+        VW["camera, input,<br/>debug_menu, inspector"]
     end
     subgraph Launcher["Kinetra::Launcher"]
         LA["launcher.cpp<br/>LaunchMenu, SessionHost, run_launcher"]
@@ -51,6 +52,8 @@ flowchart LR
     SE --> RT
     SV --> HDR
     SV --> RT
+    IV --> HDR
+    IV --> VW
     LA --> SE
     LA --> HDR
     HDR --> VW
@@ -64,6 +67,7 @@ flowchart LR
 | [runtime.cpp](runtime.cpp) | Window and context lifecycle, input, primitive batching and presentation (`Runtime::Impl`) | `Kinetra::Runtime` |
 | [session.cpp](session.cpp) | `run_session`: the loop for one directly launched session | `Kinetra::Runtime` |
 | [settings_view.cpp](settings_view.cpp) | `SettingsOverlay`: rows, layout, picking and drawing | `Kinetra::Runtime` |
+| [inspector_view.cpp](inspector_view.cpp) | `InspectorView`: wrapped rows, scrolling, capture and close | `Kinetra::Runtime` |
 | [launcher.cpp](launcher.cpp) | `LaunchMenu`, `MenuLayout`, `SessionHost` and `run_launcher` | `Kinetra::Launcher` |
 | [glad.c](../glad.c) | Generated OpenGL 3.3 loader; keep its generated contents ([provenance](../../include/glad/README.md)) | `Kinetra::Runtime` |
 
@@ -73,6 +77,8 @@ flowchart LR
 | [input.h](../../include/kinetra/view/input.h) | `Input`, `Key`, `Color` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md) |
 | [session.h](../../include/kinetra/runtime/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
 | [settings_view.h](../../include/kinetra/runtime/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
+| [inspector_view.h](../../include/kinetra/runtime/inspector_view.h) | `InspectorView` and its pointer-input result | `Kinetra::Runtime` | [Agent inspector](../../docs/engine/launcher-overlays.md#agent-inspector) |
+| [inspector.h](../../include/kinetra/view/inspector.h) | Snapshot with ordered diagnostic groups and rows | Header-only, usable headless | [Agent inspector](../../docs/engine/launcher-overlays.md#agent-inspector) |
 | [launcher.h](../../include/kinetra/runtime/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
 | [bitmap_text.h](../../include/kinetra/runtime/bitmap_text.h), [overlay_style.h](../../include/kinetra/runtime/overlay_style.h), [debug_view.h](../../include/kinetra/runtime/debug_view.h), [help_view.h](../../include/kinetra/runtime/help_view.h) | Glyphs and text, the panels' shared style, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
 | [debug_menu.h](../../include/kinetra/view/debug_menu.h) | `DebugEntry`, `DebugFolds` and the row helpers: a debug menu as data | Header-only; usable headless | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |

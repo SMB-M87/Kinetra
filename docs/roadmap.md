@@ -24,9 +24,6 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-- **Agent inspector overlay** · runtime, with Lab · added 2026-11-21
-  A reusable overlay that shows the rows of one selected agent (a title, label–value rows in groups) beside it or in a corner, so the user sees an agent's motion settings, goal and state while it runs. Kinetra owns layout, drawing and input capture, as for every overlay; applications supply the selection and the rows as headless values, as `DebugEntry` does for the debug menu ([debug_view.h](../include/kinetra/runtime/debug_view.h)).
-  Next step: design it with Lab's item of the same name, which starts with i4sim.
 - **Linux beyond Arch** · build, docs, CI, with Lab · added 2026-11-21
   Kinetra names Artix/Linux its desktop target and documents only `pacman` ([AGENTS.md](../AGENTS.md#identity-and-scope), [development](development.md#dependencies-and-options)). Support Linux in general: dependency commands per distribution family (Arch and Artix, Debian and Ubuntu, Fedora) and a second CI job on Ubuntu LTS (the user's choice of 2026-11-22), while the pinned Arch toolchain stays the reference that CI's warnings and formatting follow. Fedora gets documented commands but no CI job.
   Next step: build and test Kinetra on Ubuntu 24.04 and fix what breaks. Lab's part waits for its golden tests to hold on every toolchain.

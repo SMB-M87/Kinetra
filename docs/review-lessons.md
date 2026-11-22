@@ -48,4 +48,5 @@ No lessons yet.
 
 ## Code
 
-No lessons yet.
+- **After a layout change, assert the content whose position must change** · added 2026-11-22 · source: #31
+  A fixed close button can keep responding even when scroll offsets or a neighbouring overlay are wrong. Check which rows, bars or captions appear at the new positions.
