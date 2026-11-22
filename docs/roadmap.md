@@ -16,7 +16,7 @@ The backlog of Kinetra: engine work that is wanted but not finished, from agreed
 
 Sections, item format and the moves between sections are defined in the [documentation guide](documentation.md#roadmap). The `roadmap` skill adds, shapes and closes items, for example during a brainstorm with the user ([skill](../.agents/skills/roadmap/README.md)). A merged item is removed; its design document is the record.
 
-Within each section the first item comes first. The order was proposed on 2026-11-21 together with the [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md), which is the plan for the applications; Lab's quality roadmap of 2026-11-18 is closed, and what it left is listed here and there.
+Within each section the first item comes first. The order was proposed on 2026-11-21 together with the [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md), which is the plan for the applications, and settled with the user on 2026-11-22 ([decisions](design/2026-11-22-roadmap-decisions.md)); Lab's quality roadmap of 2026-11-18 is closed, and what it left is listed here and there.
 
 ## Now
 
@@ -25,8 +25,8 @@ Nothing in progress in Kinetra itself.
 ## Next
 
 - **Pull request review skill** · skills, with Lab · added 2026-11-21
-  A `pr-review` skill: an agent reviews an open pull request (diff, design document, rules, CI) and posts inline comments and one summary review with a conclusion and points of attention. It never approves or merges. The agent that opened the pull request processes the comments with `pr-feedback` and merges them up its [stack](workflow.md#stacked-pull-requests). Agents post with the user's GitHub account, which cannot approve or request changes on its own pull request, so every review is a comment review.
-  Next step: a design session (`grilling`): how the author's session hears about a review (in Claude Code on the web a session can subscribe to a pull request's activity; locally `/loop` or a request), how agent comments are told apart from the user's, and how the skill works with both `gh` and the GitHub tools of a cloud session, which has no `gh`. Where: the user's request of 2026-11-21, Lab item of the same name.
+  A `pr-review` skill, run on the user's request (`/pr-review` with a pull request, or the top of a stack to review every pull request in it, bottom-up). It runs the built-in `/code-review` for correctness and then a checklist from the rules (design document matches the diff, tests cover the behavior, docs and roadmap updated, CI green, merge order stated), and posts inline comments plus one summary review per pull request with a conclusion and points of attention. It never approves, requests changes, resolves threads or merges; agents post with the user's account, which cannot approve its own pull request anyway. The session that opened the pull request follows it and processes the comments with `pr-feedback`: it carries out clear findings, answers disagreement with its reason in the thread, takes real trade-offs to the user, and merges fixes up its [stack](workflow.md#stacked-pull-requests). A finding that shows a kind of mistake that can recur becomes a lesson on the repository's lessons page (`docs/review-lessons.md`), added by the author in a commit on the reviewed pull request; `feature` reads that page before building and `pr-review` before reviewing.
+  Next step: branch `feat/pr-review-skill`. Decided with the user on 2026-11-22 ([decisions](design/2026-11-22-roadmap-decisions.md)).
 - **Graphics tests in CI** · tests, CI, with Lab · added 2026-11-21
   CI compiles the graphics tests but does not run them, for want of a GPU ([testing](testing.md#continuous-integration)). The `graphics` preset already renders with SDL's offscreen driver and software Mesa ([development](development.md#graphics-execution)), which needs no GPU, so CI could run `kinetra_engine_graphics` on every pull request. Runtime and overlay changes would then be checked on GitHub, also when they come from a cloud session without a display.
   Next step: run the `graphics` workflow in CI's Arch image and see which cases pass; the WSL2 mouse-input failure ([testing, open points](testing.md#open-points)) shows that injected input needs a look.
@@ -37,8 +37,8 @@ Nothing in progress in Kinetra itself.
   `feature`, `grilling`, `verify`, `doc-module`, `refactor`, `adr` and `pr-feedback` still have only a `SKILL.md`; each gets a README from the [template](documentation.md#skill-readme-template), linked from the [skills overview](../.agents/skills/README.md).
   Next step: one branch `docs/skill-readmes` for all seven. Where: [skills overview, open points](../.agents/skills/README.md#open-points).
 - **Linux beyond Arch** · build, docs, CI, with Lab · added 2026-11-21
-  Kinetra names Artix/Linux its desktop target and documents only `pacman` ([AGENTS.md](../AGENTS.md#identity-and-scope), [development](development.md#dependencies-and-options)). Support Linux in general: dependency commands per distribution family (Arch and Artix, Debian and Ubuntu, Fedora) and a second CI job on a non-Arch distribution, while the pinned Arch toolchain stays the reference that CI's warnings and formatting follow.
-  Next step: build and test Kinetra on Ubuntu 24.04 and Fedora and fix what breaks. Lab's part waits for its golden tests to hold on every toolchain.
+  Kinetra names Artix/Linux its desktop target and documents only `pacman` ([AGENTS.md](../AGENTS.md#identity-and-scope), [development](development.md#dependencies-and-options)). Support Linux in general: dependency commands per distribution family (Arch and Artix, Debian and Ubuntu, Fedora) and a second CI job on Ubuntu LTS (the user's choice of 2026-11-22), while the pinned Arch toolchain stays the reference that CI's warnings and formatting follow. Fedora gets documented commands but no CI job.
+  Next step: build and test Kinetra on Ubuntu 24.04 and fix what breaks. Lab's part waits for its golden tests to hold on every toolchain.
 
 ## Later
 
@@ -48,6 +48,9 @@ Nothing in progress in Kinetra itself.
 - **Engine performance** · simulation, with Lab · added 2026-11-21
   Optimize the engine code that Lab's benchmarks spend their time in (spatial queries, steering, weighted-grid search, contact response), one hotspot per pull request, with a benchmark before and after and the golden lines unchanged.
   Depends on: Lab's *Performance baseline and hotspots*.
+- **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
+  CI installs the pinned toolchain from the Arch Linux Archive in every run, and falls back to the current packages when the archive does not answer ([CI falls back to current Arch packages](design/2026-11-21-ci-mirror-fallback.md)). An image with the pinned packages already installed, published to GitHub's container registry, would make CI independent of the archive and faster. It can only be built while the archive answers.
+  Next step: a design: who builds and publishes the image, and how a snapshot bump updates it.
 - **Frame read-back on `Runtime`** · runtime · added 2026-11-21
   A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
   Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).

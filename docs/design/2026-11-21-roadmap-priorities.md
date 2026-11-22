@@ -74,4 +74,4 @@ Checked every item against its source and against Lab's roadmap: each shared ite
 
 ## Open points
 
-- The user confirms or changes the order; see the Kinetra-Lab pull request.
+- Settled with the user on 2026-11-22: [roadmap decisions](2026-11-22-roadmap-decisions.md).
