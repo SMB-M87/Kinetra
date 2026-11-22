@@ -51,6 +51,7 @@ Pick targets and tests from the mapping tables: Kinetra in [testing](../../../do
 - Locally, the Targeted checks of every changed area, so the push compiles and its tests pass. For runtime, launcher or presentation changes, the graphics cases of that area are optional quick feedback: `ctest --preset graphics -L graphics -R '<regex>'` after building its targets in the `graphics` preset (offscreen SDL, software Mesa).
 - Do not run `ci`, `headless`, `graphics` or `windows` as a whole locally: the pull request's CI runs them on every push (with format, docs, the external consumer and, in Lab, the smoke runs and Windows), the graphics cases included. Run one locally only to reproduce a CI failure.
 - After pushing, read the pull request's checks (`gh pr checks <number>`). The change is verified when the checks are green; until then report "pushed, CI pending".
+- When the change alters what a scene shows, take a screenshot of it with Lab's capture tool, look at it and add it to the pull request; the reviewer runs nothing.
 - A change that depends on desktop feel, a real GPU driver or performance also needs the user's playtest, which software rendering cannot replace. Report it as open for the user.
 
 ## 4. Report

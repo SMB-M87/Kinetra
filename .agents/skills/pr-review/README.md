@@ -1,6 +1,6 @@
 # pr-review
 
-A second agent reviews every pull request except a pointer-only one, or a whole stack of them. The author starts it right after opening the pull request, and you can start it too. When it finishes, the pull request has inline comments for its findings and a summary with a conclusion. The author's session has answered each finding, the two agents have settled what they could, and the pull request is either merged by its author or waiting for you with the points that need your word.
+A second agent reviews every pull request except a pointer-only one, or a whole stack of them. The author starts it once the pull request's CI is green, and you can start it too. It reviews the code and comments; it builds and runs nothing. When it finishes, the pull request has inline comments for its findings and a summary with a conclusion. The author's session has answered each finding, the two agents have settled what they could, and the pull request is either merged by its author or waiting for you with the points that need your word.
 
 ## Table of contents
 
@@ -30,8 +30,9 @@ A second agent reviews every pull request except a pointer-only one, or a whole 
 
 ```mermaid
 flowchart LR
-    A0[Author opens pull request] --> R[pr-review, separate session]
-    R -->|goals, code review, checklist, own run| F[findings + conclusion]
+    A0[Author opens pull request] --> CI[CI green]
+    CI --> R[pr-review, separate session]
+    R -->|goals, code review, checklist| F[findings + conclusion]
     F --> PR[Pull request]
     PR --> A[Author: pr-feedback]
     A -->|fix or argument| R
@@ -46,7 +47,7 @@ flowchart LR
 - It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff.
 - It runs the agent's code review (Claude Code's `/code-review`, or a global `code-review` skill) for correctness and checks every finding itself. Then it walks a checklist from the rules: tests, verification level, docs, every copy of a changed rule or procedure, roadmap, conventions, description and merge order.
 - Its depth follows the change: the reviewer's session runs on the most capable model at high reasoning effort, one level higher for a large pull request with much logic, and the code review at `low` for docs, `medium` for code in one module, `high` for public headers, simulation behavior, CMake, CI and releases ([levels](SKILL.md#levels)). It names no model or product, so it works with any agent.
-- It reads CI's results, graphics tests included, and adds what CI does not cover: in Lab, a screenshot of the changed scene.
+- It builds, tests and runs nothing: CI runs every test on each push, graphics included, and the author adds what CI cannot, such as a screenshot of a changed scene. The reviewer checks that it is there.
 - Everything it posts on GitHub, the conclusion included, is in English and starts with **Agent review**. It reports to you in the chat in Dutch.
 - It resolves the threads it accepts, and never approves, requests changes, pushes or merges.
 - A finding that shows a kind of mistake that can recur becomes a proposed lesson. A lesson that keeps coming back is proposed to you as a rule.
@@ -54,5 +55,5 @@ flowchart LR
 ## Related skills
 
 - `pr-feedback` answers the findings in the author's session, adds the lessons, and leads to the merge under the merge rule.
-- `feature` starts this review after opening a pull request, and reads the lessons page before building.
+- `feature` starts this review once the pull request's CI is green, and reads the lessons page before building.
 - The agent's code review (Claude Code's `/code-review`, or a global `code-review` skill, as in Codex) does the correctness pass.

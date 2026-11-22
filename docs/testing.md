@@ -121,6 +121,8 @@ cmake --preset graphics && cmake --build --preset graphics --target <targets>
 ctest --preset graphics -L graphics -R '<regex>'
 ```
 
+When a change alters what a scene shows, the author also takes a screenshot of it with Lab's [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md), looks at it and adds it to the pull request: no test judges appearance, and the reviewer runs nothing.
+
 **In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers) and, in Lab, the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
 
 **Neither** proves desktop feel, a real GPU driver or performance: software rendering cannot. When a change depends on them, its design document names a playtest by the user as a check.
