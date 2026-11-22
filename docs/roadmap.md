@@ -20,8 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Skill READMEs** · docs · added 2026-11-21
-  Branch `docs/skill-readmes` adds the seven missing guides. [Design document](design/2026-11-22-skill-readmes.md)
+Nothing in progress in Kinetra itself.
 
 ## Next
 

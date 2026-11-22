@@ -1,6 +1,6 @@
 # Skill READMEs
 
-Status: accepted · Branch: `docs/skill-readmes`
+Status: implemented · Branch: `docs/skill-readmes`
 
 The skills overview should let a contributor choose a skill by seeing the request they could make and what they would get back.
 
@@ -37,12 +37,28 @@ Read each guide against its sibling instructions, check the overview links for e
 
 ## Review
 
-Pending the review of the guides.
+Compared all seven guides with their sibling procedures, including who agrees to a refactoring plan and who resolves review threads or merges. Updated a historical reference to the retired open point in the design for stacked pull requests.
 
 ## Verification
 
-Pending the documentation checks.
+- `python3 tools/check_docs.py` resolved all relative links and heading anchors in 84 Markdown files.
+- The overview linked to all nine skill READMEs. All seven new guides had the template sections, a link to the sibling instructions and three example requests with results.
+- `git diff --check` passed for the branch.
 
 ## Pull request
 
-The description will record the guides, verification and review outcome.
+**Title** — docs(skills): add the seven missing skill READMEs
+
+**Summary.** Contributors can choose any repository skill from the overview and see concrete requests and expected results before running it.
+
+**Changes.** Add seven guides, link them from the overview and close the Skill READMEs roadmap item.
+
+**Design.** [Skill READMEs](2026-11-22-skill-readmes.md)
+
+**Verification.** The documentation check passed for 84 files, the overview covers all nine skills and each new guide has three use cases.
+
+**Review notes.** The examples reflect the current workflow, including independent review and the author's role in handling feedback.
+
+**Dependencies and merge order.** One Kinetra pull request. Changes under `.agents/skills/` require the user's merge decision.
+
+**Follow-up.** None.
