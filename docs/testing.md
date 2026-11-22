@@ -146,7 +146,7 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 
 ## Continuous integration
 
-[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. It uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. When the archive does not answer, CI installs the current Arch packages from the image's own mirrors instead and marks the run with a *Toolchain not pinned* warning; such a run checks the change, but not against the pinned versions. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
+[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. Its job `checks` uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. When the archive does not answer, CI installs the current Arch packages from the image's own mirrors instead and marks the run with a *Toolchain not pinned* warning; such a run checks the change, but not against the pinned versions. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
 
 | Step | Fails when |
 | --- | --- |
@@ -155,6 +155,8 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 | `cmake --workflow --preset headless` | The simulation library or its tests need SDL2/OpenGL, or a headless test fails |
 | `cmake --workflow --preset ci` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a test fails, graphics cases included (offscreen SDL, software Mesa) |
 | External consumer with `CONSUMER_GRAPHICS=ON` | The public headers or targets no longer work for an outside project |
+
+A second job, `ubuntu`, builds and tests on GitHub's Ubuntu 24.04 LTS runner with that distribution's own GCC and packages: the headless workflow, the `ci` preset with `KINETRA_WARNINGS_AS_ERRORS=OFF` (warnings reported, not errors), its tests with the graphics cases, and the external consumer. Formatting and the docs checks run only in `checks`, and its packages follow the runner image rather than a pinned snapshot. It catches what the pinned Arch toolchain cannot show: an older compiler, C library or SDL2, as when glibc before 2.41 moved Kinetra-Lab's golden fingerprints ([design](design/2026-11-22-linux-beyond-arch.md#problem)).
 
 The workflow name `CI` and its job `checks` are a required status check on `main`, so they must keep these names. The `ci` test preset runs the graphics cases with `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1`, as the `graphics` preset does: Mesa's llvmpipe renders on the runner's CPU, so they need no GPU and no display. CI does not replace a playtest on a desktop; a local graphics run does not replace the CI result.
 

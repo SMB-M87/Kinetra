@@ -12,6 +12,12 @@
 # driver with software Mesa (llvmpipe) gives them an OpenGL context without a GPU or
 # display, the same backend as the local `graphics` preset. The workflow name "CI" and
 # job id "checks" are required status checks on main; keep them stable.
+#
+# The "ubuntu" job builds and tests on Ubuntu LTS with its own GCC and packages, so Linux
+# beyond Arch stays supported (docs/development.md#dependencies-and-options). The pinned Arch
+# job stays the reference: formatting and the docs checks run only there, and warnings are
+# errors only there, because another GCC warns about other things. Ubuntu's packages are
+# not pinned; the job follows the runner image.
 name: CI
 
 on:
@@ -70,6 +76,34 @@ jobs:
 
       - name: Full build and test (runtime, warnings as errors, graphics tests with software OpenGL)
         run: cmake --workflow --preset ci
+
+      - name: External consumer
+        run: |
+          cmake -S tests/consumer -B build-consumer -G Ninja -DKINETRA_SOURCE="$PWD" -DCONSUMER_GRAPHICS=ON
+          cmake --build build-consumer
+          ./build-consumer/consumer
+
+  ubuntu:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install dependencies
+        run: |
+          # The Debian and Ubuntu package set of docs/development.md.
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build ccache \
+            libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0
+          gcc --version | head -1; cmake --version | head -1; ldd --version | head -1
+
+      - uses: actions/checkout@v7
+
+      - name: Headless build and test (no SDL2/OpenGL)
+        run: cmake --workflow --preset headless
+
+      - name: Full build and test (runtime, warnings reported, graphics tests with software OpenGL)
+        run: |
+          cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF
+          cmake --build --preset ci
+          ctest --preset ci
 
       - name: External consumer
         run: |
