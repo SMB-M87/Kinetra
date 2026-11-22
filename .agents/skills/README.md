@@ -24,7 +24,7 @@ Each skill is a directory with a `SKILL.md` in the [Agent Skills](https://agents
 | [refactor](refactor/SKILL.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/SKILL.md) | Record an architecture decision | When a decision qualifies |
 | [pr-feedback](pr-feedback/SKILL.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply or argument per comment, lessons added, merge under the merge rule | In the author's session for every agent review; otherwise on request (`/pr-feedback`) |
-| [pr-review](pr-review/README.md) | A second agent reviews a pull request or a stack: goals, built-in code review and the repository checklist, a run of what CI does not cover, inline comments and a conclusion, two discussion rounds, proposed lessons | By the author after every pull request, in a separate session; or `/pr-review` |
+| [pr-review](pr-review/README.md) | A second agent reviews a pull request or a stack: goals, the agent's code review and the repository checklist, a run of what CI does not cover, inline comments and a conclusion, two discussion rounds, proposed lessons | By the author after every pull request, in a separate session; or `/pr-review` |
 | [roadmap](roadmap/README.md) | Keep the backlog in `docs/roadmap.md`: ideas from a brainstorm, items to pick up, items closed on merge | On request (`/roadmap`, a brainstorm), or from `feature` and `grilling` |
 
 The user's global skill set (book references such as refactoring, clean architecture and a philosophy of software design, plus `teach`, `grill-me` and `code-review`) is installed per machine and is not copied here.
