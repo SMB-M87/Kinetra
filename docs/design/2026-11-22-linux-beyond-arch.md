@@ -54,7 +54,7 @@ Non-goals:
 | How golden tests hold on every toolchain | Kinetra's own `atan2` and `asin`, computed in double and rounded once to float; the recorded fingerprints stay strict (the user, 2026-11-22) | The measurements show these two functions are the whole difference between glibc versions. A tolerance or totals would weaken every fingerprint, and a fingerprint per toolchain multiplies the values to maintain |
 | CI on another distribution | One job on Ubuntu LTS next to the pinned Arch job, which stays the reference for warnings and formatting; Fedora documented, not tested (the user, 2026-11-22) | Ubuntu LTS is GitHub's own runner image and the most common Linux; one more job keeps CI time reasonable |
 | Order of the stack | The math first, then the CI job and docs | The math is what Lab needs to start; the CI step changes `.github/` and the agent rules, so it waits for the user, and the bottom step should not wait with it |
-| Names | `kinetra::atan2(float, float)` and `kinetra::asin(float)` in `math.h` | Callers write `kinetra::atan2` where they wrote `std::atan2`; inside namespace `kinetra` an unqualified call finds these first. An unqualified call next to `using namespace kinetra;` would be ambiguous, which fails to compile rather than picking the wrong one |
+| Names | `kinetra::atan2(float, float)` and `kinetra::asin(float)` in `math.h` | Callers write `kinetra::atan2` where they wrote `std::atan2`. Inside namespace `kinetra` an unqualified call finds these first, and one on doubles narrows to float, which `-Wconversion` reports. Next to `using namespace kinetra;` an unqualified call on floats picks `kinetra::atan2`, an exact match over `::atan2(double, double)`; it is ambiguous only when `std`'s float overloads are visible too, as after `using namespace std;` (checked with GCC 13.3 and Clang 18 in review) |
 | Warnings on Ubuntu | Reported, not errors | Arch's pinned compiler is the reference; a newer or older GCC may warn about other things, and that should not fail a pull request. Formatting is checked only on Arch, whose clang-format is pinned |
 
 ## Design
@@ -91,7 +91,7 @@ and the same for `asin`. *Why double:* a double `atan2` or `asin` is accurate to
 | --- | --- | --- |
 | `kinetra::atan2` returns the correctly rounded float where glibc 2.39's `atan2f` does not | New case in `tests/simulation_tests.cpp` with two inputs found on Ubuntu 24.04, each pinned to its correctly rounded value; first with `std::atan2`, where it fails on glibc 2.39 | Targeted, then Full |
 | The same for `kinetra::asin` | Same case | Targeted, then Full |
-| `kinetra::atan2` keeps `std::atan2`'s quadrants, signed zeros and infinities, and `asin` returns NaN outside [-1, 1] | Same case | Targeted |
+| `kinetra::atan2` keeps `std::atan2`'s quadrants, signed zeros and infinities, and `asin` returns NaN outside [-1, 1] | *atan2 and asin keep the standard quadrants and special values*, inputs at run time | Targeted |
 | `signed_angle` and `tangent_steer` keep their behavior | The existing simulation and steering suites | Targeted |
 | Kinetra builds and passes on Ubuntu LTS | The new `ubuntu` CI job | Full (CI) |
 | Lab's golden fingerprints hold on Ubuntu with Arch's recorded values | Kinetra-Lab's pull request, with its own Ubuntu job | Full (Lab CI) |
@@ -106,6 +106,18 @@ Self-review of `git diff main...fix/portable-atan2-asin`:
 - Every float `std::atan2` and `std::asin` in `src/simulation/` and `include/kinetra/simulation/` now calls Kinetra's (`grep -rn "std::atan2\|std::asin"` finds none). The runtime has no call.
 - No unqualified `atan2` or `asin` call exists in Kinetra or Kinetra-Lab, so the new names cannot make a call ambiguous today.
 - Copies: the determinism statements in [math and physics](../engine/math-physics.md#limits-and-verification) and the [simulation README](../../src/simulation/README.md#invariants-and-contracts) say the same; the README's "Cross-machine bitwise determinism is not promised" stays true.
+
+Agent review of `0417ea2` (Fix first), round 1:
+
+| Finding | Resolution |
+| --- | --- |
+| Should fix: under `-ffast-math` GCC and Clang narrow `(float)asin((double)x)` back to `asinf`, and the functions are inline, so the consumer's flags decide | The precondition is in both `///` contracts and in the two determinism statements; enforcing it in code is not worth it, because other bitwise results break under those flags too |
+| The contracts and copies promise correct rounding without the double-rounding exception | Named in the contracts, math and physics, and the simulation README |
+| The special-value case was folded at compile time | `at_run_time` moved to the test file's anonymous namespace, and the case passes every input through it |
+| The *Names* decision misstated when an unqualified call is ambiguous | Replaced with the behavior the reviewer checked |
+| The test plan named the wrong case for special values | Names the case |
+| The description named step 2 only by its branch | Links #33 and Kinetra-Lab #78 |
+| Two lessons proposed | Added to the [review lessons](../review-lessons.md#code) |
 
 ### Step 2
 
@@ -142,7 +154,7 @@ The `ubuntu` job's steps, run in a clean worktree of this branch on Ubuntu 24.04
 
 Title: `fix(simulation): round atan2 and asin the same on every C library`
 
-**Stack:** step 1 of 2 (*Linux beyond Arch*); merge first. Step 2 is `build/linux-beyond-arch`.
+**Stack:** step 1 of 2 (*Linux beyond Arch*); merge first. Step 2 is #33 (`build/linux-beyond-arch`); Kinetra-Lab#78 uses both.
 
 **Summary.** Kinetra-Lab's trajectory fingerprints fail on every Linux but CI's Arch, and the roadmap blamed GCC 13. Measured on Ubuntu 24.04, the cause is the C library: glibc 2.41 made `atan2f` and `asinf` correctly rounded, older glibc rounds about one call in twenty to the other neighbor, and a crowd turns one bit into another trajectory. `kinetra::atan2` and `kinetra::asin` compute in double and round once to float, which gives the correctly rounded value with every C library; Kinetra's simulation uses them.
 
