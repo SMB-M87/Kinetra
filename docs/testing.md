@@ -143,7 +143,7 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 
 ## Continuous integration
 
-[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. It uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
+[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. It uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. When the archive does not answer, CI installs the current Arch packages from the image's own mirrors instead and marks the run with a *Toolchain not pinned* warning; such a run checks the change, but not against the pinned versions. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
 
 | Step | Fails when |
 | --- | --- |
