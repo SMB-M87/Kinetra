@@ -147,6 +147,9 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     runtime.poll();
     REQUIRE_MESSAGE(runtime.input().clicked, "Mouse click lost");
     REQUIRE_MESSAGE(runtime.input().wheel == 2, "Mouse wheel lost");
+    runtime.poll();
+    REQUIRE_MESSAGE((!runtime.input().clicked && runtime.input().mouse_down && runtime.input().wheel == 0),
+                    "Held shooting input or mouse transitions lost");
     event = {};
     event.type = SDL_MOUSEWHEEL;
     event.wheel.y = 1;
@@ -155,9 +158,6 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     send(event);
     runtime.poll();
     REQUIRE_MESSAGE(runtime.input().wheel == -1, "Flipped wheel step lost");
-    runtime.poll();
-    REQUIRE_MESSAGE((!runtime.input().clicked && runtime.input().mouse_down && runtime.input().wheel == 0),
-                    "Held shooting input or mouse transitions lost");
     event = {};
     event.type = SDL_MOUSEBUTTONUP;
     event.button.button = SDL_BUTTON_LEFT;
