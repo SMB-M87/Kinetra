@@ -54,7 +54,7 @@ All taken by the agent from the existing rules and practice; the user set the go
 
 ## Affected areas
 
-`AGENTS.md`, `docs/workflow.md`, `.agents/skills/feature/SKILL.md`, `.agents/skills/pr-feedback/SKILL.md`, `.agents/skills/README.md` (the two rows), this document and the design index. Neither skill has a README yet ([skills overview, open points](../../.agents/skills/README.md#open-points)), so only the overview changes.
+`AGENTS.md`, `docs/workflow.md`, `.agents/skills/feature/SKILL.md`, `.agents/skills/pr-feedback/SKILL.md`, `.agents/skills/README.md` (the two rows), this document and the design index. At the time, neither skill had a README, so this change updated only the [skills overview](../../.agents/skills/README.md).
 
 ## Test plan
 
