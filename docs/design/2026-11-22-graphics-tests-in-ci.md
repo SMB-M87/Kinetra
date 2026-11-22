@@ -98,7 +98,7 @@ To be filled in after the agent review.
 - `AGENTS.md`, testing, development, workflow, `verify` and `pr-review`: CI is the Full level; locally the targeted checks, graphics cases optional; a desktop playtest stays with the user.
 - `pr-review`, `feature`, workflow and `AGENTS.md`: the reviewer reviews code and comments only, and starts once CI is green; the author adds a screenshot of a changed scene.
 - `runtime.cpp`: `Runtime::poll` adds `wheel.preciseY` instead of the whole notches in `wheel.y`, so `Input::wheel` is fractional for smooth wheels, as its contract says.
-- `runtime_tests.cpp`: the mouse-input case fills its injected events as SDL does, checks click and wheel separately, and adds a flipped half step.
+- `runtime_tests.cpp`: the mouse-input case fills its injected events as SDL does, checks click and wheel separately, and adds a flipped notch. The wheel check fails with the old `poll` under `sdl2-compat` (CI on 37d9a3d). A fractional step cannot be pushed through `sdl2-compat`, which sets a pushed event's `preciseY` from its whole `y`, so no test injects one.
 - Roadmap item *Graphics tests in CI* removed.
 
 **Verification.** Local `ci` workflow in a cloud session: 278 of 278 cases, 13 graphics. The Arch result is this pull request's CI.

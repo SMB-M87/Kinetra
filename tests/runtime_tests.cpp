@@ -131,7 +131,8 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     REQUIRE_MESSAGE(!runtime.input().down(Key::a), "Focus loss retained key");
     // Fill the mouse events as SDL fills real ones, with whole notches in `y` and the exact
     // delta in `preciseY`. sdl2-compat (Arch, WSL2) returns a pushed wheel event with `y`
-    // replaced by its `mouseY`, so only `preciseY` survives there.
+    // replaced by its `mouseY` (0 here) and `preciseY` set from `y`, so this check fails
+    // there when poll() reads `y`. A fractional step cannot be pushed through sdl2-compat.
     event = {};
     event.type = SDL_MOUSEWHEEL;
     event.wheel.y = 2;
@@ -148,11 +149,12 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     REQUIRE_MESSAGE(runtime.input().wheel == 2, "Mouse wheel lost");
     event = {};
     event.type = SDL_MOUSEWHEEL;
-    event.wheel.preciseY = 0.5f;
+    event.wheel.y = 1;
+    event.wheel.preciseY = 1.f;
     event.wheel.direction = SDL_MOUSEWHEEL_FLIPPED;
     send(event);
     runtime.poll();
-    REQUIRE_MESSAGE(runtime.input().wheel == -0.5f, "Smooth or flipped wheel step lost");
+    REQUIRE_MESSAGE(runtime.input().wheel == -1, "Flipped wheel step lost");
     runtime.poll();
     REQUIRE_MESSAGE((!runtime.input().clicked && runtime.input().mouse_down && runtime.input().wheel == 0),
                     "Held shooting input or mouse transitions lost");
