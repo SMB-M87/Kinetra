@@ -372,10 +372,17 @@ TEST_CASE("the inspector scrolls wrapped values while its close button stays in 
     draw();
     CHECK(presented(runtime, {box.min.x + 8, box.min.y + 28}, overlay::text_color));
 
-    const Aabb resized{{420, 12}, {620, 95}};
-    const auto smaller = view.bounds(snapshot, resized);
+    const Aabb resized{{340, 12}, {632, 96}};
+    const auto larger = view.bounds(snapshot, resized);
+    runtime.begin({0, 0, 0});
+    view.draw(runtime, snapshot, resized);
+    runtime.end();
+    // Four rows now fit. They start with a continuation and still end at LAST.
+    CHECK(presented(runtime, {larger.min.x + 8, larger.min.y + 28}, overlay::panel_color));
+    CHECK(presented(runtime, {larger.min.x + 153, larger.min.y + 28}, overlay::value_color));
+    CHECK(presented(runtime, {larger.min.x + 8, larger.min.y + 67}, overlay::text_color));
     Input close;
-    close.mouse = {smaller.max.x - 12, smaller.min.y + 12};
+    close.mouse = {larger.max.x - 12, larger.min.y + 12};
     close.clicked = true;
     const auto result = view.update(close, snapshot, resized);
     CHECK(result.captured);
@@ -387,6 +394,42 @@ TEST_CASE("the inspector scrolls wrapped values while its close button stays in 
     view.draw(runtime, replacement, area);
     runtime.end();
     CHECK(presented(runtime, {box.min.x + 8, box.min.y + 28}, overlay::bright_color));
+}
+
+TEST_CASE("the debug menu and inspector stay interactive with the graph below the inspector") {
+    Runtime runtime("Kinetra inspector and frame times", 640, 480);
+    DebugMenu menu;
+    menu.visible = true;
+    menu.screen_origin = {8, 32};
+    bool running = true;
+    const auto entries = std::array{debug_check("RUNNING", running)};
+    InspectorView inspector;
+    const InspectorSnapshot snapshot{"MOVER", {{"STATE", {{"SPEED", "0 MM/TICK"}}}}};
+    const Aabb area{{340, 8}, {632, 300}};
+    const auto box = inspector.bounds(snapshot, area);
+    const Vec2 graph{FrameTimeGraph::origin(runtime.camera.viewport).x, box.max.y + 12};
+    FrameTimes times;
+    for (std::size_t i = 0; i < FrameTimes::capacity; ++i)
+        times.record(0.010);
+    runtime.begin({0, 0, 0});
+    menu.draw(runtime, entries);
+    inspector.draw(runtime, snapshot, area);
+    draw_frame_times(runtime, times, graph);
+    runtime.end();
+    CHECK(presented(runtime, {box.max.x - 12, box.min.y + 6}, overlay::button_color));
+    CHECK(presented(runtime, graph + Vec2{8, FrameTimeGraph::height - 3}, {0.3f, 0.9f, 0.4f}));
+    CHECK(presented(runtime, graph + Vec2{0, FrameTimeGraph::height + 4}, {1, 1, 1}));
+
+    Input click;
+    click.clicked = true;
+    click.mouse =
+        menu.screen_origin + Vec2{16, DebugMenu::row_top(0) + 8} * DebugMenu::scale(runtime.camera.viewport);
+    CHECK_FALSE(inspector.update(click, snapshot, area).captured);
+    CHECK(menu.update(click, runtime.camera.viewport, entries));
+    CHECK_FALSE(running);
+    click.mouse = {box.max.x - 12, box.min.y + 12};
+    CHECK_FALSE(menu.update(click, runtime.camera.viewport, entries));
+    CHECK(inspector.update(click, snapshot, area).close);
 }
 
 TEST_CASE("the debug menu draws its panel, section band, marks and swatch") {
