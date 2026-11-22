@@ -30,6 +30,10 @@ Nothing in progress in Kinetra itself.
 
 ## Later
 
+- **Linux support follow-ups** · build, docs, CI, with Lab · added 2026-11-22
+  Two points *Linux beyond Arch* left open: the Fedora command in [development](development.md#dependencies-and-options) is not checked against Fedora's repositories (whether `SDL2-devel` resolves under `sdl2-compat`, whether `mesa-dri-drivers` is needed), and whether `CI / ubuntu` becomes a required status next to `CI / checks`, in Kinetra and Kinetra-Lab.
+  Next step: the user decides on the required status, and checks the Fedora command or has a session that can reach Fedora's package hosts check it. Where: [design, open points](design/2026-11-22-linux-beyond-arch.md#open-points).
+
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
   Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR; factory policy (traffic zones, parking, junction rules) stays in i4sim. Decide whether the four overlapping steering models (`steer`, `priority_steer`, `tangent_steer`, `avoid_collisions`, which take different inputs and return acceleration or velocity) can share one agent-motion interface, and move i4sim-shaped defaults, such as the `PrioritySteering` values in millimeters per tick, out of the engine.
   Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.

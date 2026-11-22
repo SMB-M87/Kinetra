@@ -82,7 +82,7 @@ and the same for `asin`. *Why double:* a double `atan2` or `asin` is accurate to
 ## Affected areas
 
 - Step 1: `include/kinetra/simulation/math.h` (public header), `src/simulation/priority_steering.cpp`, `tests/simulation_tests.cpp`, [math and physics](../engine/math-physics.md), [simulation README](../../src/simulation/README.md#invariants-and-contracts).
-- Step 2: `.github/workflows/ci.yml`, `docs/development.md`, `docs/testing.md`, `README.md`, `AGENTS.md`.
+- Step 2: `.github/workflows/ci.yml`, `docs/development.md`, `docs/testing.md`, `README.md`, `AGENTS.md`, `.agents/skills/verify/SKILL.md`.
 - Both: this document, the [design index](README.md#index) and the [roadmap](../roadmap.md).
 
 ## Test plan
@@ -128,6 +128,19 @@ Self-review of `git diff fix/portable-atan2-asin...build/linux-beyond-arch`:
 - Copies of "Linux is supported; Artix/Linux is the desktop target": the README and AGENTS.md changed together; the Full level's list of CI checks changed in AGENTS.md and the `verify` skill, and its third copy, under *In CI* in [testing](../testing.md#full), was found in Kinetra-Lab's review and fixed in a later commit; `grep -rni "artix\|pacman\|desktop target"` finds no other statement of what is tested. The skill's README names no CI check, so it needs no change.
 - The job is not a required status: `CI / checks` stays the one required check, and making `CI / ubuntu` required is the user's choice.
 
+Agent review of `bcf0b77` (Fix first), round 1:
+
+| Finding | Resolution |
+| --- | --- |
+| Should fix: the job ran the runner image's CMake 3.31.6, not Ubuntu's 3.28, while three pages say it tests the distribution's packages | The install step puts `/usr/bin` first on the path, and a step prints the path and version of each tool; the testing page and the header comment say so |
+| Should fix: the roadmap item was removed without its follow-ups | *Linux support follow-ups* in *Later*: the Fedora check and the required status, both the user's |
+| Nit: "warnings reported" meant only the raw log | The build's warnings become annotations, without failing the job |
+| Nit: the icon check also runs only in `checks` | Named in testing and the header comment |
+| Nit: `sudo` and `apt update` in the table; "the first two" implied Debian | `sudo` in every row, `apt update` before `apt install`, "CI tests Arch and Ubuntu 24.04" |
+| Nit: *Changes* omitted the Full level's list in testing | Added here and in the description |
+| Question: `mesa-dri-drivers` and `SDL2-devel` on Fedora | `mesa-dri-drivers` added, as the Debian row names its Mesa drivers; both remain unchecked and are part of *Linux support follow-ups* |
+| Lesson proposed | Added to the [review lessons](../review-lessons.md#ci-and-tooling) |
+
 ## Verification
 
 ### Step 1
@@ -146,7 +159,7 @@ CI on Arch is the Full level; the pull request reports it.
 
 ### Step 2
 
-The `ubuntu` job's steps, run in a clean worktree of this branch on Ubuntu 24.04 with the job's packages installed: `cmake --workflow --preset headless` passes 230 of 230; `cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF`, `cmake --build --preset ci` and `ctest --preset ci` build without a warning and pass 280 of 280, the graphics cases included; the external consumer builds and runs. `python3 tools/check_docs.py` passes. The job itself runs first in this pull request's CI.
+The `ubuntu` job's steps, run in a clean worktree of this branch on Ubuntu 24.04 with the job's packages installed: `cmake --workflow --preset headless` passes 230 of 230; `cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF`, `cmake --build --preset ci` and `ctest --preset ci` build without a warning and pass 280 of 280, the graphics cases included; the external consumer builds and runs. That run used Ubuntu's own CMake 3.28 from `/usr/bin`, the version the job uses since review round 1; the job's first CI runs used the runner image's 3.31.6. `python3 tools/check_docs.py` passes. The job itself runs first in this pull request's CI.
 
 ## Pull request
 
@@ -184,7 +197,7 @@ Title: `build(ci): test Kinetra on Ubuntu LTS and document Linux per distributio
 
 **Changes.**
 - CI: job `ubuntu` on `ubuntu-24.04`: apt packages, headless workflow, `ci` preset with warnings reported instead of errors, its tests with the graphics cases on software OpenGL, the external consumer.
-- Docs: dependency commands for Arch and Artix, Debian and Ubuntu, and Fedora (not tested, names not yet checked) in development; the CI section of testing; the platform line of the README; the identity line and the Full level of AGENTS.md; the `verify` skill's list of CI checks.
+- Docs: dependency commands for Arch and Artix, Debian and Ubuntu, and Fedora (not tested, names not yet checked) in development; the CI section of testing and the Full level's list of CI checks there; the platform line of the README; the identity line and the Full level of AGENTS.md; the `verify` skill's list of CI checks.
 - This design document `implemented`; the roadmap item removed.
 
 **Design.** `docs/design/2026-11-22-linux-beyond-arch.md`.
@@ -195,9 +208,10 @@ Title: `build(ci): test Kinetra on Ubuntu LTS and document Linux per distributio
 
 **Dependencies and merge order.** After step 1, with a merge commit; before the Kinetra-Lab pull request. Changes CI and the agent rules, so it waits for the user.
 
-**Follow-up.** Kinetra-Lab adds its own Ubuntu job and docs. Making `CI / ubuntu` a required check, and a Fedora job, stay with the user.
+**Follow-up.** Kinetra-Lab adds its own Ubuntu job and docs. The roadmap item *Linux support follow-ups* holds the Fedora check and the required status; a Fedora job stays a non-goal.
 
 ## Open points
 
-- The Fedora command is not checked against Fedora's repositories; the user checks it, or a session that can reach Fedora's package hosts.
+- The Fedora command is not checked against Fedora's repositories; the user checks it, or a session that can reach Fedora's package hosts (roadmap: *Linux support follow-ups*).
+- Whether `CI / ubuntu` becomes a required status is the user's choice (same item).
 - Windows' C runtime may still differ in `sinf`, `cosf`, `expf`, `powf` or `hypot`; Kinetra-Lab's pull request tries its Windows-skipped golden cases and records what still differs.
