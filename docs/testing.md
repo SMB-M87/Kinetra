@@ -123,7 +123,7 @@ ctest --preset graphics -L graphics -R '<regex>'
 
 When a change alters what a scene shows, the author also takes a screenshot of it with Lab's [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md), looks at it and adds it to the pull request: no test judges appearance, and the reviewer runs nothing.
 
-**In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers) and, in Lab, the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
+**In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers) and, in Lab, the smoke runs of every executable (`kinetra_smoke:*`, label `graphics`) and the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
 
 **Neither** proves desktop feel, a real GPU driver or performance: software rendering cannot. When a change depends on them, its design document names a playtest by the user as a check.
 
@@ -164,4 +164,4 @@ Report each check as: command, result (passed / failed / not run), and the reaso
 
 ## Open points
 
-None at the moment. The WSL2 mouse-input failure had the same cause as the first CI run with graphics: `sdl2-compat` loses `wheel.y` of an injected event, and the runtime now reads `wheel.preciseY` ([graphics tests in CI](design/2026-11-22-graphics-tests-in-ci.md)).
+- **`kinetra_engine_graphics` under WSL2, after the wheel fix.** Its first case failed under WSL2 at the injected mouse-input check. CI's Arch image failed the same check for a known reason: `sdl2-compat` returns an injected wheel event without its `wheel.y`, and the runtime now reads `wheel.preciseY` ([graphics tests in CI](design/2026-11-22-graphics-tests-in-ci.md)). WSL2 probably had the same cause, but no run there has confirmed it. It needs a run of `cmake --workflow --preset graphics` by the user under WSL2.
