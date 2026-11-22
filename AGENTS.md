@@ -41,7 +41,7 @@ Read only what the task needs; the pages are written to stand on their own.
 
 - Kinetra is a C++20 2D engine: a headless simulation library plus an optional SDL2/OpenGL 3.3 runtime and launcher.
 - Kinetra contains reusable core, core tests and development infrastructure only. Demo, Dotio, i4sim, the bundled launcher executable and application tests live in Kinetra-Lab.
-- Linux is supported; Artix/Linux is the desktop target. Do not imply untested platform support.
+- Linux is supported and tested in CI on the pinned Arch toolchain, the reference for warnings and formatting, and on Ubuntu LTS; Artix/Linux is the desktop target. Do not imply untested platform support: Fedora has documented commands, not tests.
 
 ## Development cycle
 
@@ -63,7 +63,7 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 | --- | --- | --- |
 | Docs | Only Markdown, comments, skills or agent rules changed | `python3 tools/check_docs.py`; no build |
 | Targeted | Code inside one module; no public header, CMake or dependency change | Incremental build of the affected targets in the existing build directory, plus their CTest entries |
-| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Locally the targeted builds and tests of every changed area; then the pull request's CI (format, docs, `headless`, `ci` with the graphics cases on software OpenGL, consumer). Verified only when CI passes ([testing](docs/testing.md#full)) |
+| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Locally the targeted builds and tests of every changed area; then the pull request's CI (format, docs, `headless`, `ci` with the graphics cases on software OpenGL, consumer, and the same build and tests on Ubuntu LTS). Verified only when CI passes ([testing](docs/testing.md#full)) |
 
 - Report the exact commands, results and blockers. Never call a check passed that did not run.
 - A failed configure or build means verification is incomplete.
