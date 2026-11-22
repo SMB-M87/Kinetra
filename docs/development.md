@@ -49,7 +49,7 @@ cmake --workflow --preset dev
 | `headless` | Release | off | | all |
 | `asan` | Debug | off | AddressSanitizer + UndefinedBehaviorSanitizer | all |
 | `graphics` | Release | on | graphics tests, `SDL_VIDEODRIVER=offscreen`, software Mesa | all, including `graphics` |
-| `ci` | Release | on | warnings as errors, graphics tests compiled | all except `graphics` |
+| `ci` | Release | on | warnings as errors, graphics tests, `SDL_VIDEODRIVER=offscreen`, software Mesa | all, including `graphics` |
 
 `release` has configure, build and test presets but no workflow preset. Run its steps separately: `cmake --preset release && cmake --build --preset release && ctest --preset release`. For iterative work, rebuild one target with `cmake --build --preset dev --target <target>`.
 
@@ -77,7 +77,7 @@ Check changed documentation with `python3 tools/check_docs.py`, and formatting w
 cmake --workflow --preset graphics
 ```
 
-The preset sets `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1` for the tests. Use a desktop or Xvfb if SDL lacks offscreen support. Software rendering does not establish desktop performance or feel. Application presentation, menu, switching and bounded smoke checks run in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab#tests-and-resources).
+The preset sets `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1` for the tests, as the `ci` preset does in CI. Use a desktop or Xvfb if SDL lacks offscreen support. Software rendering does not establish desktop performance or feel. Application presentation, menu, switching and bounded smoke checks run in [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab#tests-and-resources).
 
 ## External consumers
 

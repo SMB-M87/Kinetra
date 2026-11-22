@@ -80,7 +80,7 @@ ctest --preset dev -R 'kinetra_traffic:clear'   # or:
 ```
 
 - **Shared setup.** For setup that several cases need, use a small helper function (as `replay` does in the traffic tests) or doctest `SUBCASE`s. Do not use global mutable state.
-- **Labels and timeouts.** Every case gets the label `unit`; pass `LABELS graphics` for cases that need a window (the `dev`, `release` and `ci` test presets exclude them) and `TIMEOUT <seconds>` for long cases. `kinetra_add_test` remains for a program that cannot use doctest; no Kinetra suite needs it.
+- **Labels and timeouts.** Every case gets the label `unit`; pass `LABELS graphics` for cases that need a window (the `dev` and `release` test presets exclude them; `graphics` and `ci` run them with software OpenGL) and `TIMEOUT <seconds>` for long cases. `kinetra_add_test` remains for a program that cannot use doctest; no Kinetra suite needs it.
 
 ## Verification levels
 
@@ -112,19 +112,20 @@ ctest --preset dev -R '<module regex>'
 
 ### Full
 
-The Full level is split between the machine and the pull request: locally runs only what CI cannot, and the pull request's CI runs the rest.
+The pull request's CI is the Full level. Locally, an agent or developer runs only what makes the push worth CI's time.
 
-**Locally**, in Kinetra and, when a Lab checkout is available, in Kinetra-Lab:
+**Locally**, before pushing: the [targeted](#targeted) builds and tests of every changed area, so CI does not become the compile loop. For runtime, launcher or presentation changes, the graphics cases of the changed area are quick feedback and optional, in seconds with the same backend as CI:
 
 ```sh
-cmake --workflow --preset graphics
+cmake --preset graphics && cmake --build --preset graphics --target <targets>
+ctest --preset graphics -L graphics -R '<regex>'
 ```
 
-It builds everything and runs every suite, the graphics cases included, which CI only compiles because it has no GPU. Report the backend. In Lab, also run the bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
+**In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers) and, in Lab, the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
 
-**In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors), the [external consumer](development.md#external-consumers) and, in Lab, the native Windows build. A change is verified when the local graphics run passed **and** the pull request's checks are green; until then, report it as pushed, not verified.
+**Neither** proves desktop feel, a real GPU driver or performance: software rendering cannot. When a change depends on them, its design document names a playtest by the user as a check.
 
-*Why:* running `ci` and `headless` locally repeated exactly what the pipeline runs on every push and again after the merge, at minutes per round (more than ten for the Windows cross build in Lab). The graphics run is the one check only a local machine can do. Run `ci`, `headless` or `windows` locally only to reproduce a CI failure.
+*Why:* running `ci` and `headless` locally repeated exactly what the pipeline runs on every push and again after the merge, at minutes per round (more than ten for the Windows cross build in Lab). The graphics run was the last check only a local machine did; since 2026-11-22 CI runs it on the same backend that local runs and cloud sessions use, so a local run only repeats it. Run `ci`, `headless`, `graphics` or `windows` locally only to reproduce a CI failure.
 
 ## Choosing targeted tests
 
@@ -135,7 +136,7 @@ It builds everything and runs every suite, the graphics cases included, which CI
 | Steering (`steering.cpp`, `priority_steering.cpp`) | `kinetra_tests kinetra_weighted_navigation_tests` | `^kinetra_(behavior\|weighted_navigation)` |
 | Avoidance (`avoidance.cpp`) | `kinetra_avoidance_tests` | `^kinetra_avoidance` |
 | Traffic admission (`traffic.cpp`) | `kinetra_traffic_tests` | `^kinetra_traffic` |
-| Runtime and launcher (`src/runtime/`) | Full level with graphics | |
+| Runtime and launcher (`src/runtime/`) | Full level; locally, as quick feedback, `kinetra_engine_runtime_tests` in the `graphics` preset | `^kinetra_engine_graphics` (`ctest --preset graphics`) |
 
 Runtime and launcher behavior is always Full level. While iterating on `settings_view.cpp` or `launcher.cpp`, the window-free suites `kinetra_settings_view` and `kinetra_launcher` give quick feedback in the `dev` build. The header-only helpers (`bitmap_text.h`, `camera.h`, `timing.h`, `debug_view.h`, `help_view.h`) are public headers, so changing them is Full level; their window-free cases are in `kinetra_presentation` and `kinetra_behavior`. Build target and CTest prefix differ for some suites; the [test map](../tests/README.md#test-map) lists both.
 
@@ -150,10 +151,10 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 | `clang-format --dry-run --Werror` on first-party sources | A file is not formatted |
 | `python3 tools/check_docs.py` | A Markdown link or anchor is broken |
 | `cmake --workflow --preset headless` | The simulation library or its tests need SDL2/OpenGL, or a headless test fails |
-| `cmake --workflow --preset ci` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a non-graphics test fails |
+| `cmake --workflow --preset ci` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a test fails, graphics cases included (offscreen SDL, software Mesa) |
 | External consumer with `CONSUMER_GRAPHICS=ON` | The public headers or targets no longer work for an outside project |
 
-The workflow name `CI` and its job `checks` are a required status check on `main`, so they must keep these names. Graphics tests are compiled in CI but not run, because there is no GPU. The CI result does not replace the local graphics run and playtests of the Full level; the local graphics run does not replace the CI result either.
+The workflow name `CI` and its job `checks` are a required status check on `main`, so they must keep these names. The `ci` test preset runs the graphics cases with `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1`, as the `graphics` preset does: Mesa's llvmpipe renders on the runner's CPU, so they need no GPU and no display. CI does not replace a playtest on a desktop; a local graphics run does not replace the CI result.
 
 ## Reporting
 

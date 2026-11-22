@@ -80,11 +80,11 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 
 ## 6. Run what CI does not cover
 
-CI builds the graphics tests but does not run them. When the diff touches a `presentation/` folder, the runtime, the launcher, overlays or `main.cpp`:
+CI runs every test, the graphics cases and Lab's smoke runs included, with offscreen SDL and software Mesa. Read their result in the pull request's checks instead of running them again. What CI cannot judge is what a change looks like. When the diff changes what a `presentation/` folder, the runtime, the launcher or an overlay draws:
 
-1. Build in your own checkout and run the graphics tests of the changed area (`cmake --workflow --preset graphics`, or its targets and `ctest --preset graphics -R <regex>`).
-2. In Kinetra-Lab, take a screenshot of the changed scene with the [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md) and look at it.
-3. Report what you ran and what you saw in the summary. When the session cannot build or show it (missing packages, no software rendering), say so: it becomes a point for the user.
+1. In Kinetra-Lab, take a screenshot of the changed scene with the [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md) and look at it.
+2. Run a graphics case locally only to explain a CI failure or a doubt about a test (`ctest --preset graphics -L graphics -R <regex>` after building its targets).
+3. Report what you ran and what you saw in the summary. When the session cannot build or show it (missing packages, no software rendering), say so: it becomes a point for the user, as does a change whose feel or performance only a desktop shows.
 
 ## 7. Classify
 

@@ -63,12 +63,12 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 | --- | --- | --- |
 | Docs | Only Markdown, comments, skills or agent rules changed | `python3 tools/check_docs.py`; no build |
 | Targeted | Code inside one module; no public header, CMake or dependency change | Incremental build of the affected targets in the existing build directory, plus their CTest entries |
-| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Locally `cmake --workflow --preset graphics` (in Lab too when available); then the pull request's CI (format, docs, `headless`, `ci`, consumer). Verified only when both pass ([testing](docs/testing.md#full)) |
+| Full | Public `include/kinetra/` header, CMake, dependency, multiple modules, runtime/launcher behavior, or the last commit of a branch | Locally the targeted builds and tests of every changed area; then the pull request's CI (format, docs, `headless`, `ci` with the graphics cases on software OpenGL, consumer). Verified only when CI passes ([testing](docs/testing.md#full)) |
 
 - Report the exact commands, results and blockers. Never call a check passed that did not run.
 - A failed configure or build means verification is incomplete.
 
-*Why:* a full build takes minutes and proves nothing for a README edit. Skipping compilation after a code change hides errors until much later.
+*Why:* a full build takes minutes and proves nothing for a README edit. Skipping compilation after a code change hides errors until much later. CI runs the graphics cases on the same software backend as a local run, so the local machine adds nothing to the Full level but a playtest on a desktop.
 
 ## Git
 

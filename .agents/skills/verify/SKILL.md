@@ -48,10 +48,10 @@ Pick targets and tests from the mapping tables: Kinetra in [testing](../../../do
 
 **Full.**
 
-- Locally only `cmake --workflow --preset graphics` (it sets `SDL_VIDEODRIVER=offscreen` and software Mesa): in Kinetra, and in Lab when a Lab checkout is available. It builds everything and runs every suite, the graphics cases included.
-- In Lab, also bounded smoke runs (`--frames 120`) of the launcher, Demo, Dotio and i4sim.
-- Do not run `ci`, `headless` or `windows` locally: the pull request's CI runs them on every push (with format, docs and the external consumer). Run one locally only to reproduce a CI failure.
-- After pushing, read the pull request's checks (`gh pr checks <number>`). The change is verified when the local graphics run passed and the checks are green; until then report "pushed, CI pending".
+- Locally, the Targeted checks of every changed area, so the push compiles and its tests pass. For runtime, launcher or presentation changes, the graphics cases of that area are optional quick feedback: `ctest --preset graphics -L graphics -R '<regex>'` after building its targets in the `graphics` preset (offscreen SDL, software Mesa).
+- Do not run `ci`, `headless`, `graphics` or `windows` as a whole locally: the pull request's CI runs them on every push (with format, docs, the external consumer and, in Lab, the smoke runs and Windows), the graphics cases included. Run one locally only to reproduce a CI failure.
+- After pushing, read the pull request's checks (`gh pr checks <number>`). The change is verified when the checks are green; until then report "pushed, CI pending".
+- A change that depends on desktop feel, a real GPU driver or performance also needs the user's playtest, which software rendering cannot replace. Report it as open for the user.
 
 ## 4. Report
 

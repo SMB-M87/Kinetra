@@ -46,7 +46,7 @@ flowchart LR
 - It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff.
 - It runs the agent's code review (Claude Code's `/code-review`, or a global `code-review` skill) for correctness and checks every finding itself. Then it walks a checklist from the rules: tests, verification level, docs, every copy of a changed rule or procedure, roadmap, conventions, description and merge order.
 - Its depth follows the change: the reviewer's session runs on the most capable model at high reasoning effort, one level higher for a large pull request with much logic, and the code review at `low` for docs, `medium` for code in one module, `high` for public headers, simulation behavior, CMake, CI and releases ([levels](SKILL.md#levels)). It names no model or product, so it works with any agent.
-- It builds and runs what CI does not cover: graphics tests and, in Lab, a screenshot of the changed scene.
+- It reads CI's results, graphics tests included, and adds what CI does not cover: in Lab, a screenshot of the changed scene.
 - Everything it posts on GitHub, the conclusion included, is in English and starts with **Agent review**. It reports to you in the chat in Dutch.
 - It resolves the threads it accepts, and never approves, requests changes, pushes or merges.
 - A finding that shows a kind of mistake that can recur becomes a proposed lesson. A lesson that keeps coming back is proposed to you as a rule.
