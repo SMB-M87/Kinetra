@@ -44,7 +44,7 @@ flowchart LR
 
 *Takeaway:* the reviewer reviews and accepts; the author changes, argues and merges; anything they cannot settle, and every change to rules, CI or your own checks, stays for you.
 
-- It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff.
+- It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff; a docs-only pull request reviewed on request takes its goals from the description.
 - It runs the agent's code review (Claude Code's `/code-review`, or a global `code-review` skill) for correctness and checks every finding itself. Then it walks a checklist from the rules: tests, verification level, docs, every copy of a changed rule or procedure, roadmap, conventions, description and merge order.
 - Its depth follows the change: the reviewer's session runs on the most capable model at high reasoning effort, one level higher for a large pull request with much logic, and the code review at `low` for docs, `medium` for code in one module, `high` for public headers, simulation behavior, CMake, CI and releases ([levels](SKILL.md#levels)). It names no model or product, so it works with any agent.
 - It builds, tests and runs nothing: CI runs every test on each push, graphics included, and the author adds what CI cannot, such as a screenshot of a changed scene. The reviewer checks that it is there.

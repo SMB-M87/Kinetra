@@ -45,7 +45,8 @@ jobs:
   # only Markdown, docs/ or .agents/. Then "linux" is skipped, only the docs check runs
   # here, and "checks" passes on this job's result. A push to main always builds. Any
   # doubt, such as a missing merge base, means a full run, and so does a failure of this
-  # job: "linux" then runs, and its docs check fails "checks" as well.
+  # job: "linux" then runs, and "checks" follows its result, so a failed docs check fails
+  # it through the docs check of "linux".
   changes:
     runs-on: ubuntu-latest
     outputs:
