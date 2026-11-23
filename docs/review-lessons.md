@@ -37,6 +37,12 @@ One list item per lesson, under the topic it belongs to:
 - **Search for copies of a changed step case-insensitively, on its key words, not on one copy's sentence** · added 2026-11-22 · source: #30
   The search for "After opening it" matched only the sentence in `AGENTS.md`; the skills overview and the `pr-feedback` guide said "after opening a pull request" and "after every pull request". Use `grep -rni` with each key word of the step in lower case.
 
+- **When a rule exempts a case from a step, search for every procedure that still performs that step, and add the exemption there** · added 2026-11-23 · source: #37
+  The docs-only exemption reached the rule pages, but not the steps that set a design document to `implemented`, copy its *Pull request* section, or say that every change gets one. The mirror image of the lesson from #27 about bans.
+
+- **State another repository's procedure by linking to it, not by restating its conditions** · added 2026-11-23 · source: #37
+  Kinetra's copies of Lab's CI skip left out the three Lab paths that always build; a link stays right when the other repository changes.
+
 ## CI and tooling
 
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22
