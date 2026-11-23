@@ -214,5 +214,5 @@ Title: `build(ci): test Kinetra on Ubuntu LTS and document Linux per distributio
 ## Open points
 
 - The Fedora command is not checked against Fedora's repositories; the user checks it, or a session that can reach Fedora's package hosts (roadmap: *Linux support follow-ups*).
-- Whether `CI / ubuntu` becomes a required status is the user's choice (same item).
+- Whether `CI / ubuntu` becomes a required status: settled on 2026-11-23, yes, through one `linux` matrix job ([CI Linux matrix](2026-11-23-ci-linux-matrix.md)).
 - Windows' C runtime may still differ in `sinf`, `cosf`, `expf`, `powf` or `hypot`; Kinetra-Lab's pull request tries its Windows-skipped golden cases and records what still differs.

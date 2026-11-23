@@ -146,19 +146,20 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 
 ## Continuous integration
 
-[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. Its job `checks` uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. When the archive does not answer, CI installs the current Arch packages from the image's own mirrors instead and marks the run with a *Toolchain not pinned* warning; such a run checks the change, but not against the pinned versions. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
+[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. Its job `linux` builds and tests on several distributions, one container each, as a matrix. The `arch` entry is the reference: it uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. When the archive does not answer, CI installs the current Arch packages from the image's own mirrors instead and marks the run with a *Toolchain not pinned* warning; such a run checks the change, but not against the pinned versions. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
 
-| Step | Fails when |
-| --- | --- |
-| `clang-format --dry-run --Werror` on first-party sources | A file is not formatted |
-| `python3 tools/check_docs.py` | A Markdown link or anchor is broken |
-| `cmake --workflow --preset headless` | The simulation library or its tests need SDL2/OpenGL, or a headless test fails |
-| `cmake --workflow --preset ci` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a test fails, graphics cases included (offscreen SDL, software Mesa) |
-| External consumer with `CONSUMER_GRAPHICS=ON` | The public headers or targets no longer work for an outside project |
+| Step | Runs on | Fails when |
+| --- | --- | --- |
+| `clang-format --dry-run --Werror` on first-party sources | `arch` | A file is not formatted |
+| `python3 tools/check_docs.py` | `arch` | A Markdown link or anchor is broken |
+| `cmake --workflow --preset headless` | every entry | The simulation library or its tests need SDL2/OpenGL, or a headless test fails |
+| `cmake --workflow --preset ci` | `arch` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a test fails, graphics cases included (offscreen SDL, software Mesa) |
+| The `ci` preset with `KINETRA_WARNINGS_AS_ERRORS=OFF` | other entries | The build breaks or a test fails, graphics cases included; warnings become annotations on the pull request |
+| External consumer with `CONSUMER_GRAPHICS=ON` | every entry | The public headers or targets no longer work for an outside project |
 
-A second job, `ubuntu`, builds and tests on GitHub's Ubuntu 24.04 LTS runner with that distribution's own GCC and packages: the headless workflow, the `ci` preset with `KINETRA_WARNINGS_AS_ERRORS=OFF` (warnings shown as annotations on the pull request, not errors), its tests with the graphics cases, and the external consumer. It puts `/usr/bin` first on the path, so the runner image's newer CMake does not stand in for Ubuntu's, and prints the version of each tool. Formatting, the docs check and the icon check run only in `checks`, and its packages follow the runner image rather than a pinned snapshot. It catches what the pinned Arch toolchain cannot show: an older compiler, C library or SDL2, as when glibc before 2.41 moved Kinetra-Lab's golden fingerprints ([design](design/2026-11-22-linux-beyond-arch.md#problem)).
+The `ubuntu` entry runs in an `ubuntu:24.04` container with that distribution's own GCC, glibc, CMake and SDL2, installed with the Debian and Ubuntu command of [development](development.md#dependencies-and-options); in a container no preinstalled runner tool can stand in for them, and a step prints the path and version of each tool. Its packages follow the image's point releases rather than a pinned snapshot. It catches what the pinned Arch toolchain cannot show: an older compiler, C library or SDL2, as when glibc before 2.41 moved Kinetra-Lab's golden fingerprints ([design](design/2026-11-22-linux-beyond-arch.md#problem)). A further distribution is one more matrix entry with its install step.
 
-The workflow name `CI` and its job `checks` are a required status check on `main`, so they must keep these names. The `ci` test preset runs the graphics cases with `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1`, as the `graphics` preset does: Mesa's llvmpipe renders on the runner's CPU, so they need no GPU and no display. CI does not replace a playtest on a desktop; a local graphics run does not replace the CI result.
+The workflow name `CI` and its job `checks` are the required status check on `main`, so they must keep these names. `checks` only waits for `linux` and passes when every entry passed, so every distribution in the matrix is required. The `ci` test preset runs the graphics cases with `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1`, as the `graphics` preset does: Mesa's llvmpipe renders on the runner's CPU, so they need no GPU and no display. CI does not replace a playtest on a desktop; a local graphics run does not replace the CI result.
 
 ## Reporting
 
