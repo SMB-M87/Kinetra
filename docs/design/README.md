@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-23 | [Roadmap: the shared UI in GIFs, images in the launcher menu and a leaner cycle](2026-11-23-roadmap-media-labs-cycle.md): Kinetra's part of the user's wishes of 2026-11-23 | implemented |
 | 2026-11-22 | [Agent inspector overlay](2026-11-22-agent-inspector-overlay.md) | implemented |
 | 2026-11-22 | [Graphics tests in CI](2026-11-22-graphics-tests-in-ci.md): the `ci` preset runs the graphics cases with software OpenGL, and CI becomes the whole Full level | implemented |
 | 2026-11-22 | [Every copy of a changed rule](2026-11-22-copies-rule.md): a recurring review lesson becomes a rule and a review step | implemented |
