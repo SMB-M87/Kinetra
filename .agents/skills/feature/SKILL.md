@@ -45,7 +45,7 @@ Run the `verify` skill on the whole branch diff. A branch with code changes ends
 
 ## 7. Review
 
-Review `git diff main...HEAD` with `/code-review` (Claude Code) or the global `code-review` skill (Codex), and check the list in the [workflow](../../../docs/workflow.md#6-review). For every rule, procedure or term the branch changes, search for the old wording and its key words (`grep -rn --include='*.md' --include='*.yml' '<old wording>' .` from the repository root, once for the old wording and once for each key word; in Kinetra-Lab this also covers `external/Kinetra`) and change every copy in the same commit, or in the fix commit when this review finds a missed copy. Fix the findings in new commits, re-verify, and record findings and resolutions in **Review**.
+Review `git diff main...HEAD` with `/code-review` (Claude Code) or the global `code-review` skill (Codex), and check the list in the [workflow](../../../docs/workflow.md#6-review). For every rule, procedure or term the branch changes, search for the old wording and its key words (`python3 tools/check_copies.py --term '<old wording>' --term '<key word>'`, in Kinetra-Lab `python3 external/Kinetra/tools/check_copies.py`, which also covers `external/Kinetra`; it searches case-insensitively, and lists the CI jobs, CMake options, presets, flags and inline names the diff removes and where they are still named) and change every copy in the same commit, or in the fix commit when this review finds a missed copy. Fix the findings in new commits, re-verify, and record findings and resolutions in **Review**.
 
 ## 8. Document
 

@@ -35,6 +35,8 @@ Comment-only means the diff of a code file contains only comment lines (`git dif
 
 ## 3. Run
 
+**Copies, at every level.** Run `python3 tools/check_copies.py` (in Lab `python3 external/Kinetra/tools/check_copies.py`), with `--term '<old wording>'` for each rule, procedure or term the change rewords. It lists the CI jobs, CMake options, presets, flags and inline names the diff removes that a page still names, and every place an old wording is left. Judge each hit: change a stale copy in the same change, and say in the report why a hit stays. It reads only, so it costs seconds.
+
 **Docs.** Run `python3 tools/check_docs.py` (in Kinetra) or `python3 external/Kinetra/tools/check_docs.py` (in Lab). Fix broken links, then stop. No build.
 
 **Targeted.** Reuse the `dev` preset build directory (`build-dev`); if it does not exist, configure it once with `cmake --preset dev`.
@@ -56,4 +58,4 @@ Pick targets and tests from the mapping tables: Kinetra in [testing](../../../do
 
 ## 4. Report
 
-Give a short table with one row per check: command, result (`passed` / `failed` / `not run`), and a note (reason, graphics backend, failing test names). On failure, show the relevant output lines, not the whole log. Never call the change verified when a required check failed or did not run.
+Give a short table with one row per check, the copies check included: command, result (`passed` / `failed` / `not run`), and a note (reason, graphics backend, failing test names). On failure, show the relevant output lines, not the whole log. Never call the change verified when a required check failed or did not run.
