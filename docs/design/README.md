@@ -76,7 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
-| 2026-11-23 | [CI mirror time budget and the remaining time limits](2026-11-23-ci-mirror-time-budget.md): the Azure mirror's index update gets five minutes, so a mirror that does not answer still reaches the fallback; Kinetra-Lab's MSYS2 install and release workflow get time limits | accepted |
+| 2026-11-23 | [CI mirror time budget and the remaining time limits](2026-11-23-ci-mirror-time-budget.md): the Azure mirror's index update gets five minutes, so a mirror that does not answer still reaches the fallback; Kinetra-Lab's MSYS2 install and release workflow get time limits | implemented |
 | 2026-11-23 | [CI fails fast on a stalled install](2026-11-23-ci-stalled-install.md): Ubuntu's packages come from the Azure mirror with a fallback, and every CI job and install step has a time limit | implemented |
 | 2026-11-23 | [Automatic Lab pointer pull request](2026-11-23-automatic-lab-pointer.md): a workflow opens Kinetra-Lab's pointer-only pull request after each merge and turns on auto-merge | implemented |
 | 2026-11-23 | [Copies check](2026-11-23-copies-check.md): `tools/check_copies.py` lists the names a change removes that a page still names; `verify` runs it | implemented |
