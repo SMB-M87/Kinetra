@@ -56,7 +56,7 @@ The names below describe depth, not a product: map them onto whatever the agent 
 
 ## 3. Goals
 
-List every goal of the roadmap item and of the design document's *Goals*. For each, find where the diff meets it and what proves it: a test, or a recorded run in *Verification*. Check that the non-goals were left alone.
+List every goal of the roadmap item and of the design document's *Goals* (for a docs-only pull request reviewed on request, of its description). For each, find where the diff meets it and what proves it: a test, or a recorded run in *Verification*. Check that the non-goals were left alone.
 
 - A goal that is not met, or met without proof, is a **blocking** finding.
 - A goal that is vague or contradicts another is a **question for the user**, not for the author: say so in the summary.

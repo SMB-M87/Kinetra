@@ -25,7 +25,7 @@ Keeps the backlog in `docs/roadmap.md` up to date: ideas from a brainstorm go in
 
 - A change that is being built now: its scope, decisions and history belong in its design document, or for a docs-only change in its pull request.
 - A known gap that nobody plans to act on: leave it under *Open points* on the page it concerns.
-- Bugs found during a change: note them in that change's design document first; they reach the roadmap when they are planned.
+- Bugs found during a change: note them in that change's design document, or a docs-only change's pull request description, first; they reach the roadmap when they are planned.
 
 ## How it works
 

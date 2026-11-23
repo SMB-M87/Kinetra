@@ -24,8 +24,7 @@ How a change moves from idea to commit in Kinetra and Kinetra-Lab. Every change 
 
 ```mermaid
 flowchart LR
-    U[Understand] --> D[Design document]
-    U -->|docs-only| I
+    U[Understand] --> D[Design document, or for docs-only the description]
     D -->|open decisions| G[grilling with the user]
     G --> D
     D --> T[Test plan / failing test]
@@ -61,7 +60,7 @@ Read older design documents only when the roadmap item, a README, an open point 
 
 - **Open decisions.** List them. If any decision is load-bearing (a wrong guess costs a rewrite, a migration or the user's trust), settle it with the user first. Use the `grilling` skill when there are several.
 - **Diagram.** Include one when structure or interaction changes; the [documentation guide](documentation.md#diagrams) says which kind.
-- **ADR.** Write one when the decision is hard to reverse, surprising without context, *and* the result of a real trade-off (`adr` skill). The design document links to it.
+- **ADR.** Write one when the decision is hard to reverse, surprising without context, *and* the result of a real trade-off (`adr` skill). The design document links to it, or the description of a docs-only change.
 - **Size.** A typo fix needs a few lines per section; a subsystem change needs a page. Several small related fixes may share one branch and one design document.
 - **Steps.** When the goal needs several changes that can each be reviewed on their own, plan them as a [stack of pull requests](#stacked-pull-requests): one design document for the goal, with a table of its steps and their branches.
 

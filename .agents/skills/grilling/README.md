@@ -27,7 +27,7 @@ Use a repository lookup for a factual question such as which target owns the lau
 
 1. The agent checks the repository first and lists the assumptions it could resolve, with sources you can correct.
 2. Each form asks about decisions whose prerequisites are settled. It explains the cost of each option and uses your answers to choose the next round. Reversible details get recommendations.
-3. The agreed choices go into the design document, or a scratch plan if there is no document. You confirm the shared understanding before implementation.
+3. The agreed choices go into the design document, or for a docs-only change into the pull request description, kept in a scratch plan until either exists. You confirm the shared understanding before implementation.
 
 ## Related skills
 

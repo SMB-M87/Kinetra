@@ -21,7 +21,7 @@ Use `adr` to preserve the reason for an architectural choice that would be costl
 
 ## When not to use it
 
-Use `grilling` while the choice is still open. A routine choice with an obvious rationale fits in the design document's Decisions table.
+Use `grilling` while the choice is still open. A routine choice with an obvious rationale fits in the design document's Decisions table, or in a docs-only pull request's description.
 
 ## How it works
 

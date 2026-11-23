@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: Interview the user in rounds of multiple-choice forms until every load-bearing decision of a plan or design is settled, and record the outcome in the design document. Use when the user asks to grill, challenge or stress-test a plan, or when the feature skill reaches open load-bearing decisions. Not for routine work, lookups or decisions already made in the conversation.
+description: Interview the user in rounds of multiple-choice forms until every load-bearing decision of a plan or design is settled, and record the outcome in the design document, or for a docs-only change in the pull request description. Use when the user asks to grill, challenge or stress-test a plan, or when the feature skill reaches open load-bearing decisions. Not for routine work, lookups or decisions already made in the conversation.
 ---
 
 <!-- Based on mattpocock/skills "grilling" (MIT, (c) 2026 Matt Pocock); assumptions ledger and load-bearing/cosmetic tiers after chaseai-yt "crucible" (MIT). Adapted for Kinetra: forms per round, outcome recorded in docs/design/. -->
@@ -59,7 +59,7 @@ Recompute the frontier and ask the next round. When every answer matched your re
 
 - Stop when the frontier is empty, or immediately when the user says stop ("stop", "klaar", "doe maar"). Unresolved branches then become stated assumptions.
 - When the scope is too big for one change, propose splitting it into phases and grill only the first phase in detail. The later phases, and branches of the tree the user deferred, become roadmap items (`roadmap` skill), so they are not lost.
-- Record every decision in the design document's **Decisions** table: decision, choice, why. Note which choices differed from the recommendation.
+- Record every decision in the design document's **Decisions** table, or for a docs-only change in the pull request description: decision, choice, why. Note which choices differed from the recommendation.
 - Ask one final form to confirm the shared understanding, then start the work. Irreversible or outward-facing actions keep their own confirmation rules.
 
 ## Do not grill
