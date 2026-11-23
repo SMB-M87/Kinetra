@@ -1,12 +1,13 @@
 # Tools
 
-Development scripts shared by Kinetra and Kinetra-Lab. They need only Python 3 and Git: no build, no network.
+Development scripts shared by Kinetra and Kinetra-Lab. The Python scripts need only Python 3 and Git: no build, no network. `lab_pointer.sh` runs in CI and talks to GitHub.
 
 ## Table of contents
 
 - [check_docs.py](#check_docspy)
 - [check_copies.py](#check_copiespy)
 - [make_icon.py](#make_iconpy)
+- [lab_pointer.sh](#lab_pointersh)
 - [Open points](#open-points)
 
 [Parent guide](../README.md) · [Documentation index](../docs/README.md)
@@ -64,6 +65,30 @@ python3 tools/make_icon.py --check  # exit 1 when a committed file no longer mat
 ```
 
 The check compares decoded pixels rather than bytes, because another zlib version may compress the same PNG differently. CI runs it next to the documentation check.
+
+## lab_pointer.sh
+
+Moves Kinetra-Lab's `external/Kinetra` pointer to Kinetra `main`, so no agent session spends a step on the [pointer-only pull request](../AGENTS.md#git). [lab-pointer.yml](../.github/workflows/lab-pointer.yml) runs it after each push to `main`, every hour, and by hand (*Run workflow* in Actions); a pull request that changes the workflow or the script runs it with `--dry-run`.
+
+```mermaid
+flowchart TD
+    S[Kinetra main and Lab's pointer] -->|equal| Done[Nothing to do]
+    S -->|main not ahead of the pointer| Err[Error: move it by hand]
+    S -->|main ahead| O{Another open Lab pull request changes external/Kinetra?}
+    O -->|yes| Wait[Wait: that one merges first; a later run catches up]
+    O -->|no| P[Commit the new pointer on chore/kinetra-pointer, open or update its pull request]
+    P --> A[Auto-merge: GitHub merges once Lab's CI passes]
+```
+
+*Takeaway:* it moves the pointer only forward, and never past a Lab pull request that records its own Kinetra commit.
+
+- It makes the commit through GitHub's API (a tree with the new gitlink), so it needs no clone. An open pull request of its own gets one more commit, a fast-forward; a branch left by a closed one starts again from `main`.
+- It needs `gh` and `jq`, and two tokens: the repository secret `LAB_POINTER_TOKEN`, a fine-grained token for Kinetra-Lab only with *Contents* and *Pull requests* read and write, and the workflow's own token for reading Kinetra. The workflow's own token cannot write to Lab, and a pull request opened with it would not start Lab's CI.
+- Every API failure stops it with a non-zero status, so a failed run shows as a red run in Kinetra's Actions, not as "nothing to do". A pointer pull request whose CI fails stays open; it is fixed like any pointer move.
+
+```sh
+bash tools/lab_pointer.sh --dry-run   # with gh's own login: says what it would do, writes nothing
+```
 
 ## Open points
 

@@ -162,6 +162,8 @@ The `ubuntu` entry runs in an `ubuntu:24.04` container with that distribution's 
 
 The workflow name `CI` and its job `checks` are the required status check on `main`, so they must keep these names. `checks` passes when every entry of `linux` passed, so every distribution in the matrix is required. A job `changes` runs first: for a pull request that changes only Markdown, `docs/` or `.agents/`, it skips `linux`, runs the docs check itself, and `checks` passes on its result; a push to `main`, any other change and any doubt build in full. The `ci` test preset runs the graphics cases with `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1`, as the `graphics` preset does: Mesa's llvmpipe renders on the runner's CPU, so they need no GPU and no display. CI does not replace a playtest on a desktop; a local graphics run does not replace the CI result.
 
+A second workflow, [lab-pointer.yml](../.github/workflows/lab-pointer.yml), tests nothing: after each push to `main`, and hourly, it opens Kinetra-Lab's pointer-only pull request and turns on auto-merge ([tool](../tools/README.md#lab_pointersh)). A pull request that changes it runs it as a dry run.
+
 ## Reporting
 
 Report each check as: command, result (passed / failed / not run), and the reason for anything not run. For graphics runs, also report the backend (desktop, Xvfb, SDL offscreen with software Mesa). Software rendering does not verify desktop feel or performance.
