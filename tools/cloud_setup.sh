@@ -42,9 +42,12 @@ if [[ ${#missing[@]} -eq 0 ]]; then
 else
     # Only the downloads get a time limit: a stalled mirror would otherwise hold the session's
     # start until the hook's own limit, while stopping dpkg halfway would break the next run.
-    if timeout 120 "${as_root[@]}" apt-get update -q >> "$log" 2>&1 &&
-        timeout 300 "${as_root[@]}" apt-get install -y -q --no-install-recommends --download-only \
-            "${missing[@]}" >> "$log" 2>&1 &&
+    # apt-get update succeeds when an index fails to download; Error-Mode=any makes it fail,
+    # as in CI, so the failure names the update and not a package it could not find.
+    if timeout -k 10 120 "${as_root[@]}" apt-get update -q -o APT::Update::Error-Mode=any \
+        >> "$log" 2>&1 &&
+        timeout -k 10 300 "${as_root[@]}" apt-get install -y -q --no-install-recommends \
+            --download-only "${missing[@]}" >> "$log" 2>&1 &&
         "${as_root[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
             --no-install-recommends "${missing[@]}" >> "$log" 2>&1; then
         report+=("installed ${missing[*]}")
@@ -53,32 +56,46 @@ else
     fi
 fi
 
-# Sets $found to the version line of clang-format as the session's PATH finds it.
-find_clang_format() {
+# Sets $found to the version line of the clang-format at $1, or of the one PATH finds.
+version_of() {
     hash -r
-    found="$(clang-format --version 2> /dev/null)"
+    found="$("${1:-clang-format}" --version 2> /dev/null)"
 }
 wanted="clang-format version $clang_format_version"
-find_clang_format
+version_of
 if [[ "$found" == *"$wanted"* ]]; then
     report+=("clang-format $clang_format_version present")
 elif ! command -v uv > /dev/null; then
     failures+=("uv is missing, so clang-format $clang_format_version is not installed")
-elif ! timeout 120 uv tool install --force "clang-format==$clang_format_version" >> "$log" 2>&1; then
-    failures+=("uv did not install clang-format $clang_format_version")
+elif ! bin="$(uv tool dir --bin 2>> "$log")" || [[ -z "$bin" ]]; then
+    failures+=("uv names no tool directory, so clang-format $clang_format_version is not installed")
 else
-    bin="$(uv tool dir --bin 2>> "$log")"
-    find_clang_format
-    # Ubuntu's clang-format in /usr/bin must not win over the pinned one.
-    if [[ "$found" != *"$wanted"* && -n "${CLAUDE_ENV_FILE:-}" ]]; then
-        echo "export PATH=\"$bin:\$PATH\"" >> "$CLAUDE_ENV_FILE"
-        PATH="$bin:$PATH"
-        find_clang_format
-    fi
+    # A resumed session may have the pinned version in uv's directory while the hook's PATH
+    # finds Ubuntu's first; install only when uv's own copy is missing or another version.
+    version_of "$bin/clang-format"
+    action=""
     if [[ "$found" == *"$wanted"* ]]; then
-        report+=("installed clang-format $clang_format_version")
+        action="clang-format $clang_format_version present"
+    elif timeout -k 10 120 uv tool install --force "clang-format==$clang_format_version" \
+        >> "$log" 2>&1; then
+        action="installed clang-format $clang_format_version"
     else
-        failures+=("clang-format $clang_format_version is in $bin, but PATH finds another first")
+        failures+=("uv did not install clang-format $clang_format_version")
+    fi
+    if [[ -n "$action" ]]; then
+        version_of
+        # Ubuntu's clang-format in /usr/bin must not win over the pinned one.
+        if [[ "$found" != *"$wanted"* && -n "${CLAUDE_ENV_FILE:-}" ]]; then
+            line="export PATH=\"$bin:\$PATH\""
+            grep -q -x -F -e "$line" "$CLAUDE_ENV_FILE" 2> /dev/null || echo "$line" >> "$CLAUDE_ENV_FILE"
+            PATH="$bin:$PATH"
+            version_of
+        fi
+        if [[ "$found" == *"$wanted"* ]]; then
+            report+=("$action")
+        else
+            failures+=("clang-format $clang_format_version is in $bin, but PATH finds another first")
+        fi
     fi
 fi
 
