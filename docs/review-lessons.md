@@ -63,6 +63,9 @@ One list item per lesson, under the topic it belongs to:
 - **Do not let a pull request's own copy of a skip filter decide its own CI unchecked** · added 2026-11-23 · source: #37
   On `pull_request`, the workflow runs from the pull request, so one dropped `^` would have skipped its build and every later one. Let the base branch's copy decide, as Kinetra-Lab#83 does with its tip, or check the filter and the decision against known source paths and build in full when they fail.
 
+- **When a script reuses an option from CI, check that the conditions CI relies on also hold where the script runs** · added 2026-11-23 · source: #47
+  #47's cloud setup took `APT::Update::Error-Mode=any` from CI's Ubuntu step, whose container lists only Ubuntu's sources and falls back to the image's. The cloud image also lists `download.docker.com`, and the script had no fallback, so one index that did not download would have stopped every install.
+
 ## Git and stacks
 
 No lessons yet.
