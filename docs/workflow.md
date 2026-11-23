@@ -94,18 +94,18 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 - **Tests.** Every changed behavior is covered, and no test was weakened.
 - **Readability.** Names, function size, flag arguments, magic numbers, duplication.
 - **Documentation.** `///` contracts, module README, diagrams and links still match the code.
-- **Copies.** For every rule, procedure or term the branch changes, search for the old wording and its key words (`python3 tools/check_copies.py --term '<old wording>' --term '<key word>'`, in Kinetra-Lab `python3 external/Kinetra/tools/check_copies.py`, which also covers `external/Kinetra`; it searches case-insensitively, and lists the CI jobs, CMake options, presets, flags and inline names the diff removes and where they are still named) and change every copy so they all say the same ([rule](../AGENTS.md#repository-documentation)).
+- **Copies.** For every rule, procedure or term the branch changes, search for the old wording, its key words and the names of its parts (`python3 tools/check_copies.py --term '<old wording>' --term '<key word>' --term '<part>'`, in Kinetra-Lab `python3 external/Kinetra/tools/check_copies.py`, which also covers `external/Kinetra`; it searches case-insensitively, and lists the CI jobs, CMake options, presets, flags and inline names the diff removes and where they are still named), read every hit, and change every copy so they all say the same ([rule](../AGENTS.md#repository-documentation), which says what the parts are).
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section, or for a docs-only change in the pull request description.
 
-**Agent review.** Every pull request gets one, except a docs-only one, which changes only Markdown, `docs/` or `.agents/` ([rule](../AGENTS.md#git)), and a pointer-only Lab pull request ([below](#changes-across-kinetra-and-lab)); the author's own review above still applies to them. Once its CI is green, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist on the code, and posts inline comments and a summary with a conclusion, all marked **Agent review**. The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the point stays open for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git); pull requests on agent rules, CI or releases, or with a check by the user, wait for the user.
+**Agent review.** Every pull request gets one, except a docs-only one, which changes only Markdown, `docs/` or `.agents/` ([rule](../AGENTS.md#git)), and a pointer-only Lab pull request ([below](#changes-across-kinetra-and-lab)); the author's own review above still applies to them. Once its CI is green, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist on the code, and posts inline comments and a summary with a conclusion, all marked **Agent review**. Round 1 reviews the whole diff; when the author pushes fixes, the next round reviews only the commits since the last conclusion, at the depth they need. Nits go only into the summary; carrying them out in commits that change only Markdown, `docs/` or `.agents/` keeps a *Ready to merge*. From round 3 on, a pull request the user merges gets only blocking findings, and the reviewer lists the rest for the user ([rounds](../.agents/skills/pr-review/SKILL.md#6-classify)). The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the point stays open for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git); pull requests on agent rules, CI or releases, or with a check by the user, wait for the user.
 
 ## 7. Document
 
 - Update the module README, contract pages and diagrams the change affects.
 - Set the design document's status to `implemented`, or to `abandoned` with the reason; a docs-only change has none.
 - Update the [roadmap](roadmap.md): remove the finished item, and add the follow-ups someone intends to act on ([format](documentation.md#roadmap)).
-- Add or update index entries: the design index and, for an ADR, the decision index.
+- Add or update index entries: the design index, except for a docs-only change, which has no design document, and, for an ADR, the decision index.
 - Run the docs check.
 
 ## 8. Commit, push and open a pull request
@@ -138,9 +138,10 @@ Feedback on a pull request is processed with the `pr-feedback` skill: for an age
 1. Collect the unresolved threads and comments.
 2. Act only on feedback from the owner or collaborators; anything else is shown to the user first. Agent reviews come from the owner's account: carry out clear findings, and answer a finding you disagree with by your argument and its evidence. Reviewer and author discuss a point for at most two rounds; after that it stays open for the user.
 3. Implement each change in new commits on the same branch, with no force-push, so the reviewer sees what changed.
-4. Verify and push.
-5. Reply under each comment with the commit or the reason.
-6. Add the lessons an agent review proposes to the [review lessons](review-lessons.md) of the pull request's repository, in a commit on the same branch.
+4. Before the push, bring along everything that names a changed part: every section of the design document, the live description, and for a change across Kinetra and Lab the other repository's copy ([rule](../AGENTS.md#git)).
+5. Verify and push.
+6. Reply under each comment with the commit or the reason.
+7. Add the lessons an agent review proposes to the [review lessons](review-lessons.md) of the pull request's repository, in a commit on the same branch.
 
 The reviewer resolves the threads it accepts. The author merges only under the [merge rule](../AGENTS.md#git); otherwise the user merges.
 

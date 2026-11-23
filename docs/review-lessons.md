@@ -34,20 +34,11 @@ One list item per lesson, under the topic it belongs to:
 - **Scope a new ban to the case it targets, and check it against every procedure that still performs that action** · added 2026-11-22 · source: #27
   "Never push a pointer move onto an open pull request" was meant for the move to the merge commit, but read literally it also forbade the branch-pointer updates that the stack rules still need. Name the exact case in the rule, then search the rules for every step that does the forbidden thing.
 
-- **Search for copies of a changed step case-insensitively, on its key words, not on one copy's sentence** · added 2026-11-22 · source: #30
-  The search for "After opening it" matched only the sentence in `AGENTS.md`; the skills overview and the `pr-feedback` guide said "after opening a pull request" and "after every pull request". Use `grep -rni` with each key word of the step in lower case.
-
-- **When a rule exempts a case from an artifact, search for the artifact's parts and for the phrases that presuppose it, not only for its name** · added 2026-11-23 · source: #37
-  The docs-only exemption first reached the pages that name the design document; review then found the steps that fill its *Decisions*, *Test plan* and *Verification*, and the roadmap's "its design document is the record", still assuming one. The mirror image of the lesson from #27 about bans.
-
 - **State another repository's procedure by linking to it, not by restating its conditions** · added 2026-11-23 · source: #37
   Kinetra's copies of Lab's CI skip left out the three Lab paths that always build; a link stays right when the other repository changes.
 
 - **Put an exemption in every skill a calling skill hands work to, not only in the caller** · added 2026-11-23 · source: #37
   `feature` sent a docs-only change's decisions to the pull request description, but `grilling` and `adr`, which also run on their own, still wrote into a design document.
-
-- **After a review fix, update every section of the design document and the description that names the changed part** · added 2026-11-23 · source: #37
-  Rounds 4 to 6 of #37 each found a fix that had reached *Review* and *Decisions* but not *Design*, *Test plan*, *Verification* or the *Pull request* section; Kinetra-Lab carries the same lesson from its #78.
 
 ## CI and tooling
 

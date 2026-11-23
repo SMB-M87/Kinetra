@@ -45,6 +45,8 @@ Classify every item:
 | Disagreement or a trade-off | Ask the user first (form), with your recommendation |
 | Out of scope | Propose a follow-up in the design document's *Open points*, or the description's for a docs-only pull request; ask the user |
 | Agent finding you disagree with | Reply with your argument and its evidence (code, test, rule); no change. After the reviewer's reply, answer once more at most; then the point is the user's |
+| Nit in an agent review's summary | Carry it out when it is clear: in commits that change only Markdown, `docs/` or `.agents/`, a *Ready to merge* still holds for them; a nit on other files goes in with the next round's fixes, or waits for a later change. No reply needed |
+| *For the user* in an agent review's summary (round 3 on) | Leave it for the user's merge decision, or carry it out with a blocking fix; it starts no new round |
 
 Post the list in Dutch (item, kind, planned action). Wait for the user only when items need a decision; otherwise continue.
 
@@ -53,6 +55,7 @@ Post the list in Dutch (item, kind, planned action). Wait for the user only when
 - Make one commit per item, or per group of closely related items: `type(scope): address review: <what>`. The cycle rules apply: tests first for behavior changes, refactor separate from behavior.
 - No force-push, amend or rebase of pushed commits. The reviewer must be able to see what changed since their review.
 - Update the design document, or for a docs-only pull request its description: add the round to **Review** (item → resolution → commit) and adjust **Decisions** if a decision changed.
+- Before the push, bring along everything that names a changed part ([rule](../../../AGENTS.md#git)): search the key words of each changed part in every section of the design document (*Decisions*, *Design*, *Affected areas*, *Test plan*, *Verification*, *Pull request*), in the live description, and, for a change across Kinetra and Lab, in the other repository's copy of the same job, script, page or claim, in both directions. Change every hit in this push; the description goes with `gh pr edit` in step 5.4.
 - Add each lesson an agent review proposes to `docs/review-lessons.md` of the pull request's repository, in the page's [format](../../../docs/review-lessons.md#format), in its own commit: `docs(lessons): <lesson>`. Skip one the page already holds.
 - Verify at the level the new commits require (`verify` skill).
 
@@ -71,7 +74,7 @@ Post the list in Dutch (item, kind, planned action). Wait for the user only when
    - **Answered:** the answer, with a link or reference
    - **Not changed:** the reason, as agreed with the user
 4. Update the pull request description with `gh pr edit` when the summary, verification or merge order changed.
-5. Never resolve threads or approve: the reviewer resolves the threads it accepts. A docs-only pull request needs no review: merge it once CI is green, every review thread is resolved, GitHub reports no conflict, and every pull request below it is merged, in Kinetra-Lab including the Kinetra pull request its pointer records, or leave it to the user when the merge rule says so. A pointer-only pull request merges once CI passes ([rule](../../../AGENTS.md#git)). Merge any other pull request only under the [merge rule](../../../AGENTS.md#git): the reviewer's latest conclusion is *Ready to merge* on the current head, its *Merge* line says *by the author*, every thread is resolved, CI is green, there is no conflict, and every pull request below in the stack is merged. Merge with a merge commit; then update the stack (the next pull request's base, `main` merged up) as the [workflow](../../../docs/workflow.md#stacked-pull-requests) describes, and move the Lab pointer to the Kinetra merge commit in a separate pointer-only pull request, never as a new commit here.
+5. Never resolve threads or approve: the reviewer resolves the threads it accepts. A docs-only pull request needs no review: merge it once CI is green, every review thread is resolved, GitHub reports no conflict, and every pull request below it is merged, in Kinetra-Lab including the Kinetra pull request its pointer records, or leave it to the user when the merge rule says so. A pointer-only pull request merges once CI passes ([rule](../../../AGENTS.md#git)). Merge any other pull request only under the [merge rule](../../../AGENTS.md#git): the reviewer's latest conclusion is *Ready to merge* on the current head, or on an earlier head when every commit after it changes only Markdown, `docs/` or `.agents/`, its *Merge* line says *by the author*, every thread is resolved, CI is green, there is no conflict, and every pull request below in the stack is merged. Merge with a merge commit; then update the stack (the next pull request's base, `main` merged up) as the [workflow](../../../docs/workflow.md#stacked-pull-requests) describes, and move the Lab pointer to the Kinetra merge commit in a separate pointer-only pull request, never as a new commit here.
 
 ## 6. Hand over (in Dutch)
 
