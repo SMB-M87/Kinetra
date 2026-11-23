@@ -122,7 +122,8 @@ jobs:
           - distro: ubuntu
             image: ubuntu:24.04
     runs-on: ubuntu-latest
-    # A run takes about three minutes; the limit leaves room for a build without cache.
+    # A run takes about two minutes; the limit leaves room for an install step that runs
+    # out its 15 minutes and for a slow runner.
     timeout-minutes: 45
     container: ${{ matrix.image }}
     defaults:
@@ -147,8 +148,8 @@ jobs:
 
       - name: Install Ubuntu's packages
         if: matrix.distro == 'ubuntu'
-        # Usually two minutes. archive.ubuntu.com, the image's source, once served a run so
-        # slowly that this step was still downloading after an hour.
+        # About half a minute from the mirror. archive.ubuntu.com, the image's source, once
+        # served a run so slowly that this step was still downloading after an hour.
         timeout-minutes: 15
         env:
           DEBIAN_FRONTEND: noninteractive
