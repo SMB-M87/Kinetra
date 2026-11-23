@@ -45,7 +45,7 @@ The detailed behavior of each subsystem: units, limits, edge cases and the reaso
 | How do I build with presets, set up clangd/clang-tidy, or run graphics or consumer checks? | [Development](development.md) |
 | What does CI check on a pull request? | [Testing: continuous integration](testing.md#continuous-integration) |
 | How are READMEs, diagrams and `///` comments written? | [Documentation guide](documentation.md) |
-| What is being changed now, and why? | [Design documents](design/README.md) |
+| What is being changed now, and why? | The *Now* section of the [roadmap](roadmap.md), and the design document its item links; the [design index](design/README.md) is for a search by topic |
 | What is planned next, and which ideas are waiting? | [Roadmap](roadmap.md) |
 | What rules must agents follow? | [AGENTS](../AGENTS.md) and [agent skills](../.agents/skills/README.md) |
 | Which mistakes did reviews find before? | [Review lessons](review-lessons.md) |

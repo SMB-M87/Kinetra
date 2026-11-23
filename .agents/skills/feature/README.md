@@ -1,6 +1,6 @@
 # feature
 
-Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. You get a design document, verified commits and a pull request that goes through independent review.
+Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. You get a design document, verified commits and a pull request that goes through independent review; a change to documentation alone gets neither design document nor independent review.
 
 ## Table of contents
 

@@ -27,7 +27,7 @@ How Kinetra and Kinetra-Lab are documented. Documentation exists to give insight
 | How do modules depend on each other; who owns what? | `docs/architecture.md` |
 | What is the contract of an engine subsystem? | `docs/engine/*.md` |
 | Why was a boundary chosen? | ADR in `docs/decisions/` |
-| What was changed in a branch, and why? | Design document in `docs/design/` |
+| What was changed in a branch, and why? | Design document in `docs/design/`; for a docs-only change, its pull request |
 | What still has to be done, and which ideas are waiting? | `docs/roadmap.md` ([format](#roadmap)) |
 | Which skill fits my situation, and what will it do? | The skill's `README.md` ([template](#skill-readme-template)); all skills in the [skills overview](../.agents/skills/README.md) |
 | How do we work? | `AGENTS.md`, [workflow](workflow.md), [conventions](conventions.md), [testing](testing.md) and this page |

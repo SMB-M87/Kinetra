@@ -84,7 +84,7 @@ Kinetra-Lab includes Kinetra as a Git submodule at `external/Kinetra` and record
 
 Start with the [documentation index](docs/README.md) and the [architecture](docs/architecture.md); each [module guide](#modules) explains its own code.
 
-Contributors follow the [development workflow](docs/workflow.md): every change gets a [design document](docs/design/README.md), tests, a review and documentation, and is verified at the [level its impact requires](docs/testing.md#verification-levels). [AGENTS.md](AGENTS.md) records the rules for agents and developers; [conventions](docs/conventions.md) and the [documentation guide](docs/documentation.md) give the details.
+Contributors follow the [development workflow](docs/workflow.md): every code change gets a [design document](docs/design/README.md), tests, an independent review and documentation, a change to documentation alone gets the author's own review, and each is verified at the [level its impact requires](docs/testing.md#verification-levels). [AGENTS.md](AGENTS.md) records the rules for agents and developers; [conventions](docs/conventions.md) and the [documentation guide](docs/documentation.md) give the details.
 
 ## Platform support
 
