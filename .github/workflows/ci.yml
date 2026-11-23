@@ -15,11 +15,13 @@
 #   package set of docs/development.md#dependencies-and-options. Warnings are annotations,
 #   not errors, because another GCC warns about other things. The image tag follows
 #   Ubuntu's point releases; its packages are not pinned. They come from Canonical's mirror
-#   inside Azure, where the runners run; when that mirror fails or lacks an index, from the
-#   image's own sources, with a warning.
+#   inside Azure, where the runners run; when that mirror fails, lacks an index or does not
+#   deliver the indexes and packages within five minutes, from the image's own sources,
+#   with a warning.
 #
-# Every job has a time limit, and so does each install step, a few times its usual
-# duration: a stalled download fails the run within minutes instead of GitHub's six hours.
+# Every job has a time limit, and so does each install step, well above its usual
+# duration; the Ubuntu step's 15 minutes also hold the mirror's five and the fallback's
+# install. A stalled download fails the run within minutes instead of GitHub's six hours.
 #
 # The `ci` test preset runs every test, the graphics cases included: SDL's offscreen
 # driver with software Mesa (llvmpipe) gives them an OpenGL context without a GPU or
@@ -122,7 +124,8 @@ jobs:
           - distro: ubuntu
             image: ubuntu:24.04
     runs-on: ubuntu-latest
-    # A run takes about three minutes; the limit leaves room for a build without cache.
+    # A run takes about two minutes; the limit leaves room for an install step that runs
+    # out its 15 minutes and for a slow runner.
     timeout-minutes: 45
     container: ${{ matrix.image }}
     defaults:
@@ -147,8 +150,8 @@ jobs:
 
       - name: Install Ubuntu's packages
         if: matrix.distro == 'ubuntu'
-        # Usually two minutes. archive.ubuntu.com, the image's source, once served a run so
-        # slowly that this step was still downloading after an hour.
+        # About half a minute from the mirror. archive.ubuntu.com, the image's source, once
+        # served a run so slowly that this step was still downloading after an hour.
         timeout-minutes: 15
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -162,13 +165,27 @@ jobs:
           cp "$sources" /etc/apt/ubuntu.sources.image
           sed -i -E 's#^URIs: http://(archive|security)\.ubuntu\.com/ubuntu/?$#URIs: http://azure.archive.ubuntu.com/ubuntu/#' "$sources"
           grep '^URIs:' "$sources"
-          install() { apt-get update "$@" && apt-get install -y --no-install-recommends $packages; }
-          # apt-get update succeeds when an index fails to download; Error-Mode=any makes the
-          # mirror's update fail then, so a run never installs from a partial package list.
-          if ! install -o APT::Update::Error-Mode=any; then
-            echo "::warning title=Ubuntu mirror not used::The Azure mirror of the Ubuntu archive failed, so this run installs from the image's own sources."
+          # The pattern matches the URIs of today's image; one it misses, say a later image's
+          # https://, would otherwise go unnoticed.
+          if grep -q -v -x 'URIs: http://azure\.archive\.ubuntu\.com/ubuntu/' <<< "$(grep '^URIs:' "$sources")"; then
+            echo "::warning title=Ubuntu mirror not used::A URI of the image's ubuntu.sources does not match this step's pattern, so this run installs from that source instead of the Azure mirror."
+          fi
+          apt_install() { apt-get install -y --no-install-recommends $packages; }
+          # The mirror gets five of the step's 15 minutes to deliver the indexes and the
+          # packages: a mirror that does not answer, or stalls a download, would otherwise spend
+          # them on apt's timeouts and retries, and the fallback would never start. timeout
+          # bounds only the update and --download-only, which run no dpkg; the install from the
+          # downloaded packages has no budget, because a killed apt-get install can leave dpkg
+          # half-configured. timeout runs a program, not a shell function: hence bash -c and
+          # the exported list. apt-get update succeeds when an index fails to download;
+          # Error-Mode=any makes the mirror's update fail then, so a run never installs from a
+          # partial package list.
+          export packages
+          if ! { timeout -k 10 300 bash -c 'apt-get update -o APT::Update::Error-Mode=any && apt-get install -y --no-install-recommends --download-only $packages' && apt_install; }; then
+            echo "::warning title=Ubuntu mirror not used::The Azure mirror of the Ubuntu archive failed or did not deliver the indexes and packages within five minutes, so this run installs from the image's own sources."
             cp /etc/apt/ubuntu.sources.image "$sources"
-            install
+            apt-get update
+            apt_install
           fi
 
       - name: Tool versions

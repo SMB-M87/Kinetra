@@ -40,6 +40,9 @@ One list item per lesson, under the topic it belongs to:
 - **Put an exemption in every skill a calling skill hands work to, not only in the caller** · added 2026-11-23 · source: #37
   `feature` sent a docs-only change's decisions to the pull request description, but `grilling` and `adr`, which also run on their own, still wrote into a design document.
 
+- **Before citing an older design document's decision as a reason, check that the code still follows it** · added 2026-11-23 · source: #42
+  Design documents are history. #42 left Kinetra-Lab's `release.yml` out of its time limits because the release workflow "waits for the pinned toolchain on purpose", a decision of 2026-11-21 that Kinetra-Lab c08ac34 had reversed a day later.
+
 ## CI and tooling
 
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22
