@@ -49,6 +49,7 @@ flowchart LR
 - Its depth follows the change: the reviewer's session runs on the most capable model at high reasoning effort, one level higher for a large pull request with much logic, and the code review at `low` for docs, `medium` for code in one module, `high` for public headers, simulation behavior, CMake, CI and releases ([levels](SKILL.md#levels)). It names no model or product, so it works with any agent.
 - It builds, tests and runs nothing: CI runs every test on each push, graphics included, and the author adds what CI cannot, such as a screenshot of a changed scene. The reviewer checks that it is there.
 - Everything it posts on GitHub, the conclusion included, is in English and starts with **Agent review**. It reports to you in the chat in Dutch.
+- Round 1 reviews the whole diff; a later round reviews only the commits since the last conclusion, at the depth they need, so it does not find new nits on lines an earlier round passed. Nits go only into the summary, and fixing them in Markdown-only commits keeps a *Ready to merge*. From round 3 on, a pull request you merge gets only blocking findings; the rest is listed for you ([levels and rounds](SKILL.md#6-classify)).
 - It resolves the threads it accepts, and never approves, requests changes, pushes or merges.
 - A finding that shows a kind of mistake that can recur becomes a proposed lesson. A lesson that keeps coming back is proposed to you as a rule.
 

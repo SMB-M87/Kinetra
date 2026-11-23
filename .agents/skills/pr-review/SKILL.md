@@ -12,7 +12,7 @@ Everything on GitHub is in English: the inline comments, the summary and its con
 
 ## Levels
 
-The author sets both when it starts the review. The reviewer checks them against the diff: it raises the code-review depth itself when the diff is riskier than the depth it was given. It cannot raise its own session's effort or model; when that effort is below what the table gives, it says so in the summary as a point of attention, so the author or the user can start the review again at the right effort. A depth above `high` (for example `xhigh`, or `max`) runs only when the author or the user passes it.
+The author sets both when it starts the review. In a later round (step 8), the code-review depth follows the commits since the last conclusion, not the whole diff. The reviewer checks them against the diff: it raises the code-review depth itself when the diff is riskier than the depth it was given. It cannot raise its own session's effort or model; when that effort is below what the table gives, it says so in the summary as a point of attention, so the author or the user can start the review again at the right effort. A depth above `high` (for example `xhigh`, or `max`) runs only when the author or the user passes it.
 
 The names below describe depth, not a product: map them onto whatever the agent offers.
 
@@ -63,7 +63,7 @@ List every goal of the roadmap item and of the design document's *Goals* (for a 
 
 ## 4. Correctness
 
-Run the agent's code review on the pull request (for example Claude Code's `/code-review <level> <number>`, or a global `code-review` skill) at the depth from the [Levels](#levels) table (or the argument, if it is higher), **without** letting it post. Check every finding against the code yourself and keep only those that hold.
+Run the agent's code review on the pull request (for example Claude Code's `/code-review <level> <number>`, or a global `code-review` skill) at the depth from the [Levels](#levels) table (or the argument, if it is higher), **without** letting it post. Check every finding against the code yourself and keep only those that hold. This is round 1; a later round reviews only the commits since the last conclusion (step 8).
 
 ## 5. Checklist
 
@@ -84,9 +84,12 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 
 Give each kept finding one severity: **blocking** (a bug, a missed goal, a broken rule, a failing or missing check), **should fix**, **question**, or **nit**. A nit never decides the conclusion.
 
+- **Nits** go only into the summary, never into an inline thread, so they hold no thread open. The author may carry them out after a *Ready to merge* without a new round ([merge rule](../../../AGENTS.md#git)).
+- **From round 3 on**, for a pull request the user merges (the *Merge* line in step 7), report only blocking findings as findings. List should-fix points and questions in the summary under *For the user*: the user weighs them at the merge, and they start no new round.
+
 ## 7. Post, per pull request
 
-1. Create a pending review. Add each finding as an inline comment on its line: `**Agent review** · <severity>: <finding>. <why>. <what to do>.` A finding on a line outside the diff goes into the summary.
+1. Create a pending review. Add each finding but a nit as an inline comment on its line: `**Agent review** · <severity>: <finding>. <why>. <what to do>.` A finding on a line outside the diff, and every nit, goes into the summary.
 2. Submit it as a *comment* review with this summary:
 
    ```markdown
@@ -96,6 +99,12 @@ Give each kept finding one severity: **blocking** (a bug, a missed goal, a broke
 
    Points of attention:
    1. <the most important first, with severity>
+
+   Nits (optional; carrying them out in commits that change only Markdown, `docs/` or `.agents/` keeps this conclusion):
+   - <nit, with file and line> (or: none)
+
+   For the user (from round 3 on, for a pull request the user merges):
+   - <should-fix point or question that starts no new round> (or: leave this part out)
 
    Merge: by the author under the merge rule | by the user (<agent rules, CI or releases, a check by the user, or a point open after two rounds>)
 
@@ -109,7 +118,8 @@ Give each kept finding one severity: **blocking** (a bug, a missed goal, a broke
    - *Fix first* when a blocking or should-fix finding is open.
    - *Questions* when only questions remain.
    - *Needs the user* when a point stayed open after two rounds, or a goal needs the user's word.
-   - Otherwise *Ready to merge*. It covers only the head sha it names.
+   - Otherwise *Ready to merge*. It covers the head sha it names, and commits after it that change only Markdown, `docs/` or `.agents/`, such as the nits' fixes ([merge rule](../../../AGENTS.md#git)).
+   - From round 3 on, for a pull request the user merges, only a blocking finding makes it *Fix first*; the rest is under *For the user*.
    - The *Merge* line says *by the user* whenever the [merge rule](../../../AGENTS.md#git) keeps the pull request for the user, whatever the conclusion.
 
 ## 8. Discussion rounds
@@ -119,7 +129,8 @@ Follow the pull request until it merges or every point is settled: subscribe to 
 - When the author answers a finding with a fix: check the fix, and that it reached every section of the design document, the description and the other repository's copy that name the changed part ([rule](../../../AGENTS.md#git)). If it holds, reply that you accept it and resolve the thread.
 - When the author answers with an argument: if it convinces you, say so and resolve the thread. If not, reply once with your counter-argument and evidence.
 - Two rounds per point at most: finding and answer, then one reply from you and one from the author. If you still disagree, reply that the point stays open for the user, leave the thread unresolved, and post an updated summary with *Needs the user*.
-- When the author pushes new commits, wait until CI is green on the new head, then review what changed since your last conclusion (steps 3 to 6 for those commits) and post an updated summary on it.
+- When the author pushes new commits, wait until CI is green on the new head, then review only the commits since your last conclusion (`git diff <last reviewed sha>..<head>`): steps 3 to 6 for those commits, with the code review at the depth those commits need, the copies check on what they change, and whether each fix reached every place that names it. Do not run a new code review of the whole diff: what an earlier round passed stays passed unless a new commit changes it. Post an updated summary on the new head.
+- After a *Ready to merge*, commits that change only Markdown, `docs/` or `.agents/` need no new round; the conclusion still holds for them.
 
 ## 9. Lessons
 
