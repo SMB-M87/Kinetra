@@ -8,8 +8,9 @@
 #   to the current Arch packages and marks itself with a warning, because it is not
 #   pinned. The snapshot matches the Artix/Arch development environment (gcc 16.2.1,
 #   clang/clang-format 23.1.5, CMake 4.5.0). Bump both deliberately, in their own commit,
-#   and fix what the new toolchain reports. Formatting, the docs check and the icon check
-#   run only here, and warnings are errors only here.
+#   and fix what the new toolchain reports. Formatting and the icon check run only here,
+#   and so does the docs check, except that the `changes` job runs it when it skips the
+#   build; warnings are errors only here.
 # - ubuntu: Ubuntu LTS with its own GCC, glibc, CMake and SDL2, the Debian and Ubuntu
 #   package set of docs/development.md#dependencies-and-options. Warnings are annotations,
 #   not errors, because another GCC warns about other things. The image tag follows

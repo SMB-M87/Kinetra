@@ -151,7 +151,7 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 | Step | Runs on | Fails when |
 | --- | --- | --- |
 | `clang-format --dry-run --Werror` on first-party sources | `arch` | A file is not formatted |
-| `python3 tools/check_docs.py` | `arch` | A Markdown link or anchor is broken |
+| `python3 tools/check_docs.py` | `arch`, or the `changes` job when it skips the build | A Markdown link or anchor is broken |
 | `python3 tools/make_icon.py --check` | `arch` | An icon file does not match its generator |
 | `cmake --workflow --preset headless` | every entry | The simulation library or its tests need SDL2/OpenGL, or a headless test fails |
 | `cmake --workflow --preset ci` | `arch` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a test fails, graphics cases included (offscreen SDL, software Mesa) |
