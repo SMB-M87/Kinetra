@@ -157,7 +157,8 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          # The Debian and Ubuntu package set of docs/development.md, plus git for the checkout.
+          # The Debian and Ubuntu package set of docs/development.md, which tools/cloud_setup.sh
+          # installs in a cloud session too, plus git for the checkout.
           packages="build-essential cmake ninja-build ccache libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0 git ca-certificates"
           # Canonical's mirror inside Azure, where the runners run, serves the same archive.
           # The copy of the image's sources stays outside sources.list.d, where apt would
