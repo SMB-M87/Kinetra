@@ -33,7 +33,7 @@ On 2026-11-23, the `linux (ubuntu)` run of Kinetra-Lab #97 spent an hour in its 
 - Goal: the Ubuntu run downloads from a mirror close to GitHub's runners, and still installs Ubuntu's own packages.
 - Goal: when that mirror fails, the run still installs from the image's own sources, and says so.
 - Non-goal: pinning Ubuntu's packages or a prebuilt CI image; the Kinetra roadmap item *CI image with the pinned toolchain* covers the Arch side.
-- Non-goal: apt's own retry and timeout settings. The stalled run was slow, not stuck on one connection; the time limits bound both cases. *Reversed on 2026-11-23 by [CI mirror time budget](2026-11-23-ci-mirror-time-budget.md): a mirror that connects and never answers used up the step's limit before the fallback started, so the mirror's update now has five minutes of its own.*
+- Non-goal: apt's own retry and timeout settings. The stalled run was slow, not stuck on one connection; the time limits bound both cases. *Reversed on 2026-11-23 by [CI mirror time budget](2026-11-23-ci-mirror-time-budget.md): a mirror that connects and never answers used up the step's limit before the fallback started, so the mirror's update and downloads now have five minutes of their own.*
 - Non-goal: `lab-pointer.yml` in Kinetra and `release.yml` in Kinetra-Lab. Neither installs from `archive.ubuntu.com`, and the release workflow waits for the pinned toolchain on purpose ([CI falls back to current Arch packages](2026-11-21-ci-mirror-fallback.md#goals-and-non-goals)). *Reversed for `release.yml` on 2026-11-23 by [CI mirror time budget](2026-11-23-ci-mirror-time-budget.md): since Kinetra-Lab c08ac34 it no longer waits, and it now has the same limits.*
 
 ## Decisions
