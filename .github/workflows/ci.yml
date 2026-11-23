@@ -118,7 +118,6 @@ jobs:
       - name: Full build and test (runtime, warnings as annotations, graphics tests with software OpenGL)
         if: matrix.distro != 'arch'
         run: |
-          set -o pipefail
           cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF
           cmake --build --preset ci 2>&1 | tee build-ci.log
           grep -E 'warning: ' build-ci.log | sort -u \
@@ -134,7 +133,9 @@ jobs:
   # The required status: passes only when every distribution of "linux" passed.
   checks:
     needs: linux
-    if: ${{ !cancelled() }}
+    # always(), not !cancelled(): a skipped required job counts as passed, so on a
+    # cancelled run this job must still run and fail.
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Every Linux run passed
