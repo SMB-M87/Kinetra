@@ -45,7 +45,7 @@ Non-goals: a Fedora entry (its package names are still unchecked); changing what
 - `linux` has `fail-fast: false`, so one distribution's failure does not cancel the other's run, and `container: ${{ matrix.image }}`.
 - Each entry has its own install step (`if: matrix.distro == …`). Arch keeps the archive snapshot and its fallback; Ubuntu installs the development page's package set plus `git` and `ca-certificates` for the checkout.
 - Formatting, the docs check, the icon check and `cmake --workflow --preset ci` with warnings as errors run only for `arch`; the other entries build the `ci` preset with `KINETRA_WARNINGS_AS_ERRORS=OFF` and turn warnings into annotations. Headless, the tool versions and the external consumer run for every entry.
-- `checks` (`needs: linux`, `if: !cancelled()`) fails unless `needs.linux.result` is `success`.
+- `checks` (`needs: linux`, `if: always()`) fails unless `needs.linux.result` is `success`. `always()` and not `!cancelled()`: GitHub counts a skipped required job as passed, so on a cancelled run `checks` must still run and fail.
 
 ## Affected areas
 
@@ -61,6 +61,16 @@ Non-goals: a Fedora entry (its package names are still unchecked); changing what
 ## Review
 
 - The first CI run failed both entries with exit code 141 on the *Tool versions* step: the explicit `shell: bash` adds `-o pipefail`, and `ldd --version | head -1` died of SIGPIPE when `head` closed the pipe. Every `head -1` became `sed -n 1p` (`f0dd744`), with a [review lesson](../review-lessons.md#ci-and-tooling); Kinetra-Lab#78 got the same fix.
+
+Agent review of `87d7afb` (Fix first), round 1:
+
+| Finding | Resolution |
+| --- | --- |
+| Should fix: with `if: !cancelled()`, a cancelled run skipped `checks`, and a skipped required job counts as passed | `if: always()`, with a comment why; the *Design* bullet says the same. Kinetra-Lab#78 has the same fix |
+| Should fix: testing's *Full* paragraph still named "job `ubuntu`" | Names the `linux (ubuntu)` run |
+| Nit: no step-table row for the icon check | Added |
+| Nit: `set -o pipefail` was redundant under the job's `bash` default | Removed |
+| Lesson proposed | Added to the [review lessons](../review-lessons.md#ci-and-tooling) |
 
 ## Verification
 
