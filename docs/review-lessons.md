@@ -50,3 +50,9 @@ No lessons yet.
 
 - **After a layout change, assert the content whose position must change** · added 2026-11-22 · source: #31
   A fixed close button can keep responding even when scroll offsets or a neighbouring overlay are wrong. Check which rows, bars or captions appear at the new positions.
+
+- **State the floating-point flags a determinism helper needs, and check the generated code under them** · added 2026-11-22 · source: #32
+  `kinetra::asin` exists to avoid `asinf`, yet with `-ffast-math` GCC and Clang emit `asinf` again; an inline header function compiles with each consumer's flags. Say in the contract which flags break it, and look at the assembly under them.
+
+- **Pass every input of a C-library test through a run-time value** · added 2026-11-22 · source: #32
+  A compiler folds a call with constant arguments, and its folding is correctly rounded, so such a test checks the compiler, not the library. The first version of #32's rounding case passed with `std::` for exactly this reason.
