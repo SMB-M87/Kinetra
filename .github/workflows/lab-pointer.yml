@@ -1,0 +1,58 @@
+# Moves Kinetra-Lab's submodule pointer to Kinetra main. After each push to main, every hour
+# (to catch up after a skipped or failed run) and by hand, tools/lab_pointer.sh opens Lab's
+# pointer-only pull request, or adds a commit to the open one, and turns on auto-merge, so
+# GitHub merges it once Lab's CI passes. It waits while another Lab pull request records its
+# own pointer. See docs/workflow.md#changes-across-kinetra-and-lab.
+#
+# Needs the repository secret LAB_POINTER_TOKEN: a fine-grained token for Kinetra-Lab only,
+# with Contents and Pull requests read and write. The workflow's own token cannot write to
+# another repository, and a pull request opened with it would not start Lab's CI. GitHub
+# turns off the hourly run after 60 days without activity in this repository; a push to
+# main or a manual run still works.
+name: Lab pointer
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+  # A pull request that changes this workflow or its script runs it as a dry run.
+  pull_request:
+    paths:
+      - .github/workflows/lab-pointer.yml
+      - tools/lab_pointer.sh
+
+permissions:
+  contents: read
+
+# Runs that write wait for each other, so two of them never open two pull requests.
+concurrency:
+  group: lab-pointer-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  pointer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Open or update Lab's pointer pull request
+        env:
+          LAB_TOKEN: ${{ secrets.LAB_POINTER_TOKEN }}
+          KINETRA_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [ -z "$LAB_TOKEN" ]; then
+            if [ "$DRY_RUN" = true ]; then
+              echo "::warning title=No Lab token::LAB_POINTER_TOKEN is not available to this run (a fork, or the secret is missing); the dry run stops here."
+              exit 0
+            fi
+            echo "::error title=No Lab token::The repository secret LAB_POINTER_TOKEN is missing; see the header of .github/workflows/lab-pointer.yml."
+            exit 1
+          fi
+          if [ "$DRY_RUN" = true ]; then
+            bash tools/lab_pointer.sh --dry-run
+          else
+            bash tools/lab_pointer.sh
+          fi
