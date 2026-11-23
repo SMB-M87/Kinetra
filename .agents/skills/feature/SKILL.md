@@ -6,19 +6,19 @@ argument-hint: "<topic or problem description>"
 
 # Feature: the full development cycle
 
-This skill carries out [docs/workflow.md](../../../docs/workflow.md). (In Kinetra-Lab, the path is `external/Kinetra/docs/workflow.md`.) Read that page first; this skill only adds the concrete steps. Talk to the user in Dutch; write code, docs and commits in English.
+This skill carries out [docs/workflow.md](../../../docs/workflow.md). (In Kinetra-Lab, the path is `external/Kinetra/docs/workflow.md`.) Each step links its section of the workflow: read that section when you reach the step, not the whole page; this skill only adds the concrete steps. Talk to the user in Dutch; write code, docs and commits in English.
 
 ## 1. Understand
 
 1. Determine the repositories involved: Kinetra only, Lab only, or both (engine mechanism plus application use).
 2. In each repository: `git status --short` and `git branch --show-current`. Report unrelated changes and leave them alone. If the current branch is not `main` and not an obvious branch for this topic, ask the user before continuing.
-3. Read `AGENTS.md`, the routing-table pages for this task, the module README, and the code and tests involved. Check `docs/roadmap.md` of each repository for an item on this topic: it carries the agreed scope and questions. Read `docs/review-lessons.md` of each repository: mistakes earlier reviews found, which this change must not repeat. For a broad survey, dispatch a read-only sub-agent with a narrow brief.
+3. Read `AGENTS.md`, the sections its routing table names for this task, the module README, and the code and tests involved. Search `docs/roadmap.md` of each repository for the topic (`grep -n -i '<key word>' docs/roadmap.md`, with each key word) and read the items it finds: they carry the agreed scope and questions. Do not read a roadmap through for this. Read `docs/review-lessons.md` of each repository: mistakes earlier reviews found, which this change must not repeat. For a broad survey, dispatch a read-only sub-agent with a narrow brief.
 
 ## 2. Branch and design document
 
 1. Decide whether the goal is one pull request or a stack. When it splits into steps that can each be reviewed on their own, plan a [stack](../../../docs/workflow.md#stacked-pull-requests): one pull request per step, each based on the step below. Propose the cut into steps to the user with the design.
 2. Create a branch in each repository involved: `git switch -c <type>/<topic>` from up-to-date `main`, or from the branch of the step below in a stack (types in the [workflow](../../../docs/workflow.md#branches-and-commits)).
-3. Copy the [template](../../../docs/design/README.md#template) to `docs/design/YYYY-MM-DD-<topic>.md` and add it to the index with status `draft`. Skip this for a docs-only change (only Markdown, `docs/` or `.agents/`): its pull request description takes the problem, the decisions and the verification, and whatever steps 2.4 to 7 write into the design document goes there too. A change across both repositories gets one document, in the repository with most of the change; the other links it. A stack shares the document of its first branch; list the steps with their branches in it.
+3. Copy the [template](../../../docs/design/README.md#template) to `docs/design/YYYY-MM-DD-<topic>.md`, reading only that section, and add a row with status `draft` at the top of the index: insert it below the index table's header (`grep -n '^| Date' docs/design/README.md`) without reading the rows. Skip this for a docs-only change (only Markdown, `docs/` or `.agents/`): its pull request description takes the problem, the decisions and the verification, and whatever steps 2.4 to 7 write into the design document goes there too. A change across both repositories gets one document, in the repository with most of the change; the other links it. A stack shares the document of its first branch; list the steps with their branches in it.
 4. Fill in Problem, with evidence such as `path:line` and measurements, plus Goals and non-goals, Design and Affected areas.
 5. If the change has a roadmap item, move it to **Now** with the branch and the design document, if it has one (`roadmap` skill). Non-goals that the user still wants become roadmap items.
 

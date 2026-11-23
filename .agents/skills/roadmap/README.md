@@ -41,7 +41,7 @@ flowchart LR
 
 *Takeaway:* an item only moves up on the user's agreement, and it leaves the roadmap when its work is merged.
 
-- It reads the roadmap and the [format](../../../docs/documentation.md#roadmap) first, so it extends existing items instead of adding duplicates.
+- It reads the [format](../../../docs/documentation.md#roadmap) and searches the roadmap for the topic first, so it extends existing items instead of adding duplicates; it reads the whole roadmap only to pick or reorder items.
 - It looks up the facts an idea rests on, and asks the user only for goals and priorities.
 - It edits the roadmap on a branch and never deletes an idea of the user without asking.
 
