@@ -43,6 +43,9 @@ One list item per lesson, under the topic it belongs to:
 - **State another repository's procedure by linking to it, not by restating its conditions** · added 2026-11-23 · source: #37
   Kinetra's copies of Lab's CI skip left out the three Lab paths that always build; a link stays right when the other repository changes.
 
+- **Put an exemption in every skill a calling skill hands work to, not only in the caller** · added 2026-11-23 · source: #37
+  `feature` sent a docs-only change's decisions to the pull request description, but `grilling` and `adr`, which also run on their own, still wrote into a design document.
+
 ## CI and tooling
 
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22
