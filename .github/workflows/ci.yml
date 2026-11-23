@@ -75,20 +75,23 @@ jobs:
           # docs/ or renamed to .md still counts as a source change.
           files=$(git diff --no-renames --name-only "$mb" "$HEAD")
           printf 'Changed in this pull request:\n%s\n' "${files:-(nothing)}"
-          # This run uses the pull request's own copy of the filter. A broken pattern must not
-          # skip builds, so it first has to keep every one of these source paths.
+          # Status 0: some line needs a build; 1: none does; anything else is doubt. The
+          # self-check below and the decision call the same function, so the self-check also
+          # tests the command that decides. Here-strings, so no SIGPIPE can read as "none".
           docs='(\.md$|^docs/|^\.agents/|^$)'
+          needs_build() { grep -q -v -E -e "$docs" <<< "$1"; }
+          # This run uses the pull request's own copy of the filter. A broken pattern or
+          # decision must not skip builds, so it first has to keep every one of these paths.
           for path in CMakeLists.txt cmake/x.cmake include/kinetra/x.h src/x.cpp tests/x.cpp .github/workflows/ci.yml tools/x.py; do
-            if ! printf '%s\n' "$path" | grep -q -v -E "$docs"; then
+            if ! needs_build "$path"; then
               echo "::warning title=Filter check failed::The docs filter would skip $path; the full CI runs."
               exit 0
             fi
           done
-          # Skip only when grep selects no line (status 1). Any other status, such as a SIGPIPE
-          # under pipefail, means a full run: the decision fails closed.
+          # Skip only when no line needs a build (status 1): the decision fails closed.
           skip=false
           status=0
-          printf '%s\n' "$files" | grep -q -v -E "$docs" || status=$?
+          needs_build "$files" || status=$?
           if [ "$status" -eq 1 ]; then
             skip=true
             echo "::notice title=Build and tests skipped::Only Markdown, docs/ or .agents/ changed: only the docs check runs."
