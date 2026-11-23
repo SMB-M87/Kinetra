@@ -13,7 +13,6 @@
 #include <doctest/doctest.h>
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -21,7 +20,6 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <thread>
 #include <vector>
 
 using namespace kinetra;
@@ -327,23 +325,22 @@ TEST_CASE("a fixed frame time replaces the measured one until it is cleared") {
     CHECK_THROWS_AS(runtime.fix_frame_times(-0.001), std::invalid_argument);
     CHECK_THROWS_AS(runtime.fix_frame_times(std::numeric_limits<double>::infinity()), std::invalid_argument);
     CHECK_THROWS_AS(runtime.fix_frame_times(std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
-    constexpr double refresh = 1.0 / 60;
-    runtime.fix_frame_times(refresh);
+    // Longer than any empty frame takes, so a measured frame cannot be mistaken for it.
+    constexpr double fixed = 1;
+    runtime.fix_frame_times(fixed);
     for (int frame = 0; frame < 4; ++frame) {
         runtime.begin({0, 0, 0, 1});
         runtime.end();
     }
     REQUIRE_MESSAGE(runtime.frame_times().size() == 3, "The first frame has no predecessor to time");
     for (std::size_t i = 0; i < runtime.frame_times().size(); ++i)
-        CHECK(runtime.frame_times()[i] == refresh);
-    // Measured again: a frame held back longer than the fixed time shows its own length.
+        CHECK(runtime.frame_times()[i] == fixed);
     runtime.fix_frame_times(std::nullopt);
     runtime.begin({0, 0, 0, 1});
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
     runtime.end();
     REQUIRE(runtime.frame_times().size() == 4);
-    CHECK(runtime.frame_times()[3] >= 0.025);
-    CHECK_MESSAGE(runtime.frame_times()[0] == refresh, "Entries recorded before stay");
+    CHECK_MESSAGE(runtime.frame_times()[3] < fixed, "Cleared, the frame is measured again");
+    CHECK_MESSAGE(runtime.frame_times()[0] == fixed, "Entries recorded before stay");
 }
 
 namespace {
