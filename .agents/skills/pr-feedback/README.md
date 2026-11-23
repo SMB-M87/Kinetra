@@ -26,7 +26,7 @@ Use `pr-review` to inspect a pull request as its independent reviewer. Use `feat
 ## How it works
 
 1. The author reads unresolved feedback on the specified pull request or the current branches. Feedback from outside the owner and collaborators goes to you for a decision.
-2. The author fixes or answers each point, records the round in the design document, or for a docs-only pull request in its description, and adds new lessons proposed by the agent review. It verifies and pushes the commits and replies in the original threads.
+2. The author fixes or answers each point, records the round in the design document, or for a docs-only pull request in its description, brings along every section, the description and the other repository's copy that name a changed part, and adds new lessons proposed by the agent review. It verifies and pushes the commits and replies in the original threads.
 3. The reviewer resolves accepted threads. The author checks the current review conclusion, CI and merge conditions; a docs-only or pointer-only pull request has no review conclusion to wait for. Pull requests reserved for you wait for your decision. [Merge rule](../../../AGENTS.md#git)
 
 ## Related skills

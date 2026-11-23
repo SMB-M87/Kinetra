@@ -77,7 +77,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 | The roadmap item moved or left, and follow-ups were added | `docs/roadmap.md` |
 | Boundaries and conventions: layers, include layout, `.h`/`.cpp`, naming, no new warnings, refactoring and behavior in separate commits, commit format | AGENTS.md, conventions |
 | The description has its parts; a stacked step states its place and merge order; a Lab pointer change links the Kinetra pull request and records a commit on a Kinetra branch | The description, `external/Kinetra` |
-| Every copy of a changed rule, procedure or term was changed, and all copies say the same | On the pull request's head, `python3 tools/check_copies.py --base <base branch> --term '<old wording>' --term '<key word>'` (in Kinetra-Lab `external/Kinetra/tools/check_copies.py`, which also covers the submodule), a script that only reads; its hits are candidates to judge, and a case-insensitive `git grep -n -i` on further key words covers what it does not |
+| Every copy of a changed rule, procedure or term was changed, and all copies say the same | On the pull request's head, `python3 tools/check_copies.py --base <base branch> --term '<old wording>' --term '<key word>' --term '<part>'` (in Kinetra-Lab `external/Kinetra/tools/check_copies.py`, which also covers the submodule), a script that only reads, with the old wording, the key words and the names of the parts ([rule](../../../AGENTS.md#repository-documentation)); its hits are candidates to judge, and a case-insensitive `git grep -n -i` on further key words covers what it does not |
 | The diff repeats no known lesson | The review lessons |
 
 ## 6. Classify
@@ -116,7 +116,7 @@ Give each kept finding one severity: **blocking** (a bug, a missed goal, a broke
 
 Follow the pull request until it merges or every point is settled: subscribe to its activity where the agent can; otherwise check it again when asked.
 
-- When the author answers a finding with a fix: check the fix. If it holds, reply that you accept it and resolve the thread.
+- When the author answers a finding with a fix: check the fix, and that it reached every section of the design document, the description and the other repository's copy that name the changed part ([rule](../../../AGENTS.md#git)). If it holds, reply that you accept it and resolve the thread.
 - When the author answers with an argument: if it convinces you, say so and resolve the thread. If not, reply once with your counter-argument and evidence.
 - Two rounds per point at most: finding and answer, then one reply from you and one from the author. If you still disagree, reply that the point stays open for the user, leave the thread unresolved, and post an updated summary with *Needs the user*.
 - When the author pushes new commits, wait until CI is green on the new head, then review what changed since your last conclusion (steps 3 to 6 for those commits) and post an updated summary on it.

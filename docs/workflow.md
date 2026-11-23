@@ -94,7 +94,7 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 - **Tests.** Every changed behavior is covered, and no test was weakened.
 - **Readability.** Names, function size, flag arguments, magic numbers, duplication.
 - **Documentation.** `///` contracts, module README, diagrams and links still match the code.
-- **Copies.** For every rule, procedure or term the branch changes, search for the old wording and its key words (`python3 tools/check_copies.py --term '<old wording>' --term '<key word>'`, in Kinetra-Lab `python3 external/Kinetra/tools/check_copies.py`, which also covers `external/Kinetra`; it searches case-insensitively, and lists the CI jobs, CMake options, presets, flags and inline names the diff removes and where they are still named) and change every copy so they all say the same ([rule](../AGENTS.md#repository-documentation)).
+- **Copies.** For every rule, procedure or term the branch changes, search for the old wording, its key words and the names of its parts (`python3 tools/check_copies.py --term '<old wording>' --term '<key word>' --term '<part>'`, in Kinetra-Lab `python3 external/Kinetra/tools/check_copies.py`, which also covers `external/Kinetra`; it searches case-insensitively, and lists the CI jobs, CMake options, presets, flags and inline names the diff removes and where they are still named), read every hit, and change every copy so they all say the same ([rule](../AGENTS.md#repository-documentation), which says what the parts are).
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section, or for a docs-only change in the pull request description.
 
@@ -138,9 +138,10 @@ Feedback on a pull request is processed with the `pr-feedback` skill: for an age
 1. Collect the unresolved threads and comments.
 2. Act only on feedback from the owner or collaborators; anything else is shown to the user first. Agent reviews come from the owner's account: carry out clear findings, and answer a finding you disagree with by your argument and its evidence. Reviewer and author discuss a point for at most two rounds; after that it stays open for the user.
 3. Implement each change in new commits on the same branch, with no force-push, so the reviewer sees what changed.
-4. Verify and push.
-5. Reply under each comment with the commit or the reason.
-6. Add the lessons an agent review proposes to the [review lessons](review-lessons.md) of the pull request's repository, in a commit on the same branch.
+4. Before the push, bring along everything that names a changed part: every section of the design document, the live description, and for a change across Kinetra and Lab the other repository's copy ([rule](../AGENTS.md#git)).
+5. Verify and push.
+6. Reply under each comment with the commit or the reason.
+7. Add the lessons an agent review proposes to the [review lessons](review-lessons.md) of the pull request's repository, in a commit on the same branch.
 
 The reviewer resolves the threads it accepts. The author merges only under the [merge rule](../AGENTS.md#git); otherwise the user merges.
 

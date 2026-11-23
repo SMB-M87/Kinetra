@@ -53,6 +53,7 @@ Post the list in Dutch (item, kind, planned action). Wait for the user only when
 - Make one commit per item, or per group of closely related items: `type(scope): address review: <what>`. The cycle rules apply: tests first for behavior changes, refactor separate from behavior.
 - No force-push, amend or rebase of pushed commits. The reviewer must be able to see what changed since their review.
 - Update the design document, or for a docs-only pull request its description: add the round to **Review** (item → resolution → commit) and adjust **Decisions** if a decision changed.
+- Before the push, bring along everything that names a changed part ([rule](../../../AGENTS.md#git)): search the key words of each changed part in every section of the design document (*Decisions*, *Design*, *Affected areas*, *Test plan*, *Verification*, *Pull request*), in the live description, and, for a change across Kinetra and Lab, in the other repository's copy of the same job, script, page or claim, in both directions. Change every hit in this push; the description goes with `gh pr edit` in step 5.4.
 - Add each lesson an agent review proposes to `docs/review-lessons.md` of the pull request's repository, in the page's [format](../../../docs/review-lessons.md#format), in its own commit: `docs(lessons): <lesson>`. Skip one the page already holds.
 - Verify at the level the new commits require (`verify` skill).
 

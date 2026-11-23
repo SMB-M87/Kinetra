@@ -35,7 +35,7 @@ Comment-only means the diff of a code file contains only comment lines (`git dif
 
 ## 3. Run
 
-**Copies, at every level.** Run `python3 tools/check_copies.py` (in Lab `python3 external/Kinetra/tools/check_copies.py`), with `--term '<old wording>'` for each rule, procedure or term the change rewords. It lists the CI jobs, CMake options, presets, flags and inline names the diff removes that a page still names, and every place an old wording is left. Judge each hit: change a stale copy in the same change, and say in the report why a hit stays. It reads only, so it costs seconds.
+**Copies, at every level.** Run `python3 tools/check_copies.py` (in Lab `python3 external/Kinetra/tools/check_copies.py`), with a `--term` for the old wording, each key word and the name of each part of every rule, procedure or term the change rewords ([rule](../../../AGENTS.md#repository-documentation)). It lists the CI jobs, CMake options, presets, flags and inline names the diff removes that a page still names, and every place an old wording is left. Judge each hit: change a stale copy in the same change, and say in the report why a hit stays. It reads only, so it costs seconds.
 
 **Docs.** Run `python3 tools/check_docs.py` (in Kinetra) or `python3 external/Kinetra/tools/check_docs.py` (in Lab). Fix broken links, then stop. No build.
 
