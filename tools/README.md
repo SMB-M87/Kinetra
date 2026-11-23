@@ -1,6 +1,6 @@
 # Tools
 
-Development scripts shared by Kinetra and Kinetra-Lab. The Python scripts need only Python 3 and Git: no build, no network. `lab_pointer.sh` runs in CI and talks to GitHub.
+Development scripts shared by Kinetra and Kinetra-Lab. The Python scripts need only Python 3 and Git: no build, no network. `lab_pointer.sh` runs in CI and talks to GitHub. `cloud_setup.sh` runs at the start of a cloud agent session and installs the toolchain.
 
 ## Table of contents
 
@@ -8,6 +8,7 @@ Development scripts shared by Kinetra and Kinetra-Lab. The Python scripts need o
 - [check_copies.py](#check_copiespy)
 - [make_icon.py](#make_iconpy)
 - [lab_pointer.sh](#lab_pointersh)
+- [cloud_setup.sh](#cloud_setupsh)
 - [Open points](#open-points)
 
 [Parent guide](../README.md) · [Documentation index](../docs/README.md)
@@ -89,6 +90,32 @@ flowchart TD
 ```sh
 bash tools/lab_pointer.sh --dry-run   # with gh's own login: says what it would do, writes nothing
 ```
+
+## cloud_setup.sh
+
+Prepares a Claude Code cloud session to build, test and format-check like CI, so a code task can start at once. A cloud session runs on Ubuntu 24.04 without SDL2 and ccache, with Ubuntu's clang-format 18 where CI formats with 23.1.5, and in Kinetra-Lab without the Kinetra submodule.
+
+| Caller | Runs |
+| --- | --- |
+| Kinetra's [.claude/settings.json](../.claude/settings.json), a SessionStart hook | `tools/cloud_setup.sh` |
+| Kinetra-Lab's `.claude/settings.json`, through Lab's `tools/cloud_setup.sh` | Loads `external/Kinetra` when the checkout lacks it, then `external/Kinetra/tools/cloud_setup.sh nlohmann-json3-dev` |
+
+The hooks run on every start and resume of a session, before it takes its first message. The script:
+
+1. Exits at once, without output, unless `CLAUDE_CODE_REMOTE` is `true`: on a developer's machine the hook does nothing.
+2. Installs the Debian and Ubuntu packages of [development](../docs/development.md#dependencies-and-options) that are missing, plus the packages given as arguments, with `--no-install-recommends` like CI's Ubuntu run. The index update and the downloads get two and five minutes, so a stalled mirror cannot hold the session's start; the install from the downloaded files has no limit, because stopping dpkg halfway would break the next run.
+3. Installs clang-format 23.1.5, the version of CI's pinned Arch snapshot, from PyPI with `uv tool install`, when `clang-format --version` names another. PyPI is on a cloud environment's default allowlist; LLVM's apt repository is not. When `~/.local/bin` is not first on `PATH`, the script puts it first for the session through `CLAUDE_ENV_FILE`.
+4. Prints one line and exits 0, also when something failed. Claude Code adds a SessionStart hook's output to the agent's context only on exit 0, so the agent learns what is missing instead of the session not starting:
+
+```text
+Cloud setup: installed ccache libsdl2-dev libgl-dev libegl-dev; installed clang-format 23.1.5.
+Cloud setup: packages present; clang-format 23.1.5 present.
+Cloud setup failed: apt-get did not install libsdl2-dev. Log: /tmp/kinetra-cloud-setup.log. By hand: apt-get install ...
+```
+
+A first start took 9 seconds in a cloud session on 2026-11-23; a session that has everything spends about a tenth of a second. Run it by hand after a failure with `CLAUDE_CODE_REMOTE=true tools/cloud_setup.sh`.
+
+Three places name the package set: [development](../docs/development.md#dependencies-and-options), CI's Ubuntu step and this script; change them together. The clang-format version follows the Arch snapshot in [ci.yml](../.github/workflows/ci.yml), whose comment says so. Sessions with several repositories and the threads of a project load no repository hooks, so there only the environment's setup script could run this script.
 
 ## Open points
 
