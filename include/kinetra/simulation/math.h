@@ -76,8 +76,8 @@ inline bool finite(Vec2 v) {
 /// Angle in radians of the point (`x`, `y`), in [-pi, pi], with std::atan2's quadrants, signed
 /// zeros, infinities and NaN. Use it instead of std::atan2 on floats in simulation code: the
 /// result is the correctly rounded float on every C library, except in rare double-rounding
-/// cases (below), where `atan2f` differs in the last bit between, for example, glibc 2.39 and
-/// 2.41, and one bit changes a chaotic trajectory. Precondition: IEEE-conforming float
+/// cases near a midpoint between two floats. `atan2f` itself differs in the last bit between,
+/// for example, glibc 2.39 and 2.41, and one bit changes a chaotic trajectory. Precondition: IEEE-conforming float
 /// semantics; `-ffast-math` or `-funsafe-math-optimizations` may let the compiler narrow the
 /// double call back to the C library's float function. The function is inline, so the flags
 /// are the caller's.
