@@ -21,7 +21,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 ## Now
 
 - **Leaner agentic cycle** · workflow, skills, with Lab · added 2026-11-23
-  The user wants the agents' development cycle to take less time and fewer steps. The rules, the [workflow](workflow.md) and the skills live here, so the measures that change them land in Kinetra. First step, on branch `ccr-6e6399fb-049f2v`, with the user's choices of 2026-11-23: a docs-only pull request gets no agent review, no design document and no build in either repository's CI; a change across both repositories gets one design document; agents read design documents only when something links them ([design](design/2026-11-23-docs-only-pull-requests.md)). Lab's design document holds the measurement of both repositories' pull requests.
+  The user wants the agents' development cycle to take less time and fewer steps. The rules, the [workflow](workflow.md) and the skills live here, so the measures that change them land in Kinetra. First step, on branch `ccr-6e6399fb-049f2v`, with the user's choices of 2026-11-23: a docs-only pull request gets no agent review and no design document, Kinetra's CI skips its build, and Lab's CI does for most of them ([Lab's rule](https://github.com/SMB-M87/Kinetra-Lab/blob/main/AGENTS.md#verification-in-lab)); a change across both repositories gets one design document; agents read design documents only when something links them ([design](design/2026-11-23-docs-only-pull-requests.md)). Lab's design document holds the measurement of both repositories' pull requests.
   Next step: Lab's automatic pointer pull request, the last measure the user chose. Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#now).
 
 ## Next

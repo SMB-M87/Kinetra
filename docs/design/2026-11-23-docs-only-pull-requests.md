@@ -39,7 +39,7 @@ On 2026-11-23 the user asked that a pull request with only documentation, or onl
 
 | Decision | Choice | Why |
 | --- | --- | --- |
-| Which pull requests are docs-only | Only Markdown, `docs/` or `.agents/` changed; in Lab also a moved pointer whose Kinetra range holds only those paths, `.github/` or `tools/` | The paths for which CI skips the build, so the exemption is checked from the file list. Comment-only code changes stay reviewed: a file list cannot tell them apart |
+| Which pull requests are docs-only | Only Markdown, `docs/` or `.agents/` changed; in Lab also a moved pointer whose Kinetra range holds only those paths, `.github/` or `tools/` | Close to the paths for which CI skips the build, so the exemption is checked from the file list; Lab's CI still builds the few Lab paths a test reads or the build copies ([Lab's rule](https://github.com/SMB-M87/Kinetra-Lab/blob/main/AGENTS.md#verification-in-lab)). Comment-only code changes stay reviewed: a file list cannot tell them apart |
 | Merge | The author merges once CI is green, with no conflict and the stack below merged | As for a pointer-only pull request. The merge rule still leaves the agent rules, CI, releases and the user's checks to the user, also when they are only Markdown |
 | The author's own review | Stays, the copies check included | Cheap, and the place where the missed copies of #26, #27, #30 and #35 are found |
 | Design document of a docs-only change | None; the pull request description holds the problem, the decisions and the verification | The user's choice of 2026-11-23; a docs-only pull request is mostly the record of itself |
