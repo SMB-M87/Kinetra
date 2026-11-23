@@ -20,13 +20,12 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-Nothing in progress in Kinetra itself.
+- **Leaner agentic cycle** · workflow, skills, with Lab · added 2026-11-23
+  The user wants the agents' development cycle to take less time and fewer steps. The rules, the [workflow](workflow.md) and the skills live here, so the measures that change them land in Kinetra. First step, on branch `ccr-6e6399fb-049f2v`: docs-only pull requests need no agent review ([design](design/2026-11-23-docs-only-pull-requests.md)), and Lab's CI skips their build; Lab's design document holds the measurement of both repositories' pull requests.
+  Next step: the measures the user chooses from that measurement, for example one design document for a change across both repositories, or no design document for a docs-only change. Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#now).
 
 ## Next
 
-- **Leaner agentic cycle** · workflow, skills, with Lab · added 2026-11-23
-  The user wants the agents' development cycle to take less time and fewer steps. The rules, the [workflow](workflow.md) and the skills live here, so the measures that change them land in Kinetra: for example one design document for a change across both repositories, and design and review sized to the Docs level.
-  Next step: Lab's item of the same name measures where the cycle spends its time; the measures are then settled with the user. Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).
 - **Shared UI in the README** · docs, media, with Lab · added 2026-11-23
   The user wants this README to show the shared UI in GIFs: the launcher menu, the configuration page (Demo's scenarios), the settings panel, the debug menu, the agent inspector, the frame times and the other debug views, captured from Demo by Lab's capture tool, since Kinetra has no applications of its own. The README has no media yet. With it comes a rule in both `AGENTS.md` files: a change that alters what is visible refreshes the affected GIFs in the same pull request; for an overlay changed here, the GIFs are captured from Lab with its pointer on the Kinetra branch.
   Next step: Lab's design for its item *README media as GIFs* settles the scenes and where the files live (proposal: `docs/media/` here). Depends on: Lab's *Demo scenario menu*, which gives Demo the configuration page it lacks (the user's decision of 2026-11-23). Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).

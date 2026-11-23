@@ -1,6 +1,6 @@
 # pr-review
 
-A second agent reviews every pull request except a pointer-only one, or a whole stack of them. The author starts it once the pull request's CI is green, and you can start it too. It reviews the code and comments; it builds and runs nothing. When it finishes, the pull request has inline comments for its findings and a summary with a conclusion. The author's session has answered each finding, the two agents have settled what they could, and the pull request is either merged by its author or waiting for you with the points that need your word.
+A second agent reviews every pull request except a docs-only or pointer-only one, or a whole stack of them. The author starts it once the pull request's CI is green, and you can start it too. It reviews the code and comments; it builds and runs nothing. When it finishes, the pull request has inline comments for its findings and a summary with a conclusion. The author's session has answered each finding, the two agents have settled what they could, and the pull request is either merged by its author or waiting for you with the points that need your word.
 
 ## Table of contents
 
@@ -22,7 +22,7 @@ A second agent reviews every pull request except a pointer-only one, or a whole 
 ## When not to use it
 
 - As a replacement for your decision on agent rules, skills, CI, releases or your own checks: those pull requests always wait for you ([merge rule](../../../AGENTS.md#git)).
-- On a pointer-only Kinetra-Lab pull request: it needs no review ([rule](../../../AGENTS.md#git)).
+- On a docs-only pull request (only Markdown, `docs/` or `.agents/`) or a pointer-only Kinetra-Lab pull request: it needs no review ([rule](../../../AGENTS.md#git)). You can still ask for one.
 - To process the comments: that is `pr-feedback`, in the session that opened the pull request.
 - On a branch that is not a pull request yet: `feature` reviews its own diff with the agent's code review in its review step.
 

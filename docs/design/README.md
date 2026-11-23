@@ -79,6 +79,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 | 2026-11-23 | [Copies check](2026-11-23-copies-check.md): `tools/check_copies.py` lists the names a change removes that a page still names; `verify` runs it | implemented |
 | 2026-11-23 | [CI Linux matrix](2026-11-23-ci-linux-matrix.md): one `linux` job with an Arch and an Ubuntu container, and `checks` requires both | implemented |
 | 2026-11-23 | [Roadmap: the shared UI in GIFs, images in the launcher menu and a leaner cycle](2026-11-23-roadmap-media-labs-cycle.md): Kinetra's part of the user's wishes of 2026-11-23 | implemented |
+| 2026-11-23 | [Docs-only pull requests without agent review](2026-11-23-docs-only-pull-requests.md): a pull request with only Markdown, `docs/` or `.agents/` merges once CI is green; the first step of *Leaner agentic cycle* | implemented |
 | 2026-11-22 | [Linux beyond Arch](2026-11-22-linux-beyond-arch.md): `kinetra::atan2` and `kinetra::asin` round the same on every C library; an Ubuntu LTS job in CI and dependency commands per distribution | implemented |
 | 2026-11-22 | [Agent inspector overlay](2026-11-22-agent-inspector-overlay.md) | implemented |
 | 2026-11-22 | [Graphics tests in CI](2026-11-22-graphics-tests-in-ci.md): the `ci` preset runs the graphics cases with software OpenGL, and CI becomes the whole Full level | implemented |
