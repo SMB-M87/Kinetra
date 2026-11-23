@@ -108,7 +108,7 @@ Each step run took the step's `run:` from `ci.yml` with Python's YAML parser and
 
 - Both workflows load with Python's YAML parser; every job has `timeout-minutes` (10, 45, 10, and 45 for Lab's `windows`), and so do both install steps (15).
 - `python3 tools/check_docs.py` in Kinetra and `python3 external/Kinetra/tools/check_docs.py` in Kinetra-Lab: all links resolve.
-- Full level: the pull requests' CI, pending at the time of writing.
+- Full level: CI passed on both pull requests, Kinetra #42 (run 45172033042, head `0e03cb4`) and Kinetra-Lab #98 (run 45172060090, head `013d987`). Their *Install Ubuntu's packages* took 23 s and 28 s, against two to three minutes before and ten minutes in #97's re-run that day; the logs show the Azure URIs, every `Get:` (267 and 268) from `azure.archive.ubuntu.com`, no `E:` or `W:` line and no *Ubuntu mirror not used* warning.
 
 ## Pull request
 
