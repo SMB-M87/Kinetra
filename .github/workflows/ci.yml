@@ -1,25 +1,27 @@
 # Checks every pull request and every push to main. See docs/testing.md#continuous-integration.
 #
-# The toolchain is pinned: a dated Arch Linux image plus the Arch Linux Archive
-# snapshot below, so compiler warnings (-Werror) and clang-format output cannot
-# change without a commit. When the archive does not answer, CI falls back to the
-# current Arch packages and marks the run with a warning, because it is not pinned.
-# The snapshot matches the Artix/Arch development environment (gcc 16.2.1,
-# clang/clang-format 23.1.5, CMake 4.5.0). Bump both deliberately, in their own
-# commit, and fix what the new toolchain reports.
+# One job, "linux", builds and tests on several distributions, each in its own container:
+#
+# - arch: the reference. The toolchain is pinned: a dated Arch Linux image plus the Arch
+#   Linux Archive snapshot below, so compiler warnings (-Werror) and clang-format output
+#   cannot change without a commit. When the archive does not answer, the run falls back
+#   to the current Arch packages and marks itself with a warning, because it is not
+#   pinned. The snapshot matches the Artix/Arch development environment (gcc 16.2.1,
+#   clang/clang-format 23.1.5, CMake 4.5.0). Bump both deliberately, in their own commit,
+#   and fix what the new toolchain reports. Formatting, the docs check and the icon check
+#   run only here, and warnings are errors only here.
+# - ubuntu: Ubuntu LTS with its own GCC, glibc, CMake and SDL2, the Debian and Ubuntu
+#   package set of docs/development.md#dependencies-and-options. Warnings are annotations,
+#   not errors, because another GCC warns about other things. The image tag follows
+#   Ubuntu's point releases; its packages are not pinned.
 #
 # The `ci` test preset runs every test, the graphics cases included: SDL's offscreen
 # driver with software Mesa (llvmpipe) gives them an OpenGL context without a GPU or
-# display, the same backend as the local `graphics` preset. The workflow name "CI" and
-# job id "checks" are required status checks on main; keep them stable.
+# display, the same backend as the local `graphics` preset.
 #
-# The "ubuntu" job builds and tests on Ubuntu LTS with its own GCC and packages, so Linux
-# beyond Arch stays supported (docs/development.md#dependencies-and-options). It puts
-# /usr/bin first on the path, so the runner image's newer CMake in /usr/local/bin does not
-# stand in for Ubuntu's. The pinned Arch job stays the reference: formatting, the docs
-# check and the icon check run only there, and warnings are errors only there, because
-# another GCC warns about other things; the ubuntu job shows them as annotations. Ubuntu's
-# packages are not pinned; the job follows the runner image.
+# The workflow name "CI" and the job id "checks" are the required status check on main;
+# keep them stable. "checks" passes only when every "linux" run passed, so every
+# distribution in the matrix is required. Add a distribution as one more matrix entry.
 name: CI
 
 on:
@@ -38,11 +40,24 @@ env:
   ARCH_SNAPSHOT: "2026/11/17"
 
 jobs:
-  checks:
+  linux:
+    name: linux (${{ matrix.distro }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: arch
+            image: archlinux:base-devel-20261108.0.623074
+          - distro: ubuntu
+            image: ubuntu:24.04
     runs-on: ubuntu-latest
-    container: archlinux:base-devel-20261108.0.623074
+    container: ${{ matrix.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Install pinned toolchain and dependencies
+      - name: Install the pinned Arch toolchain and dependencies
+        if: matrix.distro == 'arch'
         run: |
           # The pinned snapshot comes from the Arch Linux Archive. When the archive does not
           # answer, the image's own mirrors serve the current packages instead; such a run is
@@ -55,7 +70,23 @@ jobs:
             cp /etc/pacman.d/mirrorlist.image /etc/pacman.d/mirrorlist
             pacman -Syyuu --noconfirm --needed $packages
           fi
-          gcc --version | head -1; clang-format --version; cmake --version | head -1
+
+      - name: Install Ubuntu's packages
+        if: matrix.distro == 'ubuntu'
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          # The Debian and Ubuntu package set of docs/development.md, plus git for the checkout.
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential cmake ninja-build ccache \
+            libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0 git ca-certificates
+
+      - name: Tool versions
+        run: |
+          # sed reads all of its input: with head, the writer can die of SIGPIPE, and the
+          # step shell's pipefail turns that into a failure (exit code 141).
+          command -v gcc cmake ctest ninja
+          gcc --version | sed -n 1p; cmake --version | sed -n 1p; ninja --version; ldd --version | sed -n 1p
 
       - uses: actions/checkout@v7
 
@@ -63,56 +94,34 @@ jobs:
         run: git config --global --add safe.directory '*'
 
       - name: Format check (clang-format)
+        if: matrix.distro == 'arch'
         run: |
+          clang-format --version
           git ls-files -- '*.h' '*.cpp' ':(exclude)include/glad/**' ':(exclude)include/KHR/**' ':(exclude)third_party/**' \
             | xargs clang-format --dry-run --Werror
 
       - name: Documentation links
+        if: matrix.distro == 'arch'
         run: python3 tools/check_docs.py
 
       - name: Icon files match their generator
+        if: matrix.distro == 'arch'
         run: python3 tools/make_icon.py --check
 
       - name: Headless build and test (no SDL2/OpenGL)
         run: cmake --workflow --preset headless
 
       - name: Full build and test (runtime, warnings as errors, graphics tests with software OpenGL)
+        if: matrix.distro == 'arch'
         run: cmake --workflow --preset ci
 
-      - name: External consumer
-        run: |
-          cmake -S tests/consumer -B build-consumer -G Ninja -DKINETRA_SOURCE="$PWD" -DCONSUMER_GRAPHICS=ON
-          cmake --build build-consumer
-          ./build-consumer/consumer
-
-  ubuntu:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Install dependencies
-        run: |
-          # The Debian and Ubuntu package set of docs/development.md.
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build ccache \
-            libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0
-          # Ubuntu's own tools, not the runner image's newer ones in /usr/local/bin.
-          echo /usr/bin >> "$GITHUB_PATH"
-
-      - name: Tool versions
-        run: |
-          command -v gcc cmake ctest ninja
-          gcc --version | head -1; cmake --version | head -1; ninja --version; ldd --version | head -1
-
-      - uses: actions/checkout@v7
-
-      - name: Headless build and test (no SDL2/OpenGL)
-        run: cmake --workflow --preset headless
-
       - name: Full build and test (runtime, warnings as annotations, graphics tests with software OpenGL)
+        if: matrix.distro != 'arch'
         run: |
-          set -o pipefail
           cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF
           cmake --build --preset ci 2>&1 | tee build-ci.log
-          grep -E 'warning: ' build-ci.log | sort -u | sed 's/^/::warning title=Compiler warning on Ubuntu::/' || true
+          grep -E 'warning: ' build-ci.log | sort -u \
+            | sed "s/^/::warning title=Compiler warning on ${{ matrix.distro }}::/" || true
           ctest --preset ci
 
       - name: External consumer
@@ -120,3 +129,18 @@ jobs:
           cmake -S tests/consumer -B build-consumer -G Ninja -DKINETRA_SOURCE="$PWD" -DCONSUMER_GRAPHICS=ON
           cmake --build build-consumer
           ./build-consumer/consumer
+
+  # The required status: passes only when every distribution of "linux" passed.
+  checks:
+    needs: linux
+    # always(), not !cancelled(): a skipped required job counts as passed, so on a
+    # cancelled run this job must still run and fail.
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every Linux run passed
+        env:
+          LINUX: ${{ needs.linux.result }}
+        run: |
+          echo "linux: $LINUX"
+          test "$LINUX" = success

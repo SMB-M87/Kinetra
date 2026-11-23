@@ -26,8 +26,8 @@ Install them per distribution family. CI tests Arch and Ubuntu 24.04 ([continuou
 
 | Family | Command | Tested |
 | --- | --- | --- |
-| Arch, Artix | `sudo pacman -S --needed base-devel cmake ninja ccache clang sdl2-compat libglvnd mesa` | CI's `checks` job, on a pinned snapshot; `clang` provides clang-format |
-| Debian, Ubuntu | `sudo apt update && sudo apt install build-essential cmake ninja-build ccache libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0` | CI's `ubuntu` job on Ubuntu 24.04 LTS (GCC 13, glibc 2.39); clang-format is the `clang-format` package, but only the Arch version decides the format |
+| Arch, Artix | `sudo pacman -S --needed base-devel cmake ninja ccache clang sdl2-compat libglvnd mesa` | CI's `linux (arch)` run, on a pinned snapshot; `clang` provides clang-format |
+| Debian, Ubuntu | `sudo apt update && sudo apt install build-essential cmake ninja-build ccache libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0` | CI's `linux (ubuntu)` run, in an Ubuntu 24.04 LTS container (GCC 13, glibc 2.39, CMake 3.28); clang-format is the `clang-format` package, but only the Arch version decides the format |
 | Fedora | `sudo dnf install gcc-c++ cmake ninja-build ccache SDL2-devel mesa-libGL-devel mesa-libEGL-devel mesa-dri-drivers` | Not tested, and the package names are not yet checked against Fedora's repositories |
 
 Other distributions need the same parts: a C++20 compiler, CMake, Ninja, SDL2's and OpenGL's development files, and Mesa (or a GPU driver) for an OpenGL 3.3 context.
