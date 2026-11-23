@@ -6,6 +6,7 @@
 #include <kinetra/simulation/math.h>
 #include <kinetra/view/camera.h>
 #include <kinetra/view/debug_menu.h>
+#include <kinetra/view/inspector.h>
 
 #include <doctest/doctest.h>
 
@@ -16,6 +17,28 @@
 
 using kinetra::Glyph;
 using kinetra::glyph;
+
+TEST_CASE("headless inspector snapshots own ordered rows with formatted units") {
+    const auto build = [] {
+        std::string title = "MOVER";
+        std::string speed = kinetra::inspector_number(1.23456, 4) + " MM/TICK";
+        kinetra::InspectorSnapshot snapshot{
+            title, {{"MOTION", {{"SPEED", speed}, {"GOAL", kinetra::inspector_vector({-2.5f, 3}, " MM")}}}}};
+        title.assign("OTHER");
+        speed.assign("STALE");
+        return snapshot;
+    };
+    const auto snapshot = build();
+    CHECK(snapshot.title == "MOVER");
+    REQUIRE(snapshot.groups.size() == 1);
+    CHECK(snapshot.groups.front().heading == "MOTION");
+    const auto &rows = snapshot.groups.front().rows;
+    REQUIRE(rows.size() == 2);
+    CHECK(rows[0].label == "SPEED");
+    CHECK(rows[0].value == "1.235 MM/TICK");
+    CHECK(rows[1].label == "GOAL");
+    CHECK(rows[1].value == "-2.5, 3 MM");
+}
 
 TEST_CASE("punctuation glyphs use the pixels i4sim drew by hand") {
     CHECK(glyph('-') == Glyph{0, 0, 0, 31, 0, 0, 0});

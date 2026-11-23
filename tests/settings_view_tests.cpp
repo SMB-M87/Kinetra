@@ -2,6 +2,7 @@
 // rows, the Ctrl and Shift+Ctrl shortcuts, and the debug menu it shows and hides. Every
 // layout case runs with a row set of four help lines and one of three, at a large and a
 // tiny viewport.
+#include <kinetra/runtime/inspector_view.h>
 #include <kinetra/runtime/settings_view.h>
 
 #include <doctest/doctest.h>
@@ -501,4 +502,23 @@ TEST_CASE("invalid rows are rejected") {
     CHECK_THROWS_AS(SettingsOverlay({ZoomRow{}}), std::invalid_argument);
     SettingsOverlay overlay({ToggleRow{"FLAG", &flag}});
     CHECK_THROWS_AS(static_cast<void>(overlay.row_y(1)), std::out_of_range);
+}
+
+TEST_CASE("inspector layout wraps long values and snaps its input bounds inward") {
+    kinetra::InspectorView inspector;
+    const kinetra::Aabb area{{266.45f, 8.25f}, {530.75f, 401.75f}};
+    kinetra::InspectorSnapshot snapshot{"MOVER", {{"", {{"ROUTE", "A"}}}}};
+    const auto short_box = inspector.bounds(snapshot, area);
+    snapshot.groups[0].rows[0].value.assign(96, 'A');
+    const auto long_box = inspector.bounds(snapshot, area);
+    CHECK(long_box.max.y - short_box.max.y == 4 * 13);
+    CHECK(long_box.min.x == 267);
+    CHECK(long_box.min.y == 9);
+    CHECK(long_box.max.x == 530);
+    kinetra::Input input;
+    input.clicked = true;
+    input.mouse = {long_box.min.x - 1, 18};
+    CHECK_FALSE(inspector.update(input, snapshot, area).captured);
+    input.mouse.x += 1;
+    CHECK(inspector.update(input, snapshot, area).captured);
 }

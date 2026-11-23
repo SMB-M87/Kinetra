@@ -16,7 +16,7 @@ The backlog of Kinetra: engine work that is wanted but not finished, from agreed
 
 Sections, item format and the moves between sections are defined in the [documentation guide](documentation.md#roadmap). The `roadmap` skill adds, shapes and closes items, for example during a brainstorm with the user ([skill](../.agents/skills/roadmap/README.md)). A merged item is removed; its design document is the record.
 
-Within each section the first item comes first. The order was proposed on 2026-11-21 together with the [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md), which is the plan for the applications, and settled with the user on 2026-11-22 ([decisions](design/2026-11-22-roadmap-decisions.md)); Lab's quality roadmap of 2026-11-18 is closed, and what it left is listed here and there.
+Within each section the first item comes first. The order was proposed on 2026-11-21 together with the [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md), which is the plan for the applications, and settled with the user on 2026-11-22 ([decisions](design/2026-11-22-roadmap-decisions.md)); on 2026-11-23 the user put *Leaner agentic cycle* first, in both roadmaps; the other items of that day stand at the end of their sections ([design](design/2026-11-23-roadmap-media-labs-cycle.md#decisions)). Lab's quality roadmap of 2026-11-18 is closed, and what it left is listed here and there.
 
 ## Now
 
@@ -24,9 +24,12 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-- **Agent inspector overlay** · runtime, with Lab · added 2026-11-21
-  A reusable overlay that shows the rows of one selected agent (a title, label–value rows in groups) beside it or in a corner, so the user sees an agent's motion settings, goal and state while it runs. Kinetra owns layout, drawing and input capture, as for every overlay; applications supply the selection and the rows as headless values, as `DebugEntry` does for the debug menu ([debug_view.h](../include/kinetra/runtime/debug_view.h)).
-  Next step: design it with Lab's item of the same name, which starts with i4sim.
+- **Leaner agentic cycle** · workflow, skills, with Lab · added 2026-11-23
+  The user wants the agents' development cycle to take less time and fewer steps. The rules, the [workflow](workflow.md) and the skills live here, so the measures that change them land in Kinetra: for example one design document for a change across both repositories, and design and review sized to the Docs level.
+  Next step: Lab's item of the same name measures where the cycle spends its time; the measures are then settled with the user. Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).
+- **Shared UI in the README** · docs, media, with Lab · added 2026-11-23
+  The user wants this README to show the shared UI in GIFs: the launcher menu, the configuration page (Demo's scenarios), the settings panel, the debug menu, the agent inspector, the frame times and the other debug views, captured from Demo by Lab's capture tool, since Kinetra has no applications of its own. The README has no media yet. With it comes a rule in both `AGENTS.md` files: a change that alters what is visible refreshes the affected GIFs in the same pull request; for an overlay changed here, the GIFs are captured from Lab with its pointer on the Kinetra branch.
+  Next step: Lab's design for its item *README media as GIFs* settles the scenes and where the files live (proposal: `docs/media/` here). Depends on: Lab's *Demo scenario menu*, which gives Demo the configuration page it lacks (the user's decision of 2026-11-23). Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).
 
 ## Later
 
@@ -55,6 +58,9 @@ Nothing in progress in Kinetra itself.
 - **Raster route target** · navigation · added 2026-11-21
   A `WeightedGrid` counterpart of `route_target`, so agents that follow a grid route cut corners that are already in sight; Dotio's pursuers would move more smoothly.
   Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
+- **Images in the launcher menu** · runtime, launcher, with Lab · added 2026-11-23
+  For Lab's *Lab preview in the launcher*: next to the list, `LaunchMenu` shows the highlighted application's description and a picture or short clip of it. `LaunchChoice::description` is not drawn yet ([launcher.h](../include/kinetra/runtime/launcher.h)), and the runtime draws only colored shapes and bitmap text, so this needs textured drawing in `Runtime`, image data (RGBA built in, as [make_icon.py](../tools/make_icon.py) writes the window icon, or an image decoder, which is a new dependency for a design to justify), and frames that change over time for a clip.
+  Open questions: a field on `LaunchChoice` or a separate preview type; whether the preview belongs to `LaunchMenu` or is drawn by the application's launcher.
 
 ## Ideas
 
