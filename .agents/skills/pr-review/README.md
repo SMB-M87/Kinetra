@@ -44,6 +44,7 @@ flowchart LR
 
 *Takeaway:* the reviewer reviews and accepts; the author changes, argues and merges; anything they cannot settle, and every change to rules, CI or your own checks, stays for you.
 
+- It needs write access to the repository of every pull request it reviews, both repositories for a change across Kinetra and Lab: posting a review writes through the GitHub API. When you start it yourself for such a change, select both repositories. Without write access it stops before reviewing and tells you, so that no pull request merges while its review sits unposted in a session.
 - It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff; a docs-only pull request reviewed on request takes its goals from the description.
 - It runs the agent's code review (Claude Code's `/code-review`, or a global `code-review` skill) for correctness and checks every finding itself. Then it walks a checklist from the rules: tests, verification level, docs, every copy of a changed rule or procedure, roadmap, conventions, description and merge order.
 - Its depth follows the change: the reviewer's session runs on the most capable model at high reasoning effort, one level higher for a large pull request with much logic, and the code review at `low` for docs, `medium` for code in one module, `high` for public headers, simulation behavior, CMake, CI and releases ([levels](SKILL.md#levels)). It names no model or product, so it works with any agent.
