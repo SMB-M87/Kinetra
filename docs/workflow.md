@@ -46,9 +46,9 @@ Work starts from an item in the [roadmap](roadmap.md) or a request from the user
 
 ## 1. Understand
 
-- Read [AGENTS.md](../AGENTS.md) and only the pages its routing table points to for this task.
+- Read [AGENTS.md](../AGENTS.md) and only the sections its routing table names for this task.
 - Run `git status` in every repository you will touch, and note unrelated work so it stays untouched.
-- Check the [roadmap](roadmap.md) for an item on this topic; it holds the agreed scope and open questions.
+- Search the [roadmap](roadmap.md) for the topic, on its key words, and read the items the search finds; they hold the agreed scope and open questions. Read the whole roadmap only to choose or order items.
 - Read the [review lessons](review-lessons.md) (in Kinetra-Lab also Lab's): mistakes that reviews found before and that this change should not repeat.
 - Read the code, tests and docs around the change before proposing anything. Facts you can look up are your job; decisions are the user's.
 

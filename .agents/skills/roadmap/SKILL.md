@@ -12,7 +12,7 @@ Each repository has one backlog in `docs/roadmap.md`. From Kinetra-Lab, Lab's is
 
 - Engine work (simulation, runtime, launcher library, rendering, platforms) goes in Kinetra's roadmap. Applications, Lab tools, media and the Lab build go in Lab's.
 - Work that needs both gets an item in each, each with its own part and a link to the other.
-- Read the whole roadmap before editing, so you merge with an existing item instead of adding a duplicate.
+- Before you add or change an item, search the roadmap for its key words (`grep -n -i '<key word>' docs/roadmap.md`, each word in turn) and read the items the search finds and the section you edit, so you merge with an existing item instead of adding a duplicate. Read the whole roadmap only to pick the next item (step 3), to reorder, or in a brainstorm that touches many items.
 
 ## 1. Brainstorm: collect ideas
 

@@ -22,20 +22,23 @@ Each rule states *why* it exists. Use the reason to decide edge cases instead of
 
 ## Where to read what
 
-Read only what the task needs; the pages are written to stand on their own.
+Read only what the task needs; the pages are written to stand on their own. Where a row names sections, read those and not the whole page. Search the roadmap and the design index for the topic instead of reading them through.
 
 | Task | Read |
 | --- | --- |
 | Every task | This file |
-| Start, plan, review or hand over a change | [Workflow](docs/workflow.md) |
+| Start, plan, review or hand over a change | The `feature` skill, and the section of the [workflow](docs/workflow.md) for the step you are at, which the skill links; the whole workflow only to change the cycle itself |
 | Build or review a change, so known mistakes are not repeated | [Review lessons](docs/review-lessons.md) |
 | Write or review C++ or CMake | [Conventions](docs/conventions.md) |
-| Add tests or pick a verification level | [Testing](docs/testing.md); build options in [development](docs/development.md) |
-| Write READMEs, diagrams or `///` comments | [Documentation guide](docs/documentation.md) |
+| Add tests | [Test kinds](docs/testing.md#test-kinds), [rules for tests](docs/testing.md#rules-for-tests) and [writing a doctest suite](docs/testing.md#writing-a-doctest-suite) |
+| Pick a verification level | [Verification levels](docs/testing.md#verification-levels) and [choosing targeted tests](docs/testing.md#choosing-targeted-tests) (`verify` skill); [continuous integration](docs/testing.md#continuous-integration) only for a CI change; build options in [development](docs/development.md) |
+| Write `///` comments | [Code comments](docs/documentation.md#code-comments) |
+| Write a README or another page | [What goes where](docs/documentation.md#what-goes-where), the [module](docs/documentation.md#module-readme-template) or [skill README template](docs/documentation.md#skill-readme-template), and [page layout](docs/documentation.md#page-layout) |
+| Draw a diagram | [Diagrams](docs/documentation.md#diagrams) |
 | Work on one module | Its guide: [simulation](src/simulation/README.md), [runtime and launcher](src/runtime/README.md), [tests](tests/README.md) |
 | Understand dependencies and ownership | [Architecture](docs/architecture.md), [engine contracts](docs/README.md#engine-contracts) |
 | Find out why a boundary exists | [Decisions](docs/decisions/README.md) |
-| See current and planned work, or record an idea | [Roadmap](docs/roadmap.md); a [design document](docs/design/README.md) only when an item links it |
+| See current and planned work, or record an idea | The [roadmap](docs/roadmap.md) items a search for the topic finds (`grep -n -i '<key word>' docs/roadmap.md`); the whole roadmap only to choose or order items (`roadmap` skill); a [design document](docs/design/README.md) only when an item links it |
 
 ## Identity and scope
 

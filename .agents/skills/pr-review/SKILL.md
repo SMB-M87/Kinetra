@@ -49,7 +49,7 @@ The names below describe depth, not a product: map them onto whatever the agent 
 
 ## 2. Read before judging
 
-1. `AGENTS.md` (in Kinetra-Lab also Kinetra's) and the pages its routing table names for the changed areas.
+1. `AGENTS.md` (in Kinetra-Lab also Kinetra's) and the sections its routing table names for the changed areas.
 2. The review lessons: `docs/review-lessons.md` of each repository involved (in Kinetra-Lab: Lab's and `external/Kinetra/docs/review-lessons.md`).
 3. The pull request description, the design document it links, and its roadmap item.
 4. The diff against the base (`git diff <base>...<head>`) and the CI result on the head.
