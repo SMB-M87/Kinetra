@@ -45,6 +45,9 @@ One list item per lesson, under the topic it belongs to:
 - **Make a job that claims to test a distribution's packages use them, not the runner's preinstalled tools** · added 2026-11-22 · source: #33
   GitHub's runner images put newer CMake, compilers and libraries ahead of what `apt` installs, so #33's Ubuntu job first passed on CMake 3.31 while the documented command installs 3.28. Put the distribution's paths first and print the path and version of each tool the docs name.
 
+- **Under an explicit `shell: bash`, never pipe a command into `head`** · added 2026-11-23 · source: #35
+  An explicit `shell: bash` runs every step with `-o pipefail`, so when `head` closes the pipe early the writer dies of SIGPIPE and the step fails with exit code 141, at random. #35's first run failed both matrix entries on `ldd --version | head -1`. Use `sed -n 1p`, which reads all of its input.
+
 ## Git and stacks
 
 No lessons yet.
