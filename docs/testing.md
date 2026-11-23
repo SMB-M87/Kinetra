@@ -121,7 +121,7 @@ cmake --preset graphics && cmake --build --preset graphics --target <targets>
 ctest --preset graphics -L graphics -R '<regex>'
 ```
 
-When a change alters what a scene shows, the author also takes a screenshot of it with Lab's [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md), looks at it and adds it to the pull request: no test judges appearance, and the reviewer runs nothing.
+When a change alters what a scene shows, the author also takes a screenshot of it with Lab's [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md), looks at it and adds it to the pull request: no test judges appearance, and the reviewer runs nothing. The captures it makes stale are refreshed in the same pull request ([rule](../AGENTS.md#repository-documentation)).
 
 **In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers), the same build and tests on Ubuntu LTS with warnings as annotations (the `linux (ubuntu)` run) and, in Lab, the smoke runs of every executable (`kinetra_smoke:*`, label `graphics`) and the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
 

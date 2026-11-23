@@ -94,6 +94,7 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 - **Tests.** Every changed behavior is covered, and no test was weakened.
 - **Readability.** Names, function size, flag arguments, magic numbers, duplication.
 - **Documentation.** `///` contracts, module README, diagrams and links still match the code.
+- **Media.** A change to what a capture shows refreshes the captures that the media guides' tables name for it, and no others ([rule](../AGENTS.md#repository-documentation)).
 - **Copies.** For every rule, procedure or term the branch changes, search for the old wording, its key words and the names of its parts (`python3 tools/check_copies.py --term '<old wording>' --term '<key word>' --term '<part>'`, in Kinetra-Lab `python3 external/Kinetra/tools/check_copies.py`, which also covers `external/Kinetra`; it searches case-insensitively, and lists the CI jobs, CMake options, presets, flags and inline names the diff removes and where they are still named), read every hit, and change every copy so they all say the same ([rule](../AGENTS.md#repository-documentation), which says what the parts are).
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section, or for a docs-only change in the pull request description.
