@@ -75,11 +75,20 @@ jobs:
           # docs/ or renamed to .md still counts as a source change.
           files=$(git diff --no-renames --name-only "$mb" "$HEAD")
           printf 'Changed in this pull request:\n%s\n' "${files:-(nothing)}"
+          # This run uses the pull request's own copy of the filter. A broken pattern must not
+          # skip builds, so it first has to keep every one of these source paths.
+          docs='(\.md$|^docs/|^\.agents/|^$)'
+          for path in CMakeLists.txt cmake/x.cmake include/kinetra/x.h src/x.cpp tests/x.cpp .github/workflows/ci.yml tools/x.py; do
+            if ! printf '%s\n' "$path" | grep -q -v -E "$docs"; then
+              echo "::warning title=Filter check failed::The docs filter would skip $path; the full CI runs."
+              exit 0
+            fi
+          done
           # Skip only when grep selects no line (status 1). Any other status, such as a SIGPIPE
           # under pipefail, means a full run: the decision fails closed.
           skip=false
           status=0
-          printf '%s\n' "$files" | grep -q -v -E '(\.md$|^docs/|^\.agents/|^$)' || status=$?
+          printf '%s\n' "$files" | grep -q -v -E "$docs" || status=$?
           if [ "$status" -eq 1 ]; then
             skip=true
             echo "::notice title=Build and tests skipped::Only Markdown, docs/ or .agents/ changed: only the docs check runs."
