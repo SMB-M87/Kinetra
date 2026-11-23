@@ -22,12 +22,13 @@ Kinetra's README shows no media, though the launcher and the overlays it describ
 
 | Decision | Choice | Why |
 | --- | --- | --- |
-| Sections | *Shared UI in the README* and *Leaner agentic cycle* at the end of *Next*, *Images in the launcher menu* at the end of *Later* | The first two have a concrete first step in Lab's items; the images need a design with a possible new dependency. The order within a section is the user's |
+| Sections | *Leaner agentic cycle* first in *Next* and *Shared UI in the README* at its end; *Images in the launcher menu* at the end of *Later* | The user put the cycle first on 2026-11-23; the README item has a concrete first step in Lab's design; the images need a design with a possible new dependency |
+| GIFs and Demo | *Shared UI in the README* depends on Lab's *Demo scenario menu* | The user wants the configuration page shown with Demo, which has none yet |
 | Authoritative item | Lab's items hold the scenes, the measurements and the candidate measures; Kinetra's items hold Kinetra's part and link them | One place per concept |
 
 ## Design
 
-[Roadmap](../roadmap.md): **Shared UI in the README** and **Leaner agentic cycle** in *Next*, **Images in the launcher menu** in *Later*, each linked to its Lab item.
+[Roadmap](../roadmap.md): **Leaner agentic cycle** first in *Next*, **Shared UI in the README** at its end, **Images in the launcher menu** in *Later*, each linked to its Lab item.
 
 ## Verification
 
