@@ -10,6 +10,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 ## Table of contents
 
 - [Features](#features)
+- [Shared UI](#shared-ui)
 - [Modules](#modules)
 - [Quick start](#quick-start)
 - [Using Kinetra](#using-kinetra)
@@ -20,7 +21,7 @@ Reusable C++20 2D simulation library with an optional SDL2/OpenGL 3.3 runtime.
 
 [Documentation index](docs/README.md)
 
-Directory guides: [docs](docs/README.md), [tests](tests/README.md), [tools](tools/README.md).
+Directory guides: [docs](docs/README.md), [media](docs/media/README.md), [tests](tests/README.md), [tools](tools/README.md).
 
 ## Features
 
@@ -28,6 +29,18 @@ Directory guides: [docs](docs/README.md), [tests](tests/README.md), [tools](tool
 - Optional window, input, camera, colored primitives, bitmap text and direct sessions.
 - Public C++ headers under `include/kinetra/`, grouped by layer in `simulation/`, `view/` and `runtime/`; CMake targets `Kinetra::Simulation`, optional `Kinetra::Runtime` and `Kinetra::Launcher`.
 - Optional reusable launcher menu and session host in `<kinetra/runtime/launcher.h>`; application registration and gameplay remain in Lab.
+
+## Shared UI
+
+Every Kinetra-Lab application runs in the same shell: the launcher menu and session host of `Kinetra::Launcher`, and the runtime's overlays. The applications supply rows, content and actions; Kinetra lays them out, draws them and captures their input ([contracts](docs/engine/launcher-overlays.md)). The GIFs show them in Kinetra-Lab's Demo, with the pointer and keys a person would use ([how they are made](docs/media/README.md)).
+
+| Part | In use |
+| --- | --- |
+| **Launcher menu** (`LaunchMenu`, `SessionHost`): hover preselects an application, and one with configurations asks for one first, here Demo's scenarios | ![The launcher menu with Demo, Dotio and i4sim, then Demo's configuration page with Terrain, Gravity, Maze and Doorway, and Doorway starting](docs/media/ui-launcher.gif) |
+| **Settings panel** (`SettingsOverlay`): Ctrl opens it and pauses the application; toggles, help sections that open on a click, and LAUNCHER, RESUME and EXIT | ![The settings panel over Demo: Statistics off and on, the help of Sim Controls and Debug Controls, and Resume](docs/media/ui-settings.gif) |
+| **Debug menu** (`DebugMenu`): Shift+Ctrl opens a tree with one section open at a time; rows with `[-]` and `[+]` steppers, choices and color swatches change the running simulation | ![The debug menu over Demo: Speed and Max Speed stepped up, Avoidance switched to Legacy and back, and the Layers section](docs/media/ui-debug-menu.gif) |
+| **Agent inspector and frame times** (`InspectorView`, `draw_frame_times`): a selected agent's state in a panel at the top right, with the frame-time graph below it | ![A click on a Demo agent opens the inspector; Frame Times puts the graph below it; another agent is selected, and X closes the inspector](docs/media/ui-inspector.gif) |
+| **Debug layers**: what Debug Mode draws, each layer toggled in the menu in its own color, and the wheel's zoom | ![Demo's terrain with Vectors, Steering Probes, Paths, Collision Shapes and Active Agents toggled off and on, Home Range on, and the view zooming out](docs/media/ui-debug-layers.gif) |
 
 ## Modules
 

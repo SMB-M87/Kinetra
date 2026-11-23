@@ -73,7 +73,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 | A design document exists (one per stack is enough, and one per change across Kinetra and Lab, which may live in the other repository; none for a docs-only pull request), its status is `implemented`, and Decisions, Test plan and Verification match the diff | `docs/design/`, the description's *Design* |
 | Every changed behavior has a test; no test was weakened, skipped or deleted without a reason | The diff of `tests/`, the design document's test plan |
 | The verification level fits the diff by the table in AGENTS.md, and the description reports the commands; CI is green on the head | AGENTS.md *Verification*, the check runs |
-| A change to what a scene shows comes with the author's screenshot, and a change that depends on desktop feel or performance names the user's playtest | The description, the design document |
+| A change to what a scene shows comes with the author's screenshot and refreshes the captures that the media guides' tables name for it, and no others ([rule](../../../AGENTS.md#repository-documentation)); a change that depends on desktop feel or performance names the user's playtest | The description, the design document, the diff of `docs/media/` |
 | Docs follow the code: module README, contract pages, `///` summaries, diagrams; links resolve | The diff; CI's *Documentation links* step |
 | The roadmap item moved or left, and follow-ups were added | `docs/roadmap.md` |
 | Boundaries and conventions: layers, include layout, `.h`/`.cpp`, naming, no new warnings, refactoring and behavior in separate commits, commit format | AGENTS.md, conventions |

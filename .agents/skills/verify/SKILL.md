@@ -17,7 +17,7 @@ git diff --name-only main...HEAD      # committed on this branch
 git status --short                    # uncommitted and untracked
 ```
 
-A changed submodule pointer (`external/Kinetra` in Lab's diff) counts as an engine change, unless Kinetra changed only Markdown, `docs/`, `.agents/`, `.github/` or `tools/` between the two pointers (`git -C external/Kinetra diff --name-only <old> <new>`), which Lab's build does not read: then it is the Docs level, and Lab's CI runs only the docs check for it.
+A changed submodule pointer (`external/Kinetra` in Lab's diff) counts as an engine change, unless Kinetra changed only Markdown, `docs/`, `.agents/`, `.github/` or `tools/` between the two pointers (`git -C external/Kinetra diff --name-only <old> <new>`), which Lab's build does not read: then it is the Docs level, and Lab's CI runs only the docs check for it, unless the range changes Kinetra's `README.md` or `docs/media/`, which a Lab test reads.
 
 ## 2. Classify each file; the highest level wins
 
@@ -53,7 +53,7 @@ Pick targets and tests from the mapping tables: Kinetra in [testing](../../../do
 - Locally, the Targeted checks of every changed area, so the push compiles and its tests pass. For runtime, launcher or presentation changes, the graphics cases of that area are optional quick feedback: `ctest --preset graphics -L graphics -R '<regex>'` after building its targets in the `graphics` preset (offscreen SDL, software Mesa).
 - Do not run `ci`, `headless`, `graphics` or `windows` as a whole locally: the pull request's CI runs them on every push (with format, docs, the external consumer, a second Linux job on Ubuntu LTS and, in Lab, the smoke runs and Windows), the graphics cases included. Run one locally only to reproduce a CI failure.
 - After pushing, read the pull request's checks (`gh pr checks <number>`). The change is verified when the checks are green; until then report "pushed, CI pending".
-- When the change alters what a scene shows, take a screenshot of it with Lab's capture tool, look at it and add it to the pull request; the reviewer runs nothing.
+- When the change alters what a scene shows, take a screenshot of it with Lab's capture tool, look at it and add it to the pull request; the reviewer runs nothing. Refresh the captures that the media guides' tables name for the change with `tools/capture/capture_media.sh`, look at every refreshed file and commit them with the change, and no others ([rule](../../../AGENTS.md#repository-documentation)).
 - A change that depends on desktop feel, a real GPU driver or performance also needs the user's playtest, which software rendering cannot replace. Report it as open for the user.
 
 ## 4. Report

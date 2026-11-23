@@ -5,6 +5,7 @@
 #include <kinetra/view/camera.h>
 #include <kinetra/view/input.h>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -63,7 +64,8 @@ class Runtime {
     void line(Vec2 from, Vec2 to, float width, Color color);
     /// Uploads and draws the batch, then presents the frame. Without VSync it then waits for
     /// the frame limiter, unless that was switched off (see pacing()). From the second frame
-    /// on, also records the time since the previous end() in frame_times().
+    /// on, also records the time since the previous end() in frame_times(), or the fixed time
+    /// set by fix_frame_times().
     void end();
     /// What spaces the frames: `vsync` when the platform accepted a swap interval when the
     /// window was opened; otherwise `limited`, or `uncapped` after limit_frames(false).
@@ -78,8 +80,14 @@ class Runtime {
     double frame_interval() const;
     /// Wall-clock time between the last presented frames, oldest first. With VSync or the
     /// frame limiter this is the display's refresh interval; a longer entry is a frame that
-    /// reached the screen late.
+    /// reached the screen late. After fix_frame_times(seconds), every new entry is `seconds`.
     const FrameTimes &frame_times() const;
+    /// Makes end() record `seconds` in frame_times() for every frame instead of the measured
+    /// time, or measure again for std::nullopt, the default. For a program that renders frames
+    /// into files: each of its frames stands for one display refresh, not for the time it took
+    /// to draw, and a measured graph would differ on every run. Pacing does not change; entries
+    /// already recorded stay. Throws std::invalid_argument for a negative or non-finite time.
+    void fix_frame_times(std::optional<double> seconds);
     /// The view used by all drawing calls. poll() sets its viewport; the application owns
     /// position and zoom.
     Camera2D camera;

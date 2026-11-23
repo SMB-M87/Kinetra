@@ -157,6 +157,8 @@ struct Runtime::Impl {
     };
     std::vector<Vertex> vertices;
     FrameTimes frame_times;
+    /// What end() records for a frame instead of the measured time; empty to measure.
+    std::optional<double> fixed_frame_time;
     /// When the previous frame was presented; empty before the first one.
     std::optional<std::chrono::steady_clock::time_point> presented;
     /// Whether the platform accepted a swap interval, and whether the limiter replaces it
@@ -420,12 +422,19 @@ void Runtime::end() {
     // compositor and the limiter's wait all count.
     const auto now = std::chrono::steady_clock::now();
     if (impl_->presented)
-        impl_->frame_times.record(std::chrono::duration<double>(now - *impl_->presented).count());
+        impl_->frame_times.record(
+            impl_->fixed_frame_time.value_or(std::chrono::duration<double>(now - *impl_->presented).count()));
     impl_->presented = now;
 }
 
 const FrameTimes &Runtime::frame_times() const {
     return impl_->frame_times;
+}
+
+void Runtime::fix_frame_times(std::optional<double> seconds) {
+    if (seconds && (!std::isfinite(*seconds) || *seconds < 0))
+        throw std::invalid_argument("A fixed frame time must be finite and nonnegative");
+    impl_->fixed_frame_time = seconds;
 }
 
 FramePacing Runtime::pacing() const {
