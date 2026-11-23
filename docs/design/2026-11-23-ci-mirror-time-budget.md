@@ -103,6 +103,17 @@ The release workflow runs only after a merge on `main` or a tag, so its limits a
 - Own review: a step where the mirror's update and the install ran in one function would have put the budget around the install too; the update now has its own line, and the fallback's update and install are two lines, so the step's `-e` fails the run on either.
 - Copies: `check_copies.py` with `each install step`, `both install steps`, `install step`, `time limit`, `timeout-minutes`, `lacks an index`, `mirror fails`, `Ubuntu mirror not used`, `Every job has`, `six hours`, `Usually two minutes`, `Usually three minutes`, `about 11 minutes`, `without cache`, `waits for the pinned toolchain`, `setup-msys2`, `apt-get update`, `Error-Mode` and `azure.archive`, in Kinetra-Lab with this branch checked out in `external/Kinetra`. Two pages still said less than the change: [testing](../testing.md#continuous-integration) named only Kinetra-Lab's `ci.yml`, now its `release.yml` too, and Kinetra-Lab's release tool README described the install's fallback but not the limits; both changed. The other hits are lines this change wrote, the merged design documents, and Kinetra-Lab's roadmap item on cloud sessions, which is about a different `apt-get update`.
 - The session that wrote #42 and #98 had started the same fixes on a Kinetra branch `fix/ci-mirror-hang`, without a pull request; it stopped and left them to this branch. Whether that branch is deleted is the user's decision.
+- Agent review, round 1 of #43 and round 2 of Kinetra-Lab #98 (two review sessions reviewed #43 in parallel; the later one withdrew its *Ready to merge*, so the conclusion was *Questions*):
+
+  | Finding | Resolution |
+  | --- | --- |
+  | Question: could the budget also cover the downloads, since `apt-get install --download-only` runs no dpkg? | The user chose to budget them too: 31dfac1, Kinetra-Lab 6ecd400. The decision, non-goal, design, test plan and open point followed in 1881024 |
+  | Effort: the reviewer could not confirm it ran one level above high | The review session was created at `xhigh`, as its session record shows; no new review needed |
+  | Nit: "a few times its usual duration" no longer fit the corrected durations | The limits are described by what they must hold: 7a12760, Kinetra-Lab 8ecdcf6 |
+  | Nit: the header's "does not answer within five minutes" read as covering the downloads | With the downloads in the budget, the header, the warning and `testing.md` say "does not deliver the indexes and packages within five minutes": 31dfac1 |
+  | Nit: *Verification* recorded no CI result | Recorded below, after the merge |
+  | Nit: the *Follow-up* (stalled downloads) was on no roadmap | Moot: the open point is closed |
+- Copies after round 1: `git grep` for "a few times", "answer within five minutes", "its index update" and "installs themselves" in both repositories finds no line left.
 
 ## Verification
 
@@ -122,13 +133,23 @@ Each step run took the step's `run:` from the committed `ci.yml` with Python's Y
 - The three workflows load with Python's YAML parser. Kinetra's `ci.yml`: `changes` 10, `linux` 45, `checks` 10; both install steps 15. Kinetra-Lab's `ci.yml`: the same, `windows` 45, and `msys2/setup-msys2@v2` 15. Kinetra-Lab's `release.yml`: `changes` 10, `package` 30, `publish` 10; its install step 15.
 - Kinetra-Lab's release, which runs only after a merge, built locally as its [tool README](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/release/README.md) says, on Ubuntu 24.04 with `g++-mingw-w64-x86-64-posix` 13, at #98's head `862100a`: `cmake --preset windows`, the build of the four targets and `package_windows.sh` exit 0; the workflow's DLL import check finds nothing unexpected in the four executables; the zip holds 25 files.
 - `python3 tools/check_docs.py` in Kinetra and `python3 external/Kinetra/tools/check_docs.py` in Kinetra-Lab: all links resolve.
-- Full level: the pull requests' CI.
+- Full level: CI green on every head of both pull requests: #43 on 18af391 (run 45180760037) and on 1881024 (run 45225643826); Kinetra-Lab #98 on 862100a (run 45179270702) and on 8ecdcf6 (run 45225651026). The Ubuntu install took 26 s, 33 s, 26 s and 25 s, from the mirror, with no *Ubuntu mirror not used* warning: the reviewer read it in the log of run 45180760037, and the durations rule out the fallback, which takes minutes. The MSYS2 install took 65 s.
+
+After round 1, with the downloads in the budget, the same kind of runs at Kinetra-Lab's `6ecd400` step (equal to Kinetra's 31dfac1 but for the package list). A second local server stood in for a mirror that answers the update and stalls the downloads: it passes `/ubuntu/dists/` to the real mirror and never answers `/ubuntu/pool/`.
+
+| Run | Result |
+| --- | --- |
+| Mirror reachable | `--download-only` fetched 187 MB from the mirror, then the install reported *Need to get 0 B/187 MB*: it installed from the cache and downloaded nothing. Exit 0 after 54 s (Kinetra's step: 51 s), every `Get:` from `azure.archive.ubuntu.com` |
+| Mirror refused | The warning after 7 s, exit 0 after 44 s |
+| Mirror accepts and never answers | The warning at 300 s, exit 0 after 333 s |
+| Mirror serves the indexes and stalls the packages | 19 indexes from the mirror, then the download of `libc6` stalled; the warning at 300 s, the fallback installed everything from the image's sources, exit 0 after 332 s; no apt process of that run was left |
+| The step before round 1 (Kinetra-Lab 862100a), the same server | No warning; apt waited 60 s for each package and was at the 14th after 848 s; the step's limit ended it after 900 s (exit 124) with nothing installed |
 
 ## Pull request
 
-Title: `fix(ci): give the Ubuntu mirror's index update a time budget of its own`.
+Title: `fix(ci): give the Ubuntu mirror's index update a time budget of its own` (the budget covers the downloads too since round 1; the title stayed).
 
-Summary: #42's fallback to the image's sources started only when the Azure mirror failed. A mirror that accepts connections and never answers kept apt in its timeouts and retries past the install step's 15 minutes, so the run failed with no warning and no fallback (measured: still at the second index after 841 s). The mirror's `apt-get update` now runs under `timeout -k 10 300`; the installs stay unbounded, because a killed `apt-get install` can leave dpkg half-configured. The step also warns when its pattern misses one of the image's URIs, its function `install` became `apt_install`, and stale durations in the comments are corrected. In Kinetra-Lab, #98 carries the same step, a time limit on the `windows` job's MSYS2 install and on every job and the install step of `release.yml`. Changes, verification and review as in the sections above. Merge order: this pull request first, then Kinetra-Lab #98; neither depends on the other's code, and #98 does not move the pointer. Both change CI, so both wait for the user.
+Summary: #42's fallback to the image's sources started only when the Azure mirror failed. A mirror that accepts connections and never answers kept apt in its timeouts and retries past the install step's 15 minutes, so the run failed with no warning and no fallback (measured: still at the second index after 841 s). The mirror's `apt-get update` and `apt-get install --download-only` now run under one `timeout -k 10 300`; the install from the downloaded packages stays unbounded, because a killed `apt-get install` can leave dpkg half-configured. The step also warns when its pattern misses one of the image's URIs, its function `install` became `apt_install`, and stale durations in the comments are corrected. In Kinetra-Lab, #98 carries the same step, a time limit on the `windows` job's MSYS2 install and on every job and the install step of `release.yml`. Changes, verification and review as in the sections above. Merge order: this pull request first, then Kinetra-Lab #98; neither depends on the other's code, and #98 does not move the pointer. Both change CI, so both wait for the user.
 
 ## Open points
 
