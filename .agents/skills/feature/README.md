@@ -1,6 +1,6 @@
 # feature
 
-Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. You get a design document, verified commits and a pull request that goes through independent review.
+Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. You get a design document, verified commits and a pull request that goes through independent review; a change to documentation alone gets neither design document nor independent review.
 
 ## Table of contents
 
@@ -15,7 +15,7 @@ Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. You ge
 
 | Situation | Example request | Result |
 | --- | --- | --- |
-| A roadmap item is ready | “Pak het item Skill READMEs op.” | One branch with the seven guides, their design document and the corresponding roadmap update. |
+| A roadmap item is ready | “Pak het item Skill READMEs op.” | One branch with the seven guides and the corresponding roadmap update; being docs-only, it has no design document and no agent review. |
 | An engine contract appears broken | “/feature Zoek uit waarom een mislukte Navigation::rebuild de vorige kaart wist.” | A test that reproduces the reported failure before the fix, followed by the verified fix. |
 | A Lab feature needs engine support | “/feature Voeg de agent-inspector toe aan i4sim.” | A design for the engine overlay and the Lab content, with linked pull requests in dependency order. |
 

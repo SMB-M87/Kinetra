@@ -56,7 +56,7 @@ The root [CMakeLists.txt](../CMakeLists.txt) registers the suites when `BUILD_TE
 - [CMakeLists.txt](consumer/CMakeLists.txt) links `Kinetra::Simulation`; with `CONSUMER_GRAPHICS=ON` it also enables the runtime and links `Kinetra::Runtime` and `Kinetra::Launcher`.
 - [main.cpp](consumer/main.cpp) exercises geometry, navigation, avoidance and both traffic admission overloads; with graphics it also compiles and links the runtime and launcher interfaces. It never opens a window, so it does not replace the graphics suite.
 
-CI runs it on every pull request. Run it yourself when you change a public header, a target or a link dependency; the commands are in [external consumers](../docs/development.md#external-consumers).
+CI runs it on every pull request that changes more than documentation. Run it yourself when you change a public header, a target or a link dependency; the commands are in [external consumers](../docs/development.md#external-consumers).
 
 ## Adding a suite
 

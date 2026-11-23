@@ -14,7 +14,7 @@ All three must be true:
 2. **Surprising without context:** a future reader would ask "why on earth is it done this way?".
 3. **A real trade-off:** there were genuine alternatives, and one was chosen for specific reasons.
 
-If any is false, the design document's **Decisions** table is enough. Say so and stop.
+If any is false, the design document's **Decisions** table, or a docs-only pull request's description, is enough. Say so and stop.
 
 ## 2. Where
 
@@ -56,5 +56,5 @@ Keep it short: an ADR records *that* and *why*, not the full design (which lives
 ## 4. Maintain
 
 - Add the ADR to the index table. When it replaces or amends an older decision, set the old ADR's status to `superseded by [NNNN](...)` or `amended by [NNNN](...)` and update its row in the index; never delete history.
-- Link the ADR from the design document, and from the architecture or contract page it affects.
+- Link the ADR from the design document, or from a docs-only pull request's description, and from the architecture or contract page it affects.
 - Run the docs check, then commit as `docs(adr): record NNNN <slug>` (or together with the change it belongs to).

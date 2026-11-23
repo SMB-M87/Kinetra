@@ -33,14 +33,14 @@ An item moves from Ideas or Later to **Next** when the goal is clear, a first st
 
 ## 3. Pick up: start an item
 
-When the user asks what is next, propose the first item of **Next** (and say why, if you suggest another). Once the user agrees, start it with the `feature` skill. On the new branch, move the item to **Now** with its branch and design document, in the branch's first commit.
+When the user asks what is next, propose the first item of **Next** (and say why, if you suggest another). Once the user agrees, start it with the `feature` skill. On the new branch, move the item to **Now** with its branch and its design document, if it has one, in the branch's first commit.
 
 ## 4. Close: remove a finished item
 
-On the branch that finishes an item, in the same commit as the design document's status `implemented`:
+On the branch that finishes an item, in the same commit as the design document's status `implemented`, or in the last commit of a docs-only branch, which has no design document and whose pull request is the record:
 
-- Remove the item from **Now**. Its design document is the record; do not keep a done list.
-- Add the follow-ups from the design document's *Open points* that someone intends to act on, as items in **Next** or **Later**, linking the open point.
+- Remove the item from **Now**. Its design document, or for a docs-only change its pull request, is the record; do not keep a done list.
+- Add the follow-ups from the design document's *Open points*, or the pull request's for a docs-only change, that someone intends to act on, as items in **Next** or **Later**, linking the open point.
 - When the work spans both repositories, update the other repository's item as well, on that repository's branch.
 
 ## Rules

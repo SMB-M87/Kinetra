@@ -1,12 +1,12 @@
 ---
 name: pr-review
-description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session once the pull request's CI is green, for every pull request except a pointer-only one, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, every copy of a changed rule, roadmap, CI, merge order, review lessons) on the code, builds and runs nothing, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, resolves the threads it accepts, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and once a pull request's CI is green.
+description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session once the pull request's CI is green, for every pull request except a docs-only or pointer-only one, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, every copy of a changed rule, roadmap, CI, merge order, review lessons) on the code, builds and runs nothing, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, resolves the threads it accepts, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and once a pull request's CI is green.
 argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole stack) [code-review depth: low|medium|high, or higher on request]"
 ---
 
 # PR review: an agent reviews a pull request
 
-The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a pointer-only Lab pull request: the author starts it in a separate session once the pull request's CI is green, and the user can start it too. The reviewer only reads the code and comments on it: CI runs the builds and tests, and the author runs what CI cannot (a screenshot of a changed scene). The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
+The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a docs-only one (only Markdown, `docs/` or `.agents/`) and a pointer-only Lab pull request ([rule](../../../AGENTS.md#git)): the author starts it in a separate session once the pull request's CI is green, and the user can start it too. The reviewer only reads the code and comments on it: CI runs the builds and tests, and the author runs what CI cannot (a screenshot of a changed scene). The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
 
 Everything on GitHub is in English: the inline comments, the summary and its conclusion. Only the hand-over in the chat (step 10) is in Dutch.
 
@@ -56,7 +56,7 @@ The names below describe depth, not a product: map them onto whatever the agent 
 
 ## 3. Goals
 
-List every goal of the roadmap item and of the design document's *Goals*. For each, find where the diff meets it and what proves it: a test, or a recorded run in *Verification*. Check that the non-goals were left alone.
+List every goal of the roadmap item and of the design document's *Goals* (for a docs-only pull request reviewed on request, of its description). For each, find where the diff meets it and what proves it: a test, or a recorded run in *Verification*. Check that the non-goals were left alone.
 
 - A goal that is not met, or met without proof, is a **blocking** finding.
 - A goal that is vague or contradicts another is a **question for the user**, not for the author: say so in the summary.
@@ -69,7 +69,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 
 | Check | Where to look |
 | --- | --- |
-| A design document exists (one per stack is enough), its status is `implemented`, and Decisions, Test plan and Verification match the diff | `docs/design/`, the description's *Design* |
+| A design document exists (one per stack is enough, and one per change across Kinetra and Lab, which may live in the other repository; none for a docs-only pull request), its status is `implemented`, and Decisions, Test plan and Verification match the diff | `docs/design/`, the description's *Design* |
 | Every changed behavior has a test; no test was weakened, skipped or deleted without a reason | The diff of `tests/`, the design document's test plan |
 | The verification level fits the diff by the table in AGENTS.md, and the description reports the commands; CI is green on the head | AGENTS.md *Verification*, the check runs |
 | A change to what a scene shows comes with the author's screenshot, and a change that depends on desktop feel or performance names the user's playtest | The description, the design document |

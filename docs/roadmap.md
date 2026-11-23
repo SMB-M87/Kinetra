@@ -1,6 +1,6 @@
 # Roadmap
 
-The backlog of Kinetra: engine work that is wanted but not finished, from agreed follow-ups to loose ideas. Work in progress is described in its design document; this page says what comes after it. Application work lives in the [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md).
+The backlog of Kinetra: engine work that is wanted but not finished, from agreed follow-ups to loose ideas. Work in progress is described in its design document, or for a docs-only change in its pull request; this page says what comes after it. Application work lives in the [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md).
 
 ## Table of contents
 
@@ -14,7 +14,7 @@ The backlog of Kinetra: engine work that is wanted but not finished, from agreed
 
 ## How to use this page
 
-Sections, item format and the moves between sections are defined in the [documentation guide](documentation.md#roadmap). The `roadmap` skill adds, shapes and closes items, for example during a brainstorm with the user ([skill](../.agents/skills/roadmap/README.md)). A merged item is removed; its design document is the record.
+Sections, item format and the moves between sections are defined in the [documentation guide](documentation.md#roadmap). The `roadmap` skill adds, shapes and closes items, for example during a brainstorm with the user ([skill](../.agents/skills/roadmap/README.md)). A merged item is removed; its design document, or for a docs-only change its pull request, is the record.
 
 Within each section the first item comes first. The order was proposed on 2026-11-21 together with the [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md), which is the plan for the applications, and settled with the user on 2026-11-22 ([decisions](design/2026-11-22-roadmap-decisions.md)); on 2026-11-23 the user put *Leaner agentic cycle* first, in both roadmaps; the other items of that day stand at the end of their sections ([design](design/2026-11-23-roadmap-media-labs-cycle.md#decisions)). Lab's quality roadmap of 2026-11-18 is closed, and what it left is listed here and there.
 
@@ -24,9 +24,6 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-- **Leaner agentic cycle** · workflow, skills, with Lab · added 2026-11-23
-  The user wants the agents' development cycle to take less time and fewer steps. The rules, the [workflow](workflow.md) and the skills live here, so the measures that change them land in Kinetra: for example one design document for a change across both repositories, and design and review sized to the Docs level.
-  Next step: Lab's item of the same name measures where the cycle spends its time; the measures are then settled with the user. Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).
 - **Shared UI in the README** · docs, media, with Lab · added 2026-11-23
   The user wants this README to show the shared UI in GIFs: the launcher menu, the configuration page (Demo's scenarios), the settings panel, the debug menu, the agent inspector, the frame times and the other debug views, captured from Demo by Lab's capture tool, since Kinetra has no applications of its own. The README has no media yet. With it comes a rule in both `AGENTS.md` files: a change that alters what is visible refreshes the affected GIFs in the same pull request; for an overlay changed here, the GIFs are captured from Lab with its pointer on the Kinetra branch.
   Next step: Lab's design for its item *README media as GIFs* settles the scenes and where the files live (proposal: `docs/media/` here). Depends on: Lab's *Demo scenario menu*, which gives Demo the configuration page it lacks (the user's decision of 2026-11-23). Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).

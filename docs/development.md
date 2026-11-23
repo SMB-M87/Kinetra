@@ -89,7 +89,7 @@ The preset sets `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1` for th
 
 ## External consumers
 
-The separate [consumer fixture](../tests/consumer/) checks the public simulation interfaces. With `CONSUMER_GRAPHICS=ON`, it also checks the runtime headers and linking, without opening a window. Run it when changing the public build boundary (CI always runs it):
+The separate [consumer fixture](../tests/consumer/) checks the public simulation interfaces. With `CONSUMER_GRAPHICS=ON`, it also checks the runtime headers and linking, without opening a window. Run it when changing the public build boundary (CI runs it on every pull request that changes more than documentation):
 
 ```sh
 cmake -S tests/consumer -B build-consumer -G Ninja -DKINETRA_SOURCE="$PWD" -DCONSUMER_GRAPHICS=ON

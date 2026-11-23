@@ -1,6 +1,6 @@
 # pr-review
 
-A second agent reviews every pull request except a pointer-only one, or a whole stack of them. The author starts it once the pull request's CI is green, and you can start it too. It reviews the code and comments; it builds and runs nothing. When it finishes, the pull request has inline comments for its findings and a summary with a conclusion. The author's session has answered each finding, the two agents have settled what they could, and the pull request is either merged by its author or waiting for you with the points that need your word.
+A second agent reviews every pull request except a docs-only or pointer-only one, or a whole stack of them. The author starts it once the pull request's CI is green, and you can start it too. It reviews the code and comments; it builds and runs nothing. When it finishes, the pull request has inline comments for its findings and a summary with a conclusion. The author's session has answered each finding, the two agents have settled what they could, and the pull request is either merged by its author or waiting for you with the points that need your word.
 
 ## Table of contents
 
@@ -22,7 +22,7 @@ A second agent reviews every pull request except a pointer-only one, or a whole 
 ## When not to use it
 
 - As a replacement for your decision on agent rules, skills, CI, releases or your own checks: those pull requests always wait for you ([merge rule](../../../AGENTS.md#git)).
-- On a pointer-only Kinetra-Lab pull request: it needs no review ([rule](../../../AGENTS.md#git)).
+- On a docs-only pull request (only Markdown, `docs/` or `.agents/`) or a pointer-only Kinetra-Lab pull request: it needs no review ([rule](../../../AGENTS.md#git)). You can still ask for one.
 - To process the comments: that is `pr-feedback`, in the session that opened the pull request.
 - On a branch that is not a pull request yet: `feature` reviews its own diff with the agent's code review in its review step.
 
@@ -44,7 +44,7 @@ flowchart LR
 
 *Takeaway:* the reviewer reviews and accepts; the author changes, argues and merges; anything they cannot settle, and every change to rules, CI or your own checks, stays for you.
 
-- It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff.
+- It reads the rules, the review lessons and the design document, and checks every goal of the roadmap item and the design document against the diff; a docs-only pull request reviewed on request takes its goals from the description.
 - It runs the agent's code review (Claude Code's `/code-review`, or a global `code-review` skill) for correctness and checks every finding itself. Then it walks a checklist from the rules: tests, verification level, docs, every copy of a changed rule or procedure, roadmap, conventions, description and merge order.
 - Its depth follows the change: the reviewer's session runs on the most capable model at high reasoning effort, one level higher for a large pull request with much logic, and the code review at `low` for docs, `medium` for code in one module, `high` for public headers, simulation behavior, CMake, CI and releases ([levels](SKILL.md#levels)). It names no model or product, so it works with any agent.
 - It builds, tests and runs nothing: CI runs every test on each push, graphics included, and the author adds what CI cannot, such as a screenshot of a changed scene. The reviewer checks that it is there.

@@ -55,7 +55,11 @@ class Removed:
 
 
 def git(root: Path, *args: str, check: bool = True) -> str:
-    result = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
+    # errors="replace": an undecodable byte, as in a binary file or a text file that is not
+    # UTF-8, becomes a replacement character instead of stopping the check.
+    result = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
     if check and result.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)}: {result.stderr.strip()}")
     return result.stdout if result.returncode == 0 else ""
@@ -141,7 +145,9 @@ def collect(root: Path, base: str) -> dict[tuple[str, str], Removed]:
     changed = git(root, "diff", "--name-only", "--no-renames", base).splitlines()
     for path in changed:
         before, after = old_text(root, base, path), new_text(root, path)
-        if not before:
+        # A NUL byte marks a binary file, such as a deleted video: its decoded bytes would
+        # only produce chance matches, like a "-D" flag in a run of random characters.
+        if not before or "\0" in before:
             continue
         name = Path(path).name
         if path.startswith(".github/workflows/") and name.endswith((".yml", ".yaml")):
