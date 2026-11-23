@@ -67,6 +67,7 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
 ## Test plan
 
 - The decision step, extracted from `ci.yml`, in a blobless clone of Kinetra: the docs-only #29, #34 and this branch's first commit skip; the code and CI pull requests #33, #35 and #36 build; a source moved into `docs/` with `git mv` builds; a line in `ci.yml` builds; an empty diff skips; a base that does not exist warns *No merge base* and leaves `skip_build` empty, a full run.
+- The fail-closed form of the decision (after review round 2), on its own under `bash -e` with and without `pipefail`: 20,000 source paths build in 20 of 20 runs, 20,000 docs paths skip, a mixed diff builds, an empty diff skips.
 - YAML parses; `python3 tools/check_docs.py`; `python3 tools/check_copies.py` with the old wordings.
 - `check_copies.py` in Kinetra-Lab on a branch that deletes `docs/media/kinetra-lab-tour.mp4`: a `UnicodeDecodeError` before the fix, the list of hits after it.
 - This pull request's own CI changes `ci.yml`, so it builds in full; the skip runs on the next docs-only pull request.
@@ -88,10 +89,15 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
   - The `changes` decision fails closed: tested with 20,000 source paths, a large docs diff, a mixed and an empty diff, with and without `pipefail`.
   - *Leaner agentic cycle* leaves Kinetra's *Now*; *Decisions*, *Design*, *Affected areas* and *Pull request* include the round-1 commits.
   - Lessons: the round-1 lesson on exemptions is replaced by the reviewer's wider one, and one on failing closed is added.
+- Agent review, round 3 (on 2008388, *Fix first*, one point to fix and nits), all carried out:
+  - Skills used on their own still wrote into a design document: `grilling` (description, step 4, README), `adr` (steps and README), the ADR bullet of workflow step 2, the `roadmap` README's note on bugs and the `pr-review` goal list now name the description for a docs-only change; the diagram keeps grilling for it, with the description in the design node; `docs/development.md` says CI runs the consumer on every pull request that changes more than documentation.
+  - `feature` step 9.5 no longer merges; step 9.8 is the only merge step.
+  - *Test plan* and *Verification* list the fail-closed runs; the double blank line in the review lessons is gone; the pull request description matches *Pull request* again.
+  - 2008388 changed the review lessons inside a `docs(design)` commit; pushed history stays as it is, and the lesson edits of this round have a commit of their own.
 
 ## Verification
 
-- The decision step's runs in the test plan, with the results above.
+- The decision step's runs in the test plan, with the results above, the fail-closed runs included.
 - `python3 -c "import yaml; …"` parses the workflow.
 - `python3 tools/check_docs.py`: all links resolve.
 - `python3 tools/check_copies.py` with the terms above: only the hits listed under *Review*.
@@ -101,7 +107,7 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
 **Leaner cycle: docs-only pull requests skip the review, the design document and the build**
 
 - **Summary:** a pull request that changes only Markdown, `docs/` or `.agents/` gets no agent review and no design document, and Kinetra's CI runs only the docs check for it (Lab's CI skips most of them); a change across both repositories gets one design document; agents read design documents only when something links them. The first step of *Leaner agentic cycle*, with the user's choices of 2026-11-23.
-- **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`, `docs/design/README.md`, `docs/README.md`, `docs/documentation.md`, `docs/roadmap.md`, `tests/README.md`, `README.md`; skills `pr-review`, `pr-feedback`, `feature`, `roadmap`, `verify` and the overview; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job, failing closed); `tools/check_copies.py` (binary files); three review lessons; this document.
+- **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`, `docs/design/README.md`, `docs/README.md`, `docs/documentation.md`, `docs/roadmap.md`, `tests/README.md`, `README.md`; skills `pr-review`, `pr-feedback`, `feature`, `roadmap`, `verify` and the overview; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job, failing closed); `tools/check_copies.py` (binary files); three review lessons; `grilling`, `adr`, `docs/development.md`; this document.
 - **Design:** this document; Kinetra-Lab's design document in Kinetra-Lab#83 for the measurement and Lab's skip.
 - **Verification:** the decision step in a blobless clone (docs-only skips; code, CI and a rename into `docs/` build; doubt builds) and the fail-closed form under both shells; YAML; `check_docs.py`; `check_copies.py` with the old wordings and the document's parts.
 - **Review notes:** agent review rounds 1 and 2, both *Fix first*, answered in the commits named under *Review*. The branch name comes from the session environment.
