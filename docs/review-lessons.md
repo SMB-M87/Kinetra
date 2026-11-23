@@ -37,8 +37,8 @@ One list item per lesson, under the topic it belongs to:
 - **Search for copies of a changed step case-insensitively, on its key words, not on one copy's sentence** · added 2026-11-22 · source: #30
   The search for "After opening it" matched only the sentence in `AGENTS.md`; the skills overview and the `pr-feedback` guide said "after opening a pull request" and "after every pull request". Use `grep -rni` with each key word of the step in lower case.
 
-- **When a rule exempts a case from a step, search for every procedure that still performs that step, and add the exemption there** · added 2026-11-23 · source: #37
-  The docs-only exemption reached the rule pages, but not the steps that set a design document to `implemented`, copy its *Pull request* section, or say that every change gets one. The mirror image of the lesson from #27 about bans.
+- **When a rule exempts a case from an artifact, search for the artifact's parts and for the phrases that presuppose it, not only for its name** · added 2026-11-23 · source: #37
+  The docs-only exemption first reached the pages that name the design document; review then found the steps that fill its *Decisions*, *Test plan* and *Verification*, and the roadmap's "its design document is the record", still assuming one. The mirror image of the lesson from #27 about bans.
 
 - **State another repository's procedure by linking to it, not by restating its conditions** · added 2026-11-23 · source: #37
   Kinetra's copies of Lab's CI skip left out the three Lab paths that always build; a link stays right when the other repository changes.
@@ -56,6 +56,10 @@ One list item per lesson, under the topic it belongs to:
 
 - **Under an explicit `shell: bash`, never pipe a command into `head`** · added 2026-11-23 · source: #35
   An explicit `shell: bash` runs every step with `-o pipefail`, so when `head` closes the pipe early the writer dies of SIGPIPE and the step fails with exit code 141, at random. #35's first run failed both matrix entries on `ldd --version | head -1`. Use `sed -n 1p`, which reads all of its input.
+
+- **Make a CI skip decision fail closed: skip only on an explicit "nothing left", never on a non-zero pipeline status** · added 2026-11-23 · source: #37
+  `if ! a | b | grep -q .` reads any failure, such as a SIGPIPE under `pipefail`, as "no source changed" and skips the build; test for `grep`'s status 1 instead.
+
 
 ## Git and stacks
 
