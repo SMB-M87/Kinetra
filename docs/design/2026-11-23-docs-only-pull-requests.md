@@ -47,7 +47,7 @@ This change spans both repositories and has a design document in each, against t
 | Design document of a docs-only change | None; the pull request description holds the problem, the decisions and the verification | The user's choice of 2026-11-23; a docs-only pull request is mostly the record of itself |
 | A change across both repositories | One design document, in the repository with most of the change; the other pull request links it | The user's choice of 2026-11-23 |
 | Reading design documents | Not at the start of a task: only the branch's own, one that is linked, or one a search for the topic finds | The user asked whether agents must load them; they are history once implemented, and READMEs describe the current state |
-| CI skip in Kinetra | A `changes` job as in Lab, inline, for pull requests only; a push to `main` always builds | The user's choice of 2026-11-23. Kinetra has no pointer, so the decision is a few lines; the post-merge run stays complete |
+| CI skip in Kinetra | A `changes` job, inline, for pull requests only; a push to `main` always builds. The filter first checks itself: if it would skip any of a list of known source paths, the full CI runs | The user's choice of 2026-11-23. Kinetra has no pointer, so the decision is a few lines. On a pull request the workflow runs from the pull request itself, so a typo in the pattern could otherwise skip its own build and every later one; Lab lets the merge base's script decide instead (found by the agent review) |
 | History for the decision | A blobless checkout (`filter: blob:none`) | The decision needs commits and trees only |
 
 ## Design
@@ -67,6 +67,7 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
 ## Test plan
 
 - The decision step, extracted from `ci.yml`, in a blobless clone of Kinetra: the docs-only #29, #34 and this branch's first commit skip; the code and CI pull requests #33, #35 and #36 build; a source moved into `docs/` with `git mv` builds; a line in `ci.yml` builds; an empty diff skips; a base that does not exist warns *No merge base* and leaves `skip_build` empty, a full run.
+- The filter's self-check (after review round 5): with the pattern intact, docs-only #34 skips and #36 builds; with one `^` dropped (`|$`), both warn *Filter check failed* and build.
 - The fail-closed form of the decision (after review round 2), on its own under `bash -e` with and without `pipefail`: 20,000 source paths build in 20 of 20 runs, 20,000 docs paths skip, a mixed diff builds, an empty diff skips.
 - YAML parses; `python3 tools/check_docs.py`; `python3 tools/check_copies.py` with the old wordings.
 - `check_copies.py` in Kinetra-Lab on a branch that deletes `docs/media/kinetra-lab-tour.mp4`: a `UnicodeDecodeError` before the fix, the list of hits after it.
@@ -95,6 +96,7 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
   - *Test plan* and *Verification* list the fail-closed runs; the double blank line in the review lessons is gone; the pull request description was brought up to date.
   - 2008388 changed the review lessons inside a `docs(design)` commit; pushed history stays as it is, and the lesson edits of this round have a commit of their own.
 - Agent review, round 4 (on 453ec86): *Ready to merge*, with three nits, carried out after it: this section and *Design* caught up with round 3, the `pr-feedback` and `pr-review` READMEs follow their `SKILL.md`, and the `changes` job's comment says that a failed docs check fails `checks` through `linux`.
+- Agent review, round 5 (on c328bcf, *Fix first*): the pull request's own copy of the filter decided its own CI, so a typo could skip every build; the filter now checks itself against known source paths and builds in full when it would skip one. `feature` steps 9.5 and 9.7 name step 9.8. One more lesson.
 
 ## Verification
 
@@ -108,10 +110,10 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
 **Leaner cycle: docs-only pull requests skip the review, the design document and the build**
 
 - **Summary:** a pull request that changes only Markdown, `docs/` or `.agents/` gets no agent review and no design document, and Kinetra's CI runs only the docs check for it (Lab's CI skips most of them); a change across both repositories gets one design document; agents read design documents only when something links them. The first step of *Leaner agentic cycle*, with the user's choices of 2026-11-23.
-- **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`, `docs/design/README.md`, `docs/README.md`, `docs/documentation.md`, `docs/roadmap.md`, `docs/development.md`, `tests/README.md`, `README.md`; skills `pr-review`, `pr-feedback`, `feature`, `roadmap`, `grilling`, `adr`, `verify` and the overview, with their READMEs; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job, failing closed); `tools/check_copies.py` (binary files); four review lessons; this document.
+- **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`, `docs/design/README.md`, `docs/README.md`, `docs/documentation.md`, `docs/roadmap.md`, `docs/development.md`, `tests/README.md`, `README.md`; skills `pr-review`, `pr-feedback`, `feature`, `roadmap`, `grilling`, `adr`, `verify` and the overview, with their READMEs; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job, failing closed, with a filter that checks itself); `tools/check_copies.py` (binary files); five review lessons; this document.
 - **Design:** this document; Kinetra-Lab's design document in Kinetra-Lab#83 for the measurement and Lab's skip.
 - **Verification:** the decision step in a blobless clone (docs-only skips; code, CI and a rename into `docs/` build; doubt builds) and the fail-closed form under both shells; YAML; `check_docs.py`; `check_copies.py` with the old wordings and the document's parts.
-- **Review notes:** agent review rounds 1 to 3, each *Fix first*, answered in the commits named under *Review*; round 4 concluded *Ready to merge* on 453ec86, and its three nits followed. The branch name comes from the session environment.
+- **Review notes:** agent review rounds 1 to 3, each *Fix first*, answered in the commits named under *Review*; round 4 concluded *Ready to merge* on 453ec86, and its three nits followed; round 5 found that the filter decided its own CI, now guarded. The branch name comes from the session environment.
 - **Dependencies and merge order:** this pull request first, with a merge commit; then Kinetra-Lab#83 with its pointer at this branch's head; then a pointer-only pull request. It changes agent rules and CI, so the user merges it.
 - **Follow-up:** Lab's *Automatic pointer pull request*; the reviewer's rule candidate on searching key nouns waits for the user.
 
