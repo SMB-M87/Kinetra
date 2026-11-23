@@ -43,7 +43,7 @@ Classify every item:
 | Change request that is clear and in scope | Implement |
 | Question | Answer, with a reference to code or docs; change the docs if the question shows they are unclear |
 | Disagreement or a trade-off | Ask the user first (form), with your recommendation |
-| Out of scope | Propose a follow-up in the design document's *Open points*; ask the user |
+| Out of scope | Propose a follow-up in the design document's *Open points*, or the description's for a docs-only pull request; ask the user |
 | Agent finding you disagree with | Reply with your argument and its evidence (code, test, rule); no change. After the reviewer's reply, answer once more at most; then the point is the user's |
 
 Post the list in Dutch (item, kind, planned action). Wait for the user only when items need a decision; otherwise continue.
@@ -52,7 +52,7 @@ Post the list in Dutch (item, kind, planned action). Wait for the user only when
 
 - Make one commit per item, or per group of closely related items: `type(scope): address review: <what>`. The cycle rules apply: tests first for behavior changes, refactor separate from behavior.
 - No force-push, amend or rebase of pushed commits. The reviewer must be able to see what changed since their review.
-- Update the design document: add the round to **Review** (item → resolution → commit) and adjust **Decisions** if a decision changed.
+- Update the design document, or for a docs-only pull request its description: add the round to **Review** (item → resolution → commit) and adjust **Decisions** if a decision changed.
 - Add each lesson an agent review proposes to `docs/review-lessons.md` of the pull request's repository, in the page's [format](../../../docs/review-lessons.md#format), in its own commit: `docs(lessons): <lesson>`. Skip one the page already holds.
 - Verify at the level the new commits require (`verify` skill).
 

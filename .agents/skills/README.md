@@ -49,7 +49,7 @@ flowchart LR
     RM -->|item picked up| F
 ```
 
-`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it. `feature` starts `pr-review` in a separate session once the pull request's CI is green; the author's session answers its findings with `pr-feedback`, and merges under the merge rule when nothing is open.
+`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it. `feature` starts `pr-review` in a separate session once the pull request's CI is green, except for a docs-only or pointer-only pull request; the author's session answers its findings with `pr-feedback`, and merges under the merge rule when nothing is open.
 
 ## Maintenance
 

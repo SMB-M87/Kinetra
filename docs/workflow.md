@@ -55,7 +55,7 @@ Work starts from an item in the [roadmap](roadmap.md) or a request from the user
 
 ## 2. Design
 
-Create `docs/design/YYYY-MM-DD-<topic>.md` from the [template](design/README.md#template) on a new branch. Fill in the problem, goals, non-goals, design, affected areas and risks. A docs-only change (only Markdown, `docs/` or `.agents/`) needs no design document: its pull request description says what and why. A change across Kinetra and Lab has one, in the repository with most of the change ([below](#changes-across-kinetra-and-lab)).
+Create `docs/design/YYYY-MM-DD-<topic>.md` from the [template](design/README.md#template) on a new branch. Fill in the problem, goals, non-goals, design, affected areas and risks. A docs-only change (only Markdown, `docs/` or `.agents/`) needs no design document: its pull request description says what and why, and takes whatever steps 3 to 7 write into the design document. A change across Kinetra and Lab has one, in the repository with most of the change ([below](#changes-across-kinetra-and-lab)).
 
 Read older design documents only when the roadmap item, a README, an open point or the user links one, or a search of `docs/design/` for the topic finds one; once implemented, they are history ([rule](../AGENTS.md#development-cycle)).
 

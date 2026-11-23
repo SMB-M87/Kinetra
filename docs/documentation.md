@@ -117,14 +117,14 @@ Which skills it calls, and which skills call it.
 
 Each repository keeps one backlog in `docs/roadmap.md`: work that is wanted but not finished, from agreed follow-ups to loose ideas. Kinetra's roadmap holds engine work; Kinetra-Lab's holds applications, tools and the build. Work that needs both gets an item in each, linked to the other. The `roadmap` skill adds, shapes and closes items.
 
-A roadmap and a design document divide the work by time. The roadmap holds what has not started or is waiting; once a branch starts, its design document holds the scope, decisions and history, and the roadmap item only links to it. A merged item is removed: its design document is the record.
+A roadmap and a design document divide the work by time. The roadmap holds what has not started or is waiting; once a branch starts, its design document holds the scope, decisions and history, and the roadmap item only links to it; a docs-only change has no design document, and its pull request takes that part. A merged item is removed: its design document, or for a docs-only change its pull request, is the record.
 
 ### Sections
 
 | Section | Holds | An item moves on when |
 | --- | --- | --- |
 | **Now** | Items with a branch or an open pull request | Its pull request merges: the item is removed |
-| **Next** | Agreed and shaped: the goal and a first step are clear, nothing blocks it | Someone starts it: it moves to Now with its branch and design document |
+| **Next** | Agreed and shaped: the goal and a first step are clear, nothing blocks it | Someone starts it: it moves to Now with its branch and its design document, if it has one |
 | **Later** | Wanted, but large, blocked or not yet shaped | It is shaped and unblocked: it moves to Next |
 | **Ideas** | Brainstorm and wishes, not agreed. Raw notes and questions are fine | The user agrees to pursue it: it moves to Later or Next |
 

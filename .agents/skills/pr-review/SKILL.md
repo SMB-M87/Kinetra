@@ -69,7 +69,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 
 | Check | Where to look |
 | --- | --- |
-| A design document exists (one per stack is enough, and one per change across Kinetra and Lab, which may live in the other repository), its status is `implemented`, and Decisions, Test plan and Verification match the diff | `docs/design/`, the description's *Design* |
+| A design document exists (one per stack is enough, and one per change across Kinetra and Lab, which may live in the other repository; none for a docs-only pull request), its status is `implemented`, and Decisions, Test plan and Verification match the diff | `docs/design/`, the description's *Design* |
 | Every changed behavior has a test; no test was weakened, skipped or deleted without a reason | The diff of `tests/`, the design document's test plan |
 | The verification level fits the diff by the table in AGENTS.md, and the description reports the commands; CI is green on the head | AGENTS.md *Verification*, the check runs |
 | A change to what a scene shows comes with the author's screenshot, and a change that depends on desktop feel or performance names the user's playtest | The description, the design document |
