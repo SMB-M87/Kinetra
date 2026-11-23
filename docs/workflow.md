@@ -105,7 +105,7 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 - Update the module README, contract pages and diagrams the change affects.
 - Set the design document's status to `implemented`, or to `abandoned` with the reason; a docs-only change has none.
 - Update the [roadmap](roadmap.md): remove the finished item, and add the follow-ups someone intends to act on ([format](documentation.md#roadmap)).
-- Add or update index entries: the design index and, for an ADR, the decision index.
+- Add or update index entries: the design index, except for a docs-only change, which has no design document, and, for an ADR, the decision index.
 - Run the docs check.
 
 ## 8. Commit, push and open a pull request
