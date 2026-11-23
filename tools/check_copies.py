@@ -55,7 +55,11 @@ class Removed:
 
 
 def git(root: Path, *args: str, check: bool = True) -> str:
-    result = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
+    # errors="replace": a changed binary file, such as a deleted video, is searched as text
+    # with replacement characters instead of stopping the check.
+    result = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
     if check and result.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)}: {result.stderr.strip()}")
     return result.stdout if result.returncode == 0 else ""

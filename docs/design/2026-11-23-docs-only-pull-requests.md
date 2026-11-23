@@ -54,16 +54,18 @@ On 2026-11-23 the user asked that a pull request with only documentation, or onl
 - `docs/workflow.md`: the cycle diagram sends docs-only and pointer-only pull requests from green CI to the merge; step 2 has the exceptions and the reading rule; steps 6 and 8 the review exemption and the description without a design document; *Changes across Kinetra and Lab* the single design document and Lab's wider skip.
 - `docs/design/README.md`: the exceptions, and that the index is for a search by topic.
 - Skills: `pr-review` (description, introduction, README), `pr-feedback`, `feature` (steps 2.3, 5 and 7), `verify` (the pointer range), and the overview.
+- `tools/check_copies.py`: reads `git show` output with replacement characters, so a changed binary file no longer stops it; it stopped on Lab's deleted tour video.
 - `.github/workflows/ci.yml`: a `changes` job decides with `git diff --no-renames --name-only` against the merge base and runs the docs check for a skipped pull request; `linux` needs it and runs unless it skips; `checks` passes on a rightful skip, as in Lab. `docs/testing.md` describes it.
 
 ## Affected areas
 
-The pages above, `.github/workflows/ci.yml`, Kinetra's roadmap item *Leaner agentic cycle* (to *Now*), this document and the design index.
+The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's roadmap item *Leaner agentic cycle* (to *Now*), this document and the design index.
 
 ## Test plan
 
 - The decision step, extracted from `ci.yml`, in a blobless clone of Kinetra: the docs-only #29, #34 and this branch's first commit skip; the code and CI pull requests #33, #35 and #36 build; a source moved into `docs/` with `git mv` builds; a line in `ci.yml` builds; an empty diff skips; a base that does not exist warns *No merge base* and leaves `skip_build` empty, a full run.
 - YAML parses; `python3 tools/check_docs.py`; `python3 tools/check_copies.py` with the old wordings.
+- `check_copies.py` in Kinetra-Lab on a branch that deletes `docs/media/kinetra-lab-tour.mp4`: a `UnicodeDecodeError` before the fix, the list of hits after it.
 - This pull request's own CI changes `ci.yml`, so it builds in full; the skip runs on the next docs-only pull request.
 
 ## Review
@@ -83,7 +85,7 @@ The pages above, `.github/workflows/ci.yml`, Kinetra's roadmap item *Leaner agen
 **Leaner cycle: docs-only pull requests skip the review, the design document and the build**
 
 - **Summary:** a pull request that changes only Markdown, `docs/` or `.agents/` gets no agent review and no design document, and CI runs only the docs check for it; a change across both repositories gets one design document; agents read design documents only when something links them. The first step of *Leaner agentic cycle*, with the user's choices of 2026-11-23.
-- **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`; `docs/design/README.md`; skills `pr-review`, `pr-feedback`, `feature`, `verify` and the overview; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job); roadmap; this document.
+- **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`; `docs/design/README.md`; skills `pr-review`, `pr-feedback`, `feature`, `verify` and the overview; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job); `tools/check_copies.py` (binary files); roadmap; this document.
 - **Design:** this document; the Kinetra-Lab design of the same branch for the measurement and Lab's skip.
 - **Verification:** the decision step in a blobless clone (docs-only skips, code, CI, a rename into `docs/` build, doubt builds), YAML, `check_docs.py`, `check_copies.py`; this pull request's CI.
 - **Review notes:** the `changes` job and the `checks` condition, which follow Lab's; whether the reading rule is clear enough to keep agents out of the design index.
