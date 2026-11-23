@@ -7,6 +7,7 @@
 #include <kinetra/view/camera.h>
 
 #ifdef CONSUMER_GRAPHICS
+#include <kinetra/runtime/inspector_view.h>
 #include <kinetra/runtime/launcher.h>
 #include <kinetra/runtime/session.h>
 #include <kinetra/runtime/settings_view.h>
@@ -49,6 +50,12 @@ int main() {
     kinetra::Camera2D camera;
     if (overlay.update(input, camera) || overlay.request() != kinetra::SessionRequest::none)
         return 8;
+    kinetra::InspectorView inspector;
+    const kinetra::InspectorSnapshot snapshot{"Test agent", {{"Motion", {{"Speed", "0 MM/TICK"}}}}};
+    input.mouse = {630, 16};
+    input.clicked = true;
+    if (!inspector.update(input, snapshot, {{8, 8}, {640, 480}}).close)
+        return 19;
     const kinetra::LauncherBindings bindings{std::nullopt, false};
     if (bindings.menu_key)
         return 9;
