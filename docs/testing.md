@@ -123,7 +123,7 @@ ctest --preset graphics -L graphics -R '<regex>'
 
 When a change alters what a scene shows, the author also takes a screenshot of it with Lab's [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md), looks at it and adds it to the pull request: no test judges appearance, and the reviewer runs nothing.
 
-**In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers) and, in Lab, the smoke runs of every executable (`kinetra_smoke:*`, label `graphics`) and the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
+**In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers), the same build and tests on Ubuntu LTS with warnings reported (job `ubuntu`) and, in Lab, the smoke runs of every executable (`kinetra_smoke:*`, label `graphics`) and the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
 
 **Neither** proves desktop feel, a real GPU driver or performance: software rendering cannot. When a change depends on them, its design document names a playtest by the user as a check.
 
@@ -146,7 +146,7 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 
 ## Continuous integration
 
-[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. It uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. When the archive does not answer, CI installs the current Arch packages from the image's own mirrors instead and marks the run with a *Toolchain not pinned* warning; such a run checks the change, but not against the pinned versions. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
+[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on every pull request and every push to `main`. Its job `checks` uses a dated `archlinux:base-devel` image with packages from a fixed [Arch Linux Archive](https://archive.archlinux.org/) snapshot. When the archive does not answer, CI installs the current Arch packages from the image's own mirrors instead and marks the run with a *Toolchain not pinned* warning; such a run checks the change, but not against the pinned versions. The compiler, CMake and clang-format versions therefore match the Artix/Arch development environment, and they cannot change without a commit. Update the snapshot deliberately, in its own commit, and fix what the new toolchain reports in that commit.
 
 | Step | Fails when |
 | --- | --- |
@@ -155,6 +155,8 @@ Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-
 | `cmake --workflow --preset headless` | The simulation library or its tests need SDL2/OpenGL, or a headless test fails |
 | `cmake --workflow --preset ci` | Kinetra has a compiler warning (`-Werror`), the build breaks, or a test fails, graphics cases included (offscreen SDL, software Mesa) |
 | External consumer with `CONSUMER_GRAPHICS=ON` | The public headers or targets no longer work for an outside project |
+
+A second job, `ubuntu`, builds and tests on GitHub's Ubuntu 24.04 LTS runner with that distribution's own GCC and packages: the headless workflow, the `ci` preset with `KINETRA_WARNINGS_AS_ERRORS=OFF` (warnings shown as annotations on the pull request, not errors), its tests with the graphics cases, and the external consumer. It puts `/usr/bin` first on the path, so the runner image's newer CMake does not stand in for Ubuntu's, and prints the version of each tool. Formatting, the docs check and the icon check run only in `checks`, and its packages follow the runner image rather than a pinned snapshot. It catches what the pinned Arch toolchain cannot show: an older compiler, C library or SDL2, as when glibc before 2.41 moved Kinetra-Lab's golden fingerprints ([design](design/2026-11-22-linux-beyond-arch.md#problem)).
 
 The workflow name `CI` and its job `checks` are a required status check on `main`, so they must keep these names. The `ci` test preset runs the graphics cases with `SDL_VIDEODRIVER=offscreen` and `LIBGL_ALWAYS_SOFTWARE=1`, as the `graphics` preset does: Mesa's llvmpipe renders on the runner's CPU, so they need no GPU and no display. CI does not replace a playtest on a desktop; a local graphics run does not replace the CI result.
 

@@ -20,9 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Linux beyond Arch** · build, docs, CI, with Lab · added 2026-11-21
-  Kinetra names Artix/Linux its desktop target and documents only `pacman`. Support Linux in general: `kinetra::atan2` and `kinetra::asin`, which round the same on every C library so Lab's golden fingerprints hold on other distributions; dependency commands per distribution family (Arch and Artix, Debian and Ubuntu, Fedora); and a second CI job on Ubuntu LTS (the user's choice of 2026-11-22), while the pinned Arch toolchain stays the reference for warnings and formatting. Fedora gets documented commands but no CI job.
-  Where: [design](design/2026-11-22-linux-beyond-arch.md), a stack of `fix/portable-atan2-asin` and `build/linux-beyond-arch`; Lab item of the same name.
+Nothing in progress in Kinetra itself.
 
 ## Next
 
@@ -34,6 +32,10 @@ Within each section the first item comes first. The order was proposed on 2026-1
   Next step: Lab's design for its item *README media as GIFs* settles the scenes and where the files live (proposal: `docs/media/` here). Depends on: Lab's *Demo scenario menu*, which gives Demo the configuration page it lacks (the user's decision of 2026-11-23). Where: [Kinetra-Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).
 
 ## Later
+
+- **Linux support follow-ups** · build, docs, CI, with Lab · added 2026-11-22
+  Two points *Linux beyond Arch* left open: the Fedora command in [development](development.md#dependencies-and-options) is not checked against Fedora's repositories (whether `SDL2-devel` resolves under `sdl2-compat`, whether `mesa-dri-drivers` is needed), and whether `CI / ubuntu` becomes a required status next to `CI / checks`, in Kinetra and Kinetra-Lab.
+  Next step: the user decides on the required status, and checks the Fedora command or has a session that can reach Fedora's package hosts check it. Where: [design, open points](design/2026-11-22-linux-beyond-arch.md#open-points).
 
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
   Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR; factory policy (traffic zones, parking, junction rules) stays in i4sim. Decide whether the four overlapping steering models (`steer`, `priority_steer`, `tangent_steer`, `avoid_collisions`, which take different inputs and return acceleration or velocity) can share one agent-motion interface, and move i4sim-shaped defaults, such as the `PrioritySteering` values in millimeters per tick, out of the engine.

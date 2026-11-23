@@ -42,6 +42,9 @@ One list item per lesson, under the topic it belongs to:
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22
   The first commit of #22 listed three mirrors of the Arch Linux Archive that do not exist, and only CI showed it. Check the value with a request first; when the session cannot reach it, say so and prefer a source that names no host, such as the image's own mirror list.
 
+- **Make a job that claims to test a distribution's packages use them, not the runner's preinstalled tools** · added 2026-11-22 · source: #33
+  GitHub's runner images put newer CMake, compilers and libraries ahead of what `apt` installs, so #33's Ubuntu job first passed on CMake 3.31 while the documented command installs 3.28. Put the distribution's paths first and print the path and version of each tool the docs name.
+
 ## Git and stacks
 
 No lessons yet.

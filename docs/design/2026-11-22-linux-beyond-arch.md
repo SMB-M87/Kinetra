@@ -1,6 +1,6 @@
 # Linux beyond Arch
 
-Status: accepted · Branches: `fix/portable-atan2-asin`, `build/linux-beyond-arch` · Related: [roadmap item](../roadmap.md#now), Kinetra-Lab design *Linux beyond Arch and golden tests on every toolchain* (`docs/design/2026-11-22-linux-beyond-arch.md` in Kinetra-Lab)
+Status: implemented · Branches: `fix/portable-atan2-asin`, `build/linux-beyond-arch` · Related: Kinetra roadmap item *Linux beyond Arch* (removed by step 2), Kinetra-Lab design *Linux beyond Arch and golden tests on every toolchain* (`docs/design/2026-11-22-linux-beyond-arch.md` in Kinetra-Lab)
 
 Kinetra builds and passes its tests on Ubuntu 24.04, but its float angles depend on the C library: `atan2f` and `asinf` round differently in glibc before 2.41 than on CI's Arch toolchain, which moves Kinetra-Lab's golden fingerprints on every other Linux. This stack makes those two functions round the same everywhere, then adds an Ubuntu LTS job to CI and dependency commands per distribution family, so Linux in general is supported and the docs say what is tested.
 
@@ -82,7 +82,7 @@ and the same for `asin`. *Why double:* a double `atan2` or `asin` is accurate to
 ## Affected areas
 
 - Step 1: `include/kinetra/simulation/math.h` (public header), `src/simulation/priority_steering.cpp`, `tests/simulation_tests.cpp`, [math and physics](../engine/math-physics.md), [simulation README](../../src/simulation/README.md#invariants-and-contracts).
-- Step 2: `.github/workflows/ci.yml`, `docs/development.md`, `docs/testing.md`, `README.md`, `AGENTS.md`.
+- Step 2: `.github/workflows/ci.yml`, `docs/development.md`, `docs/testing.md`, `README.md`, `AGENTS.md`, `.agents/skills/verify/SKILL.md`.
 - Both: this document, the [design index](README.md#index) and the [roadmap](../roadmap.md).
 
 ## Test plan
@@ -119,6 +119,28 @@ Agent review of `0417ea2` (Fix first), round 1:
 | The description named step 2 only by its branch | Links #33 and Kinetra-Lab #78 |
 | Two lessons proposed | Added to the [review lessons](../review-lessons.md#code) |
 
+### Step 2
+
+Self-review of `git diff fix/portable-atan2-asin...build/linux-beyond-arch`:
+
+- Package names: every Debian and Ubuntu package was checked with `apt-cache policy` on Ubuntu 24.04 before it went into the job and the docs, following the [review lesson](../review-lessons.md#ci-and-tooling) on names from memory. The Fedora names could not be checked: every Fedora host was refused by this session's network, and no container runtime was available. The command is marked as not checked on the page itself, and the pull request asks the user to check it.
+- The job installs `cmake` from Ubuntu, but the runner image also has a newer CMake in `/usr/local/bin`, which comes first on the path; the job prints the version it uses. Both meet the presets' 3.25.
+- Copies of "Linux is supported; Artix/Linux is the desktop target": the README and AGENTS.md changed together; the Full level's list of CI checks changed in AGENTS.md and the `verify` skill, and its third copy, under *In CI* in [testing](../testing.md#full), was found in Kinetra-Lab's review and fixed in a later commit; `grep -rni "artix\|pacman\|desktop target"` finds no other statement of what is tested. The skill's README names no CI check, so it needs no change.
+- The job is not a required status: `CI / checks` stays the one required check, and making `CI / ubuntu` required is the user's choice.
+
+Agent review of `bcf0b77` (Fix first), round 1:
+
+| Finding | Resolution |
+| --- | --- |
+| Should fix: the job ran the runner image's CMake 3.31.6, not Ubuntu's 3.28, while three pages say it tests the distribution's packages | The install step puts `/usr/bin` first on the path, and a step prints the path and version of each tool; the testing page and the header comment say so |
+| Should fix: the roadmap item was removed without its follow-ups | *Linux support follow-ups* in *Later*: the Fedora check and the required status, both the user's |
+| Nit: "warnings reported" meant only the raw log | The build's warnings become annotations, without failing the job |
+| Nit: the icon check also runs only in `checks` | Named in testing and the header comment |
+| Nit: `sudo` and `apt update` in the table; "the first two" implied Debian | `sudo` in every row, `apt update` before `apt install`, "CI tests Arch and Ubuntu 24.04" |
+| Nit: *Changes* omitted the Full level's list in testing | Added here and in the description |
+| Question: `mesa-dri-drivers` and `SDL2-devel` on Fedora | `mesa-dri-drivers` added, as the Debian row names its Mesa drivers; both remain unchecked and are part of *Linux support follow-ups* |
+| Lesson proposed | Added to the [review lessons](../review-lessons.md#ci-and-tooling) |
+
 ## Verification
 
 ### Step 1
@@ -134,6 +156,10 @@ On Ubuntu 24.04 (GCC 13.3, glibc 2.39), in the session that found the cause:
 | Kinetra-Lab with this commit: `ctest --preset ci -j4 -LE soak`, `ctest --preset ci -L soak` and `cmake --workflow --preset headless`, after its Demo and Dotio calls moved to Kinetra's functions | Passes: 316 of 316, 5 of 5 and 259 of 259, the five fingerprints that failed before included, with the values recorded on Arch |
 
 CI on Arch is the Full level; the pull request reports it.
+
+### Step 2
+
+The `ubuntu` job's steps, run in a clean worktree of this branch on Ubuntu 24.04 with the job's packages installed: `cmake --workflow --preset headless` passes 230 of 230; `cmake --preset ci -DKINETRA_WARNINGS_AS_ERRORS=OFF`, `cmake --build --preset ci` and `ctest --preset ci` build without a warning and pass 280 of 280, the graphics cases included; the external consumer builds and runs. That run used Ubuntu's own CMake 3.28 from `/usr/bin`, the version the job uses since review round 1; the job's first CI runs used the runner image's 3.31.6. `python3 tools/check_docs.py` passes. The job itself runs first in this pull request's CI.
 
 ## Pull request
 
@@ -162,6 +188,31 @@ Title: `fix(simulation): round atan2 and asin the same on every C library`
 
 **Follow-up.** Step 2 adds the Ubuntu CI job; Kinetra-Lab moves its own calls and enables its fingerprints on Ubuntu and, if they hold, Windows.
 
+### Step 2
+
+Title: `build(ci): test Kinetra on Ubuntu LTS and document Linux per distribution`
+
+**Stack:** step 2 of 2 (*Linux beyond Arch*); merge after step 1 (`fix/portable-atan2-asin`).
+
+**Summary.** Kinetra supported Linux in name but documented and tested only Arch. CI gets a second job on Ubuntu 24.04 LTS with that distribution's own GCC, glibc and SDL2, while the pinned Arch job stays the reference for warnings and formatting; the development page gives a dependency command per distribution family and says which are tested.
+
+**Changes.**
+- CI: job `ubuntu` on `ubuntu-24.04`: apt packages with `/usr/bin` first on the path, so Ubuntu's own CMake 3.28 and tools run, a step that prints them, the headless workflow, the `ci` preset with warnings as annotations instead of errors, its tests with the graphics cases on software OpenGL, the external consumer.
+- Docs: dependency commands for Arch and Artix, Debian and Ubuntu, and Fedora (not tested, names not yet checked) in development; the CI section of testing and the Full level's list of CI checks there; the platform line of the README; the identity line and the Full level of AGENTS.md; the `verify` skill's list of CI checks.
+- This design document `implemented`; the roadmap item removed and *Linux support follow-ups* added; one review lesson (CI and tooling).
+
+**Design.** `docs/design/2026-11-22-linux-beyond-arch.md`.
+
+**Verification.** The job's steps passed in a clean worktree on Ubuntu 24.04 (230 and 280 of 280 tests, the consumer); the docs check passes. The job's own first run is in this pull request's CI.
+
+**Review notes.** Warnings on Ubuntu are annotations, not errors, by design: Arch's pinned GCC is the reference. `CI / ubuntu` is not a required status; the user decides whether to make it one. Please check the Fedora command, which this session could not reach Fedora to verify.
+
+**Dependencies and merge order.** After step 1, with a merge commit; before the Kinetra-Lab pull request. Changes CI and the agent rules, so it waits for the user.
+
+**Follow-up.** Kinetra-Lab adds its own Ubuntu job and docs. The roadmap item *Linux support follow-ups* holds the Fedora check and the required status; a Fedora job stays a non-goal.
+
 ## Open points
 
+- The Fedora command is not checked against Fedora's repositories; the user checks it, or a session that can reach Fedora's package hosts (roadmap: *Linux support follow-ups*).
+- Whether `CI / ubuntu` becomes a required status is the user's choice (same item).
 - Windows' C runtime may still differ in `sinf`, `cosf`, `expf`, `powf` or `hypot`; Kinetra-Lab's pull request tries its Windows-skipped golden cases and records what still differs.
