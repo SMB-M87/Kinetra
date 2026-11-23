@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-23 | [Copies check](2026-11-23-copies-check.md): `tools/check_copies.py` lists the names a change removes that a page still names; `verify` runs it | implemented |
 | 2026-11-23 | [Roadmap: the shared UI in GIFs, images in the launcher menu and a leaner cycle](2026-11-23-roadmap-media-labs-cycle.md): Kinetra's part of the user's wishes of 2026-11-23 | implemented |
 | 2026-11-22 | [Linux beyond Arch](2026-11-22-linux-beyond-arch.md): `kinetra::atan2` and `kinetra::asin` round the same on every C library; an Ubuntu LTS job in CI and dependency commands per distribution | implemented |
 | 2026-11-22 | [Agent inspector overlay](2026-11-22-agent-inspector-overlay.md) | implemented |
