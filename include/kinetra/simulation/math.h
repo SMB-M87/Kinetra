@@ -77,10 +77,10 @@ inline bool finite(Vec2 v) {
 /// zeros, infinities and NaN. Use it instead of std::atan2 on floats in simulation code: the
 /// result is the correctly rounded float on every C library, except in rare double-rounding
 /// cases near a midpoint between two floats. `atan2f` itself differs in the last bit between,
-/// for example, glibc 2.39 and 2.41, and one bit changes a chaotic trajectory. Precondition: IEEE-conforming float
-/// semantics; `-ffast-math` or `-funsafe-math-optimizations` may let the compiler narrow the
-/// double call back to the C library's float function. The function is inline, so the flags
-/// are the caller's.
+/// for example, glibc 2.39 and 2.41, and one bit changes a chaotic trajectory.
+/// Precondition: IEEE-conforming float semantics; `-ffast-math` or
+/// `-funsafe-math-optimizations` may let the compiler narrow the double call back to the C
+/// library's float function. The function is inline, so the flags are the caller's.
 inline float atan2(float y, float x) {
     // A double atan2 is accurate to about one double ulp on every C library, 29 bits beyond a
     // float, so one rounding to float gives the correctly rounded value except when the exact
