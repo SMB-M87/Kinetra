@@ -1,8 +1,10 @@
 # Docs-only pull requests, one design document, and less to read
 
-Status: implemented · Branch: `ccr-6e6399fb-049f2v` · Related: [Kinetra-Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-23-leaner-cycle-first-step.md) (the measurement and Lab's CI skip), roadmap item *Leaner agentic cycle*, [Git rules](../../AGENTS.md#git), [development cycle](../../AGENTS.md#development-cycle)
+Status: implemented · Branch: `ccr-6e6399fb-049f2v` · Related: Kinetra-Lab's design document `docs/design/2026-11-23-leaner-cycle-first-step.md` in [Kinetra-Lab#83](https://github.com/SMB-M87/Kinetra-Lab/pull/83) (the measurement and Lab's CI skip), roadmap item *Leaner agentic cycle*, [Git rules](../../AGENTS.md#git), [development cycle](../../AGENTS.md#development-cycle)
 
 On 2026-11-23 the user asked that a pull request with only documentation, or only a submodule move, get no agent review, and then chose four measures from the measurement in Lab's design document. Three of them change Kinetra: a docs-only change needs no design document, a change across both repositories gets one design document, and Kinetra's CI skips the build of a docs-only pull request. The user also asked whether agents must read the design documents at all; they no longer do at the start of a task. The first step of *Leaner agentic cycle*.
+
+This change spans both repositories and has a design document in each, against the rule it adds: both were written before the user chose that rule, halfway through the branch. Kinetra's holds the rules and Kinetra's CI, Lab's the measurement and Lab's CI.
 
 ## Table of contents
 
@@ -72,6 +74,13 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
 
 - The author's review of the diff, and the copies check with the old wordings of the review rule (`except a pointer-only`, `every pull request except`, `Every pull request gets`, `needs no review`), of the pointer range (`Markdown, docs or skills`) and of the design-document rule (`Each branch has a design document`, `Every branch has a design document`, `its own branch, design document and pull request`): every hit follows in this pull request or the Kinetra-Lab one, or is a dated design document or review lesson.
 - With the CI change this pull request is no longer docs-only, so it gets an agent review; it changes agent rules and CI, so the user merges.
+- Agent review, round 1 (on 5246745, *Fix first*):
+  - Blocking, copies that still gave every change a design document and a review, or every pull request a build (README, cycle and diagram, workflow steps 6 to 8, `feature` steps 8 and 9, its README, the `roadmap` closing step, the `pr-review` checklist, the docs index, the consumer note): fixed in 7f6ec4d, after a search on the key words `design document`, `every change` and `every pull request`.
+  - The docs-only merge sentence dropped resolved threads and Kinetra before Lab: fixed in 7f6ec4d, and carried to workflow step 8, `feature` step 9.5 and `pr-feedback` step 5.
+  - Kinetra's copies of Lab's skip left out the Lab paths that always build: they now link Lab's rule (16cbd03).
+  - Two design documents for one change: both stay, explained above; the link to Lab's document goes through Kinetra-Lab#83, since this pull request merges first.
+  - Nits: the diagram skips the design document for a docs-only change (7f6ec4d); `check_copies.py` skips binary files, which gave six chance `-D` flags on the deleted video (a5dcd89); the branch name comes from the session environment, which allows only this branch, as the pull request description says.
+  - Two lessons added to the [review lessons](../review-lessons.md); the rule candidate on searching key nouns is the user's.
 
 ## Verification
 
@@ -86,7 +95,7 @@ The pages above, `.github/workflows/ci.yml`, `tools/check_copies.py`, Kinetra's 
 
 - **Summary:** a pull request that changes only Markdown, `docs/` or `.agents/` gets no agent review and no design document, and CI runs only the docs check for it; a change across both repositories gets one design document; agents read design documents only when something links them. The first step of *Leaner agentic cycle*, with the user's choices of 2026-11-23.
 - **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`; `docs/design/README.md`; skills `pr-review`, `pr-feedback`, `feature`, `verify` and the overview; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job); `tools/check_copies.py` (binary files); roadmap; this document.
-- **Design:** this document; the Kinetra-Lab design of the same branch for the measurement and Lab's skip.
+- **Design:** this document; Kinetra-Lab's design document in Kinetra-Lab#83 for the measurement and Lab's skip.
 - **Verification:** the decision step in a blobless clone (docs-only skips, code, CI, a rename into `docs/` build, doubt builds), YAML, `check_docs.py`, `check_copies.py`; this pull request's CI.
 - **Review notes:** the `changes` job and the `checks` condition, which follow Lab's; whether the reading rule is clear enough to keep agents out of the design index.
 - **Dependencies and merge order:** this pull request first, with a merge commit; then the Kinetra-Lab pull request of the same branch, with its pointer at this branch's head; then a pointer-only pull request, the first one judged by Lab's new skip. The user merges both.
