@@ -31,6 +31,7 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 failures=()
 report=()
+advice=()
 
 missing=()
 for package in "${packages[@]}"; do
@@ -40,19 +41,36 @@ done
 if [[ ${#missing[@]} -eq 0 ]]; then
     report+=("packages present")
 else
+    # dpkg left halfway, by the hook's limit or a VM reclaimed during an install, would make
+    # every later install fail until it is configured.
+    if [[ -n "$(dpkg --audit 2> /dev/null)" ]]; then
+        "${as_root[@]}" env DEBIAN_FRONTEND=noninteractive dpkg --configure -a >> "$log" 2>&1
+    fi
+    # apt-get update exits 0 when an index does not download, and that is wanted here: the
+    # cloud image also lists sources outside Ubuntu's archive (download.docker.com), while
+    # every package this script installs is in the archive. A failed fetch goes into the line.
+    # CI's Ubuntu step can fail on it instead (APT::Update::Error-Mode=any), because its
+    # container lists only Ubuntu's sources and falls back to the image's.
+    update_output="$(timeout -k 10 120 "${as_root[@]}" apt-get update -q 2>&1)"
+    update_status=$?
+    printf '%s\n' "$update_output" >> "$log"
+    index_note=""
+    if grep -q -E '^[WE]: (Failed to fetch|Some index files failed to download)' <<< "$update_output"; then
+        index_note="an apt index did not download"
+    fi
     # Only the downloads get a time limit: a stalled mirror would otherwise hold the session's
     # start until the hook's own limit, while stopping dpkg halfway would break the next run.
-    # apt-get update succeeds when an index fails to download; Error-Mode=any makes it fail,
-    # as in CI, so the failure names the update and not a package it could not find.
-    if timeout -k 10 120 "${as_root[@]}" apt-get update -q -o APT::Update::Error-Mode=any \
-        >> "$log" 2>&1 &&
+    if [[ $update_status -eq 0 ]] &&
         timeout -k 10 300 "${as_root[@]}" apt-get install -y -q --no-install-recommends \
             --download-only "${missing[@]}" >> "$log" 2>&1 &&
         "${as_root[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
             --no-install-recommends "${missing[@]}" >> "$log" 2>&1; then
         report+=("installed ${missing[*]}")
+        [[ -z "$index_note" ]] || report+=("$index_note")
     else
         failures+=("apt-get did not install ${missing[*]}")
+        [[ -z "$index_note" ]] || failures+=("$index_note")
+        advice+=("apt-get update && apt-get install --no-install-recommends ${missing[*]}")
     fi
 fi
 
@@ -67,8 +85,10 @@ if [[ "$found" == *"$wanted"* ]]; then
     report+=("clang-format $clang_format_version present")
 elif ! command -v uv > /dev/null; then
     failures+=("uv is missing, so clang-format $clang_format_version is not installed")
+    advice+=("pip install clang-format==$clang_format_version into a virtual environment")
 elif ! bin="$(uv tool dir --bin 2>> "$log")" || [[ -z "$bin" ]]; then
     failures+=("uv names no tool directory, so clang-format $clang_format_version is not installed")
+    advice+=("pip install clang-format==$clang_format_version into a virtual environment")
 else
     # A resumed session may have the pinned version in uv's directory while the hook's PATH
     # finds Ubuntu's first; install only when uv's own copy is missing or another version.
@@ -81,6 +101,7 @@ else
         action="installed clang-format $clang_format_version"
     else
         failures+=("uv did not install clang-format $clang_format_version")
+        advice+=("uv tool install --force clang-format==$clang_format_version")
     fi
     if [[ -n "$action" ]]; then
         version_of
@@ -95,6 +116,7 @@ else
             report+=("$action")
         else
             failures+=("clang-format $clang_format_version is in $bin, but PATH finds another first")
+            advice+=("put $bin first on PATH")
         fi
     fi
 fi
@@ -108,7 +130,6 @@ join() {
 if [[ ${#failures[@]} -eq 0 ]]; then
     echo "Cloud setup: $(join "${report[@]}")."
 else
-    echo "Cloud setup failed: $(join "${failures[@]}"). Log: $log. By hand:" \
-        "apt-get install --no-install-recommends ${packages[*]}; uv tool install clang-format==$clang_format_version."
+    echo "Cloud setup failed: $(join "${failures[@]}"). Log: $log. By hand: $(join "${advice[@]}")."
 fi
 exit 0
