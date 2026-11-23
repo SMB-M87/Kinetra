@@ -63,6 +63,9 @@ One list item per lesson, under the topic it belongs to:
 - **Make a CI skip decision fail closed: skip only on an explicit "nothing left", never on a non-zero pipeline status** · added 2026-11-23 · source: #37
   `if ! a | b | grep -q .` reads any failure, such as a SIGPIPE under `pipefail`, as "no source changed" and skips the build; test for `grep`'s status 1 instead.
 
+- **Do not let a pull request's own copy of a skip filter decide its own CI unchecked** · added 2026-11-23 · source: #37
+  On `pull_request`, the workflow runs from the pull request, so one dropped `^` would have skipped its build and every later one. Let the merge base's copy decide, as Kinetra-Lab#83 does, or check the filter against known source paths and build in full when it fails.
+
 ## Git and stacks
 
 No lessons yet.
