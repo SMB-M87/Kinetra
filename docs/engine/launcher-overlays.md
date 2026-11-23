@@ -1,6 +1,6 @@
 # Launcher, sessions and overlays
 
-Contracts of the optional application shell: sessions and their requests, the launcher loop, and the screen-space overlays (settings, debug menu, help and bitmap text). Kinetra owns the layout, drawing and input capture of these pieces; applications supply rows, actions and content. [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) registers the concrete applications.
+Contracts of the optional application shell: sessions and their requests, the launcher loop, and the screen-space overlays (settings, debug menu, help and bitmap text). Kinetra owns the layout, drawing and input capture of these pieces; applications supply rows, actions and content. [Kinetra-Lab](https://github.com/SMB-M87/Kinetra-Lab) registers the concrete applications; the README's [shared UI](../../README.md#shared-ui) shows them in use.
 
 ## Table of contents
 

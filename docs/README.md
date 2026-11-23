@@ -12,7 +12,7 @@ Where each question about Kinetra is answered. Module guides explain the code th
 
 [Project overview](../README.md)
 
-Directory guides: [decisions](decisions/README.md), [design](design/README.md).
+Directory guides: [decisions](decisions/README.md), [design](design/README.md), [media](media/README.md).
 
 ## Modules
 
@@ -34,6 +34,7 @@ The detailed behavior of each subsystem: units, limits, edge cases and the reaso
 | How do pathfinding, steering, avoidance and traffic admission cooperate? | [Navigation](engine/navigation.md) |
 | How do window, input, rendering and timing work? | [Runtime](engine/runtime.md) |
 | How do sessions, the launcher and the overlays work? | [Launcher, sessions and overlays](engine/launcher-overlays.md) |
+| What do the launcher and the overlays look like, and when are their GIFs refreshed? | [Shared UI in GIFs](media/README.md) |
 
 ## Design and workflows
 
