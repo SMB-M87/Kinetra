@@ -197,15 +197,15 @@ Title: `build(ci): test Kinetra on Ubuntu LTS and document Linux per distributio
 **Summary.** Kinetra supported Linux in name but documented and tested only Arch. CI gets a second job on Ubuntu 24.04 LTS with that distribution's own GCC, glibc and SDL2, while the pinned Arch job stays the reference for warnings and formatting; the development page gives a dependency command per distribution family and says which are tested.
 
 **Changes.**
-- CI: job `ubuntu` on `ubuntu-24.04`: apt packages, headless workflow, `ci` preset with warnings reported instead of errors, its tests with the graphics cases on software OpenGL, the external consumer.
+- CI: job `ubuntu` on `ubuntu-24.04`: apt packages with `/usr/bin` first on the path, so Ubuntu's own CMake 3.28 and tools run, a step that prints them, the headless workflow, the `ci` preset with warnings as annotations instead of errors, its tests with the graphics cases on software OpenGL, the external consumer.
 - Docs: dependency commands for Arch and Artix, Debian and Ubuntu, and Fedora (not tested, names not yet checked) in development; the CI section of testing and the Full level's list of CI checks there; the platform line of the README; the identity line and the Full level of AGENTS.md; the `verify` skill's list of CI checks.
-- This design document `implemented`; the roadmap item removed.
+- This design document `implemented`; the roadmap item removed and *Linux support follow-ups* added; one review lesson (CI and tooling).
 
 **Design.** `docs/design/2026-11-22-linux-beyond-arch.md`.
 
 **Verification.** The job's steps passed in a clean worktree on Ubuntu 24.04 (230 and 280 of 280 tests, the consumer); the docs check passes. The job's own first run is in this pull request's CI.
 
-**Review notes.** Warnings on Ubuntu are not errors, by design: Arch's pinned GCC is the reference. `CI / ubuntu` is not a required status; the user decides whether to make it one. Please check the Fedora command, which this session could not reach Fedora to verify.
+**Review notes.** Warnings on Ubuntu are annotations, not errors, by design: Arch's pinned GCC is the reference. `CI / ubuntu` is not a required status; the user decides whether to make it one. Please check the Fedora command, which this session could not reach Fedora to verify.
 
 **Dependencies and merge order.** After step 1, with a merge commit; before the Kinetra-Lab pull request. Changes CI and the agent rules, so it waits for the user.
 
