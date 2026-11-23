@@ -74,8 +74,12 @@ jobs:
           # docs/ or renamed to .md still counts as a source change.
           files=$(git diff --no-renames --name-only "$mb" "$HEAD")
           printf 'Changed in this pull request:\n%s\n' "${files:-(nothing)}"
+          # Skip only when grep selects no line (status 1). Any other status, such as a SIGPIPE
+          # under pipefail, means a full run: the decision fails closed.
           skip=false
-          if ! printf '%s\n' "$files" | grep -v -E '(\.md$|^docs/|^\.agents/)' | grep -q .; then
+          status=0
+          printf '%s\n' "$files" | grep -q -v -E '(\.md$|^docs/|^\.agents/|^$)' || status=$?
+          if [ "$status" -eq 1 ]; then
             skip=true
             echo "::notice title=Build and tests skipped::Only Markdown, docs/ or .agents/ changed: only the docs check runs."
           fi
