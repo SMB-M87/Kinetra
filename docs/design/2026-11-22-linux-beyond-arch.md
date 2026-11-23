@@ -172,9 +172,10 @@ Title: `fix(simulation): round atan2 and asin the same on every C library`
 **Summary.** Kinetra-Lab's trajectory fingerprints fail on every Linux but CI's Arch, and the roadmap blamed GCC 13. Measured on Ubuntu 24.04, the cause is the C library: glibc 2.41 made `atan2f` and `asinf` correctly rounded, older glibc rounds about one call in twenty to the other neighbor, and a crowd turns one bit into another trajectory. `kinetra::atan2` and `kinetra::asin` compute in double and round once to float, which gives the correctly rounded value with every C library; Kinetra's simulation uses them.
 
 **Changes.**
-- `math.h`: `kinetra::atan2(float, float)` and `kinetra::asin(float)`, with contracts; `signed_angle` uses `atan2`.
+- `math.h`: `kinetra::atan2(float, float)` and `kinetra::asin(float)`, with contracts that name the rare double-rounding exception and the precondition of IEEE-conforming float semantics (no `-ffast-math`); `signed_angle` uses `atan2`.
 - `priority_steering.cpp`: `tangent_steer` uses both.
-- `simulation_tests.cpp`: a case with four inputs where glibc 2.39 rounds wrongly, pinned to the correctly rounded values, and a case for quadrants, signed zeros, infinities and NaN.
+- `simulation_tests.cpp`: a case with four inputs where glibc 2.39 rounds wrongly, pinned to the correctly rounded values, and a case for quadrants, signed zeros, infinities and NaN; both pass their inputs through `at_run_time` so the compiler cannot fold the calls.
+- Two review lessons (Code).
 - Docs: math and physics contract, simulation README invariants, this design document, the design index, the roadmap item in *Now*.
 
 **Design.** `docs/design/2026-11-22-linux-beyond-arch.md`.
