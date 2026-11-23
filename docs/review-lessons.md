@@ -46,6 +46,9 @@ One list item per lesson, under the topic it belongs to:
 - **Put an exemption in every skill a calling skill hands work to, not only in the caller** · added 2026-11-23 · source: #37
   `feature` sent a docs-only change's decisions to the pull request description, but `grilling` and `adr`, which also run on their own, still wrote into a design document.
 
+- **After a review fix, update every section of the design document and the description that names the changed part** · added 2026-11-23 · source: #37
+  Rounds 4 to 6 of #37 each found a fix that had reached *Review* and *Decisions* but not *Design*, *Test plan*, *Verification* or the *Pull request* section; Kinetra-Lab carries the same lesson from its #78.
+
 ## CI and tooling
 
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22
@@ -64,7 +67,7 @@ One list item per lesson, under the topic it belongs to:
   `if ! a | b | grep -q .` reads any failure, such as a SIGPIPE under `pipefail`, as "no source changed" and skips the build; test for `grep`'s status 1 instead.
 
 - **Do not let a pull request's own copy of a skip filter decide its own CI unchecked** · added 2026-11-23 · source: #37
-  On `pull_request`, the workflow runs from the pull request, so one dropped `^` would have skipped its build and every later one. Let the merge base's copy decide, as Kinetra-Lab#83 does, or check the filter against known source paths and build in full when it fails.
+  On `pull_request`, the workflow runs from the pull request, so one dropped `^` would have skipped its build and every later one. Let the base branch's copy decide, as Kinetra-Lab#83 does with its tip, or check the filter and the decision against known source paths and build in full when they fail.
 
 ## Git and stacks
 
