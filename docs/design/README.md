@@ -1,6 +1,6 @@
 # Design documents
 
-Every branch has a design document, written before the code. It records the problem, the decisions taken with the user, the test plan, the review outcome and the text for the pull request. Design documents are kept after merging: together they are the change history *with reasons*.
+Every branch has a design document, written before the code, except a docs-only one; a change across Kinetra and Lab has one, in the repository that holds most of it ([rule](../../AGENTS.md#development-cycle)). It records the problem, the decisions taken with the user, the test plan, the review outcome and the text for the pull request. Design documents are kept after merging: together they are the change history *with reasons*. They are looked up, not read at the start of a task: the index below is for a search by topic.
 
 ## Table of contents
 
@@ -79,7 +79,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 | 2026-11-23 | [Copies check](2026-11-23-copies-check.md): `tools/check_copies.py` lists the names a change removes that a page still names; `verify` runs it | implemented |
 | 2026-11-23 | [CI Linux matrix](2026-11-23-ci-linux-matrix.md): one `linux` job with an Arch and an Ubuntu container, and `checks` requires both | implemented |
 | 2026-11-23 | [Roadmap: the shared UI in GIFs, images in the launcher menu and a leaner cycle](2026-11-23-roadmap-media-labs-cycle.md): Kinetra's part of the user's wishes of 2026-11-23 | implemented |
-| 2026-11-23 | [Docs-only pull requests without agent review](2026-11-23-docs-only-pull-requests.md): a pull request with only Markdown, `docs/` or `.agents/` merges once CI is green; the first step of *Leaner agentic cycle* | implemented |
+| 2026-11-23 | [Docs-only pull requests, one design document, and less to read](2026-11-23-docs-only-pull-requests.md): a pull request with only Markdown, `docs/` or `.agents/` gets no review, design document or build; one design document per change across both repositories; design documents read only when linked | implemented |
 | 2026-11-22 | [Linux beyond Arch](2026-11-22-linux-beyond-arch.md): `kinetra::atan2` and `kinetra::asin` round the same on every C library; an Ubuntu LTS job in CI and dependency commands per distribution | implemented |
 | 2026-11-22 | [Agent inspector overlay](2026-11-22-agent-inspector-overlay.md) | implemented |
 | 2026-11-22 | [Graphics tests in CI](2026-11-22-graphics-tests-in-ci.md): the `ci` preset runs the graphics cases with software OpenGL, and CI becomes the whole Full level | implemented |

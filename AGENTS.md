@@ -35,7 +35,7 @@ Read only what the task needs; the pages are written to stand on their own.
 | Work on one module | Its guide: [simulation](src/simulation/README.md), [runtime and launcher](src/runtime/README.md), [tests](tests/README.md) |
 | Understand dependencies and ownership | [Architecture](docs/architecture.md), [engine contracts](docs/README.md#engine-contracts) |
 | Find out why a boundary exists | [Decisions](docs/decisions/README.md) |
-| See current and planned work, or record an idea | [Roadmap](docs/roadmap.md) and [design documents](docs/design/README.md) |
+| See current and planned work, or record an idea | [Roadmap](docs/roadmap.md); a [design document](docs/design/README.md) only when an item links it |
 
 ## Identity and scope
 
@@ -47,13 +47,14 @@ Read only what the task needs; the pages are written to stand on their own.
 
 Every change follows the full cycle in the [workflow](docs/workflow.md): **understand → design → test plan → implement → verify → review → document → commit**. The `feature` skill walks through it.
 
-- Each branch has a design document in [docs/design/](docs/design/README.md), written before code. Small changes get a short document, but they still get one.
+- Each branch has a design document in [docs/design/](docs/design/README.md), written before code; small changes get a short one. A docs-only change (only Markdown, `docs/` or `.agents/`) needs none: its pull request description carries the problem, the decisions and the verification. A change across Kinetra and Lab gets one design document, in the repository that holds most of it, which the other repository's pull request links.
+- Design documents are history once implemented. Do not read the design index or older design documents to start a task: read your branch's own, and another only when the roadmap item, a README, an open point or the user links it, or a search of `docs/design/` for the topic finds it.
 - Settle open, load-bearing decisions with the user before implementing; use the `grilling` skill when there are several.
 - Record hard-to-reverse, surprising trade-offs as an ADR (`adr` skill).
 - Separate refactoring commits from behavior changes.
 - Keep the [roadmap](docs/roadmap.md) current: a branch moves its item to *Now* when it starts and removes it when it finishes, and follow-ups and the user's ideas become items (`roadmap` skill).
 
-*Why:* the code grew feature by feature without recorded design or reasons. The cycle leaves a trail, so the next reader understands both what changed and why.
+*Why:* the code grew feature by feature without recorded design or reasons. The cycle leaves a trail, so the next reader understands both what changed and why. The trail is for looking up a reason, not for reading at the start of every task: the design documents hold more text than the code.
 
 ## Verification by impact
 

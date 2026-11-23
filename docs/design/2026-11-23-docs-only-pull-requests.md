@@ -1,8 +1,8 @@
-# Docs-only pull requests without agent review
+# Docs-only pull requests, one design document, and less to read
 
-Status: implemented · Branch: `ccr-6e6399fb-049f2v` · Related: [Kinetra-Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-23-leaner-cycle-first-step.md) (Lab's CI skip and the measurement), roadmap item *Leaner agentic cycle*, [Git rules](../../AGENTS.md#git)
+Status: implemented · Branch: `ccr-6e6399fb-049f2v` · Related: [Kinetra-Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-23-leaner-cycle-first-step.md) (the measurement and Lab's CI skip), roadmap item *Leaner agentic cycle*, [Git rules](../../AGENTS.md#git), [development cycle](../../AGENTS.md#development-cycle)
 
-On 2026-11-23 the user asked that a pull request with only documentation, or only a submodule move, get no agent review. Pointer-only pull requests already had none; this change exempts docs-only pull requests too, in both repositories, as the first step of *Leaner agentic cycle*. Lab's CI, which now skips their build, changes in the Lab pull request of the same branch.
+On 2026-11-23 the user asked that a pull request with only documentation, or only a submodule move, get no agent review, and then chose four measures from the measurement in Lab's design document. Three of them change Kinetra: a docs-only change needs no design document, a change across both repositories gets one design document, and Kinetra's CI skips the build of a docs-only pull request. The user also asked whether agents must read the design documents at all; they no longer do at the start of a task. The first step of *Leaner agentic cycle*.
 
 ## Table of contents
 
@@ -21,61 +21,75 @@ On 2026-11-23 the user asked that a pull request with only documentation, or onl
 
 ## Problem
 
-- Every pull request except a pointer-only one waits for a separate review session ([rule](../../AGENTS.md#git)). From 18 to 23 November, 15 of Kinetra's 36 merged pull requests changed only Markdown, `docs/` or `.agents/`, and so did 9 of the 57 that Lab merged into `main`, 6 more with a pointer move beside them.
-- A review session costs a session start, a code review at depth `low` and a discussion round, for a diff that cannot change what is built. The findings on such pull requests were missed copies of a reworded rule, which the author's own step 6 and `check_copies.py` now look for.
+- Every pull request except a pointer-only one waited for a separate review session. From 18 to 23 November, 15 of Kinetra's 36 merged pull requests changed only Markdown, `docs/` or `.agents/`, and so did 9 of the 57 that Lab merged into `main`, 6 more with a pointer beside them. Since the agent review started on 22 November, Kinetra #26 to #29 and Lab #67 each got one.
+- Every docs-only pull request also got a design document, and 12 topics have one in both repositories.
+- The design documents now hold more text than the code: about 70k tokens here and 170k in Lab, against roughly 110k and 300k tokens of C++. The routing table sent agents to them for current and planned work, so a task could start by reading history.
+- Kinetra's CI built and tested every docs-only pull request, a median 1.8 minutes over 95 runs.
 
 ## Goals and non-goals
 
-- Goal: a docs-only pull request needs no agent review; the author merges it once CI is green, unless the merge rule leaves it to the user.
-- Goal: every page that states the review rule says the same.
-- Non-goal: a CI skip in Kinetra. Its full run took a median 1.8 minutes over 95 runs from 18 to 23 November; Lab's took 8.9.
-- Non-goal: a smaller design document for docs-only changes, and the other candidate measures of the roadmap item. The user settles those after the measurement in Lab's design document.
+- Goal: a docs-only pull request needs no agent review and no design document, and Kinetra's CI runs only the docs check for it.
+- Goal: a change across Kinetra and Lab has one design document.
+- Goal: agents read a design document only when something links it, or a search for the topic finds it.
+- Goal: every page that states these rules says the same.
+- Non-goal: moving, shortening or deleting the existing design documents; the user keeps them.
+- Non-goal: the automatic pointer pull request, which Lab's roadmap holds.
 
 ## Decisions
 
 | Decision | Choice | Why |
 | --- | --- | --- |
-| Which pull requests | Only Markdown, `docs/` or `.agents/` changed; in Lab also a moved pointer whose Kinetra range holds only those paths, `.github/` or `tools/` | The same paths for which Lab's CI skips the build, so the exemption can be checked from the file list. Comment-only code changes stay reviewed: a file list cannot tell them apart |
-| Merge | The author merges once CI is green, with no conflict and the stack below merged | As for a pointer-only pull request. The merge rule's list still leaves the agent rules, CI, releases and the user's checks to the user, also when they are only Markdown |
-| The author's own review | Stays: step 6 of the workflow, the copies check included | Cheap, and the place where the missed copies of #26, #27, #30 and #35 are found |
-| A review on request | The user can still start `pr-review` on a docs-only pull request | The exemption removes a waiting step, not the option |
+| Which pull requests are docs-only | Only Markdown, `docs/` or `.agents/` changed; in Lab also a moved pointer whose Kinetra range holds only those paths, `.github/` or `tools/` | The paths for which CI skips the build, so the exemption is checked from the file list. Comment-only code changes stay reviewed: a file list cannot tell them apart |
+| Merge | The author merges once CI is green, with no conflict and the stack below merged | As for a pointer-only pull request. The merge rule still leaves the agent rules, CI, releases and the user's checks to the user, also when they are only Markdown |
+| The author's own review | Stays, the copies check included | Cheap, and the place where the missed copies of #26, #27, #30 and #35 are found |
+| Design document of a docs-only change | None; the pull request description holds the problem, the decisions and the verification | The user's choice of 2026-11-23; a docs-only pull request is mostly the record of itself |
+| A change across both repositories | One design document, in the repository with most of the change; the other pull request links it | The user's choice of 2026-11-23 |
+| Reading design documents | Not at the start of a task: only the branch's own, one that is linked, or one a search for the topic finds | The user asked whether agents must load them; they are history once implemented, and READMEs describe the current state |
+| CI skip in Kinetra | A `changes` job as in Lab, inline, for pull requests only; a push to `main` always builds | The user's choice of 2026-11-23. Kinetra has no pointer, so the decision is a few lines; the post-merge run stays complete |
+| History for the decision | A blobless checkout (`filter: blob:none`) | The decision needs commits and trees only |
 
 ## Design
 
-- `AGENTS.md`: the review rule names docs-only pull requests next to pointer-only ones; a new **Docs-only pull requests** rule defines them; the merge rule says they need no review conclusion; the *Why* says why they need no second agent; the `pr-review` row of the skills table.
-- `docs/workflow.md`: the cycle diagram sends docs-only and pointer-only pull requests from green CI to the merge; step 6 and step 8 name the exemption; the Kinetra range that Lab's CI skips now also lists `.github/` and `tools/`, and Lab's docs-only skip.
-- Skills: `pr-review` (description, introduction, README), `pr-feedback` (agent reviews, merging), `feature` (steps 5 and 7), `verify` (the pointer range), and the skills overview.
+- `AGENTS.md`: the review rule names docs-only pull requests; a **Docs-only pull requests** rule defines them; the merge rule says they need no review conclusion; the development cycle gives the two design-document exceptions and the reading rule, and its *Why* says why; the routing table sends roadmap readers to a design document only when an item links it; the `pr-review` row.
+- `docs/workflow.md`: the cycle diagram sends docs-only and pointer-only pull requests from green CI to the merge; step 2 has the exceptions and the reading rule; steps 6 and 8 the review exemption and the description without a design document; *Changes across Kinetra and Lab* the single design document and Lab's wider skip.
+- `docs/design/README.md`: the exceptions, and that the index is for a search by topic.
+- Skills: `pr-review` (description, introduction, README), `pr-feedback`, `feature` (steps 2.3, 5 and 7), `verify` (the pointer range), and the overview.
+- `.github/workflows/ci.yml`: a `changes` job decides with `git diff --no-renames --name-only` against the merge base and runs the docs check for a skipped pull request; `linux` needs it and runs unless it skips; `checks` passes on a rightful skip, as in Lab. `docs/testing.md` describes it.
 
 ## Affected areas
 
-The pages above, Kinetra's roadmap item *Leaner agentic cycle* (to *Now*), this document and the design index. No code, CMake or CI.
+The pages above, `.github/workflows/ci.yml`, Kinetra's roadmap item *Leaner agentic cycle* (to *Now*), this document and the design index.
 
 ## Test plan
 
-Docs level: `python3 tools/check_docs.py`, and `python3 tools/check_copies.py` with the old wordings of the review rule and of the pointer range.
+- The decision step, extracted from `ci.yml`, in a blobless clone of Kinetra: the docs-only #29, #34 and this branch's first commit skip; the code and CI pull requests #33, #35 and #36 build; a source moved into `docs/` with `git mv` builds; a line in `ci.yml` builds; an empty diff skips; a base that does not exist warns *No merge base* and leaves `skip_build` empty, a full run.
+- YAML parses; `python3 tools/check_docs.py`; `python3 tools/check_copies.py` with the old wordings.
+- This pull request's own CI changes `ci.yml`, so it builds in full; the skip runs on the next docs-only pull request.
 
 ## Review
 
-- The author's review of the diff, and the copies check with `--term 'except a pointer-only'`, `--term 'every pull request except'`, `--term 'Every pull request gets'`, `--term 'needs no review'`, `--term 'Markdown, docs or skills'` and `--term 'Markdown, \`docs/\` or \`.agents/\`'`: every hit in Kinetra and Lab either follows in these two pull requests or is a dated design document or review lesson, which stay as records.
-- No agent review: this pull request is docs-only, and the user asked for none on such pull requests. It changes agent rules, so the user merges it.
+- The author's review of the diff, and the copies check with the old wordings of the review rule (`except a pointer-only`, `every pull request except`, `Every pull request gets`, `needs no review`), of the pointer range (`Markdown, docs or skills`) and of the design-document rule (`Each branch has a design document`, `Every branch has a design document`, `its own branch, design document and pull request`): every hit follows in this pull request or the Kinetra-Lab one, or is a dated design document or review lesson.
+- With the CI change this pull request is no longer docs-only, so it gets an agent review; it changes agent rules and CI, so the user merges.
 
 ## Verification
 
+- The decision step's runs in the test plan, with the results above.
+- `python3 -c "import yaml; …"` parses the workflow.
 - `python3 tools/check_docs.py`: all links resolve.
 - `python3 tools/check_copies.py` with the terms above: only the hits listed under *Review*.
 
 ## Pull request
 
-**docs(agents): docs-only pull requests need no agent review**
+**Leaner cycle: docs-only pull requests skip the review, the design document and the build**
 
-- **Summary:** a pull request that changes only Markdown, `docs/` or `.agents/` no longer waits for a review session; the author merges it once CI is green, unless the merge rule leaves it to the user. The first step of *Leaner agentic cycle*, at the user's request of 2026-11-23.
-- **Changes:** `AGENTS.md` (review rule, docs-only rule, merge rule, *Why*, skills table); `docs/workflow.md` (diagram, steps 6 and 8, Lab's skip); skills `pr-review`, `pr-feedback`, `feature`, `verify` and the overview; roadmap; this document.
-- **Design:** this document; the Kinetra-Lab design of the same branch for the CI skip and the measurement.
-- **Verification:** Docs level, `check_docs.py` and `check_copies.py`.
-- **Review notes:** no agent review, by the user's request; the agent rules change, so the user merges.
-- **Dependencies and merge order:** this pull request first, with a merge commit; then the Kinetra-Lab pull request of the same branch; then a pointer-only pull request, which is the first one judged by Lab's new skip.
-- **Follow-up:** the further measures of *Leaner agentic cycle*, once the user has chosen them.
+- **Summary:** a pull request that changes only Markdown, `docs/` or `.agents/` gets no agent review and no design document, and CI runs only the docs check for it; a change across both repositories gets one design document; agents read design documents only when something links them. The first step of *Leaner agentic cycle*, with the user's choices of 2026-11-23.
+- **Changes:** `AGENTS.md` (review, docs-only and merge rules, development cycle, routing table, skills table); `docs/workflow.md`; `docs/design/README.md`; skills `pr-review`, `pr-feedback`, `feature`, `verify` and the overview; `.github/workflows/ci.yml` and `docs/testing.md` (the `changes` job); roadmap; this document.
+- **Design:** this document; the Kinetra-Lab design of the same branch for the measurement and Lab's skip.
+- **Verification:** the decision step in a blobless clone (docs-only skips, code, CI, a rename into `docs/` build, doubt builds), YAML, `check_docs.py`, `check_copies.py`; this pull request's CI.
+- **Review notes:** the `changes` job and the `checks` condition, which follow Lab's; whether the reading rule is clear enough to keep agents out of the design index.
+- **Dependencies and merge order:** this pull request first, with a merge commit; then the Kinetra-Lab pull request of the same branch, with its pointer at this branch's head; then a pointer-only pull request, the first one judged by Lab's new skip. The user merges both.
+- **Follow-up:** the automatic pointer pull request (Lab's roadmap).
 
 ## Open points
 
-- Whether docs-only changes still need a design document of their own is one of the measures the user settles next.
+- The design index in `docs/design/README.md` sits below the template, so writing a new design document still loads it. If that weighs, the index can move to a page of its own.

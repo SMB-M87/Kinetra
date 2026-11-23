@@ -18,7 +18,7 @@ This skill carries out [docs/workflow.md](../../../docs/workflow.md). (In Kinetr
 
 1. Decide whether the goal is one pull request or a stack. When it splits into steps that can each be reviewed on their own, plan a [stack](../../../docs/workflow.md#stacked-pull-requests): one pull request per step, each based on the step below. Propose the cut into steps to the user with the design.
 2. Create a branch in each repository involved: `git switch -c <type>/<topic>` from up-to-date `main`, or from the branch of the step below in a stack (types in the [workflow](../../../docs/workflow.md#branches-and-commits)).
-3. Copy the [template](../../../docs/design/README.md#template) to `docs/design/YYYY-MM-DD-<topic>.md` and add it to the index with status `draft`. A stack shares the document of its first branch; list the steps with their branches in it.
+3. Copy the [template](../../../docs/design/README.md#template) to `docs/design/YYYY-MM-DD-<topic>.md` and add it to the index with status `draft`. Skip this for a docs-only change (only Markdown, `docs/` or `.agents/`): its pull request description takes the problem, the decisions and the verification. A change across both repositories gets one document, in the repository with most of the change; the other links it. A stack shares the document of its first branch; list the steps with their branches in it.
 4. Fill in Problem, with evidence such as `path:line` and measurements, plus Goals and non-goals, Design and Affected areas.
 5. If the change has a roadmap item, move it to **Now** with the branch and the design document (`roadmap` skill). Non-goals that the user still wants become roadmap items.
 

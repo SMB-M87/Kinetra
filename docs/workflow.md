@@ -54,7 +54,9 @@ Work starts from an item in the [roadmap](roadmap.md) or a request from the user
 
 ## 2. Design
 
-Create `docs/design/YYYY-MM-DD-<topic>.md` from the [template](design/README.md#template) on a new branch. Fill in the problem, goals, non-goals, design, affected areas and risks.
+Create `docs/design/YYYY-MM-DD-<topic>.md` from the [template](design/README.md#template) on a new branch. Fill in the problem, goals, non-goals, design, affected areas and risks. A docs-only change (only Markdown, `docs/` or `.agents/`) needs no design document: its pull request description says what and why. A change across Kinetra and Lab has one, in the repository with most of the change ([below](#changes-across-kinetra-and-lab)).
+
+Read older design documents only when the roadmap item, a README, an open point or the user links one, or a search of `docs/design/` for the topic finds one; once implemented, they are history ([rule](../AGENTS.md#development-cycle)).
 
 - **Open decisions.** List them. If any decision is load-bearing (a wrong guess costs a rewrite, a migration or the user's trust), settle it with the user first. Use the `grilling` skill when there are several.
 - **Diagram.** Include one when structure or interaction changes; the [documentation guide](documentation.md#diagrams) says which kind.
@@ -109,7 +111,7 @@ Fix the findings, re-verify at the right level and record the outcome in the des
 ## 8. Commit, push and open a pull request
 
 - The final commit leaves the branch consistent: code, tests, docs and design document agree.
-- The design document's *Pull request* section holds the title and description. The description has these parts:
+- The design document's *Pull request* section holds the title and description; a docs-only change without a design document writes them directly. The description has these parts:
   - **Summary**: what changed and why, in two or three lines.
   - **Changes**: grouped by area.
   - **Design**: a link to the design document and any ADR.
@@ -207,7 +209,7 @@ sequenceDiagram
     L->>G: pointer-only pull request to the Kinetra merge commit, merged by the agent
 ```
 
-- Reusable mechanisms change in Kinetra; application policy changes in Lab. When both change, each repository gets its own branch, design document and pull request. The Lab design document and pull request link to the Kinetra ones.
+- Reusable mechanisms change in Kinetra; application policy changes in Lab. When both change, each repository gets its own branch and pull request, and one design document serves both: it lives in the repository that holds most of the change, and the other pull request links it.
 - Push the Kinetra branch before the Lab branch, so the pointer is fetchable for anyone who checks out the Lab pull request.
 - Merge the Kinetra pull request with a merge commit, not a squash, so Lab's pointer stays reachable after the branch is deleted. If a Kinetra pull request was squashed anyway, its branch commit can become unreachable, so the Lab pull request cannot merge with it: that is the one case where the Lab pull request's own pointer moves to the squashed commit before it merges, and its CI runs again.
 - The Lab pull request merges with its pointer at the Kinetra branch commit it was verified with. Right after, a separate pointer-only pull request moves the pointer to the Kinetra merge commit on `main`: no agent review, and the agent merges it once its CI passes. Lab's CI skips the build and tests of such a pull request when Kinetra changed only Markdown, `docs/`, `.agents/`, `.github/` or `tools/` between the two pointers (an identical tree included), which Lab's build does not read, and runs only the docs check then; it does the same for a Lab pull request that changes only Markdown, `docs/` or `.agents/`. Never push that move to the merge commit onto the Lab pull request that is open or reviewed: its CI would run again for one line. While the Kinetra pull request is still in review and its branch moves, the Lab branch follows it with a pointer commit, as the stack rules above say.
