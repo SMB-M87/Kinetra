@@ -281,6 +281,19 @@ TEST_CASE("atan2 and asin keep the standard quadrants and special values") {
     CHECK(std::isnan(run_asin(1.5f)));
 }
 
+TEST_CASE("vectors are equal exactly when both components compare equal") {
+    static_assert(Vec2{1, 2} == Vec2{1, 2} && Vec2{1, 2} != Vec2{2, 1});
+    const Vec2 a{at_run_time(1.5f), at_run_time(-2)};
+    CHECK(a == Vec2{1.5f, -2});
+    CHECK_FALSE(a != Vec2{1.5f, -2});
+    CHECK(a != Vec2{1.5f, -2.0001f});
+    CHECK(a != Vec2{1.5001f, -2});
+    CHECK(Vec2{at_run_time(0.f), 0} == Vec2{at_run_time(-0.f), -0.f});
+    const Vec2 not_a_number{std::nanf(""), 0};
+    CHECK(not_a_number != not_a_number);
+    CHECK_FALSE(not_a_number == not_a_number);
+}
+
 TEST_CASE("touching circles collide with zero penetration along the center line") {
     const auto c = collide(circle({0, 0}), circle({1, 0}));
     REQUIRE(c);

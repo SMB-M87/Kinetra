@@ -15,7 +15,7 @@ Headless mechanisms use world units, seconds and radians. Positive rotation is c
 
 | API | Contract |
 | --- | --- |
-| [math.h](../../include/kinetra/simulation/math.h) | Vec2 arithmetic, dot/cross, normalization, rotation, signed angle, `atan2` and `asin` that round the same on every C library, interpolation, distances, bounds and shape values |
+| [math.h](../../include/kinetra/simulation/math.h) | Vec2 arithmetic and exact equality, dot/cross, normalization, rotation, signed angle, `atan2` and `asin` that round the same on every C library, interpolation, distances, bounds and shape values |
 | [physics.h](../../include/kinetra/simulation/physics.h) | Body state, contacts, integration, impulses and World |
 | [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) | Rebuildable AABB index; sorted unique overlapping input indices |
 | [collision_grid.h](../../include/kinetra/simulation/collision_grid.h) | Row-major occupancy collision and first blocked segment fraction |
