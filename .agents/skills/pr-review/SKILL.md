@@ -1,12 +1,12 @@
 ---
 name: pr-review
-description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session once the pull request's CI is green, for every pull request except a docs-only or pointer-only one, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, every copy of a changed rule, roadmap, CI, merge order, review lessons) on the code, builds and runs nothing, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, after which the author's answer stands, resolves the threads it accepts or that reached that limit, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and once a pull request's CI is green.
+description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session once the pull request's CI is green, for every pull request except a pointer-only one and a docs-only one that leaves the agent rules alone, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, every copy of a changed rule, roadmap, CI, merge order, review lessons) on the code, builds and runs nothing, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, after which the author's answer stands, resolves the threads it accepts or that reached that limit, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and once a pull request's CI is green.
 argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole stack) [code-review depth: low|medium|high, or higher on request]"
 ---
 
 # PR review: an agent reviews a pull request
 
-The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a docs-only one (only Markdown, `docs/` or `.agents/`) and a pointer-only Lab pull request ([rule](../../../AGENTS.md#git)): the author starts it in a separate session once the pull request's CI is green, and the user can start it too. The reviewer only reads the code and comments on it: CI runs the builds and tests, and the author runs what CI cannot (a screenshot of a changed scene). The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
+The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a docs-only one (only Markdown, `docs/` or `.agents/`, and none of the agent rules) and a pointer-only Lab pull request ([rule](../../../AGENTS.md#git)): the author starts it in a separate session once the pull request's CI is green, and the user can start it too. The reviewer only reads the code and comments on it: CI runs the builds and tests, and the author runs what CI cannot (a screenshot of a changed scene). The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
 
 Everything on GitHub is in English: the inline comments, the summary and its conclusion. Only the hand-over in the chat (step 10) is in Dutch.
 
@@ -85,7 +85,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 
 Give each kept finding one severity: **blocking** (a bug, a missed goal, a broken rule, a failing or missing check), **should fix**, **question**, or **nit**. A nit never decides the conclusion.
 
-- **Nits** go only into the summary, never into an inline thread, so they hold no thread open. The author may carry them out after a *Ready to merge* without a new round ([merge rule](../../../AGENTS.md#git)).
+- **Nits** go only into the summary, never into an inline thread, so they hold no thread open. The author may carry them out after a *Ready to merge* without a new round, unless they change the agent rules ([merge rule](../../../AGENTS.md#git)).
 - **From round 3 on**, report only blocking findings as findings. List should-fix points and questions in the summary under *For the user*: the author may still carry them out, the user reads them after the merge, and they start no new round.
 
 ## 7. Post, per pull request
@@ -101,7 +101,7 @@ Give each kept finding one severity: **blocking** (a bug, a missed goal, a broke
    Points of attention:
    1. <the most important first, with severity>
 
-   Nits (optional; carrying them out in commits that change only Markdown, `docs/` or `.agents/` keeps this conclusion):
+   Nits (optional; carrying them out in commits that change only Markdown, `docs/` or `.agents/` and none of the agent rules keeps this conclusion):
    - <nit, with file and line> (or: none)
 
    For the user, after the merge:
@@ -116,7 +116,8 @@ Give each kept finding one severity: **blocking** (a bug, a missed goal, a broke
 
    - *Fix first* when a blocking or should-fix finding is open.
    - *Questions* when only questions remain.
-   - Otherwise *Ready to merge*. It covers the head sha it names, and commits after it that change only Markdown, `docs/` or `.agents/`, such as the nits' fixes ([merge rule](../../../AGENTS.md#git)).
+   - A point that the two-round limit settled, and a goal question the author settled, count toward neither; they are under *For the user*.
+   - Otherwise *Ready to merge*. It covers the head sha it names, and commits after it that change only Markdown, `docs/` or `.agents/` and none of the agent rules, such as the nits' fixes ([merge rule](../../../AGENTS.md#git)).
    - From round 3 on, only a blocking finding makes it *Fix first*; the rest is under *For the user*.
    - The author merges under the [merge rule](../../../AGENTS.md#git) whatever the pull request changes; no conclusion hands the merge to the user.
 
@@ -128,7 +129,7 @@ Follow the pull request until it merges or every point is settled: subscribe to 
 - When the author answers with an argument: if it convinces you, say so and resolve the thread. If not, reply once with your counter-argument and evidence.
 - Two rounds per point at most: finding and answer, then one reply from you and one from the author. If you still disagree, reply that the author's answer stands, resolve the thread, and post an updated summary that lists the point under *For the user*.
 - When the author pushes new commits, wait until CI is green on the new head, then review only the commits since your last conclusion (`git diff <last reviewed sha>..<head>`): steps 3 to 6 for those commits, with the code review at the depth those commits need, the copies check on what they change, and whether each fix reached every place that names it. Do not run a new code review of the whole diff: what an earlier round passed stays passed unless a new commit changes it. Post an updated summary on the new head.
-- After a *Ready to merge*, commits that change only Markdown, `docs/` or `.agents/` need no new round; the conclusion still holds for them.
+- After a *Ready to merge*, commits that change only Markdown, `docs/` or `.agents/` and none of the agent rules need no new round; the conclusion still holds for them. A commit to the agent rules gets a round of its own.
 
 ## 9. Lessons
 
