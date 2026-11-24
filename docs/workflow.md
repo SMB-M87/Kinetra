@@ -1,6 +1,6 @@
 # Development workflow
 
-How a change moves from idea to commit in Kinetra and Kinetra-Lab. Every change follows this cycle; the depth of each step scales with the change, but no step is skipped, except that a docs-only change has no design document and no agent review.
+How a change moves from idea to commit in Kinetra and Kinetra-Lab. Every change follows this cycle; the depth of each step scales with the change, but no step is skipped, except that a docs-only change has no design document, and no agent review unless it changes the agent rules.
 
 ## Table of contents
 
@@ -36,7 +36,7 @@ flowchart LR
     R --> Doc[Update docs and comments]
     Doc --> C[Final commit, push, pull request]
     C --> CI[CI green]
-    CI -->|docs-only or pointer-only| M
+    CI -->|pointer-only, or docs-only without rule changes| M
     CI --> AR[Agent review and discussion]
     AR -->|findings| I
     AR -->|nothing open| M[Author merges; the user checks afterwards]
@@ -99,13 +99,13 @@ Review the complete branch diff (`git diff main...HEAD`) as if someone else wrot
 
 Fix the findings, re-verify at the right level and record the outcome in the design document's *Review* section, or for a docs-only change in the pull request description.
 
-**Agent review.** Every pull request gets one, except a docs-only one, which changes only Markdown, `docs/` or `.agents/` ([rule](../AGENTS.md#git)), and a pointer-only Lab pull request ([below](#changes-across-kinetra-and-lab)); the author's own review above still applies to them. Once its CI is green, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. That session gets write access to the repository of every pull request it reviews, both repositories for a change across Kinetra and Lab, because posting a review writes through the GitHub API and read access covers only `git clone` and `git fetch`; [review access](#review-access) says how it gets that access without the user, and a reviewer that cannot post stops before reviewing and says so. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist on the code, and posts inline comments and a summary with a conclusion, all marked **Agent review**. Round 1 reviews the whole diff; when the author pushes fixes, the next round reviews only the commits since the last conclusion, at the depth they need. Nits go only into the summary; carrying them out in commits that change only Markdown, `docs/` or `.agents/` keeps a *Ready to merge*. From round 3 on, a pull request gets only blocking findings, and the reviewer lists the rest in its summary for the user to check after the merge ([rounds](../.agents/skills/pr-review/SKILL.md#6-classify)). The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the author's last answer stands: the reviewer resolves the thread and lists the point in its summary for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git), whatever the pull request changes, agent rules, CI and releases included; the user checks merged work afterwards.
+**Agent review.** Every pull request gets one, except a docs-only one (only Markdown, `docs/` or `.agents/`) that leaves the agent rules alone ([rule](../AGENTS.md#git)), and a pointer-only Lab pull request ([below](#changes-across-kinetra-and-lab)); the author's own review above still applies to them. Once its CI is green, the author starts a separate session with the `pr-review` skill, on the most capable model the agent offers, at a reasoning effort and code-review depth by the kind of change ([levels](../.agents/skills/pr-review/SKILL.md#levels)), in a new session or task, or else a fresh sub-agent that gets only the link and the depth, or else by asking the user to start the `pr-review` skill in a new session; the pull request waits for its conclusion. That session gets write access to the repository of every pull request it reviews, both repositories for a change across Kinetra and Lab, because posting a review writes through the GitHub API and read access covers only `git clone` and `git fetch`; [review access](#review-access) says how it gets that access without the user, and a reviewer that cannot post stops before reviewing and says so. The reviewer checks every goal of the roadmap item and the design document, runs the agent's code review and the repository checklist on the code, and posts inline comments and a summary with a conclusion, all marked **Agent review**. Round 1 reviews the whole diff; when the author pushes fixes, the next round reviews only the commits since the last conclusion, at the depth they need. Nits go only into the summary; carrying them out in commits that change only Markdown, `docs/` or `.agents/` and none of the agent rules keeps a *Ready to merge*. From round 3 on, a pull request gets only blocking findings, and the reviewer lists the rest in its summary for the user to check after the merge ([rounds](../.agents/skills/pr-review/SKILL.md#6-classify)). The author answers each finding with `pr-feedback` (below); the reviewer accepts and resolves the thread, or replies once more. After two rounds on one point without agreement, the author's last answer stands: the reviewer resolves the thread and lists the point in its summary for the user. When nothing is open, the author merges under the [merge rule](../AGENTS.md#git), whatever the pull request changes, agent rules, CI and releases included; the user checks merged work afterwards.
 
 ### Review access
 
 A review session that cannot write to a repository it reviews loses its review: Kinetra#42 merged without one, and on 2026-11-24 the review of Kinetra#52 and Kinetra-Lab#114 waited until the user granted access. In a Claude Code cloud session the reviewer gets that access without the user:
 
-- Both repositories' `.claude/settings.json` allow, without a prompt, the tools that check and attach a repository (`check_repo_access`, `add_repo`, `register_repo_root`) and those that read a pull request and post and resolve a review (`pull_request_read`, `pull_request_review_write`, `add_comment_to_pending_review`, `add_reply_to_pull_request_comment`, `resolve_review_thread`, `add_issue_comment`). A cloud session reads these rules only when it starts with one repository, as a review session does.
+- Both repositories' `.claude/settings.json` allow, without a prompt, the tools that check and attach a repository (`check_repo_access`, `add_repo`, `register_repo_root`), those that read a pull request and post and resolve a review (`pull_request_read`, `pull_request_review_write`, `add_comment_to_pending_review`, `add_reply_to_pull_request_comment`, `resolve_review_thread`, `add_issue_comment`), the reviewer's subscription to the pull request (`subscribe_pr_activity`) and the author's look at the reviewer's events (`list_events`). A cloud session that starts with one repository reads that repository's file; one that starts with several reads none. A review session starts in one, so the file of the repository it starts in applies, and the two files are kept identical.
 - The author starts the review session with `create_session` from the repository of the pull request, Kinetra-Lab for a change across both. Its prompt names every pull request and asks the reviewer to attach each other repository with push access before it reviews (step 0 of `pr-review`).
 - The author checks that the reviewer got its access: the reviewer's first events (`list_events`) show the attach, or its report says why it failed. Only when the attach failed does the author ask the user, once, to grant access to the repository it names.
 
@@ -137,7 +137,7 @@ A review session that cannot write to a repository it reviews loses its review: 
 
   Write the body to a scratch file, never into the repository.
 - Check the result with `gh pr view <number> --json mergeable,url`, and report a conflict instead of resolving it on `main`.
-- Wait for the pull request's CI and fix a red check; once it is green, start the agent review (step 6) and follow the pull request. A docs-only pull request skips the agent review: merge it once CI is green, every review thread is resolved, GitHub reports no conflict, and every pull request below it is merged, in Kinetra-Lab including the Kinetra pull request its pointer records ([merge rule](../AGENTS.md#git)).
+- Wait for the pull request's CI and fix a red check; once it is green, start the agent review (step 6) and follow the pull request. A docs-only pull request that leaves the agent rules alone skips the agent review: merge it once CI is green, every review thread is resolved, GitHub reports no conflict, and every pull request below it is merged, in Kinetra-Lab including the Kinetra pull request its pointer records ([merge rule](../AGENTS.md#git)).
 - Report to the user in Dutch: what changed, the commits and pull-request links, the verification commands and results, remaining risks, the merge order, and whether the pull request merged under the [merge rule](../AGENTS.md#git) or what still keeps it open.
 
 ### Review feedback
@@ -209,6 +209,7 @@ sequenceDiagram
     participant L as Lab branch
     participant G as GitHub
     participant R as Review session
+    participant A as Author
     K->>K: design, implement, verify, commit engine change
     K->>G: push branch, open Kinetra pull request
     L->>L: design (links the Kinetra design), adapt applications
@@ -216,7 +217,7 @@ sequenceDiagram
     L->>L: full Lab verification against that pointer
     L->>G: push branch, open Lab pull request (links Kinetra PR)
     R->>G: agent review of both pull requests, after both repositories are attached
-    L->>G: the author merges Kinetra first, then Lab
+    A->>G: merge Kinetra first, then Lab
     G->>G: lab-pointer workflow opens the pointer-only pull request to the Kinetra merge commit, auto-merged after Lab's CI
 ```
 
