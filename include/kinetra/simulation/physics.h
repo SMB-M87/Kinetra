@@ -129,6 +129,9 @@ class World {
     /// Removes all bodies and resets the step statistics. Previous indices become invalid.
     void clear() {
         bodies_.clear();
+        fixed_bodies_.clear();
+        fixed_ids_.clear();
+        fixed_index_valid_ = false;
         candidate_pairs_ = 0;
         sweep_budget_exhausted_ = false;
     }
@@ -159,9 +162,11 @@ class World {
     std::vector<Body> bodies_;
     // Broad phase of step(). Fixed bodies never move during a step, so they have their own
     // index, rebuilt only when one of them differs from `fixed_bodies_`, the copies it was
-    // built from; `grid_` indexes the moving bodies again for every pass. `fixed_ids_` and
-    // `moving_ids_` give the body index of each grid index, ascending; `boxes_` holds the box
-    // of every body in the current pass.
+    // built from; `grid_` indexes the moving bodies again for every pass, from
+    // `moving_boxes_`. `fixed_ids_` and `moving_ids_` give the body index of each grid
+    // index, ascending. `boxes_` holds, by body index, the box of each moving body in the
+    // current pass and, while `fixed_index_valid_`, the box of each fixed body the index was
+    // built from.
     SpatialGrid grid_;
     SpatialGrid fixed_grid_;
     std::vector<Body> fixed_bodies_;

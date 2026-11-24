@@ -602,12 +602,22 @@ bool same(Vec2 a, Vec2 b) {
     return a.x == b.x && a.y == b.y;
 }
 
-// Whether bounds() gives both bodies the same box: it reads only these fields. Comparing
-// with == treats -0 and +0 as equal, which changes no overlap test.
+// Whether bounds() gives both bodies the same box, by the fields it reads for the shape, so
+// that turning a fixed circle keeps the index. Comparing with == treats -0 and +0 as equal,
+// which changes no overlap test.
 bool same_geometry(const Body &a, const Body &b) {
-    return a.shape == b.shape && same(a.position, b.position) && same(a.half_extents, b.half_extents) &&
-           a.radius == b.radius && a.angle == b.angle &&
-           std::equal(a.vertices.begin(), a.vertices.end(), b.vertices.begin(), b.vertices.end(), same);
+    if (a.shape != b.shape || !same(a.position, b.position))
+        return false;
+    switch (a.shape) {
+    case Shape::circle:
+        return a.radius == b.radius;
+    case Shape::box:
+        return same(a.half_extents, b.half_extents) && a.angle == b.angle;
+    case Shape::polygon:
+        return a.angle == b.angle &&
+               std::equal(a.vertices.begin(), a.vertices.end(), b.vertices.begin(), b.vertices.end(), same);
+    }
+    return false;
 }
 
 } // namespace
@@ -647,7 +657,7 @@ void World::index_fixed_bodies() {
 void World::candidates(Aabb area, bool with_fixed, std::vector<std::size_t> &out) const {
     out.clear();
     const auto moving = grid_.query(area);
-    if (!with_fixed) {
+    if (!with_fixed || fixed_ids_.empty()) {
         for (auto k : moving)
             out.push_back(moving_ids_[k]);
         return;

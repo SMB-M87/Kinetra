@@ -48,7 +48,8 @@ Non-goals:
 | --- | --- | --- |
 | How `World::step` learns that a fixed body changed | It compares the fixed bodies at the start of each step with copies of the ones the fixed index was built from (index, motion and every field `bounds` reads), and rebuilds the index only on a difference | `World::body(id)` returns a mutable `Body&`, and callers change bodies between steps (Demo assigns the player's body every tick). A comparison needs no API change and costs one pass over the fixed bodies per step, against 14 rebuilds. An explicit "terrain changed" call would be a contract change that every caller could forget |
 | Order of the candidates | A query of both indexes is merged into the sorted, unique list one grid over all bodies gave | The earliest swept event breaks ties by pair order (strict `<`), and the correction passes resolve in order; any other order changes the simulation |
-| Where the fixed index is rebuilt | At the first pass of a step, where the single grid used to be rebuilt | A bad box throws `std::invalid_argument` at the same point of the step, after the first substep's forces, as before |
+| Where the fixed index is rebuilt | At the first pass of a step, where the single grid used to be rebuilt | A bad box throws `std::invalid_argument` at the same point of the step, after the first substep's forces, as before. When a fixed and a moving box are both bad, the fixed one is checked first, so the message can name the other fault; the type and the point stay, and no test or caller reads the message |
+| Which fields mark a fixed body as changed | Per shape, the fields `bounds` reads: a circle's position and radius; a box's position, half extents and angle; a polygon's position, angle and vertices | Turning a fixed circle, or any field `bounds` ignores, keeps the index |
 | Bucket storage | `SpatialGrid::rebuild` keeps the vectors of the cells in use and drops a cell that stayed empty for a whole rebuild | Rebuilding over boxes that barely move then allocates almost nothing; the map stays bounded by the cells of the last two rebuilds |
 | Stack | Four Kinetra pull requests, `perf/world-fixed-index`, then the query, the prediction loop and `bounds` on branches stacked on it; one Lab pull request per step on the Lab stack | One question per pull request, measured on its own |
 
@@ -95,17 +96,34 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | Behavior | Test | Level |
 | --- | --- | --- |
 | Step 1: a fixed body the caller moves, reshapes, turns into a moving body, or adds between steps is seen by the next step | New cases in `simulation_tests.cpp`: a world stepped once, then changed through `body(id)` or `add`, collides as a fresh world with the same bodies does, with the same `candidate_pairs()` | Targeted |
-| Step 1: the candidate pairs and their order are unchanged | Existing `moving_contact_tests.cpp` and `simulation_tests.cpp` (`candidate_pairs()`), Lab's Demo crowd characterization lines, i4sim golden and pressure tests, Dotio fingerprints | Full |
+| Step 1: the candidate pairs and their order are unchanged | New characterization case in `simulation_tests.cpp`: a 51-body world of fixed boxes, polygons and circles interleaved with moving ones in a container added last, whose fingerprint over 360 steps (every position, velocity, angle and `candidate_pairs()`) was recorded on Kinetra `73adc66`; putting the fixed candidates first in the merge changes it. Existing `moving_contact_tests.cpp` and `simulation_tests.cpp` (`candidate_pairs()`), Lab's Demo crowd characterization lines, i4sim golden and pressure tests, Dotio fingerprints | Full |
 | Step 1: a rebuild keeps the grid's results | Existing spatial grid tests, plus a case that rebuilds with boxes that move away and back and queries after each rebuild | Targeted |
 | Every step: no simulated value changes | Lab's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline apart from `elapsed_ms` | Full (Lab) |
 
 ## Review
 
-Filled in per step.
+### Step 1
+
+`/code-review` at medium on `main...perf/world-fixed-index` found no change to the bit-identical behavior and seven points:
+
+| Finding | Resolution |
+| --- | --- |
+| No test compares the merged order with the single grid's; a fresh world uses the same merge | Fixed: the mixed-world fingerprint, recorded on `main`, fails when the merge puts fixed candidates first |
+| Two bad boxes can give the other message | Recorded in *Decisions*: the type and the point of the throw are kept |
+| `clear()` keeps the fixed index and its copies | Fixed: `clear()` drops them |
+| Two grids allocate two vectors per query | Kept for step 2, whose buffer overload removes them; a world without fixed bodies skips the fixed query now |
+| Every field is compared, whatever the shape | Fixed: the fields `bounds` reads for the shape |
+| The member comment misstates `boxes_` | Fixed |
+| The kept buckets cost a walk over the cells of two rebuilds | Kept: one walk over the cells against freeing and allocating every bucket; the measurement shows the gain. Step 2 replaces the hash map for compact areas |
 
 ## Verification
 
-Filled in per step.
+### Step 1
+
+- Kinetra: `cmake --preset dev && cmake --build --preset dev && ctest --preset dev`: 272 of 272 passed. `clang-format --dry-run --Werror` on the changed files, `python3 tools/check_docs.py` and `python3 tools/check_copies.py --term 'rebuilds its grid' --term 'broad phase'` (every hit still true) pass.
+- Lab at the pointer: `ctest --preset dev` without the graphics cases, 318 of 318 passed, golden and pressure tests included.
+- Bit identity on the release build: i4sim's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline's apart from `elapsed_ms` in all three runs; Dotio's output, fingerprints included, identical; Demo's characterization lines pass.
+- Time, release preset, median of three runs on one cloud machine (four cores of an Intel Xeon at 2.1 GHz, about 1.25 times slower than the baseline's on Demo): Demo's soak at 48 agents 12.1 to 2.7 s (steering) and 12.0 to 2.5 s (route), at 240 agents 28.0 to 18.1 s, 28.9 to 18.5 s and 26.0 to 16.3 s; i4sim and Dotio within run-to-run noise. Lab's performance page has the row and the new Demo profile.
 
 ## Pull request
 

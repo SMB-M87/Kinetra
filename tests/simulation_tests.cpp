@@ -11,10 +11,13 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <limits>
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace kinetra;
@@ -53,6 +56,80 @@ std::vector<Aabb> random_boxes() {
         boxes.push_back({center - extent, center + extent});
     }
     return boxes;
+}
+
+/// Fingerprint of a mixed world over 360 steps: fixed walls, boxes and polygons interleaved by
+/// index with moving circles, boxes and a polygon, set out symmetrically so that equal-time
+/// events occur. Hashes every body's position, velocity and angles and candidate_pairs().
+std::uint64_t mixed_world_fingerprint() {
+    World world(2);
+    world.gravity = {0, -10};
+    std::mt19937 rng(29);
+    std::uniform_real_distribution<float> unit(-1, 1);
+    for (int i = 0; i < 24; ++i) {
+        const float x = float(i % 6) * 3 - 7.5f, y = float(i / 6) * 3 - 4.5f;
+        Body fixed;
+        fixed.motion = Motion::fixed;
+        fixed.position = {x, y};
+        if (i % 3 == 0) {
+            fixed.shape = Shape::box;
+            fixed.half_extents = {0.8f, 0.3f};
+            fixed.angle = 0.25f * float(i % 4);
+        } else if (i % 3 == 1) {
+            fixed = regular_polygon(5 + i % 3, 0.6f);
+            fixed.motion = Motion::fixed;
+            fixed.position = {x, y};
+        } else {
+            fixed.radius = 0.4f;
+        }
+        world.add(fixed);
+        Body mover;
+        mover.position = {x + 1.5f, y + 1.5f};
+        mover.velocity = {float(i % 2 ? 2 : -2), unit(rng)};
+        mover.motion = i % 4 == 0 ? Motion::controlled : Motion::dynamic;
+        if (i % 5 == 0) {
+            mover.shape = Shape::box;
+            mover.half_extents = {0.4f, 0.4f};
+        } else if (i % 7 == 0) {
+            mover = regular_polygon(6, 0.45f);
+            mover.position = {x + 1.5f, y + 1.5f};
+            mover.velocity = {-2, 0};
+        } else {
+            mover.radius = 0.35f;
+            mover.angular_velocity = unit(rng);
+        }
+        world.add(mover);
+    }
+    // A container added last, so that movers resting on it and on each other meet a fixed
+    // body with a higher index than their moving neighbors.
+    for (const auto &[position, extent] :
+         {std::pair{Vec2{0, -7}, Vec2{10, 0.5f}}, std::pair{Vec2{-10, 0}, Vec2{0.5f, 8}},
+          std::pair{Vec2{10, 0}, Vec2{0.5f, 8}}}) {
+        Body wall;
+        wall.motion = Motion::fixed;
+        wall.shape = Shape::box;
+        wall.position = position;
+        wall.half_extents = extent;
+        world.add(wall);
+    }
+    std::uint64_t hash = 1469598103934665603ull;
+    auto mix = [&](float value) {
+        std::uint32_t bits;
+        std::memcpy(&bits, &value, sizeof bits);
+        for (int k = 0; k < 4; ++k) {
+            hash ^= (bits >> (8 * k)) & 0xff;
+            hash *= 1099511628211ull;
+        }
+    };
+    for (int step = 0; step < 360; ++step) {
+        world.step(1.f / 60);
+        for (const auto &b : world.bodies())
+            for (float v :
+                 {b.position.x, b.position.y, b.velocity.x, b.velocity.y, b.angle, b.angular_velocity})
+                mix(v);
+        mix(float(world.candidate_pairs()));
+    }
+    return hash;
 }
 
 /// Angular velocity of a box mover with `motion` after one step into a fixed box off its center.
@@ -609,6 +686,13 @@ TEST_CASE("a tiny relative projectile step does not tunnel through a circle") {
 
 TEST_CASE("a long grazing projectile hits a tangent circle") {
     CHECK(segment_circle({-10000, 25}, {10000, 25}, {}, 25).has_value());
+}
+
+TEST_CASE("a mixed world steps as it did with one grid over all bodies") {
+    // The value was recorded with the broad phase before fixed bodies had an index of their
+    // own (Kinetra 73adc66). The pairs' order decides ties between equal-time events and the
+    // order of the correction passes, so a wrong merge of the two indexes changes it.
+    CHECK(mixed_world_fingerprint() == 0x0d6bd60145972dd1ull);
 }
 
 TEST_CASE("a fixed body changed between steps acts as in a new world") {
