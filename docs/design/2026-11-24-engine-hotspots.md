@@ -136,6 +136,17 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | No test switches one grid between both storages | Fixed: compact, scattered, compact, then a rejected rebuild that keeps the dense index |
 | `<utility>` missing for `std::move` | Fixed |
 
+### Step 3
+
+`/code-review` at medium on `perf/spatial-query...perf/priority-prediction` checked the bound (the float error is at most about 2.4e-7 times the magnitudes, the slack 1e-5 times), the conversions to `int` and zero, tiny and huge values, found no change to the result and four points:
+
+| Finding | Resolution |
+| --- | --- |
+| The relative slack cannot cover the absolute error of subnormal results (a safety multiplier near 1e-36) | Fixed: the smallest normal float is added |
+| The test never uses a fractional step, another safety margin, negative or large coordinates | Fixed: two more scales |
+| The test would pass if no scene predicted an overlap | Fixed: at least five overlaps per scale |
+| The reference copy in the test rounds alike only without contraction into fused multiply-adds | Stated in the test; CI's targets do not contract. The golden lines elsewhere rest on the same assumption |
+
 ## Verification
 
 ### Step 1
@@ -150,6 +161,12 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 - Kinetra: `ctest --preset dev`, 276 of 276 passed; `clang-format --dry-run --Werror` on the changed files.
 - Bit identity on the release build, on Lab `main` with hotspot 2: i4sim's CSV with and without `--predictive-passing` and Dotio's output identical in all three runs; Demo's characterization lines pass.
 - Time, median of three runs interleaved with step 1 on the same machine: i4sim 19.8 to 15.8 s, with passing 34.3 to 23.1 s; Demo's soak 2.9 to 1.6 s at 48 agents, 18.8 to 13.3 s at 240; Dotio unchanged. A query that tested every box when it would visit more entries than there are boxes measured the same on Demo (13.2 against 13.4 s over three interleaved runs) and was left out.
+
+### Step 3
+
+- Kinetra: `ctest --preset dev`, 277 of 277 passed; `clang-format --dry-run --Werror` on the changed files. Shifting the interval by two steps fails the new case 369 times (lower end) and 174 times (upper end).
+- Bit identity on the release build: i4sim's CSV with and without `--predictive-passing` and Dotio's output identical in all three runs, and again after the review's fixes; Demo's characterization lines pass.
+- Time, median of three runs interleaved with step 2 on the same machine: i4sim 15.8 to 11.4 s, with passing 22.5 to 18.4 s; Demo and Dotio unchanged.
 
 ## Pull request
 
