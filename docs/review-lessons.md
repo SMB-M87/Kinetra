@@ -28,6 +28,9 @@ One list item per lesson, under the topic it belongs to:
 
 ## Docs and links
 
+- **When a change removes a gate, check every exemption that the gate made safe** · added 2026-11-24 · source: #56
+  Removing the user's merge gate on the agent rules left the docs-only exemption in place, so a pull request that rewrites the merge rule or a skill would have merged with no second agent and no user.
+
 - **When a change adds a member to a set (an enum value, a request, a menu row), search for each existing member as a term, not only for the old list** · added 2026-11-24 · source: #53, Kinetra-Lab#115
   The search covered `none, menu, exit` and `menu or exit`, and missed the `menu_key` contract and Kinetra-Lab's architecture page, which name the requests one at a time (`SessionRequest::menu`, "LAUNCHER gives `menu`") and so still described two ways to leave.
 
@@ -50,6 +53,9 @@ One list item per lesson, under the topic it belongs to:
   Design documents are history. #42 left Kinetra-Lab's `release.yml` out of its time limits because the release workflow "waits for the pinned toolchain on purpose", a decision of 2026-11-21 that Kinetra-Lab c08ac34 had reversed a day later.
 
 ## CI and tooling
+
+- **When a permission list is meant to unblock a procedure, list every tool call of that procedure, in each session that runs it** · added 2026-11-24 · source: #56, Kinetra-Lab#117
+  The review-access list covered the reviewer's attach and its posts, but not its subscription to the pull request or the author's `list_events` check, so both still prompted outside auto mode.
 
 - **Never write a host name, URL or version into configuration from memory** · added 2026-11-21 · source: #22
   The first commit of #22 listed three mirrors of the Arch Linux Archive that do not exist, and only CI showed it. Check the value with a request first; when the session cannot reach it, say so and prefer a source that names no host, such as the image's own mirror list.
