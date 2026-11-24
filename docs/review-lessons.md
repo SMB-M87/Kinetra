@@ -28,6 +28,9 @@ One list item per lesson, under the topic it belongs to:
 
 ## Docs and links
 
+- **Add an exception to a defined term in the same form on every page, never by redefining the term on some of them** · added 2026-11-24 · source: #57
+  "Docs-only" got an exception in `AGENTS.md` (a docs-only rule change still gets a review) but a narrower definition in the workflow and `pr-review`, so a pull request that changes only a skill got two answers to whether it needs a design document.
+
 - **When a change removes a gate, check every exemption that the gate made safe** · added 2026-11-24 · source: #56
   Removing the user's merge gate on the agent rules left the docs-only exemption in place, so a pull request that rewrites the merge rule or a skill would have merged with no second agent and no user.
 
