@@ -8,6 +8,7 @@
 #   to the current Arch packages and marks itself with a warning, because it is not
 #   pinned. The snapshot matches the Artix/Arch development environment (gcc 16.2.1,
 #   clang/clang-format 23.1.5, CMake 4.5.0). Bump both deliberately, in their own commit,
+#   together with clang_format_version in tools/cloud_setup.sh, which cloud sessions use,
 #   and fix what the new toolchain reports. Formatting and the icon check run only here,
 #   and so does the docs check, except that the `changes` job runs it when it skips the
 #   build; warnings are errors only here.
@@ -156,7 +157,8 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          # The Debian and Ubuntu package set of docs/development.md, plus git for the checkout.
+          # The Debian and Ubuntu package set of docs/development.md, which tools/cloud_setup.sh
+          # installs in a cloud session too, plus git for the checkout.
           packages="build-essential cmake ninja-build ccache libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0 git ca-certificates"
           # Canonical's mirror inside Azure, where the runners run, serves the same archive.
           # The copy of the image's sources stays outside sources.list.d, where apt would
