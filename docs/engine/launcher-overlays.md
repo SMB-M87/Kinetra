@@ -31,6 +31,7 @@ A request is state, not an event: the host acts on it once, and a menu request d
 [`kinetra/runtime/launcher.h`](../../include/kinetra/runtime/launcher.h) is the `Kinetra::Launcher` target, built with `KINETRA_BUILD_RUNTIME`. It publicly links Runtime. Consumers may use it or call `run_session` directly.
 
 - **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and status line let applications reuse the menu for their own resource selection.
+- **Previews.** Supply an immutable `RgbaImage` in at least one `LaunchChoice::preview` to enable the preview panel on the application list. It shows the highlighted application's image and up to four lines of its description. The panel sits beside the list in landscape windows and below it in portrait windows. Configuration pages use the centered list. Use `LaunchMenu::layout(viewport)` to position scripted clicks on the current page.
 - **`SessionHost`** owns one session. A factory that throws leaves the current session and camera untouched. The first advance after a transition gets zero elapsed time and empty input, so the selecting click and the construction time never reach the new session.
 - **`run_launcher`** is the standard loop over a `SessionHost` and a `LaunchMenu`:
 
