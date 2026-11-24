@@ -20,8 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Vec2 equality in place of component comparisons** · simulation, tests, with Lab · added 2026-11-24
-  Branch `refactor/vec2-component-comparisons` · [design](design/2026-11-24-vec2-component-comparisons.md).
+Nothing in progress in Kinetra itself.
 
 ## Next
 
