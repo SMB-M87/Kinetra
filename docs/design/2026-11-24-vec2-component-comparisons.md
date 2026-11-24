@@ -35,27 +35,29 @@ Use the existing operators for exact comparisons of complete vectors. Preserve s
 
 ## Design
 
-Compare fixed-body positions, box extents and polygon vertices directly. Compare avoidance extents and the calculated offset against zero vectors. Detect launcher pointer motion with vector inequality while preserving the settling guard. Express exact test expectations as vector comparisons.
+Compare fixed-body positions, box extents and polygon vertices directly. Compare avoidance extents and the calculated offset against zero vectors. Detect launcher pointer motion with vector inequality while preserving the settling guard. Express exact test expectations as vector comparisons and add coordinate context where the previous scalar assertions printed values.
 
 ## Affected areas
 
-Simulation (`physics.cpp`, `avoidance.cpp`), launcher input handling and the simulation, weighted-navigation and runtime tests.
+Simulation (`physics.cpp`, `avoidance.cpp`), launcher input handling and the simulation, weighted-navigation, runtime and settings-view tests.
 
 ## Test plan
 
-Run the existing simulation suites for fixed-body cache reuse and invalidation, collision and avoidance. Run the weighted-navigation reference comparisons and the launcher suite, including the resting-pointer regression. Run the runtime graphics suite for viewport resizing and coordinate picking. The existing vector equality case covers differing axes, signed zero and NaN. Pull request CI provides Full verification.
+Run the existing simulation suites for fixed-body cache reuse and invalidation, collision and avoidance. Run the weighted-navigation reference comparisons and the launcher suite, including the resting-pointer regression. Run the runtime graphics suite for viewport resizing and coordinate picking and the settings-view suite for the overlay half extent, menu origin and inspector bounds. The existing vector equality case covers differing axes, signed zero and NaN. Pull request CI provides Full verification.
 
 ## Review
 
 The branch diff preserves shape-specific cache checks, including polygon vertex count and order. The avoidance test still compares the calculated offset against zero, and pointer movement still requires the settling guard. Tests assert exact equality on the same coordinates. The axis-alignment predicate in `priority_steering.cpp` tests for a difference on both axes and retains its component comparisons.
 
+Round 1 added the three settings-view comparisons and kept the actual and expected coordinates in test failure output (`6f3a431`). The verification commands are also listed in the pull request description.
+
 ## Verification
 
-- `cmake --preset dev` and `cmake --build --preset dev --parallel 3 --target kinetra_tests kinetra_polygon_tests kinetra_sweep_tests kinetra_translation_sweep_tests kinetra_moving_contact_tests kinetra_contact_response_tests kinetra_avoidance_tests kinetra_weighted_navigation_tests kinetra_launcher_tests` passed.
-- `ctest --preset dev --parallel 3 -R '^kinetra_(behavior|polygons|sweeps|translation_sweeps|moving_contacts|contact_response|avoidance|weighted_navigation|launcher)'` passed all 202 tests.
+- `cmake --preset dev` and `cmake --build --preset dev --parallel 3 --target kinetra_tests kinetra_polygon_tests kinetra_sweep_tests kinetra_translation_sweep_tests kinetra_moving_contact_tests kinetra_contact_response_tests kinetra_avoidance_tests kinetra_weighted_navigation_tests kinetra_launcher_tests kinetra_settings_view_tests` passed.
+- `ctest --preset dev --parallel 3 -R '^kinetra_(behavior|polygons|sweeps|translation_sweeps|moving_contacts|contact_response|avoidance|weighted_navigation|launcher|settings_view)'` passed all 228 tests.
 - `cmake --preset graphics`, `cmake --build --preset graphics --parallel 2 --target kinetra_engine_runtime_tests` and `ctest --preset graphics -R '^kinetra_engine_graphics:'` passed all 20 runtime tests with SDL offscreen and software Mesa.
 - In Kinetra-Lab, `cmake --preset graphics`, `cmake --build --preset graphics --parallel 3 --target kinetra kinetra_menu_tests` and `ctest --preset graphics -R '^(kinetra_menu:|kinetra_smoke:launcher$)'` passed all 10 tests, including the offscreen launcher smoke test, against the engine refactor.
-- `clang-format --dry-run --Werror` with version 23.1.5 passed for the six changed C++ files. `python3 tools/check_docs.py`, `python3 tools/check_copies.py` and `git diff --check` also passed.
+- `git diff --name-only -z main -- '*.cpp' | xargs -0 clang-format --dry-run --Werror` passed with clang-format 23.1.5. `python3 tools/check_docs.py`, `python3 tools/check_copies.py --term 'same(Vec2, Vec2)' --term 'Vec2 equality in place of component comparisons'` and `git diff --check` also passed. The copies check lists the design index entry, which identifies this change by its original title.
 - Pull request CI provides Full verification.
 
 ## Pull request
@@ -70,7 +72,7 @@ Use Kinetra's existing exact `Vec2` equality throughout the engine where the cod
 
 - Compare positions, box extents and polygon vertex vectors directly in the fixed-body cache.
 - Use vector comparisons for zero vectors in avoidance and for pointer motion in the launcher.
-- Use vector comparisons for exact expectations in the simulation, weighted-navigation and runtime tests.
+- Use vector comparisons for exact expectations in the simulation, weighted-navigation, runtime and settings-view tests. Include coordinate values where the scalar assertions printed them.
 
 **Design**
 
@@ -78,7 +80,12 @@ Use Kinetra's existing exact `Vec2` equality throughout the engine where the cod
 
 **Verification**
 
-The targeted `dev` build and 202 tests passed. The `graphics` runtime target and 20 tests passed on SDL offscreen with software Mesa. The Kinetra-Lab launcher build and 10 tests, including its offscreen smoke test, passed against the refactor. Formatting, documentation links and the copies check passed. Full verification runs in pull request CI.
+- `cmake --preset dev` and `cmake --build --preset dev --parallel 3 --target kinetra_tests kinetra_polygon_tests kinetra_sweep_tests kinetra_translation_sweep_tests kinetra_moving_contact_tests kinetra_contact_response_tests kinetra_avoidance_tests kinetra_weighted_navigation_tests kinetra_launcher_tests kinetra_settings_view_tests` passed.
+- `ctest --preset dev --parallel 3 -R '^kinetra_(behavior|polygons|sweeps|translation_sweeps|moving_contacts|contact_response|avoidance|weighted_navigation|launcher|settings_view)'` passed all 228 tests.
+- `cmake --preset graphics`, `cmake --build --preset graphics --parallel 2 --target kinetra_engine_runtime_tests` and `ctest --preset graphics -R '^kinetra_engine_graphics:'` passed all 20 runtime tests with SDL offscreen and software Mesa.
+- In Kinetra-Lab, `cmake --preset graphics`, `cmake --build --preset graphics --parallel 3 --target kinetra kinetra_menu_tests` and `ctest --preset graphics -R '^(kinetra_menu:|kinetra_smoke:launcher$)'` passed all 10 tests against the refactor.
+- `git diff --name-only -z main -- '*.cpp' | xargs -0 clang-format --dry-run --Werror`, `python3 tools/check_docs.py`, `python3 tools/check_copies.py --term 'same(Vec2, Vec2)' --term 'Vec2 equality in place of component comparisons'` and `git diff --check` passed.
+- Full verification runs in pull request CI.
 
 **Review notes**
 
