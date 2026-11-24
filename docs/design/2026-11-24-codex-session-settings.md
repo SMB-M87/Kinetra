@@ -54,6 +54,8 @@ The [first review](https://github.com/SMB-M87/Kinetra/pull/59#pullrequestreview-
 
 Codex uses a single review call for a summary and its inline comments. The workflow's `COMMENT` rule governs that call.
 
+The [second review](https://github.com/SMB-M87/Kinetra/pull/59#pullrequestreview-6038681942) confirmed both goals and resolved the four threads after CI passed on `e489af5`.
+
 ## Verification
 
 - Codex CLI `0.167.0-alpha.4` loaded the 17 approvals only in the trusted checkout. It discovered all nine Kinetra skills there. To inspect the config from Kinetra's root, start the app server with an isolated Codex configuration directory.
@@ -64,7 +66,7 @@ Codex uses a single review call for a summary and its inline comments. The workf
   env CODEX_HOME="$kinetra_codex_check" codex app-server --strict-config
   ```
 
-  Send these JSON-RPC lines in order, waiting for each response. Replace `/path/to/Kinetra` with the checkout's absolute path. Repeat with `untrusted` in the temporary config to check the project's approval layer is absent.
+  Send these JSON-RPC lines in order. Wait for a response only to messages with an `id`. Replace `/path/to/Kinetra` with the checkout's absolute path. Repeat with `untrusted` in the temporary config to check the project's approval layer is absent.
 
   ```jsonl
   {"id":1,"method":"initialize","params":{"clientInfo":{"name":"kinetra-check","version":"1"}}}
