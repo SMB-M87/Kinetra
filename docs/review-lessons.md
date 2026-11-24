@@ -28,6 +28,9 @@ One list item per lesson, under the topic it belongs to:
 
 ## Docs and links
 
+- **After editing a pull request description, check its links on the rendered page, not in the text you sent** · added 2026-11-24 · source: #50
+  A link with a section anchor was stored with its URL in a code span; the reply on #50 and Kinetra-Lab#112 reported it fixed from the text that was sent. Read the pull request's `body_html`, or the page, after each edit.
+
 - **On a stacked branch, link only to files that exist on that branch** · added 2026-11-21 · source: #20
   Every pull request of a stack runs the docs check on its own tree; a link to a design document that only the branch above adds fails it. Name such a document in plain text, or link it from the branch above.
 
