@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <functional>
 #include <kinetra/simulation/navigation.h>
+#include <kinetra/simulation/weighted_grid.h>
 #include <limits>
 #include <queue>
 #include <stdexcept>
@@ -294,6 +295,17 @@ Vec2 route_target(Vec2 position, std::vector<Vec2> &route, const Navigation &nav
     constexpr float lookahead = 2;
     return visible_route_target(position, route, lookahead,
                                 [&](Vec2 start, Vec2 goal) { return navigation.clear(start, goal); });
+}
+
+Vec2 route_target(Vec2 position, std::vector<Vec2> &route, const WeightedGrid &grid,
+                  GridRouteOptions options) {
+    if (!finite(position) || !std::isfinite(options.lookahead) || options.lookahead < 0 ||
+        !finite(options.half_extents) || options.half_extents.x < 0 || options.half_extents.y < 0)
+        throw std::invalid_argument("Raster route target requires a finite position and finite, "
+                                    "nonnegative lookahead and half extents");
+    return visible_route_target(position, route, options.lookahead, [&](Vec2 start, Vec2 goal) {
+        return grid.clear(start, goal, options.half_extents);
+    });
 }
 
 } // namespace kinetra

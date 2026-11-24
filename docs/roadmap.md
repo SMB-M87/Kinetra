@@ -20,8 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Raster route target** · navigation · added 2026-11-21
-  Where: [design](design/2026-11-24-raster-route-target.md), `feat/raster-route-target`.
+Nothing in progress in Kinetra itself.
 
 ## Next
 

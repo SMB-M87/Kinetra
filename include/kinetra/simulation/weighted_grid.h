@@ -77,4 +77,24 @@ class WeightedGrid {
     std::vector<bool> blocked_;
     std::vector<float> weights_;
 };
+
+/// Clearance and lookahead settings for following a WeightedGrid route.
+struct GridRouteOptions {
+    /// Distance budget in grid world units. Zero still permits skipping visible waypoints.
+    float lookahead{};
+    /// Half extents of the swept axis-aligned footprint in grid world units. Zero uses a point.
+    Vec2 half_extents{};
+};
+
+/// Erases leading waypoints whose successor is reachable by a direct swept segment from `position`.
+/// Returns the first remaining waypoint or a visible point up to `options.lookahead` units along
+/// the route via that waypoint. Returns the exact final waypoint when only it remains, or
+/// `position` when the route is empty.
+///
+/// Use grid coordinates and a valid route whose first waypoint is reachable from `position`.
+/// Clearance follows `grid.clear`; grid weights and search predicates do not affect shortcuts.
+/// The caller owns arrival and replanning after grid changes. Throws std::invalid_argument
+/// for nonfinite `position` or nonfinite or negative option values, before erasing any waypoints.
+Vec2 route_target(Vec2 position, std::vector<Vec2> &route, const WeightedGrid &grid,
+                  GridRouteOptions options);
 } // namespace kinetra

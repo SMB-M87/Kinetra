@@ -114,6 +114,16 @@ the world fails. Exact endpoints are used when checking the first and last link.
 `borders()` merges contiguous collinear edges of the free-cell union, removing
 raster seams from steering and contact geometry.
 
+[`route_target(position, route, grid, options)`](../../include/kinetra/simulation/weighted_grid.h)
+skips a prefix of raster waypoints as the next point becomes visible. It keeps
+the exact final waypoint. `GridRouteOptions::half_extents` sets the footprint for
+every clearance check. `GridRouteOptions::lookahead` sets the distance budget in
+grid world units for a visible point past an upcoming corner. Use zero to skip
+waypoints without looking past a corner. Shortcuts use geometric clearance only.
+Follow the original waypoints when congestion weights or search admission rules
+must also constrain the segment. The caller supplies a route whose leading
+waypoint is reachable and decides when to replan if the raster changes.
+
 `priority_steer` accepts axis-aligned boxes and axis-aligned border segments. It returns overlap, predictive and seek forces plus capped acceleration. Immediate
 overlap recovery precedes prediction and arrival. `constrain_borders` then limits
 normal velocity toward expanded wall segments while preserving feasible tangential

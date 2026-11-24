@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <random>
 #include <span>
 #include <stdexcept>
@@ -238,6 +239,70 @@ TEST_CASE("a swept footprint does not cut a blocked corner") {
 
 TEST_CASE("a wall-tangent footprint sweep is clear") {
     CHECK(footprint_grid().clear({18, 15}, {18, 35}, footprint));
+}
+
+TEST_CASE("a raster route target consumes visible waypoints and keeps the exact goal") {
+    const auto grid = corridor_grid();
+    const Vec2 position{5, 15};
+    const Vec2 goal{44, 16};
+    auto route = grid.path(position, goal);
+    REQUIRE(route.size() > 1);
+
+    CHECK(distance(route_target(position, route, grid, {}), goal) == 0);
+    REQUIRE(route.size() == 1);
+    CHECK(distance(route.front(), goal) == 0);
+    CHECK(distance(route_target(position, route, grid, {}), goal) == 0);
+
+    route.clear();
+    CHECK(distance(route_target(position, route, grid, {}), position) == 0);
+    CHECK(route.empty());
+}
+
+TEST_CASE("raster corner lookahead requires a clear sweep") {
+    const auto grid = footprint_grid();
+    const Vec2 position{15, 25};
+    const Vec2 corner{15, 15};
+    const Vec2 goal{45, 15};
+    std::vector<Vec2> route{corner, goal};
+    REQUIRE_FALSE(grid.clear(position, goal));
+
+    CHECK(distance(route_target(position, route, grid, {}), corner) == 0);
+    CHECK(distance(route_target(position, route, grid, {.lookahead = 15}), {20, 15}) == 0);
+    REQUIRE_FALSE(grid.clear(position, {37, 15}));
+    CHECK(distance(route_target(position, route, grid, {.lookahead = 32}), corner) == 0);
+    REQUIRE(route.size() == 2);
+    CHECK(distance(route.front(), corner) == 0);
+
+    CHECK(distance(route_target(corner, route, grid, {}), goal) == 0);
+    REQUIRE(route.size() == 1);
+}
+
+TEST_CASE("raster route shortcuts account for the swept footprint") {
+    const auto grid = footprint_grid();
+    const Vec2 position{5, 15};
+    const Vec2 corner{35, 15};
+    const Vec2 goal{35, 19};
+    std::vector<Vec2> route{corner, goal};
+
+    CHECK(distance(route_target(position, route, grid, {.half_extents = footprint}), corner) == 0);
+    REQUIRE(route.size() == 2);
+    CHECK(distance(route_target(position, route, grid, {}), goal) == 0);
+    CHECK(route.size() == 1);
+}
+
+TEST_CASE("invalid raster route inputs leave the waypoints intact") {
+    const auto grid = corridor_grid();
+    const Vec2 position{5, 15}, corner{15, 15}, goal{25, 15};
+    std::vector<Vec2> route{corner, goal};
+    const auto infinity = std::numeric_limits<float>::infinity();
+
+    CHECK_THROWS_AS(route_target(position, route, grid, {.lookahead = -1}), std::invalid_argument);
+    CHECK_THROWS_AS(route_target(position, route, grid, {.lookahead = infinity}), std::invalid_argument);
+    CHECK_THROWS_AS(route_target(position, route, grid, {.half_extents = {-1, 0}}), std::invalid_argument);
+    CHECK_THROWS_AS(route_target({infinity, 0}, route, grid, {}), std::invalid_argument);
+    REQUIRE(route.size() == 2);
+    CHECK(distance(route.front(), corner) == 0);
+    CHECK(distance(route.back(), goal) == 0);
 }
 
 TEST_CASE("the footprint planner detours along clear links") {
