@@ -24,9 +24,7 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-- **Review sessions that can post on both repositories** · agents, workflow, with Lab · added 2026-11-24
-  An agent review is lost or stalls when its session cannot write to a repository it reviews, and the rule that it gets write access to both ([workflow](workflow.md#6-review), step 0 of the `pr-review` skill) has not prevented it. Kinetra#42 merged without its review, which its session had written but could not post. On 2026-11-24 the review of Kinetra#52 and Kinetra-Lab#114 stopped before it began: the author's session had started it with only Kinetra-Lab attached, the session's permission check refused its request to attach Kinetra with push access, and the review waited until the user granted it. The reviewer must reach every repository it reviews without the user stepping in each time.
-  Next step: find what works in a cloud session: the author's session starting the review session with both repositories attached for push, a permission rule in `.claude/settings.json` of both repositories that lets a session attach the other one, or the author checking the reviewer's access before handing over. Which access a session may take without asking is the user's call. Where: Kinetra-Lab's item of the same name.
+Nothing agreed next in Kinetra itself.
 
 ## Later
 

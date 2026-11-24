@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-24 | [Review access and merges by the author](2026-11-24-review-access-and-agent-merges.md): a review session attaches every repository it reviews without a prompt; the author merges every change, rules, CI and releases included, and the user checks afterwards | implemented |
 | 2026-11-24 | [Engine hotspots](2026-11-24-engine-hotspots.md): the four engine hotspots of Lab's performance baseline, one pull request each, every simulated value unchanged | implemented |
 | 2026-11-24 | [Lab previews in the launcher](2026-11-24-launcher-images.md) | implemented |
 | 2026-11-23 | [CI mirror time budget and the remaining time limits](2026-11-23-ci-mirror-time-budget.md): the Azure mirror's index update and downloads get five minutes, so a mirror that does not answer still reaches the fallback; Kinetra-Lab's MSYS2 install and release workflow get time limits | implemented |
