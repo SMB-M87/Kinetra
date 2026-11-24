@@ -117,7 +117,9 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
         // testing every j, and the same `diff`.
         const int steps = s.prediction_steps;
         const Vec2 extent = (a.half_extents + other.half_extents) * s.safety_multiplier;
-        // Narrows [lo, hi] to the steps j whose exact gap along one axis is below the extent.
+        // Narrows [lo, hi] to the steps j whose exact gap along one axis is below the extent
+        // plus `slack`, rounded outward to whole steps. A bound that is NaN, from a predicted
+        // position that overflowed, narrows nothing: std::max and std::min return `lo` and `hi`.
         auto narrow = [&](float mover, float position, float velocity, float half, double &lo, double &hi) {
             const double rate = double(velocity) * double(s.prediction_step);
             const double gap = double(mover) - double(position);
@@ -147,9 +149,10 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
             if (lo > hi) // Also keeps a far-off bound from reaching the conversion to int.
                 continue;
             for (int j = int(lo); j <= int(hi); ++j) {
+                // `mover` is the same expression the loop over every pair used, so the value
+                // narrowed and the value tested are one.
                 const Vec2 diff =
-                    (a.position + a.velocity * (static_cast<float>(i) * s.prediction_step)) -
-                    (other.position + other.velocity * (static_cast<float>(j) * s.prediction_step));
+                    mover - (other.position + other.velocity * (static_cast<float>(j) * s.prediction_step));
                 if (std::abs(diff.x) < extent.x && std::abs(diff.y) < extent.y) {
                     result.predictive += normalized(diff);
                     ++predicted;

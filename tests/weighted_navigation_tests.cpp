@@ -389,9 +389,28 @@ TEST_CASE("tangent steering rejects an unbounded horizon") {
     CHECK_THROWS_AS(tangent_steer(cruiser(), {100, 20}, {}, 2, .6f, 65), std::invalid_argument);
 }
 
+TEST_CASE("priority steering keeps a step that only rounding puts inside the extent") {
+    // A neighbor creeps along y below the float spacing at y = 10,002, so every float gap rounds
+    // to -2, inside the extent of 2.00001, while the exact gap leaves it after ten steps. The
+    // loop over every pair finds (0, 19); without the slack the search would skip i = 0.
+    PrioritySteering settings;
+    settings.prediction_steps = 32;
+    settings.safety_multiplier = 1;
+    Body mover = cruiser_at({0, 10000}, {0, 1});
+    mover.half_extents = {1, 1};
+    Body other = cruiser_at({20, 10002}, {-1, 1e-6f});
+    other.half_extents = {1, 1.00001f};
+    const Body neighbors[]{other};
+    const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
+    const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
+    REQUIRE((expected.x != 0 || expected.y != 0));
+    CHECK(actual.x == expected.x);
+    CHECK(actual.y == expected.y);
+}
+
 TEST_CASE("priority steering predicts the same first overlap as testing every pair of steps") {
     // Random scenes at Lab's scales: unit boxes, and i4sim's millimeters with a horizon of 32
-    // steps; whole-number positions and speeds put boxes exactly on the extent at some steps.
+    // steps; whole-number positions and speeds make exact ties between steps more likely.
     // Further scales use a fractional step, a non-default safety margin, negative and large
     // coordinates. The reference is compiled in this file, so both copies of the expression
     // must round alike: this holds without contraction into fused multiply-adds, as on the
