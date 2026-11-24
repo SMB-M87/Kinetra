@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <kinetra/simulation/spatial_grid.h>
 #include <stdexcept>
+#include <utility>
 
 namespace kinetra {
 
@@ -47,40 +48,64 @@ void SpatialGrid::rebuild(std::span<const Aabb> bounds) {
         entries += std::int64_t(r.max_x - r.min_x + 1) * (r.max_y - r.min_y + 1);
         ranges.push_back(r);
     }
-    bounds_.assign(bounds.begin(), bounds.end());
-    ranges_ = std::move(ranges);
-    extent_ = extent;
-    const std::int64_t width = std::int64_t(extent.max_x) - extent.min_x + 1;
-    const std::int64_t height = std::int64_t(extent.max_y) - extent.min_y + 1;
-    // A dense array of cells when the occupied area is small next to the entries, so its
-    // memory stays proportional to the boxes; a hash map of cells otherwise.
-    dense_ = !ranges_.empty() && width * height <= 4 * entries + 1024 && width * height <= max_dense_cells;
-    if (dense_) {
-        width_ = int(width);
-        starts_.assign(std::size_t(width * height) + 1, 0);
-        for (const auto &r : ranges_)
-            for (int y = r.min_y; y <= r.max_y; ++y)
-                for (int x = r.min_x; x <= r.max_x; ++x)
-                    ++starts_[cell_index(x, y) + 1];
-        for (std::size_t c = 1; c < starts_.size(); ++c)
-            starts_[c] += starts_[c - 1];
-        ids_.resize(std::size_t(entries));
-        std::vector<std::size_t> fill(starts_.begin(), starts_.end() - 1);
-        // Filled in index order, so every cell lists its boxes ascending.
-        for (std::size_t i = 0; i < ranges_.size(); ++i) {
-            const auto &r = ranges_[i];
-            for (int y = r.min_y; y <= r.max_y; ++y)
-                for (int x = r.min_x; x <= r.max_x; ++x)
-                    ids_[fill[cell_index(x, y)]++] = i;
-        }
+    // Only an allocation can fail from here on. It leaves an empty index rather than one whose
+    // cell storage belongs to other boxes.
+    try {
+        bounds_.assign(bounds.begin(), bounds.end());
+        ranges_ = std::move(ranges);
+        extent_ = extent;
+        const std::int64_t width = std::int64_t(extent.max_x) - extent.min_x + 1;
+        const std::int64_t height = std::int64_t(extent.max_y) - extent.min_y + 1;
+        // A dense array of cells when the occupied area is small next to the entries, so its
+        // memory stays proportional to the boxes; a hash map of cells otherwise.
+        dense_ =
+            !ranges_.empty() && width * height <= 4 * entries + 1024 && width * height <= max_dense_cells;
+        if (dense_)
+            index_dense(int(width), std::size_t(width * height), std::size_t(entries));
+        else
+            index_sparse();
+    } catch (...) {
+        bounds_.clear();
+        ranges_.clear();
+        extent_ = {0, 0, -1, -1};
+        dense_ = false;
+        starts_.clear();
+        ids_.clear();
         buckets_.clear();
-        return;
+        throw;
     }
+}
+
+void SpatialGrid::index_dense(int width, std::size_t cell_count, std::size_t entries) {
+    width_ = width;
+    // Count the boxes of each cell into starts_[c + 1], sum them into the first entry of each
+    // cell, use those as fill positions, then shift them back by one cell.
+    starts_.assign(cell_count + 1, 0);
+    for (const auto &r : ranges_)
+        for (int y = r.min_y; y <= r.max_y; ++y)
+            for (int x = r.min_x; x <= r.max_x; ++x)
+                ++starts_[cell_index(x, y) + 1];
+    for (std::size_t c = 1; c < starts_.size(); ++c)
+        starts_[c] += starts_[c - 1];
+    ids_.resize(entries);
+    // Filled in index order, so every cell lists its boxes ascending.
+    for (std::size_t i = 0; i < ranges_.size(); ++i) {
+        const auto &r = ranges_[i];
+        for (int y = r.min_y; y <= r.max_y; ++y)
+            for (int x = r.min_x; x <= r.max_x; ++x)
+                ids_[starts_[cell_index(x, y)]++] = i;
+    }
+    std::copy_backward(starts_.begin(), starts_.end() - 1, starts_.end());
+    starts_[0] = 0;
+}
+
+void SpatialGrid::index_sparse() {
     starts_.clear();
     ids_.clear();
     // Keep the storage of the cells in use: a grid rebuilt every tick over boxes that barely
     // move would otherwise free and allocate every bucket again. A cell that stayed empty
-    // for a whole rebuild is dropped, so the map tracks the cells of the last two rebuilds.
+    // for a whole rebuild is dropped, so the map tracks the cells of the last two rebuilds;
+    // dense rebuilds in between leave the map alone.
     for (auto it = buckets_.begin(); it != buckets_.end();) {
         if (it->second.empty()) {
             it = buckets_.erase(it);

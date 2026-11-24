@@ -37,6 +37,8 @@ class SpatialGrid {
         int min_x, min_y, max_x, max_y;
     };
     CellRange cells(Aabb area) const;
+    void index_dense(int width, std::size_t cell_count, std::size_t entries);
+    void index_sparse();
     static std::uint64_t key(int x, int y);
     std::size_t cell_index(int x, int y) const {
         return std::size_t(y - extent_.min_y) * std::size_t(width_) + std::size_t(x - extent_.min_x);

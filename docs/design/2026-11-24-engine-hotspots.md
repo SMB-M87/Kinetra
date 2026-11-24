@@ -67,7 +67,11 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 ### Step 2: `SpatialGrid::query` without hashing, allocation and sort
 
-To be designed on its branch, from this direction: a dense cell array for a bounded occupied area (with the hash map for a sparse one), each box reported once from one cell of its overlap, and an overload that writes into the caller's buffer. The result stays sorted and unique; the limits (100,000 cells per box, cell coordinates within ±10^9) and the exception guarantees stay as documented.
+`rebuild` validates every box first, as before, and keeps each box's cell range. When the cells all boxes cover form a compact area, at most `4 * entries + 1024` cells and at most 2^22 (32 MB of offsets), the grid stores them densely: `starts_` holds, for each cell of that area row by row, where its boxes begin in `ids_`, which is filled in index order, so each cell lists its boxes ascending. Otherwise the hash map of step 1 stays. A rebuild that fails on an allocation leaves an empty index instead of mixed storage.
+
+`query` clips the query's cell range to the covered area and visits its cells. A box that spans several of them is reported only from the first cell of its overlap with the query, its lowest `x` and `y` there, so the result holds no duplicates and needs no `unique`; overlapping boxes always share that cell, because floor is monotonic. One cell lists its boxes ascending, so a one-cell query skips the sort. A new overload, `query(Aabb, std::vector<std::size_t> &)`, writes into a vector the caller reuses; the old one calls it. The result is the same sorted, unique set; the limits (100,000 cells per box, cell coordinates within ±10^9) and the exceptions stay, and a rejected query leaves the caller's vector unchanged.
+
+`World::step` queries both of its grids through member vectors. Lab's callers keep the returning overload: in the profile after this step allocation is 4% of Demo and 1% of i4sim, and a query that tested every box when it would visit more entries than there are boxes made no measurable difference on Demo, so neither is part of this step.
 
 ### Step 3: `priority_steer` finds the first overlapping pair per step
 
@@ -89,6 +93,7 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 ## Affected areas
 
 - Step 1: `World` in [physics.h](../../include/kinetra/simulation/physics.h) (private members only) and [physics.cpp](../../src/simulation/physics.cpp); `SpatialGrid::rebuild` in [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp). No public signature or documented behavior changes.
+- Step 2: `SpatialGrid` in [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) (a new `query` overload; private members) and [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp); `World::candidates` in physics.cpp. Behavior and limits unchanged.
 - Lab: [performance](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md) per step, the roadmap items in both repositories.
 
 ## Test plan
@@ -98,6 +103,7 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | Step 1: a fixed body the caller moves, reshapes, turns into a moving body, or adds between steps is seen by the next step | New cases in `simulation_tests.cpp`: a world stepped once, then changed through `body(id)` or `add`, collides as a fresh world with the same bodies does, with the same `candidate_pairs()` | Targeted |
 | Step 1: the candidate pairs and their order are unchanged | New characterization case in `simulation_tests.cpp`: a 51-body world of fixed boxes, polygons and circles interleaved with moving ones in a container added last, whose fingerprint over 360 steps (every position, velocity, angle and `candidate_pairs()`) was recorded on Kinetra `73adc66`; putting the fixed candidates first in the merge changes it. Existing `moving_contact_tests.cpp` and `simulation_tests.cpp` (`candidate_pairs()`), Lab's Demo crowd characterization lines, i4sim golden and pressure tests, Dotio fingerprints | Full |
 | Step 1: a rebuild keeps the grid's results | Existing spatial grid tests, plus a case that rebuilds with boxes that move away and back and queries after each rebuild | Targeted |
+| Step 2: queries give the same sorted, unique indices in both storages, also through the caller's buffer | New cases in `simulation_tests.cpp`: a compact and a scattered set (one far box) against an exhaustive search, with large and empty areas; one grid switched between both storages and a rejected rebuild after a dense one; a rejected query leaves the buffer unchanged. The existing grid cases | Targeted |
 | Every step: no simulated value changes | Lab's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline apart from `elapsed_ms` | Full (Lab) |
 
 ## Review
