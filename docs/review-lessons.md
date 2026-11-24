@@ -28,6 +28,9 @@ One list item per lesson, under the topic it belongs to:
 
 ## Docs and links
 
+- **When a change adds a member to a set (an enum value, a request, a menu row), search for each existing member as a term, not only for the old list** · added 2026-11-24 · source: #53, Kinetra-Lab#115
+  The search covered `none, menu, exit` and `menu or exit`, and missed the `menu_key` contract and Kinetra-Lab's architecture page, which name the requests one at a time (`SessionRequest::menu`, "LAUNCHER gives `menu`") and so still described two ways to leave.
+
 - **After editing a pull request description, check its links on the rendered page, not in the text you sent** · added 2026-11-24 · source: #50
   A link with a section anchor was stored with its URL in a code span; the reply on #50 and Kinetra-Lab#112 reported it fixed from the text that was sent. Read the pull request's `body_html`, or the page, after each edit.
 
