@@ -350,25 +350,97 @@ TEST_CASE("rebuilding a spatial grid without boxes drops stale objects") {
 }
 
 TEST_CASE("a spatial grid rebuilt over moving boxes matches an exhaustive search") {
-    // Rebuilds keep the storage of cells in use; boxes that leave and return must still be found.
-    const auto boxes = random_boxes();
-    SpatialGrid grid(3);
-    for (float shift : {0.f, 60.f, 0.f, -30.f, 0.f}) {
-        CAPTURE(shift);
-        auto moved = boxes;
-        for (std::size_t i = 0; i < moved.size(); i += 2) {
-            moved[i].min.x += shift;
-            moved[i].max.x += shift;
-        }
-        grid.rebuild(moved);
-        for (const auto &area : boxes) {
-            std::vector<std::size_t> expected;
-            for (std::size_t j = 0; j < moved.size(); ++j)
-                if (moved[j].overlaps(area))
-                    expected.push_back(j);
-            CHECK(grid.query(area) == expected);
+    // Rebuilds keep the storage of cells in use; boxes that leave and return must still be found,
+    // in the dense cells of a compact set and in the hashed cells that one far box forces.
+    for (const bool scattered : {false, true}) {
+        auto boxes = random_boxes();
+        if (scattered)
+            boxes.push_back({{1000000, -1}, {1000001, 1}});
+        SpatialGrid grid(3);
+        for (float shift : {0.f, 60.f, 0.f, -30.f, 0.f}) {
+            CAPTURE(scattered);
+            CAPTURE(shift);
+            auto moved = boxes;
+            for (std::size_t i = 0; i < moved.size(); i += 2) {
+                moved[i].min.x += shift;
+                moved[i].max.x += shift;
+            }
+            grid.rebuild(moved);
+            for (const auto &area : boxes) {
+                std::vector<std::size_t> expected;
+                for (std::size_t j = 0; j < moved.size(); ++j)
+                    if (moved[j].overlaps(area))
+                        expected.push_back(j);
+                CHECK(grid.query(area) == expected);
+            }
         }
     }
+}
+
+TEST_CASE("a spatial grid gives the same results over a compact and a scattered set") {
+    // A compact set fills a dense array of cells; one far box makes the grid fall back to its
+    // hash map. Both must match an exhaustive search, also through the caller's buffer.
+    auto compact = random_boxes();
+    auto scattered = compact;
+    scattered.push_back({{1000000, -1}, {1000001, 1}});
+    for (const auto *boxes : {&compact, &scattered}) {
+        CAPTURE(boxes->size());
+        SpatialGrid grid(3);
+        grid.rebuild(*boxes);
+        std::vector<std::size_t> buffer{99};
+        auto areas = *boxes;
+        areas.push_back({{-300, -300}, {300, 300}});
+        areas.push_back({{999999, -5}, {1000002, 0}});
+        areas.push_back({{500, 500}, {501, 501}});
+        for (const auto &area : areas) {
+            std::vector<std::size_t> expected;
+            for (std::size_t j = 0; j < boxes->size(); ++j)
+                if ((*boxes)[j].overlaps(area))
+                    expected.push_back(j);
+            CHECK(grid.query(area) == expected);
+            grid.query(area, buffer);
+            CHECK(buffer == expected);
+        }
+    }
+}
+
+TEST_CASE("one spatial grid switches between its dense and hashed cells") {
+    // State left from one storage must not leak into the other, and a rejected rebuild keeps
+    // the dense index it had.
+    const auto compact = random_boxes();
+    const auto scattered = [&] {
+        auto boxes = compact;
+        boxes.push_back({{1000000, -1}, {1000001, 1}});
+        return boxes;
+    }();
+    SpatialGrid grid(3);
+    auto matches = [&](const std::vector<Aabb> &boxes) {
+        for (const auto &area : compact) {
+            std::vector<std::size_t> expected;
+            for (std::size_t j = 0; j < boxes.size(); ++j)
+                if (boxes[j].overlaps(area))
+                    expected.push_back(j);
+            if (grid.query(area) != expected)
+                return false;
+        }
+        return true;
+    };
+    for (const auto *boxes : {&compact, &scattered, &compact, &scattered, &compact}) {
+        grid.rebuild(*boxes);
+        CHECK(matches(*boxes));
+    }
+    const std::vector<Aabb> oversized{{{0, 0}, {10000, 10000}}};
+    CHECK_THROWS_AS(grid.rebuild(oversized), std::invalid_argument);
+    CHECK(matches(compact));
+}
+
+TEST_CASE("a rejected spatial query leaves the caller's buffer unchanged") {
+    SpatialGrid grid(1);
+    grid.rebuild(random_boxes());
+    std::vector<std::size_t> buffer{1, 2, 3};
+    CHECK_THROWS_AS(grid.query({{0, 0}, {1000, 1000}}, buffer), std::invalid_argument);
+    CHECK_THROWS_AS(grid.query({{1, 0}, {0, 1}}, buffer), std::invalid_argument);
+    CHECK(buffer == std::vector<std::size_t>{1, 2, 3});
 }
 
 TEST_CASE("an elastic circle collision conserves momentum and energy") {

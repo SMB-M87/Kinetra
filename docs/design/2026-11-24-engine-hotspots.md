@@ -1,6 +1,6 @@
 # Engine hotspots
 
-Status: accepted, step 1 implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
+Status: accepted, steps 1 and 2 implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
 
 Kinetra-Lab's performance baseline of 2026-11-23 found four hotspots in engine code: `World::step`'s broad phase, `SpatialGrid::query`, `priority_steer`'s prediction loop and `bounds` of a box. This change takes them one per pull request, in that order, without changing a single simulated value: every golden line, fingerprint and benchmark result stays as it is, and only the time goes down. Demo falls behind at time scale 4 because of the first one.
 
@@ -67,7 +67,11 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 ### Step 2: `SpatialGrid::query` without hashing, allocation and sort
 
-To be designed on its branch, from this direction: a dense cell array for a bounded occupied area (with the hash map for a sparse one), each box reported once from one cell of its overlap, and an overload that writes into the caller's buffer. The result stays sorted and unique; the limits (100,000 cells per box, cell coordinates within ±10^9) and the exception guarantees stay as documented.
+`rebuild` validates every box first, as before, and keeps each box's cell range. When the cells all boxes cover form a compact area, at most `4 * entries + 1024` cells and at most 2^22 (32 MB of offsets), the grid stores them densely: `starts_` holds, for each cell of that area row by row, where its boxes begin in `ids_`, which is filled in index order, so each cell lists its boxes ascending. Otherwise the hash map of step 1 stays. A rebuild that fails on an allocation leaves an empty index instead of mixed storage, as the `rebuild` contract says. The thresholds are named constants in spatial_grid.cpp.
+
+`query` clips the query's cell range to the covered area and visits its cells. A box that spans several of them is reported only from the first cell of its overlap with the query, its lowest `x` and `y` there, so the result holds no duplicates and needs no `unique`; overlapping boxes always share that cell, because floor is monotonic. One cell lists its boxes ascending, so a one-cell query skips the sort. A new overload, `query(Aabb, std::vector<std::size_t> &)`, writes into a vector the caller reuses; the old one calls it. The result is the same sorted, unique set; the limits (100,000 cells per box, cell coordinates within ±10^9) and the exceptions stay, and a rejected query leaves the caller's vector unchanged.
+
+`World::step` queries both of its grids through member vectors. Lab's callers keep the returning overload: in the profile after this step allocation is 4% of Demo and 1% of i4sim, and a query that tested every box when it would visit more entries than there are boxes made no measurable difference on Demo, so neither is part of this step.
 
 ### Step 3: `priority_steer` finds the first overlapping pair per step
 
@@ -89,6 +93,7 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 ## Affected areas
 
 - Step 1: `World` in [physics.h](../../include/kinetra/simulation/physics.h) (private members only) and [physics.cpp](../../src/simulation/physics.cpp); `SpatialGrid::rebuild` in [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp). No public signature or documented behavior changes.
+- Step 2: `SpatialGrid` in [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) (a new `query` overload; private members) and [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp); `World::candidates` in physics.cpp. Behavior and limits unchanged.
 - Lab: [performance](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md) per step, the roadmap items in both repositories.
 
 ## Test plan
@@ -98,6 +103,7 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | Step 1: a fixed body the caller moves, reshapes, turns into a moving body, or adds between steps is seen by the next step | New cases in `simulation_tests.cpp`: a world stepped once, then changed through `body(id)` or `add`, collides as a fresh world with the same bodies does, with the same `candidate_pairs()` | Targeted |
 | Step 1: the candidate pairs and their order are unchanged | New characterization case in `simulation_tests.cpp`: a 51-body world of fixed boxes, polygons and circles interleaved with moving ones in a container added last, whose fingerprint over 360 steps (every position, velocity, angle and `candidate_pairs()`) was recorded on Kinetra `73adc66`; putting the fixed candidates first in the merge changes it. Existing `moving_contact_tests.cpp` and `simulation_tests.cpp` (`candidate_pairs()`), Lab's Demo crowd characterization lines, i4sim golden and pressure tests, Dotio fingerprints | Full |
 | Step 1: a rebuild keeps the grid's results | Existing spatial grid tests, plus a case that rebuilds with boxes that move away and back and queries after each rebuild | Targeted |
+| Step 2: queries give the same sorted, unique indices in both storages, also through the caller's buffer | New cases in `simulation_tests.cpp`: a compact and a scattered set (one far box) against an exhaustive search, with large and empty areas; one grid switched between both storages and a rejected rebuild after a dense one; a rejected query leaves the buffer unchanged. The existing grid cases | Targeted |
 | Every step: no simulated value changes | Lab's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline apart from `elapsed_ms` | Full (Lab) |
 
 ## Review
@@ -129,6 +135,20 @@ Agent review round 1 (#49 and Kinetra-Lab#111, both *Fix first*):
 
 Round 2: Kinetra-Lab#111 *Ready to merge*; #49 asked for this record of round 1 and the test count after the merge.
 
+### Step 2
+
+`/code-review` at medium on `perf/world-fixed-index...perf/spatial-query` found no change to the query results and five points:
+
+| Finding | Resolution |
+| --- | --- |
+| A rebuild that runs out of memory after setting the extent could leave storage that belongs to other boxes, and a later query reads out of bounds | Fixed: an allocation failure leaves an empty index |
+| A dense rebuild freed the hashed buckets | Fixed: dense rebuilds leave the map alone; the next hashed rebuild clears it as in step 1 |
+| The dense fill copied the offsets into a scratch vector | Fixed: the offsets serve as fill positions and are shifted back |
+| No test switches one grid between both storages | Fixed: compact, scattered, compact, then a rejected rebuild that keeps the dense index |
+| `<utility>` missing for `std::move` | Fixed |
+
+Agent review round 1 (#50): no blocking point; three should-fix points, all fixed. The hashed storage's bucket reuse lost its moving-boxes test, because the test fell into the dense storage; it now runs on both. The dense thresholds were unnamed numbers; they are now named constants with their reason. Step 2 was missing from this document's record. Of the nits, the `rebuild` contract now states what an allocation failure leaves, the query buffers have a comment, and the status and roadmap are current. The rest are recorded here and left: a `ranges` vector per rebuild, each storage keeping the other's capacity, and `dense_` tested per cell. Each costs less than the measurement's noise.
+
 ## Verification
 
 ### Step 1
@@ -137,6 +157,12 @@ Round 2: Kinetra-Lab#111 *Ready to merge*; #49 asked for this record of round 1 
 - Lab at the pointer: `ctest --preset dev` without the graphics cases, 318 of 318 passed, golden and pressure tests included.
 - Bit identity on the release build: i4sim's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline's apart from `elapsed_ms` in all three runs; Dotio's output, fingerprints included, identical; Demo's characterization lines pass.
 - Time, release preset, median of three runs on one cloud machine (four cores of an Intel Xeon at 2.1 GHz, about 1.25 times slower than the baseline's on Demo): Demo's soak at 48 agents 12.1 to 2.7 s (steering) and 12.0 to 2.5 s (route), at 240 agents 28.0 to 18.1 s, 28.9 to 18.5 s and 26.0 to 16.3 s; i4sim and Dotio within run-to-run noise. Lab's performance page has the row and the new Demo profile.
+
+### Step 2
+
+- Kinetra: `ctest --preset dev`, 276 of 276 passed; `clang-format --dry-run --Werror` on the changed files.
+- Bit identity on the release build, on Lab `main` with hotspot 2: i4sim's CSV with and without `--predictive-passing` and Dotio's output identical in all three runs; Demo's characterization lines pass.
+- Time, median of three runs interleaved with step 1 on the same machine: i4sim 19.8 to 15.8 s, with passing 34.3 to 23.1 s; Demo's soak 2.9 to 1.6 s at 48 agents, 18.8 to 13.3 s at 240; Dotio unchanged. A query that tested every box when it would visit more entries than there are boxes measured the same on Demo (13.2 against 13.4 s over three interleaved runs) and was left out.
 
 ## Pull request
 
@@ -148,6 +174,15 @@ Round 2: Kinetra-Lab#111 *Ready to merge*; #49 asked for this record of round 1 
 - Changes: `fixed_grid_` and the change detection at the start of a step; queries merged into the single grid's order; `clear()` drops the index; `SpatialGrid::rebuild` keeps bucket storage; tests for the order (a fingerprint recorded on 73adc66), for every kind of change to a fixed body, and for rebuilds over moving boxes.
 - Design, verification and review: the sections above.
 - Merge order: first in the Kinetra stack, with a merge commit; then Kinetra-Lab#111.
+
+### Step 2
+
+**perf(simulation): SpatialGrid queries a dense cell array into the caller's buffer** (#50, Lab: Kinetra-Lab#112)
+
+- Summary: a compact grid stores its cells densely, a query reports each box from one cell and skips the sort for one cell, and a new overload writes into the caller's vector; results, limits and exceptions are unchanged.
+- Changes: `rebuild` keeps each box's cell range and chooses dense or hashed storage; an allocation failure leaves an empty index; `query(Aabb, std::vector<std::size_t> &)`; `World::step` queries through member vectors; tests for both storages, a switch between them, moving boxes in each, and a rejected query.
+- Design, verification and review: the sections above.
+- Merge order: after #49, with a merge commit; then Kinetra-Lab#112.
 
 ## Open points
 

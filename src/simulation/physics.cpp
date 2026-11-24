@@ -655,17 +655,19 @@ void World::index_fixed_bodies() {
     fixed_index_valid_ = true;
 }
 
-void World::candidates(Aabb area, bool with_fixed, std::vector<std::size_t> &out) const {
+void World::candidates(Aabb area, bool with_fixed, std::vector<std::size_t> &out) {
     out.clear();
-    const auto moving = grid_.query(area);
+    grid_.query(area, moving_found_);
     if (!with_fixed || fixed_ids_.empty()) {
-        for (auto k : moving)
+        for (auto k : moving_found_)
             out.push_back(moving_ids_[k]);
         return;
     }
     // Both lists ascend in body index, so merging them gives the sorted, unique list that
     // one grid over all bodies would return.
-    const auto fixed = fixed_grid_.query(area);
+    fixed_grid_.query(area, fixed_found_);
+    const auto &fixed = fixed_found_;
+    const auto &moving = moving_found_;
     std::size_t f = 0, m = 0;
     while (f < fixed.size() || m < moving.size()) {
         if (m == moving.size() || (f < fixed.size() && fixed_ids_[fixed[f]] < moving_ids_[moving[m]]))
