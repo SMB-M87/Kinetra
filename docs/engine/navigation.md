@@ -120,6 +120,8 @@ the exact final waypoint. `GridRouteOptions::half_extents` sets the footprint fo
 every clearance check. `GridRouteOptions::lookahead` sets the distance budget in
 grid world units for a visible point past an upcoming corner. Use zero to skip
 waypoints without looking past a corner. Shortcuts use geometric clearance only.
+The follower can check a straight run with one sweep. It retains waypoint order
+when that sweep is blocked or the route turns.
 Follow the original waypoints when congestion weights or search admission rules
 must also constrain the segment. The caller supplies a route whose leading
 waypoint is reachable and decides when to replan if the raster changes.

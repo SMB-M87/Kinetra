@@ -277,6 +277,49 @@ TEST_CASE("raster corner lookahead requires a clear sweep") {
     REQUIRE(route.size() == 1);
 }
 
+TEST_CASE("a raster route target stops at the first obstruction after a straight run") {
+    const auto grid = footprint_grid();
+    const Vec2 position{15, 5};
+    const Vec2 before_turn{35, 5};
+    const Vec2 after_turn{35, 35};
+    const Vec2 goal{5, 35};
+    std::vector<Vec2> route{{20, 5}, {25, 5}, before_turn, after_turn, goal};
+    REQUIRE(grid.clear(position, goal));
+    REQUIRE_FALSE(grid.clear(position, after_turn));
+
+    CHECK(distance(route_target(position, route, grid, {}), before_turn) == 0);
+    REQUIRE(route.size() == 3);
+    CHECK(distance(route[1], after_turn) == 0);
+}
+
+TEST_CASE("a straight raster shortcut retains the intermediate endpoint check") {
+    const auto grid = footprint_grid();
+    const Vec2 position{5, 35};
+    const Vec2 first{10, 30};
+    const Vec2 touching{20, 20};
+    const Vec2 goal{35, 5};
+    std::vector<Vec2> route{first, touching, goal};
+    REQUIRE(grid.clear(position, goal));
+    REQUIRE_FALSE(grid.clear(position, touching));
+
+    CHECK(distance(route_target(position, route, grid, {}), first) == 0);
+    CHECK(route.size() == 3);
+}
+
+TEST_CASE("a blocked straight raster sweep falls back to checking each waypoint") {
+    const auto grid = footprint_grid();
+    const Vec2 position{5, 25};
+    const Vec2 first{15, 25};
+    const Vec2 hidden{35, 25};
+    const Vec2 goal{45, 25};
+    std::vector<Vec2> route{first, hidden, goal};
+    REQUIRE_FALSE(grid.blocked(grid.cell(hidden)));
+    REQUIRE_FALSE(grid.clear(position, goal));
+
+    CHECK(distance(route_target(position, route, grid, {}), first) == 0);
+    CHECK(route.size() == 3);
+}
+
 TEST_CASE("raster route shortcuts account for the swept footprint") {
     const auto grid = footprint_grid();
     const Vec2 position{5, 15};
