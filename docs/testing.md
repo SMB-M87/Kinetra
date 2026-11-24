@@ -125,7 +125,7 @@ When a change alters what a scene shows, the author also takes a screenshot of i
 
 **In CI**, on every push to the pull request: formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers), the same build and tests on Ubuntu LTS with warnings as annotations (the `linux (ubuntu)` run) and, in Lab, the smoke runs of every executable (`kinetra_smoke:*`, label `graphics`) and the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
 
-**Neither** proves desktop feel, a real GPU driver or performance: software rendering cannot. When a change depends on them, its design document names a playtest by the user as a check.
+**Neither** proves desktop feel, a real GPU driver or performance: software rendering cannot. When a change depends on them, its design document names a playtest by the user as a check, which follows the merge.
 
 *Why:* running `ci` and `headless` locally repeated exactly what the pipeline runs on every push and again after the merge, at minutes per round (more than ten for the Windows cross build in Lab). The graphics run was the last check only a local machine did; since 2026-11-22 CI runs it on the same backend that local runs and cloud sessions use, so a local run only repeats it. Run `ci`, `headless`, `graphics` or `windows` locally only to reproduce a CI failure.
 

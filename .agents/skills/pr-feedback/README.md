@@ -16,7 +16,7 @@ Use `pr-feedback` in the author's session to act on review comments on an open p
 | Situation | Example request | Result |
 | --- | --- | --- |
 | A collaborator found a broken link in a skill guide | “/pr-feedback Verwerk de opmerking over de link in de README.” | A correction on the same branch, a Docs check and a reply identifying the commit. |
-| An agent reviewer questions a navigation contract | “/pr-feedback Beantwoord de review over Navigation::rebuild.” | A fix or an argument backed by code, a test or the documented contract. A disagreement still open after two rounds goes to you. |
+| An agent reviewer questions a navigation contract | “/pr-feedback Beantwoord de review over Navigation::rebuild.” | A fix or an argument backed by code, a test or the documented contract. After two rounds of disagreement the author's answer stands, and the review lists the point for you to check after the merge. |
 | Feedback affects the bottom of a PR stack | “/pr-feedback Verwerk de feedback op de onderste PR van de stack.” | Verified commits on that branch, then merges into the dependent branches so each review keeps its history. |
 
 ## When not to use it
@@ -27,7 +27,7 @@ Use `pr-review` to inspect a pull request as its independent reviewer. Use `feat
 
 1. The author reads unresolved feedback on the specified pull request or the current branches. Feedback from outside the owner and collaborators goes to you for a decision.
 2. The author fixes or answers each point, records the round in the design document, or for a docs-only pull request in its description, brings along every section, the description and the other repository's copy that name a changed part, and adds new lessons proposed by the agent review. It verifies and pushes the commits and replies in the original threads.
-3. The reviewer resolves accepted threads. The author checks the current review conclusion, CI and merge conditions; a docs-only or pointer-only pull request has no review conclusion to wait for. Pull requests reserved for you wait for your decision. [Merge rule](../../../AGENTS.md#git)
+3. The reviewer resolves accepted threads, and those that reached two rounds. The author checks the current review conclusion, CI and merge conditions, and merges whatever the pull request changes; a docs-only or pointer-only pull request has no review conclusion to wait for. You check merged work afterwards. [Merge rule](../../../AGENTS.md#git)
 
 ## Related skills
 
