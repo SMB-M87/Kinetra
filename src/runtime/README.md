@@ -1,6 +1,6 @@
 # Runtime and launcher
 
-The optional interactive half of Kinetra: an SDL2/OpenGL 3.3 window with input and batched primitive drawing (`Kinetra::Runtime`), the loops that drive application sessions, the settings overlay, and the generic launcher (`Kinetra::Launcher`). Applications such as those in Kinetra-Lab use it to get a window, a menu and shared overlays without owning any backend code.
+The optional interactive half of Kinetra: an SDL2/OpenGL 3.3 window with input and 2D drawing (`Kinetra::Runtime`), the loops that drive application sessions, the settings overlay, and the generic launcher (`Kinetra::Launcher`). Applications such as those in Kinetra-Lab use it to get a window, a menu and shared overlays without owning any backend code.
 
 ## Table of contents
 
@@ -17,9 +17,9 @@ The optional interactive half of Kinetra: an SDL2/OpenGL 3.3 window with input a
 
 ## Purpose and scope
 
-The runtime turns a window into input, a camera and colored primitives; the session loops turn an application into frames; the overlays and the launcher give every application the same menu, settings panel and debug controls.
+The runtime supplies input, a camera, colored primitives and image drawing. The session loops drive frames. The overlays and the launcher give every application the same menu, settings panel and debug controls.
 
-Not here: simulation (headless, in [src/simulation](../simulation/README.md); Runtime does not link it), application rules and registration (Kinetra-Lab), textures, audio and alternate backends.
+Simulation is headless in [src/simulation](../simulation/README.md). Kinetra-Lab owns the application rules and registrations. Image decoding, audio and alternate backends are outside this module's scope.
 
 ## Concepts
 
@@ -73,7 +73,7 @@ flowchart LR
 
 | Public header | Responsibility | Linking | Contract |
 | --- | --- | --- | --- |
-| [engine.h](../../include/kinetra/runtime/engine.h) | `Runtime`, `FramePacing` | `Kinetra::Runtime` | [Runtime](../../docs/engine/runtime.md) |
+| [engine.h](../../include/kinetra/runtime/engine.h) | `Runtime`, `RgbaImage`, `FramePacing` | `Kinetra::Runtime` | [Runtime](../../docs/engine/runtime.md) |
 | [input.h](../../include/kinetra/view/input.h) | `Input`, `Key`, `Color` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md) |
 | [session.h](../../include/kinetra/runtime/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
 | [settings_view.h](../../include/kinetra/runtime/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
@@ -113,7 +113,7 @@ After a transition the clock restarts, so building a world does not count as sim
 
 **Settings overlay.** `layout()` computes every row's position from the rows and their expanded state. `update()` takes that layout *before* applying the click, so the click hits what was drawn in the previous frame. `draw()` uses the same layout and the same click bands for its highlights. That shared layout is what keeps drawing and picking in step.
 
-**Rendering.** `runtime.cpp` triangulates circles, boxes, polygons and lines into one dynamic vertex batch per frame and draws it in `end()`. Circles adapt their segment count to their size on screen and fade over a one-pixel edge for antialiasing. The [runtime contract](../../docs/engine/runtime.md) lists the limits.
+**Rendering.** `runtime.cpp` triangulates circles, boxes, polygons and lines into a dynamic vertex batch. It flushes the batch before each textured image and in `end()` to keep draw order. Circles adapt their segment count to their size on screen and fade over a one-pixel edge for antialiasing. The [runtime contract](../../docs/engine/runtime.md) lists the limits.
 
 ## Invariants and contracts
 
