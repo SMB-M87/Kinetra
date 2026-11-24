@@ -645,9 +645,10 @@ void World::index_fixed_bodies() {
             boxes.push_back(bounds(bodies_[i]));
         }
     fixed_grid_.rebuild(boxes); // Throws for a bad box and leaves the index invalid.
-    fixed_bodies_.clear();
+    // Assigning element by element reuses the vertex storage of the previous copies.
+    fixed_bodies_.resize(ids.size());
     for (std::size_t k = 0; k < ids.size(); ++k) {
-        fixed_bodies_.push_back(bodies_[ids[k]]);
+        fixed_bodies_[k] = bodies_[ids[k]];
         boxes_[ids[k]] = boxes[k];
     }
     fixed_ids_ = std::move(ids);
