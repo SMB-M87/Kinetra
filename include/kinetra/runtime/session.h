@@ -6,9 +6,11 @@ namespace kinetra {
 /// What a session asks its host to do after an advance.
 ///
 /// A request is state, not an event: the host reads it after every advance and acts on
-/// it once. `menu` leaves the session for the host's menu (run_session has no menu and
-/// ends the run); `exit` ends the program.
-enum class SessionRequest { none, menu, exit };
+/// it once. `menu` leaves the session for the host's menu; `configurations` leaves it for
+/// the menu's configuration page of the application that ran, with its configuration
+/// selected (run_launcher; an application without configurations gets the application
+/// list). run_session has no menu and ends the run on both. `exit` ends the program.
+enum class SessionRequest { none, menu, configurations, exit };
 
 /// Application-owned behavior. The host owns one session at a time on the runtime thread.
 class Session {

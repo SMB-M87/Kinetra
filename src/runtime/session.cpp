@@ -13,7 +13,7 @@ int run_session(Runtime &runtime, Session &session, int frame_limit) {
         const auto now = Clock::now();
         session.advance(std::chrono::duration<double>(now - previous).count(), runtime.input(),
                         runtime.camera);
-        // menu has no meaning without a launcher, so both requests end the run.
+        // A menu has no meaning without a launcher, so every request ends the run.
         if (session.request() != SessionRequest::none)
             break;
         previous = now;

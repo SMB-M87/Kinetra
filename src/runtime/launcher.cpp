@@ -10,6 +10,12 @@ constexpr Vec2 preview_inset{10, 10};
 constexpr Vec2 image_slot{250, 140};
 constexpr float panel_gap = 18;
 
+/// Whether `configuration` exists for `choice`: zero for one without configurations.
+bool known_configuration(const LaunchChoice &choice, std::size_t configuration) {
+    const auto count = choice.configurations.size();
+    return count == 0 ? configuration == 0 : configuration < count;
+}
+
 void draw_preview(Runtime &runtime, const LaunchChoice &choice, Vec2 origin, float scale) {
     const auto world = [&](Vec2 point) { return runtime.camera.screen_to_world(origin + point * scale); };
     const float units = scale / runtime.camera.pixels_per_unit;
@@ -109,11 +115,24 @@ std::string_view LaunchMenu::row_name(std::size_t row) const {
 std::string_view LaunchMenu::description() const {
     return choices_[application_].description;
 }
+void LaunchMenu::show_configurations(LaunchSelection selection) {
+    const auto &choice = choices_.at(selection.application);
+    if (!known_configuration(choice, selection.configuration))
+        throw std::out_of_range("Unknown application configuration");
+    application_ = selection.application;
+    configurations_[application_] = selection.configuration;
+    configuring_ = !choice.configurations.empty();
+    settle_pointer_ = true;
+}
 MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
 }
 std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewport) {
-    const bool pointer_moved = input.mouse.x != pointer_.x || input.mouse.y != pointer_.y;
+    // After show_configurations the pointer is wherever the session left it; it counts as
+    // resting there, so it does not hover away the configuration that ran.
+    const bool pointer_moved =
+        !settle_pointer_ && (input.mouse.x != pointer_.x || input.mouse.y != pointer_.y);
+    settle_pointer_ = false;
     pointer_ = input.mouse;
     if (configuring_ && input.hit(Key::m)) {
         configuring_ = false;
@@ -217,19 +236,20 @@ std::vector<LaunchChoice> SessionHost::choices() const {
 }
 void SessionHost::start(LaunchSelection selection, Camera2D &camera) {
     const auto &entry = applications_.at(selection.application);
-    const auto count = entry.choice.configurations.size();
-    if ((count == 0 && selection.configuration != 0) || (count && selection.configuration >= count))
+    if (!known_configuration(entry.choice, selection.configuration))
         throw std::out_of_range("Unknown application configuration");
     auto next_camera = camera;
     auto next = entry.create(next_camera, selection.configuration);
     if (!next)
         throw std::runtime_error("Application factory returned no session");
     session_ = std::move(next);
+    selection_ = selection;
     camera = next_camera;
     fresh_ = true;
 }
 void SessionHost::return_to_menu() {
     session_.reset();
+    selection_.reset();
     fresh_ = false;
 }
 void SessionHost::advance(double elapsed, const Input &input, Camera2D &camera) {
@@ -280,9 +300,12 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
             const SessionRequest request = host.session()->request();
             if (request == SessionRequest::exit)
                 break;
-            if (request == SessionRequest::menu) {
+            if (request == SessionRequest::menu || request == SessionRequest::configurations) {
+                const auto ran = host.selection();
                 // Destroy before the menu draws, so a session never coexists with the next one.
                 host.return_to_menu();
+                if (request == SessionRequest::configurations && ran)
+                    menu.show_configurations(*ran);
                 switched = true;
             }
         }

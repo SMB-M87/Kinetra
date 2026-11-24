@@ -43,6 +43,8 @@ struct ScriptedSession final : Session {
     bool escape_closes{true};
     int *destroyed{};
     int *rendered{};
+    /// Called once, in the advance that raises the request.
+    std::function<void()> on_request;
     ScriptedSession(SessionRequest request, int at, bool escape, int *destroyed_count = nullptr,
                     int *render_count = nullptr)
         : request_at(at), raised(request), escape_closes(escape), destroyed(destroyed_count),
@@ -54,6 +56,8 @@ struct ScriptedSession final : Session {
     void advance(double elapsed, const Input &, Camera2D &) override {
         REQUIRE_MESSAGE(elapsed >= 0, "Negative frame time");
         ++advances;
+        if (advances == request_at && on_request)
+            on_request();
     }
     void render(Runtime &runtime) override {
         ++renders;
@@ -74,12 +78,22 @@ struct ScriptedApplication {
     SessionRequest request{SessionRequest::none};
     int request_at{0};
     bool escape_closes{true};
+    /// Configuration names of the registration; none by default.
+    std::vector<std::string> configurations;
     int created{}, destroyed{}, renders{};
+    /// The configuration index of every session created, in order.
+    std::vector<std::size_t> started;
+    /// Handed to every session as ScriptedSession::on_request.
+    std::function<void()> on_request;
     std::vector<ApplicationRegistration> registrations() {
-        return {{{"SCRIPTED", "TEST", {}, 0}, [this](Camera2D &, std::size_t) -> std::unique_ptr<Session> {
+        return {{{"SCRIPTED", "TEST", configurations, 0},
+                 [this](Camera2D &, std::size_t configuration) -> std::unique_ptr<Session> {
                      ++created;
-                     return std::make_unique<ScriptedSession>(request, request_at, escape_closes, &destroyed,
-                                                              &renders);
+                     started.push_back(configuration);
+                     auto session = std::make_unique<ScriptedSession>(request, request_at, escape_closes,
+                                                                      &destroyed, &renders);
+                     session->on_request = on_request;
+                     return session;
                  }}};
     }
 };
@@ -661,9 +675,9 @@ TEST_CASE("run_session honors the frame limit") {
     CHECK_THROWS_AS(run_session(runtime, direct, -1), std::invalid_argument);
 }
 
-TEST_CASE("run_session ends on a menu or exit request without rendering that frame") {
+TEST_CASE("run_session ends on any request without rendering that frame") {
     Runtime runtime("Kinetra session", 160, 120);
-    for (const auto request : {SessionRequest::menu, SessionRequest::exit}) {
+    for (const auto request : {SessionRequest::menu, SessionRequest::configurations, SessionRequest::exit}) {
         CAPTURE(static_cast<int>(request));
         ScriptedSession session(request, 2, true);
         CHECK(run_session(runtime, session, 10) == 1);
@@ -681,6 +695,26 @@ TEST_CASE("run_launcher returns to the menu on a menu request") {
     CHECK(application.created == 1);
     CHECK_MESSAGE(application.destroyed == 1, "the session is destroyed when it asks for the menu");
     CHECK_MESSAGE(application.renders == 1, "the menu, not the session, draws the frame of the request");
+}
+
+TEST_CASE("run_launcher returns to the configuration page on a configurations request") {
+    Runtime runtime("Kinetra launcher", 160, 120);
+    ScriptedApplication application;
+    application.configurations = {"SMALL", "LARGE"};
+    application.request = SessionRequest::configurations;
+    application.request_at = 2;
+    // The first session draws frame 1 and asks for its page in frame 2, which the menu
+    // draws. Enter, pressed then, reaches the menu in frame 3 and starts the configuration
+    // the page selected, whose session draws that frame.
+    application.on_request = [&] {
+        if (application.created == 1)
+            press(SDLK_RETURN);
+    };
+    CHECK(run_launcher(runtime, application.registrations(), LaunchSelection{0, 1}, 3) == 3);
+    REQUIRE_MESSAGE(application.created == 2, "Enter did not start a session from the configuration page");
+    CHECK_MESSAGE(application.started[1] == 1, "the page did not select the configuration that ran");
+    CHECK_MESSAGE(application.renders == 2, "the menu, not the session, draws the frame of the request");
+    CHECK(application.destroyed == 2);
 }
 
 TEST_CASE("run_launcher titles the window after the menu or the running session from the first frame") {

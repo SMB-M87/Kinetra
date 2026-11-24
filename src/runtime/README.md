@@ -28,7 +28,7 @@ Simulation is headless in [src/simulation](../simulation/README.md). Kinetra-Lab
 | Logical pixels | Window coordinates used for input, picking and overlays; independent of high-DPI framebuffers |
 | Drawable pixels | Framebuffer size used for the OpenGL viewport |
 | Session | Application behavior behind the window: advance, render, title, and a `SessionRequest` |
-| Request | `none`, `menu` or `exit`, read by the host after every advance |
+| Request | `none`, `menu`, `configurations` or `exit`, read by the host after every advance |
 | Host | The loop that owns a session: `run_session` for one application, `run_launcher` with a `SessionHost` for many |
 | Overlay | Screen-space panel that owns its layout, drawing and input capture; the application supplies content |
 
@@ -101,12 +101,12 @@ flowchart TD
     Limit -->|no| Poll
 ```
 
-*Takeaway:* a session that asks to leave is never drawn again, and without a launcher a menu request ends the run.
+*Takeaway:* a session that asks to leave is never drawn again, and without a launcher a `menu` or `configurations` request ends the run.
 
 **Launcher.** `run_launcher` alternates between the menu and one hosted session; its state diagram and bindings are in the [launcher contract](../../docs/engine/launcher-overlays.md#launcher). Each frame it:
 1. polls with the running session's Escape policy, or `escape_closes_menu` in the menu;
 2. handles the bound menu key or a menu selection;
-3. advances the session and acts on its request;
+3. advances the session and acts on its request, opening the configuration page of the application that ran for `configurations`;
 4. draws the session or the menu.
 
 After a transition the clock restarts, so building a world does not count as simulated time. The title is refreshed on a transition and at most every 500 ms otherwise.
@@ -119,7 +119,7 @@ After a transition the clock restarts, so building a world does not count as sim
 
 - One `Runtime` at a time, created, used and destroyed on the main thread. Sessions are destroyed before the Runtime.
 - Public headers expose no SDL, GLAD or OpenGL types; Runtime does not link Simulation.
-- A host reads `request()` after every advance and before render; a session never sees a frame after its `menu` or `exit` request.
+- A host reads `request()` after every advance and before render; a session never sees a frame after its `menu`, `configurations` or `exit` request.
 - `run_launcher` starts a session only from the menu, after the previous one was destroyed, so two sessions never exist at once (Dotio's world is a singleton). `SessionHost::start` itself keeps the old session until the factory succeeds, so a throwing factory leaves the old session and camera untouched.
 - Overlay positions are in logical panel pixels, scaled by a factor that depends only on the viewport.
 - Borrowed pointers (overlay flags, and whatever the functions of a debug entry refer to) must outlive the overlay's `update` and `draw` calls.

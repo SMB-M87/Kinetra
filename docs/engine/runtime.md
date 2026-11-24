@@ -53,7 +53,7 @@ Application renderers cull scene content before submitting primitives. `polygon`
 
 ## Sessions and timing
 
-A [Session](../../include/kinetra/runtime/session.h) provides `advance`, `render`, `title`, `request()` and `close_on_escape()`. `run_session(runtime, session, frame_limit)` measures wall-clock elapsed time, polls events, advances, and renders unless the session made a request; a `menu` or `exit` request ends the run. Zero frame limit means unlimited; negative limits throw. Hosting several applications, the request table and the launcher loop are in [launcher, sessions and overlays](launcher-overlays.md).
+A [Session](../../include/kinetra/runtime/session.h) provides `advance`, `render`, `title`, `request()` and `close_on_escape()`. `run_session(runtime, session, frame_limit)` measures wall-clock elapsed time, polls events, advances, and renders unless the session made a request; any request (`menu`, `configurations` or `exit`) ends the run. Zero frame limit means unlimited; negative limits throw. Hosting several applications, the request table and the launcher loop are in [launcher, sessions and overlays](launcher-overlays.md).
 
 Applications own pause and resume and their `FixedClock` instances, so each selects its own update rate. `FixedClock` validates its step and caps the backlog; time beyond the cap is dropped, which keeps input responsive after a stall. `RateCounter` turns counted frames or updates into a per-second rate for statistics displays.
 

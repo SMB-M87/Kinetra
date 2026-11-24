@@ -22,17 +22,18 @@ A [Session](../../include/kinetra/runtime/session.h) is the application behind a
 | --- | --- | --- |
 | `none` | Render and continue | Render and continue |
 | `menu` | End the run without rendering; there is no menu | Destroy the session and draw the menu in the same frame |
+| `configurations` | End the run without rendering, as `menu` | As `menu`, on the configuration page of the application that ran, with its configuration selected; the application list for an application without configurations |
 | `exit` | End the run without rendering | End the loop without rendering |
 
-A request is state, not an event: the host acts on it once, and a menu request destroys the session, so sessions never reset it. `close_on_escape()` decides whether Escape closes the window while the session runs; sessions with their own exit action return false.
+A request is state, not an event: the host acts on it once, and a `menu` or `configurations` request destroys the session, so sessions never reset it. `configurations` lets a session offer a way back to its own choice of variant, as Kinetra-Lab's Demo does from its debug menu, without knowing the menu. `close_on_escape()` decides whether Escape closes the window while the session runs; sessions with their own exit action return false.
 
 ## Launcher
 
 [`kinetra/runtime/launcher.h`](../../include/kinetra/runtime/launcher.h) is the `Kinetra::Launcher` target, built with `KINETRA_BUILD_RUNTIME`. It publicly links Runtime. Consumers may use it or call `run_session` directly.
 
-- **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and status line let applications reuse the menu for their own resource selection.
+- **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. `show_configurations(selection)` opens that page with a given configuration selected, which `run_launcher` uses for a `configurations` request; a pointer that the session left over another row keeps that selection until it moves. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and status line let applications reuse the menu for their own resource selection.
 - **Previews.** Supply an immutable `RgbaImage` in at least one `LaunchChoice::preview` to enable the preview panel on the application list. It shows the highlighted application's image and up to four lines of its description. The panel sits beside the list in landscape windows and below it in portrait windows. Configuration pages use the centered list. Use `LaunchMenu::layout(viewport)` to position scripted clicks on the current page.
-- **`SessionHost`** owns one session. A factory that throws leaves the current session and camera untouched. The first advance after a transition gets zero elapsed time and empty input, so the selecting click and the construction time never reach the new session.
+- **`SessionHost`** owns one session and remembers its `selection()`. A factory that throws leaves the current session and camera untouched. The first advance after a transition gets zero elapsed time and empty input, so the selecting click and the construction time never reach the new session.
 - **`run_launcher`** is the standard loop over a `SessionHost` and a `LaunchMenu`:
 
 ```mermaid
@@ -41,6 +42,7 @@ stateDiagram-v2
     [*] --> Menu
     Menu --> Running: selection, factory succeeds
     Running --> Menu: request() == menu, or menu_key if bound
+    Running --> Menu: request() == configurations, on that application's page
     Running --> Shutdown: request() == exit, window closed, or Escape if close_on_escape()
     Menu --> Shutdown: Exit button, window closed, or Escape if escape_closes_menu
     Shutdown --> [*]
@@ -48,7 +50,7 @@ stateDiagram-v2
 
 *Takeaway:* a session leaves through its own request; the two keys the loop handles itself are configurable.
 
-`LauncherBindings` holds those keys: `menu_key` (M by default; `std::nullopt` leaves returning to `SessionRequest::menu`) and `escape_closes_menu` (true by default). During a run, Escape follows `Session::close_on_escape()`. Kinetra-Lab passes `{std::nullopt, false}`, so only its sessions' own requests and the window's close button leave a run.
+`LauncherBindings` holds those keys: `menu_key` (M by default; `std::nullopt` leaves returning to the session's own `menu` and `configurations` requests) and `escape_closes_menu` (true by default). During a run, Escape follows `Session::close_on_escape()`. Kinetra-Lab passes `{std::nullopt, false}`, so only its sessions' own requests and the window's close button leave a run.
 
 The window title names what is on screen, nothing more: `launcher_window_title` ("Launcher") while the menu is open, and `Session::title()`, the application's name, while a session runs. The loop sets it on the first frame and on every transition, and otherwise refreshes it every 500 ms. Status such as pause state or counters belongs in the window, where the application draws it.
 

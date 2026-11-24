@@ -76,7 +76,7 @@ sequenceDiagram
         S->>S: application update and physics
     end
     Main->>S: request()
-    alt menu or exit
+    alt menu, configurations or exit
         Main-->>Main: end the run without rendering
     else none
         Main->>S: render(runtime)
