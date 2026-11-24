@@ -598,24 +598,19 @@ std::optional<SweepContact> sweep_translation(const Body &a, Vec2 end_a, const B
 
 namespace {
 
-bool same(Vec2 a, Vec2 b) {
-    return a.x == b.x && a.y == b.y;
-}
-
 // Whether bounds() gives both bodies the same box, by the fields it reads for the shape, so
 // that turning a fixed circle keeps the index. Comparing with == treats -0 and +0 as equal,
 // which changes no overlap test.
 bool same_geometry(const Body &a, const Body &b) {
-    if (a.shape != b.shape || !same(a.position, b.position))
+    if (a.shape != b.shape || a.position != b.position)
         return false;
     switch (a.shape) {
     case Shape::circle:
         return a.radius == b.radius;
     case Shape::box:
-        return same(a.half_extents, b.half_extents) && a.angle == b.angle;
+        return a.half_extents == b.half_extents && a.angle == b.angle;
     case Shape::polygon:
-        return a.angle == b.angle &&
-               std::equal(a.vertices.begin(), a.vertices.end(), b.vertices.begin(), b.vertices.end(), same);
+        return a.angle == b.angle && a.vertices == b.vertices;
     }
     return false;
 }

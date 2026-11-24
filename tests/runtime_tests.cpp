@@ -261,15 +261,12 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     for (const auto size : {Vec2{640, 360}, Vec2{200, 150}}) {
         SDL_SetWindowSize(window, int(size.x), int(size.y));
         runtime.poll();
-        REQUIRE_MESSAGE((runtime.camera.viewport.x == size.x && runtime.camera.viewport.y == size.y),
-                        "Camera did not follow window resize");
+        REQUIRE_MESSAGE(runtime.camera.viewport == size, "Camera did not follow window resize");
         const Vec2 center = runtime.camera.world_to_screen(runtime.camera.position);
-        REQUIRE_MESSAGE((center.x == size.x / 2 && center.y == size.y / 2),
-                        "Camera center moved after resize");
+        REQUIRE_MESSAGE(center == size / 2, "Camera center moved after resize");
         const Vec2 picked = runtime.camera.screen_to_world(center + Vec2{20, -20});
-        REQUIRE_MESSAGE(
-            (picked.x == runtime.camera.position.x + 1 && picked.y == runtime.camera.position.y + 1),
-            "Picking scale changed after resize");
+        REQUIRE_MESSAGE((picked == runtime.camera.position + Vec2{1, 1}),
+                        "Picking scale changed after resize");
         runtime.begin({0, 0, 0, 1});
         runtime.box(runtime.camera.position, {2, 2}, 0, {0, 1, 0, 1});
         runtime.end();

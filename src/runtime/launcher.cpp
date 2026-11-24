@@ -130,8 +130,7 @@ MenuLayout LaunchMenu::layout(Vec2 viewport) const {
 std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewport) {
     // After show_configurations the pointer is wherever the session left it; it counts as
     // resting there, so it does not hover away the configuration that ran.
-    const bool pointer_moved =
-        !settle_pointer_ && (input.mouse.x != pointer_.x || input.mouse.y != pointer_.y);
+    const bool pointer_moved = !settle_pointer_ && input.mouse != pointer_;
     settle_pointer_ = false;
     pointer_ = input.mouse;
     if (configuring_ && input.hit(Key::m)) {
