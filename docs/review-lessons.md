@@ -75,6 +75,9 @@ No lessons yet.
 
 ## Code
 
+- **Give a rounding margin a constructed test that fails without it** · added 2026-11-24 · source: #51
+  `priority_steer`'s slack decided only for gaps within the float error of the extent, which random scenes never reach, so its first test passed with the slack removed. Build the case where only the margin keeps the right answer, and check that it fails without it.
+
 - **When a change adds a second path (a storage, a fast path), check which path each existing test now takes, and keep a test on the old one** · added 2026-11-24 · source: #50
   #50's dense storage took over every grid in the tests, so the hashed buckets that #49 had made reusable lost their only test of boxes that move away and back.
 

@@ -162,6 +162,15 @@ Agent review round 1 (#50): no blocking point; three should-fix points, all fixe
 | The test would pass if no scene predicted an overlap | Fixed: at least five overlaps per scale |
 | The reference copy in the test rounds alike only without contraction into fused multiply-adds | Stated in the test; CI's targets do not contract. The golden lines elsewhere rest on the same assumption |
 
+Agent review round 1 (#51 and Kinetra-Lab#113, both *Fix first*): the interval argument holds (slack more than 80 times the float error) and step 4's decision matches the numbers.
+
+| Finding | Resolution |
+| --- | --- |
+| No scene reaches a case where the slack decides; `floor` and `ceil` already widen by a step | Fixed: a constructed case (a neighbor creeping below the float spacing at y = 10,002) that fails with the slack set to zero, and passes with it; a review lesson |
+| The descriptions of both pull requests were out of date (step 4, roadmap, pointer, design link) | Fixed in the descriptions |
+| Nits: `diff` computed from `mover`, the narrowing comment, the NaN handling, the whole-number claim in the test | Fixed; `diff` reuses `mover`, which is bit-identical without contraction (i4sim's CSV checked again) |
+| Lab's open point on border distances still said 3% of the run | Fixed on Kinetra-Lab#113: about 5% after steps 1 to 3 |
+
 ## Verification
 
 ### Step 1
@@ -214,4 +223,4 @@ Agent review round 1 (#50): no blocking point; three should-fix points, all fixe
 
 ## Open points
 
-None yet.
+- The commit type `perf` is not in the types of [AGENTS.md](../../AGENTS.md#git); this stack used it for its optimizations. Whether to add it is the user's decision.
