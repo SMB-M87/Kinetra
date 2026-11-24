@@ -77,7 +77,7 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 For a step `i` of the mover, the float expression gives `diff = mover_i - (other.position + other.velocity * (j * step))`, and its exact value is linear in the neighbor's step `j`. Per axis, the steps whose exact gap is below the extent plus `slack` form an interval, found in double precision and rounded outward with `floor` and `ceil`; the two axes are intersected with `[0, steps]`. `slack` is 1e-5 times the sum of the magnitudes involved (mover, neighbor position, the neighbor's travel over the horizon, the extent), about 40 times the float error of the expression, plus the smallest normal float for subnormal results. A step outside the interval has an exact gap of at least extent plus slack, so its float `diff` cannot pass the strict `<` test; the steps inside are tested in ascending order with the unchanged expression. So the first pair `(i, j)` and its `diff` are those of the old loop over all (horizon + 1)² pairs. A neighbor that stands still on an axis keeps every step or none; an interval that is empty or far off skips the step `i` before any conversion to `int`.
 
-### Step 4: `bounds` of a box, not done
+### Step 4: box bounds, not done
 
 Measured again after Lab's hotspot 2 and steps 1 to 3: `kinetra::bounds` is 3% of i4sim's motion benchmark (2% with predictive passing) and `sincosf` 2% (1%), against 30% and 7% in the baseline, when contact resolution computed bounds for every pair. One rotation per call would save about half of `sincosf`, about 1% of the run, so it is not worth a pull request of its own. Lab's performance page records the decision; neither roadmap keeps an item for it.
 
