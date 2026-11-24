@@ -24,7 +24,9 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-Nothing planned next; the items of *Later* follow.
+- **Review sessions that can post on both repositories** · agents, workflow, with Lab · added 2026-11-24
+  An agent review is lost or stalls when its session cannot write to a repository it reviews, and the rule that it gets write access to both ([workflow](workflow.md#6-review), step 0 of the `pr-review` skill) has not prevented it. Kinetra#42 merged without its review, which its session had written but could not post. On 2026-11-24 the review of Kinetra#52 and Kinetra-Lab#114 stopped before it began: the author's session had started it with only Kinetra-Lab attached, the session's permission check refused its request to attach Kinetra with push access, and the review waited until the user granted it. The reviewer must reach every repository it reviews without the user stepping in each time.
+  Next step: find what works in a cloud session: the author's session starting the review session with both repositories attached for push, a permission rule in `.claude/settings.json` of both repositories that lets a session attach the other one, or the author checking the reviewer's access before handing over. Which access a session may take without asking is the user's call. Where: Kinetra-Lab's item of the same name.
 
 ## Later
 
@@ -38,9 +40,6 @@ Nothing planned next; the items of *Later* follow.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
   CI installs the pinned toolchain from the Arch Linux Archive in every run, and falls back to the current packages when the archive does not answer ([CI falls back to current Arch packages](design/2026-11-21-ci-mirror-fallback.md)). An image with the pinned packages already installed, published to GitHub's container registry, would make CI independent of the archive and faster. It can only be built while the archive answers.
   Next step: a design: who builds and publishes the image, and how a snapshot bump updates it.
-- **Report the injected wheel event to sdl2-compat** · runtime, tests · added 2026-11-22
-  `sdl2-compat` 2.32.64 returns an event pushed through `SDL_PushEvent` with `wheel.y` taken from the bytes of `mouseY`, and `preciseY` set from the whole `y` (`Event2to3` and `Event3to2`); real input is not affected. So no graphics test can inject a fractional wheel step, and the WSL2 failure probably had this cause ([graphics tests in CI](design/2026-11-22-graphics-tests-in-ci.md)). An upstream report or patch is the user's call: it goes out under their account.
-  Next step: the user decides whether to report it.
 - **Frame read-back on `Runtime`** · runtime · added 2026-11-21
   A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
   Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).
@@ -50,6 +49,9 @@ Nothing planned next; the items of *Later* follow.
 - **Raster route target** · navigation · added 2026-11-21
   A `WeightedGrid` counterpart of `route_target`, so agents that follow a grid route cut corners that are already in sight; Dotio's pursuers would move more smoothly.
   Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
+- **Vec2 equality in place of component comparisons** · simulation, tests, with Lab · added 2026-11-24
+  Since #52, `kinetra::Vec2` has `==`, and Lab's Dotio uses it. Kinetra still compares the components one by one in `same(Vec2, Vec2)` in `src/simulation/physics.cpp` and in `tests/runtime_tests.cpp:250`; both can use `==`. Lab's item of the same name covers i4sim, Demo and the capture tool.
+  Where: [Dotio on `kinetra::Vec2`, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-24-dotio-on-kinetra-vec2.md#open-points).
 
 ## Ideas
 

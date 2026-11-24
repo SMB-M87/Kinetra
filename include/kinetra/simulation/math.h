@@ -35,6 +35,11 @@ struct Vec2 {
         y -= v.y;
         return *this;
     }
+    /// Exact equality of both components, by IEEE comparison: +0 equals -0, and a NaN
+    /// component equals nothing, itself included. Meant for values that are copied or
+    /// replayed, such as a position that must not have moved; results of arithmetic that can
+    /// round differently want a tolerance instead.
+    constexpr bool operator==(const Vec2 &) const = default;
 };
 
 /// Dot product.
