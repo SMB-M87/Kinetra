@@ -841,8 +841,13 @@ TEST_CASE("a fixed body changed between steps acts as in a new world") {
             fresh.step(1.f / 120);
             CHECK(world.candidate_pairs() == fresh.candidate_pairs());
         }
-        for (std::size_t i = 0; i < world.bodies().size(); ++i)
-            CHECK(world.body(i).position == fresh.body(i).position);
+        for (std::size_t i = 0; i < world.bodies().size(); ++i) {
+            const Vec2 actual = world.body(i).position;
+            const Vec2 expected = fresh.body(i).position;
+            CAPTURE(i);
+            INFO("actual (", actual.x, ", ", actual.y, "), expected (", expected.x, ", ", expected.y, ")");
+            CHECK(actual == expected);
+        }
     }
 }
 
