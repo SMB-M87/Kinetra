@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <kinetra/simulation/spatial_grid.h>
 #include <stdexcept>
 
@@ -30,7 +31,17 @@ void SpatialGrid::rebuild(std::span<const Aabb> bounds) {
     for (const auto &b : bounds)
         (void)cells(b);
     bounds_.assign(bounds.begin(), bounds.end());
-    buckets_.clear();
+    // Keep the storage of the cells in use: a grid rebuilt every tick over boxes that barely
+    // move would otherwise free and allocate every bucket again. A cell that stayed empty
+    // for a whole rebuild is dropped, so the map tracks the cells of the last two rebuilds.
+    for (auto it = buckets_.begin(); it != buckets_.end();) {
+        if (it->second.empty()) {
+            it = buckets_.erase(it);
+        } else {
+            it->second.clear();
+            ++it;
+        }
+    }
     for (std::size_t i = 0; i < bounds_.size(); ++i) {
         const auto r = cells(bounds_[i]);
         for (int y = r.min_y; y <= r.max_y; ++y)

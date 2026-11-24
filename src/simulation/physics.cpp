@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <kinetra/simulation/physics.h>
 #include <limits>
@@ -595,6 +596,85 @@ std::optional<SweepContact> sweep_translation(const Body &a, Vec2 end_a, const B
     return hit;
 }
 
+namespace {
+
+bool same(Vec2 a, Vec2 b) {
+    return a.x == b.x && a.y == b.y;
+}
+
+// Whether bounds() gives both bodies the same box, by the fields it reads for the shape, so
+// that turning a fixed circle keeps the index. Comparing with == treats -0 and +0 as equal,
+// which changes no overlap test.
+bool same_geometry(const Body &a, const Body &b) {
+    if (a.shape != b.shape || !same(a.position, b.position))
+        return false;
+    switch (a.shape) {
+    case Shape::circle:
+        return a.radius == b.radius;
+    case Shape::box:
+        return same(a.half_extents, b.half_extents) && a.angle == b.angle;
+    case Shape::polygon:
+        return a.angle == b.angle &&
+               std::equal(a.vertices.begin(), a.vertices.end(), b.vertices.begin(), b.vertices.end(), same);
+    }
+    return false;
+}
+
+} // namespace
+
+bool World::fixed_index_current() const {
+    if (!fixed_index_valid_)
+        return false;
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < bodies_.size(); ++i) {
+        if (bodies_[i].motion != Motion::fixed)
+            continue;
+        if (k == fixed_ids_.size() || fixed_ids_[k] != i || !same_geometry(bodies_[i], fixed_bodies_[k]))
+            return false;
+        ++k;
+    }
+    return k == fixed_ids_.size();
+}
+
+void World::index_fixed_bodies() {
+    std::vector<std::size_t> ids;
+    std::vector<Aabb> boxes;
+    for (std::size_t i = 0; i < bodies_.size(); ++i)
+        if (bodies_[i].motion == Motion::fixed) {
+            ids.push_back(i);
+            boxes.push_back(bounds(bodies_[i]));
+        }
+    fixed_grid_.rebuild(boxes); // Throws for a bad box and leaves the index invalid.
+    // Assigning element by element reuses the vertex storage of the previous copies.
+    fixed_bodies_.resize(ids.size());
+    for (std::size_t k = 0; k < ids.size(); ++k) {
+        fixed_bodies_[k] = bodies_[ids[k]];
+        boxes_[ids[k]] = boxes[k];
+    }
+    fixed_ids_ = std::move(ids);
+    fixed_index_valid_ = true;
+}
+
+void World::candidates(Aabb area, bool with_fixed, std::vector<std::size_t> &out) const {
+    out.clear();
+    const auto moving = grid_.query(area);
+    if (!with_fixed || fixed_ids_.empty()) {
+        for (auto k : moving)
+            out.push_back(moving_ids_[k]);
+        return;
+    }
+    // Both lists ascend in body index, so merging them gives the sorted, unique list that
+    // one grid over all bodies would return.
+    const auto fixed = fixed_grid_.query(area);
+    std::size_t f = 0, m = 0;
+    while (f < fixed.size() || m < moving.size()) {
+        if (m == moving.size() || (f < fixed.size() && fixed_ids_[fixed[f]] < moving_ids_[moving[m]]))
+            out.push_back(fixed_ids_[fixed[f++]]);
+        else
+            out.push_back(moving_ids_[moving[m++]]);
+    }
+}
+
 std::size_t World::add(Body b) {
     validate(b);
     bodies_.push_back(b);
@@ -611,6 +691,29 @@ void World::step(float dt) {
     const auto moving_count = std::count_if(bodies_.begin(), bodies_.end(),
                                             [](const Body &b) { return b.motion != Motion::fixed; });
     const std::size_t event_budget = 8 * std::max<std::size_t>(1, moving_count);
+    // The caller may have changed a fixed body since the last step. The index itself is
+    // rebuilt at the first pass, where a bad box throws as it would from one grid.
+    // While the index is valid, boxes_ keeps the fixed boxes it was built from: a pass
+    // writes only the boxes of moving bodies.
+    boxes_.resize(bodies_.size());
+    if (!fixed_index_current())
+        fixed_index_valid_ = false;
+    moving_ids_.clear();
+    for (std::size_t i = 0; i < bodies_.size(); ++i)
+        if (bodies_[i].motion != Motion::fixed)
+            moving_ids_.push_back(i);
+    // Fixed boxes are the same in every pass; only the moving bodies are indexed again.
+    auto index_pass = [&](auto box_of) {
+        if (!fixed_index_valid_)
+            index_fixed_bodies();
+        moving_boxes_.clear();
+        for (auto i : moving_ids_) {
+            boxes_[i] = box_of(bodies_[i]);
+            moving_boxes_.push_back(boxes_[i]);
+        }
+        grid_.rebuild(moving_boxes_);
+    };
+    std::vector<std::size_t> found;
     auto velocity = [](const Body &b) { return b.motion == Motion::fixed ? Vec2{} : b.velocity; };
     auto sweep_supported = [](const Body &b) {
         return b.motion == Motion::fixed || b.shape == Shape::circle || b.angular_velocity == 0;
@@ -633,23 +736,23 @@ void World::step(float dt) {
         }
         float remaining = dt / 2;
         for (std::size_t event = 0; event < event_budget && remaining > 0; ++event) {
-            std::vector<Aabb> swept_bounds;
-            swept_bounds.reserve(bodies_.size());
-            for (const auto &b : bodies_) {
+            // A fixed body's swept box is its plain box: it has no velocity.
+            index_pass([&](const Body &b) {
                 auto box = bounds(b);
-                const Vec2 travel = velocity(b) * remaining;
+                const Vec2 travel = b.velocity * remaining;
                 box.min += Vec2{std::min(0.f, travel.x), std::min(0.f, travel.y)};
                 box.max += Vec2{std::max(0.f, travel.x), std::max(0.f, travel.y)};
-                swept_bounds.push_back(box);
-            }
-            grid_.rebuild(swept_bounds);
+                return box;
+            });
             std::optional<SweepContact> earliest;
             std::size_t first = 0, second = 0;
             for (std::size_t i = 0; i < bodies_.size(); ++i) {
                 const auto &a = bodies_[i];
                 if (!sweep_supported(a))
                     continue;
-                for (auto j : grid_.query(swept_bounds[i])) {
+                // A fixed body skips the fixed candidates below, so it needs none.
+                candidates(boxes_[i], a.motion != Motion::fixed, found);
+                for (auto j : found) {
                     const auto &b = bodies_[j];
                     if (j <= i || !sweep_supported(b) ||
                         (a.motion == Motion::fixed && b.motion == Motion::fixed))
@@ -702,17 +805,15 @@ void World::step(float dt) {
             sweep_budget_exhausted_ = true;
         // Rebuild after correction passes as correction can create new contacts.
         for (int pass = 0; pass < 6; ++pass) {
-            std::vector<Aabb> boxes;
-            boxes.reserve(bodies_.size());
-            for (const auto &b : bodies_)
-                boxes.push_back(bounds(b));
-            grid_.rebuild(boxes);
+            index_pass([](const Body &b) { return bounds(b); });
             for (std::size_t i = 0; i < bodies_.size(); ++i) {
                 // Only movers initiate queries. Fixed bodies remain indexed, including
                 // those inserted before a mover; moving pairs are still visited once.
+                // Boxes stay those of the pass's start, as one rebuild per pass gave.
                 if (bodies_[i].motion == Motion::fixed)
                     continue;
-                for (auto j : grid_.query(boxes[i])) {
+                candidates(boxes_[i], true, found);
+                for (auto j : found) {
                     if (j == i || (j < i && bodies_[j].motion != Motion::fixed))
                         continue;
                     ++candidate_pairs_;
