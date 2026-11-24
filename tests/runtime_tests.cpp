@@ -348,11 +348,15 @@ namespace {
 /// within rounding. The front buffer is undefined after a swap on some drivers, so either
 /// buffer may hold the frame.
 bool presented(const Runtime &runtime, Vec2 point, Color expected) {
+    GLint viewport[4]{};
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    const int x = viewport[0] + int(point.x * float(viewport[2]) / runtime.camera.viewport.x);
+    const int y =
+        viewport[1] + viewport[3] - 1 - int(point.y * float(viewport[3]) / runtime.camera.viewport.y);
     for (const auto buffer : {GL_FRONT, GL_BACK}) {
         unsigned char pixel[4]{};
         glReadBuffer(buffer);
-        glReadPixels(int(point.x), int(runtime.camera.viewport.y - 1 - point.y), 1, 1, GL_RGBA,
-                     GL_UNSIGNED_BYTE, pixel);
+        glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
         const auto near = [](unsigned char channel, float value) {
             return std::abs(float(channel) - value * 255) <= 3;
         };
@@ -375,12 +379,35 @@ TEST_CASE("RGBA images keep their row order and blend between ordinary shapes") 
     runtime.begin();
     runtime.box(world({160, 120}), Vec2{100, 100} / units, 0, {0, 0, 1});
     runtime.image(image, world({60, 20}), Vec2{200, 200} / units);
-    runtime.box(world({230, 50}), Vec2{10, 10} / units, 0, {1, 1, 1});
+    runtime.box(world({230, 50}), Vec2{10, 10} / units, 0, {1, 1, 1, 0.5f});
     runtime.end();
     CHECK(presented(runtime, {90, 50}, {1, 0, 0}));
     CHECK(presented(runtime, {90, 190}, {0, 1, 0}));
+    CHECK(presented(runtime, {160, 190}, {0, 0.5f, 0.5f})); // Filter the opaque/transparent boundary.
     CHECK(presented(runtime, {230, 190}, {0, 0, 1}));
-    CHECK(presented(runtime, {230, 50}, {1, 1, 1}));
+    CHECK(presented(runtime, {230, 50}, {1, 0.5f, 0.5f}));
+}
+
+TEST_CASE("a pending OpenGL error leaves the previous image usable") {
+    const std::uint8_t red[]{255, 0, 0, 255}, green[]{0, 255, 0, 255};
+    const auto first = std::make_shared<const RgbaImage>(1, 1, red);
+    const auto second = std::make_shared<const RgbaImage>(1, 1, green);
+    Runtime runtime("Texture upload recovery", 320, 240);
+    const auto corner = runtime.camera.screen_to_world({0, 0});
+    const auto size = runtime.camera.viewport / runtime.camera.pixels_per_unit;
+    runtime.begin();
+    runtime.image(first, corner, size);
+    runtime.end();
+    runtime.begin();
+    glEnable(GL_TEXTURE_2D); // This fixed-function state is invalid in the core profile.
+    CHECK_THROWS_AS(runtime.image(second, corner, size), std::runtime_error);
+    runtime.image(first, corner, size);
+    runtime.end();
+    CHECK(presented(runtime, {160, 120}, {1, 0, 0}));
+    runtime.begin();
+    runtime.image(second, corner, size);
+    runtime.end();
+    CHECK(presented(runtime, {160, 120}, {0, 1, 0}));
 }
 
 TEST_CASE("the drawn preview and its description follow the highlighted application") {

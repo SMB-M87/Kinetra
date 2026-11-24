@@ -24,11 +24,11 @@ enum class FramePacing {
     uncapped,
 };
 
-/// Immutable, CPU-side RGBA image. The bytes are ordered by row from the top left,
-/// four bytes per pixel with straight alpha and no row padding.
+/// Immutable, CPU-side RGBA image. Supply bytes by row from the top left, four bytes per
+/// pixel with straight alpha and no row padding. The image stores premultiplied pixels.
 class RgbaImage {
   public:
-    /// Copies the pixels. Throws std::invalid_argument for nonpositive dimensions or
+    /// Copies and premultiplies the pixels. Throws std::invalid_argument for nonpositive dimensions or
     /// a byte count other than width * height * 4.
     RgbaImage(int width, int height, std::span<const std::uint8_t> pixels);
     RgbaImage(const RgbaImage &) = delete;

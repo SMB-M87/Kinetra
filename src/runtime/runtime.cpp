@@ -181,6 +181,15 @@ RgbaImage::RgbaImage(int width, int height, std::span<const std::uint8_t> pixels
     if (pixel_count % w != 0 || pixel_count / w != static_cast<std::size_t>(height))
         throw std::invalid_argument("Invalid RGBA image dimensions or pixel count");
     pixels_.assign(pixels.begin(), pixels.end());
+    // Filter premultiplied colors so transparent texels contribute no RGB at an edge.
+    constexpr int opaque = 255;
+    for (std::size_t start = 0; start < pixels_.size(); start += channels) {
+        const auto alpha = pixels_[start + channels - 1];
+        for (std::size_t channel = 0; channel < channels - 1; ++channel) {
+            auto &color = pixels_[start + channel];
+            color = static_cast<std::uint8_t>((color * alpha + opaque / 2) / opaque);
+        }
+    }
 }
 
 struct Runtime::Impl {
@@ -240,10 +249,15 @@ void Runtime::Impl::bind_image_texture(const std::shared_ptr<const RgbaImage> &i
         glBindTexture(GL_TEXTURE_2D, texture);
         return;
     }
+    // Report a pending error before mutating the texture so it cannot be mistaken for
+    // an upload failure after the cached pixels have already changed.
+    if (const auto error = glGetError(); error != GL_NO_ERROR)
+        throw std::runtime_error("OpenGL error before RGBA image upload (" + std::to_string(error) + ")");
     GLint max_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_size);
     if (image->width() > max_size || image->height() > max_size)
         throw std::invalid_argument("Image exceeds the OpenGL texture size limit");
+    uploaded_image.reset();
     if (!texture) {
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -255,8 +269,8 @@ void Runtime::Impl::bind_image_texture(const std::shared_ptr<const RgbaImage> &i
         glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image->width(), image->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  pixels.data());
-    if (glGetError() != GL_NO_ERROR)
-        throw std::runtime_error("OpenGL could not upload the RGBA image");
+    if (const auto error = glGetError(); error != GL_NO_ERROR)
+        throw std::runtime_error("OpenGL could not upload the RGBA image (" + std::to_string(error) + ")");
     uploaded_image = image;
 }
 
@@ -501,7 +515,9 @@ void main() { pixel = texture(picture, uv); }
     glUseProgram(impl_->image_program);
     glBindVertexArray(impl_->vao);
     glUniform4f(impl_->image_bounds, first.x, first.y, last.x, last.y);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Runtime::end() {
