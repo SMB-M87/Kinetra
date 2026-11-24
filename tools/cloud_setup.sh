@@ -7,11 +7,14 @@
 #
 # Usage: tools/cloud_setup.sh [--cloud] [extra apt package...]
 #   Runs when called with --cloud or in a Claude Code cloud session (CLAUDE_CODE_REMOTE=true).
-#   Installs only missing tools and packages. Always exits 0 and prints one status line when
-#   active. The output of apt and uv goes to the log it names.
+#   Installs only missing tools and packages and prints one status line when active. An
+#   explicit setup reports failure with exit 1. The Claude hook exits 0 to deliver the line.
+#   The output of apt and uv goes to the log it names.
 set -uo pipefail
 
+fail_on_setup_error=false
 if [[ "${1:-}" == "--cloud" ]]; then
+    fail_on_setup_error=true
     shift
 elif [[ "${CLAUDE_CODE_REMOTE:-}" != "true" ]]; then
     exit 0
@@ -134,5 +137,8 @@ if [[ ${#failures[@]} -eq 0 ]]; then
     echo "Cloud setup: $(join "${report[@]}")."
 else
     echo "Cloud setup failed: $(join "${failures[@]}"). Log: $log. By hand: $(join "${advice[@]}")."
+    if [[ "$fail_on_setup_error" == "true" ]]; then
+        exit 1
+    fi
 fi
 exit 0
