@@ -172,6 +172,7 @@ class World {
     std::vector<Body> fixed_bodies_;
     std::vector<std::size_t> fixed_ids_, moving_ids_;
     std::vector<Aabb> boxes_, moving_boxes_;
+    // Query results of each grid, kept between queries to reuse their storage.
     std::vector<std::size_t> fixed_found_, moving_found_;
     bool fixed_index_valid_{};
     std::size_t candidate_pairs_{};

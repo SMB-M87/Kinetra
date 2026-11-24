@@ -350,23 +350,29 @@ TEST_CASE("rebuilding a spatial grid without boxes drops stale objects") {
 }
 
 TEST_CASE("a spatial grid rebuilt over moving boxes matches an exhaustive search") {
-    // Rebuilds keep the storage of cells in use; boxes that leave and return must still be found.
-    const auto boxes = random_boxes();
-    SpatialGrid grid(3);
-    for (float shift : {0.f, 60.f, 0.f, -30.f, 0.f}) {
-        CAPTURE(shift);
-        auto moved = boxes;
-        for (std::size_t i = 0; i < moved.size(); i += 2) {
-            moved[i].min.x += shift;
-            moved[i].max.x += shift;
-        }
-        grid.rebuild(moved);
-        for (const auto &area : boxes) {
-            std::vector<std::size_t> expected;
-            for (std::size_t j = 0; j < moved.size(); ++j)
-                if (moved[j].overlaps(area))
-                    expected.push_back(j);
-            CHECK(grid.query(area) == expected);
+    // Rebuilds keep the storage of cells in use; boxes that leave and return must still be found,
+    // in the dense cells of a compact set and in the hashed cells that one far box forces.
+    for (const bool scattered : {false, true}) {
+        auto boxes = random_boxes();
+        if (scattered)
+            boxes.push_back({{1000000, -1}, {1000001, 1}});
+        SpatialGrid grid(3);
+        for (float shift : {0.f, 60.f, 0.f, -30.f, 0.f}) {
+            CAPTURE(scattered);
+            CAPTURE(shift);
+            auto moved = boxes;
+            for (std::size_t i = 0; i < moved.size(); i += 2) {
+                moved[i].min.x += shift;
+                moved[i].max.x += shift;
+            }
+            grid.rebuild(moved);
+            for (const auto &area : boxes) {
+                std::vector<std::size_t> expected;
+                for (std::size_t j = 0; j < moved.size(); ++j)
+                    if (moved[j].overlaps(area))
+                        expected.push_back(j);
+                CHECK(grid.query(area) == expected);
+            }
         }
     }
 }
