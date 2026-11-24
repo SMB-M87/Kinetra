@@ -124,6 +124,18 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | The member comment misstates `boxes_` | Fixed |
 | The kept buckets cost a walk over the cells of two rebuilds | Kept: one walk over the cells against freeing and allocating every bucket; the measurement shows the gain. Step 2 replaces the hash map for compact areas |
 
+### Step 2
+
+`/code-review` at medium on `perf/world-fixed-index...perf/spatial-query` found no change to the query results and five points:
+
+| Finding | Resolution |
+| --- | --- |
+| A rebuild that runs out of memory after setting the extent could leave storage that belongs to other boxes, and a later query reads out of bounds | Fixed: an allocation failure leaves an empty index |
+| A dense rebuild freed the hashed buckets | Fixed: dense rebuilds leave the map alone; the next hashed rebuild clears it as in step 1 |
+| The dense fill copied the offsets into a scratch vector | Fixed: the offsets serve as fill positions and are shifted back |
+| No test switches one grid between both storages | Fixed: compact, scattered, compact, then a rejected rebuild that keeps the dense index |
+| `<utility>` missing for `std::move` | Fixed |
+
 ## Verification
 
 ### Step 1
@@ -132,6 +144,12 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 - Lab at the pointer: `ctest --preset dev` without the graphics cases, 318 of 318 passed, golden and pressure tests included.
 - Bit identity on the release build: i4sim's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline's apart from `elapsed_ms` in all three runs; Dotio's output, fingerprints included, identical; Demo's characterization lines pass.
 - Time, release preset, median of three runs on one cloud machine (four cores of an Intel Xeon at 2.1 GHz, about 1.25 times slower than the baseline's on Demo): Demo's soak at 48 agents 12.1 to 2.7 s (steering) and 12.0 to 2.5 s (route), at 240 agents 28.0 to 18.1 s, 28.9 to 18.5 s and 26.0 to 16.3 s; i4sim and Dotio within run-to-run noise. Lab's performance page has the row and the new Demo profile.
+
+### Step 2
+
+- Kinetra: `ctest --preset dev`, 276 of 276 passed; `clang-format --dry-run --Werror` on the changed files.
+- Bit identity on the release build, on Lab `main` with hotspot 2: i4sim's CSV with and without `--predictive-passing` and Dotio's output identical in all three runs; Demo's characterization lines pass.
+- Time, median of three runs interleaved with step 1 on the same machine: i4sim 19.8 to 15.8 s, with passing 34.3 to 23.1 s; Demo's soak 2.9 to 1.6 s at 48 agents, 18.8 to 13.3 s at 240; Dotio unchanged. A query that tested every box when it would visit more entries than there are boxes measured the same on Demo (13.2 against 13.4 s over three interleaved runs) and was left out.
 
 ## Pull request
 
