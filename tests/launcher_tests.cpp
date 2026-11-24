@@ -40,6 +40,38 @@ TEST_CASE("a configurable application asks for its configuration before launchin
     CHECK_MESSAGE(selection->configuration == 1, "default configuration lost");
 }
 
+TEST_CASE("preview layout follows selection and only applies to the application list") {
+    const std::uint8_t pixel[]{0, 0, 0, 255};
+    const auto image = std::make_shared<const RgbaImage>(1, 1, pixel);
+    LaunchMenu menu({{"ONE", "FIRST", {}, 0, image}, {"TWO", "SECOND", {"SMALL"}, 0}});
+    const Vec2 wide{1280, 800}, tall{360, 620};
+    const auto landscape = menu.layout(wide);
+    const auto portrait = menu.layout(tall);
+    REQUIRE(landscape.preview_origin);
+    REQUIRE(portrait.preview_origin);
+    CHECK(landscape.preview_origin->x > landscape.row_center(0).x);
+    CHECK(portrait.preview_origin->y > portrait.footer_center().y);
+    Input input;
+    input.mouse = landscape.row_center(1);
+    CHECK_FALSE(menu.update(input, wide));
+    CHECK(menu.description() == "SECOND");
+    CHECK(menu.layout(wide).row_center(1).x == landscape.row_center(1).x);
+    input.pressed[std::size_t(Key::up)] = true;
+    menu.update(input, wide);
+    CHECK(menu.description() == "FIRST");
+    input.pressed = {};
+    input.clicked = true;
+    CHECK_FALSE(menu.update(input, wide));
+    CHECK(menu.configuring());
+    CHECK_FALSE(menu.layout(wide).preview_origin);
+    input.mouse = menu.layout(wide).row_center(0);
+    const auto picked = menu.update(input, wide);
+    REQUIRE(picked);
+    CHECK(picked->application == 1);
+    CHECK(menu.layout(wide).preview_origin);
+    CHECK_FALSE(LaunchMenu({{"PLAIN", "NO IMAGE", {}, 0}}).layout(wide).preview_origin);
+}
+
 TEST_CASE("menu pages wrap and stay pickable at every viewport") {
     for (auto viewport : {Vec2{1280, 800}, Vec2{160, 120}}) {
         CAPTURE(viewport.x);

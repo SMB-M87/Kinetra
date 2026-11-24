@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <kinetra/runtime/timing.h>
 #include <kinetra/view/camera.h>
 #include <kinetra/view/input.h>
@@ -8,6 +9,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <vector>
 
 namespace kinetra {
 
@@ -22,13 +24,33 @@ enum class FramePacing {
     uncapped,
 };
 
-/// SDL2/OpenGL 3.3 window, input and batched primitive drawing. Own on the main
+/// Immutable, CPU-side RGBA image. Supply bytes by row from the top left, four bytes per
+/// pixel with straight alpha and no row padding. The image stores premultiplied pixels.
+class RgbaImage {
+  public:
+    /// Copies and premultiplies the pixels. Throws std::invalid_argument for nonpositive dimensions or
+    /// a byte count other than width * height * 4.
+    RgbaImage(int width, int height, std::span<const std::uint8_t> pixels);
+    RgbaImage(const RgbaImage &) = delete;
+    RgbaImage &operator=(const RgbaImage &) = delete;
+    /// Width in pixels.
+    int width() const { return width_; }
+    /// Height in pixels.
+    int height() const { return height_; }
+
+  private:
+    friend class Runtime;
+    int width_, height_;
+    std::vector<std::uint8_t> pixels_;
+};
+
+/// SDL2/OpenGL 3.3 window, input and 2D drawing. Own on the main
 /// thread; only one Runtime may exist at a time. Throws runtime_error on setup,
 /// shader or rendering initialization failures. No simulation dependency.
 ///
 /// A frame is poll(), then begin(), any number of drawing calls, and end(). Drawing calls
-/// take world coordinates and go through `camera`; they only fill a batch, which end()
-/// uploads, draws and presents.
+/// take world coordinates and go through `camera`. Shapes fill a batch, which a textured
+/// draw or end() flushes in call order.
 class Runtime {
   public:
     /// Opens a resizable window of `width` x `height` logical pixels with the Kinetra icon.
@@ -62,6 +84,12 @@ class Runtime {
     void polygon(std::span<const Vec2> vertices, Color color);
     /// Straight line of `width` world units.
     void line(Vec2 from, Vec2 to, float width, Color color);
+    /// Draws `image` in a world-space rectangle starting at `top_left`, with positive `size`.
+    /// Call between begin() and end(). The runtime reuses the last upload without keeping
+    /// the CPU image alive. Throws std::invalid_argument for a null image, invalid bounds
+    /// or dimensions exceeding the context's texture limit, and std::runtime_error
+    /// if the image shader or texture cannot be prepared.
+    void image(const std::shared_ptr<const RgbaImage> &image, Vec2 top_left, Vec2 size);
     /// Uploads and draws the batch, then presents the frame. Without VSync it then waits for
     /// the frame limiter, unless that was switched off (see pacing()). From the second frame
     /// on, also records the time since the previous end() in frame_times(), or the fixed time
@@ -95,6 +123,7 @@ class Runtime {
   private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
+    Vec2 clip_point(Vec2 world) const;
     void triangle(Vec2 a, Vec2 b, Vec2 c, Color color);
     void triangle(Vec2 a, Vec2 b, Vec2 c, Color ca, Color cb, Color cc);
 };

@@ -53,9 +53,6 @@ Nothing planned next; the items of *Later* follow.
 - **Raster route target** · navigation · added 2026-11-21
   A `WeightedGrid` counterpart of `route_target`, so agents that follow a grid route cut corners that are already in sight; Dotio's pursuers would move more smoothly.
   Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
-- **Images in the launcher menu** · runtime, launcher, with Lab · added 2026-11-23
-  For Lab's *Lab preview in the launcher*: next to the list, `LaunchMenu` shows the highlighted application's description and a picture or short clip of it. `LaunchChoice::description` is not drawn yet ([launcher.h](../include/kinetra/runtime/launcher.h)), and the runtime draws only colored shapes and bitmap text, so this needs textured drawing in `Runtime`, image data (RGBA built in, as [make_icon.py](../tools/make_icon.py) writes the window icon, or an image decoder, which is a new dependency for a design to justify), and frames that change over time for a clip.
-  Open questions: a field on `LaunchChoice` or a separate preview type; whether the preview belongs to `LaunchMenu` or is drawn by the application's launcher.
 
 ## Ideas
 

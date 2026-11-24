@@ -4,13 +4,71 @@
 #include <stdexcept>
 
 namespace kinetra {
-MenuLayout::MenuLayout(Vec2 viewport, std::size_t rows)
-    : scale(std::min({2.f, viewport.x / 320,
-                      viewport.y / (150.f + static_cast<float>(std::min(rows, page_size) * 40))})),
-      visible_rows(std::min(rows, page_size)) {
+namespace {
+constexpr Vec2 preview_size{270, 214};
+constexpr Vec2 preview_inset{10, 10};
+constexpr Vec2 image_slot{250, 140};
+constexpr float panel_gap = 18;
+
+void draw_preview(Runtime &runtime, const LaunchChoice &choice, Vec2 origin, float scale) {
+    const auto world = [&](Vec2 point) { return runtime.camera.screen_to_world(origin + point * scale); };
+    const float units = scale / runtime.camera.pixels_per_unit;
+    runtime.box(world(preview_size / 2), preview_size * (units / 2), 0, {0.06f, 0.1f, 0.16f});
+    Vec2 description_origin = preview_inset;
+    if (choice.preview) {
+        const Vec2 pixels{static_cast<float>(choice.preview->width()),
+                          static_cast<float>(choice.preview->height())};
+        const Vec2 size = pixels * std::min(image_slot.x / pixels.x, image_slot.y / pixels.y);
+        runtime.image(choice.preview, world(preview_inset + (image_slot - size) / 2), size * units);
+        description_origin.y += image_slot.y + preview_inset.y;
+    }
+    // The bitmap font advances six units per character. Keep the panel size fixed as
+    // choices change, preferring word boundaries and honoring explicit line breaks.
+    constexpr std::size_t columns = static_cast<std::size_t>(image_slot.x / 6);
+    std::string_view text = choice.description;
+    for (int row = 0; row < 4 && !text.empty(); ++row) {
+        const auto line_end = std::min(text.find('\n'), text.size());
+        auto length = std::min(line_end, columns);
+        if (length < line_end && text[length] != ' ') {
+            const auto space = text.rfind(' ', length);
+            if (space != 0 && space != std::string_view::npos)
+                length = space;
+        }
+        draw_text(runtime, text.substr(0, length), origin + description_origin * scale, scale,
+                  {0.85f, 0.9f, 1});
+        text.remove_prefix(length);
+        while (text.starts_with(' '))
+            text.remove_prefix(1);
+        if (text.starts_with('\n'))
+            text.remove_prefix(1);
+        description_origin.y += 11;
+    }
+}
+} // namespace
+
+MenuLayout::MenuLayout(Vec2 viewport, std::size_t rows) : MenuLayout(viewport, rows, false) {
+}
+
+MenuLayout::MenuLayout(Vec2 viewport, std::size_t rows, bool with_preview)
+    : visible_rows(std::min(rows, page_size)) {
     if (!finite(viewport) || viewport.x <= 0 || viewport.y <= 0)
         throw std::invalid_argument("Invalid menu viewport");
-    origin = (viewport - Vec2{300, 130.f + static_cast<float>(visible_rows * 40)} * scale) / 2;
+    const Vec2 list{300, 130.f + static_cast<float>(visible_rows * 40)};
+    Vec2 bounds = list;
+    Vec2 list_offset{}, preview_offset{};
+    if (with_preview && viewport.x >= viewport.y) {
+        bounds = {list.x + panel_gap + preview_size.x, std::max(list.y, preview_size.y)};
+        list_offset.y = (bounds.y - list.y) / 2;
+        preview_offset = {list.x + panel_gap, (bounds.y - preview_size.y) / 2};
+    } else if (with_preview) {
+        bounds.y += panel_gap + preview_size.y;
+        preview_offset = {(list.x - preview_size.x) / 2, list.y + panel_gap};
+    }
+    scale = std::min({2.f, viewport.x / (bounds.x + 20), viewport.y / (bounds.y + 20)});
+    const Vec2 group_origin = (viewport - bounds * scale) / 2;
+    origin = group_origin + list_offset * scale;
+    if (with_preview)
+        preview_origin = group_origin + preview_offset * scale;
 }
 Vec2 MenuLayout::footer_center(float x) const {
     return origin + Vec2{x, 110.f + static_cast<float>(visible_rows * 40)} * scale;
@@ -36,6 +94,7 @@ LaunchMenu::LaunchMenu(std::vector<LaunchChoice> choices, std::string heading)
                                            : choice.default_configuration >= choice.configurations.size()))
             throw std::invalid_argument("Invalid launcher name or default configuration");
         configurations_.push_back(choice.default_configuration);
+        has_previews_ = has_previews_ || static_cast<bool>(choice.preview);
     }
 }
 std::size_t LaunchMenu::selected() const {
@@ -50,6 +109,9 @@ std::string_view LaunchMenu::row_name(std::size_t row) const {
 std::string_view LaunchMenu::description() const {
     return choices_[application_].description;
 }
+MenuLayout LaunchMenu::layout(Vec2 viewport) const {
+    return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
+}
 std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewport) {
     const bool pointer_moved = input.mouse.x != pointer_.x || input.mouse.y != pointer_.y;
     pointer_ = input.mouse;
@@ -62,37 +124,35 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewp
         selection = (selection + 1) % row_count();
     if (input.hit(Key::up))
         selection = (selection + row_count() - 1) % row_count();
+    const auto menu_layout = layout(viewport);
+    const auto first = selection / MenuLayout::page_size * MenuLayout::page_size;
     // A resting pointer must not undo keyboard navigation on the next frame.
     if (pointer_moved && !input.hit(Key::down) && !input.hit(Key::up)) {
-        const MenuLayout layout(viewport, row_count());
-        const auto first = selection / MenuLayout::page_size * MenuLayout::page_size;
-        for (std::size_t i = 0; i < layout.visible_rows && first + i < row_count(); ++i)
-            if (layout.contains(i, input.mouse)) {
+        for (std::size_t i = 0; i < menu_layout.visible_rows && first + i < row_count(); ++i)
+            if (menu_layout.contains(i, input.mouse)) {
                 selection = first + i;
                 break;
             }
     }
     bool confirm = input.hit(Key::enter) || input.hit(Key::space);
     if (input.clicked) {
-        const MenuLayout layout(viewport, row_count());
-        const auto first = selection / MenuLayout::page_size * MenuLayout::page_size;
-        if (layout.footer_contains(input.mouse, 150)) {
+        if (menu_layout.footer_contains(input.mouse, 150)) {
             exit_requested_ = true;
             return std::nullopt;
         }
         if (row_count() > MenuLayout::page_size) {
-            if (layout.footer_contains(input.mouse, 50)) {
+            if (menu_layout.footer_contains(input.mouse, 50)) {
                 selection = first == 0 ? (row_count() - 1) / MenuLayout::page_size * MenuLayout::page_size
                                        : first - MenuLayout::page_size;
                 return std::nullopt;
             }
-            if (layout.footer_contains(input.mouse, 250)) {
+            if (menu_layout.footer_contains(input.mouse, 250)) {
                 selection = first + MenuLayout::page_size < row_count() ? first + MenuLayout::page_size : 0;
                 return std::nullopt;
             }
         }
-        for (std::size_t i = 0; i < layout.visible_rows && first + i < row_count(); ++i)
-            if (layout.contains(i, input.mouse)) {
+        for (std::size_t i = 0; i < menu_layout.visible_rows && first + i < row_count(); ++i)
+            if (menu_layout.contains(i, input.mouse)) {
                 selection = first + i;
                 confirm = true;
                 break;
@@ -108,7 +168,7 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewp
     return LaunchSelection{application_, configuration()};
 }
 void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
-    const MenuLayout layout(runtime.camera.viewport, row_count());
+    const auto layout = this->layout(runtime.camera.viewport);
     runtime.begin();
     draw_text(runtime, heading_, layout.origin + Vec2{10, 10} * layout.scale, layout.scale * 3,
               {0.55f, 1, 0.35f});
@@ -135,6 +195,8 @@ void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
         button("PREVIOUS", 50);
         button("NEXT", 250);
     }
+    if (layout.preview_origin)
+        draw_preview(runtime, choices_[application_], *layout.preview_origin, layout.scale);
     if (!status.empty())
         draw_text(runtime, status.substr(0, 80), {8, runtime.camera.viewport.y - 16},
                   std::min(1.f, runtime.camera.viewport.x / 490), {1, 0.5f, 0.35f});
