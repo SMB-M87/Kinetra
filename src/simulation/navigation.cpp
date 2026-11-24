@@ -264,22 +264,36 @@ kinetra::Vec2 Navigation::point(int id) const {
     return area.min + kinetra::Vec2{float(id % width) * spacing, float(id / width) * spacing};
 }
 
-kinetra::Vec2 route_target(kinetra::Vec2 position, std::vector<kinetra::Vec2> &route,
-                           const Navigation &navigation) {
-    while (route.size() > 1 && navigation.clear(position, route[1]))
-        route.erase(route.begin());
+namespace {
+template <typename Clear>
+Vec2 visible_route_target(Vec2 position, std::vector<Vec2> &route, float lookahead, Clear clear) {
     if (route.empty())
         return position;
-    if (route.size() == 1)
-        return route.front();
-    const auto corner = route.front();
-    const float distance = kinetra::length(corner - position);
-    if (distance < 2) {
-        const auto ahead = corner + kinetra::limited(route[1] - corner, 2 - distance);
-        if (navigation.clear(position, ahead))
-            return ahead;
+
+    auto corner = route.begin();
+    while (corner + 1 != route.end() && clear(position, *(corner + 1)))
+        ++corner;
+
+    auto target = *corner;
+    if (corner + 1 != route.end()) {
+        // Spend the budget getting to the corner before looking along the next leg.
+        const float remaining = lookahead - distance(position, *corner);
+        if (remaining > 0) {
+            const auto ahead = *corner + limited(*(corner + 1) - *corner, remaining);
+            if (clear(position, ahead))
+                target = ahead;
+        }
     }
-    return corner;
+    route.erase(route.begin(), corner);
+    return target;
+}
+} // namespace
+
+Vec2 route_target(Vec2 position, std::vector<Vec2> &route, const Navigation &navigation) {
+    // Preserve the body-navigation lookahead in world units used by existing callers.
+    constexpr float lookahead = 2;
+    return visible_route_target(position, route, lookahead,
+                                [&](Vec2 start, Vec2 goal) { return navigation.clear(start, goal); });
 }
 
 } // namespace kinetra

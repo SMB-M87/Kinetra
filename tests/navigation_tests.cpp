@@ -48,6 +48,20 @@ TEST_CASE("every segment of a planned path is clear") {
     }
 }
 
+TEST_CASE("body navigation looks up to two world units past a corner") {
+    const auto navigation = around_box();
+    const Vec2 start{-1, 0}, corner{-1, 3}, goal{2, 3};
+    std::vector<Vec2> route{corner, goal};
+    const Vec2 near_corner{-1, 2};
+    REQUIRE_FALSE(navigation.clear(near_corner, goal));
+
+    CHECK(distance(route_target(start, route, navigation), corner) == 0);
+    CHECK(distance(route_target(near_corner, route, navigation), {0, 3}) == 0);
+    REQUIRE(route.size() == 2);
+    CHECK(distance(route_target(corner, route, navigation), goal) == 0);
+    CHECK(route.size() == 1);
+}
+
 TEST_CASE("an occupied goal is projected to a clear endpoint") {
     const auto navigation = around_box();
     const auto projected = navigation.path({-2, 0}, {});
