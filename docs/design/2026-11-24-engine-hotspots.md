@@ -1,6 +1,6 @@
 # Engine hotspots
 
-Status: in progress, step 1 implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
+Status: in progress, steps 1 and 2 implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
 
 Kinetra-Lab's performance baseline of 2026-11-23 found four hotspots in engine code: `World::step`'s broad phase, `SpatialGrid::query`, `priority_steer`'s prediction loop and `bounds` of a box. This change takes them one per pull request, in that order, without changing a single simulated value: every golden line, fingerprint and benchmark result stays as it is, and only the time goes down. Demo falls behind at time scale 4 because of the first one.
 
@@ -67,7 +67,7 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 ### Step 2: `SpatialGrid::query` without hashing, allocation and sort
 
-`rebuild` validates every box first, as before, and keeps each box's cell range. When the cells all boxes cover form a compact area, at most `4 * entries + 1024` cells and at most 2^22 (32 MB of offsets), the grid stores them densely: `starts_` holds, for each cell of that area row by row, where its boxes begin in `ids_`, which is filled in index order, so each cell lists its boxes ascending. Otherwise the hash map of step 1 stays. A rebuild that fails on an allocation leaves an empty index instead of mixed storage.
+`rebuild` validates every box first, as before, and keeps each box's cell range. When the cells all boxes cover form a compact area, at most `4 * entries + 1024` cells and at most 2^22 (32 MB of offsets), the grid stores them densely: `starts_` holds, for each cell of that area row by row, where its boxes begin in `ids_`, which is filled in index order, so each cell lists its boxes ascending. Otherwise the hash map of step 1 stays. A rebuild that fails on an allocation leaves an empty index instead of mixed storage, as the `rebuild` contract says. The thresholds are named constants in spatial_grid.cpp.
 
 `query` clips the query's cell range to the covered area and visits its cells. A box that spans several of them is reported only from the first cell of its overlap with the query, its lowest `x` and `y` there, so the result holds no duplicates and needs no `unique`; overlapping boxes always share that cell, because floor is monotonic. One cell lists its boxes ascending, so a one-cell query skips the sort. A new overload, `query(Aabb, std::vector<std::size_t> &)`, writes into a vector the caller reuses; the old one calls it. The result is the same sorted, unique set; the limits (100,000 cells per box, cell coordinates within ±10^9) and the exceptions stay, and a rejected query leaves the caller's vector unchanged.
 
@@ -134,6 +134,8 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | No test switches one grid between both storages | Fixed: compact, scattered, compact, then a rejected rebuild that keeps the dense index |
 | `<utility>` missing for `std::move` | Fixed |
 
+Agent review round 1 (#50): no blocking point; three should-fix points, all fixed. The hashed storage's bucket reuse lost its moving-boxes test, because the test fell into the dense storage; it now runs on both. The dense thresholds were unnamed numbers; they are now named constants with their reason. Step 2 was missing from this document's record. Of the nits, the `rebuild` contract now states what an allocation failure leaves, the query buffers have a comment, and the status and roadmap are current. The rest are recorded here and left: a `ranges` vector per rebuild, each storage keeping the other's capacity, and `dense_` tested per cell. Each costs less than the measurement's noise.
+
 ## Verification
 
 ### Step 1
@@ -159,6 +161,15 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 - Changes: `fixed_grid_` and the change detection at the start of a step; queries merged into the single grid's order; `clear()` drops the index; `SpatialGrid::rebuild` keeps bucket storage; tests for the order (a fingerprint recorded on 73adc66), for every kind of change to a fixed body, and for rebuilds over moving boxes.
 - Design, verification and review: the sections above.
 - Merge order: first in the Kinetra stack, with a merge commit; then Kinetra-Lab#111.
+
+### Step 2
+
+**perf(simulation): SpatialGrid queries a dense cell array into the caller's buffer** (#50, Lab: Kinetra-Lab#112)
+
+- Summary: a compact grid stores its cells densely, a query reports each box from one cell and skips the sort for one cell, and a new overload writes into the caller's vector; results, limits and exceptions are unchanged.
+- Changes: `rebuild` keeps each box's cell range and chooses dense or hashed storage; an allocation failure leaves an empty index; `query(Aabb, std::vector<std::size_t> &)`; `World::step` queries through member vectors; tests for both storages, a switch between them, moving boxes in each, and a rejected query.
+- Design, verification and review: the sections above.
+- Merge order: after #49, with a merge commit; then Kinetra-Lab#112.
 
 ## Open points
 

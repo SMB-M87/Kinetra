@@ -22,7 +22,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 - **Engine performance** · simulation, with Lab · added 2026-11-21
   Optimize the engine code that Lab's benchmarks spend their time in, one hotspot per pull request, with a benchmark before and after and the golden lines unchanged. Lab's baseline of 2026-11-23 named four: `World::step`'s grid rebuilds, `SpatialGrid::query`, `priority_steer`'s prediction loop and `bounds` of a box, taken in that order as a stack, with Lab's item *Engine hotspots from the performance baseline*.
-  Next step: step 1, fixed bodies indexed once, on `perf/world-fixed-index`. Where: [design](design/2026-11-24-engine-hotspots.md).
+  Next step: steps 1 and 2 in review (#49, #50), step 3, `priority_steer`, on `perf/priority-prediction` (#51). Where: [design](design/2026-11-24-engine-hotspots.md).
 
 ## Next
 

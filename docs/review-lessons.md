@@ -72,6 +72,9 @@ No lessons yet.
 
 ## Code
 
+- **When a change adds a second path (a storage, a fast path), check which path each existing test now takes, and keep a test on the old one** · added 2026-11-24 · source: #50
+  #50's dense storage took over every grid in the tests, so the hashed buckets that #49 had made reusable lost their only test of boxes that move away and back.
+
 - **Record a characterization constant only from results the module promises across machines, or name the toolchains it holds on and the commit to record it again from** · added 2026-11-24 · source: #49
   The first fingerprint of #49 ran a chaotic world through the C library's `sinf` and `cosf`, which the simulation README does not promise to round alike; on another toolchain only the old code it characterizes could record the value again. Build such a scene from operations that round alike everywhere.
 
