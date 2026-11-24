@@ -391,8 +391,11 @@ TEST_CASE("one spatial grid switches between its dense and hashed cells") {
     // State left from one storage must not leak into the other, and a rejected rebuild keeps
     // the dense index it had.
     const auto compact = random_boxes();
-    auto scattered = compact;
-    scattered.push_back({{1000000, -1}, {1000001, 1}});
+    const auto scattered = [&] {
+        auto boxes = compact;
+        boxes.push_back({{1000000, -1}, {1000001, 1}});
+        return boxes;
+    }();
     SpatialGrid grid(3);
     auto matches = [&](const std::vector<Aabb> &boxes) {
         for (const auto &area : compact) {
