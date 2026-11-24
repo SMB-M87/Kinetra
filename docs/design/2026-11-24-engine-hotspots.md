@@ -1,6 +1,6 @@
 # Engine hotspots
 
-Status: draft · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
+Status: in progress, step 1 implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
 
 Kinetra-Lab's performance baseline of 2026-11-23 found four hotspots in engine code: `World::step`'s broad phase, `SpatialGrid::query`, `priority_steer`'s prediction loop and `bounds` of a box. This change takes them one per pull request, in that order, without changing a single simulated value: every golden line, fingerprint and benchmark result stays as it is, and only the time goes down. Demo falls behind at time scale 4 because of the first one.
 
@@ -39,7 +39,7 @@ Goals:
 Non-goals:
 
 - Lab's hotspot 2 (i4sim's `MotionStep::resolve_contacts`) and hotspot 6 (Dotio's shelter search), which are Lab code.
-- Faster narrow phases (`collide`, `sweep_translation`) or a different broad-phase structure for `World`; the baseline does not point at them.
+- Faster narrow phases (`collide`, `sweep_translation`) or another kind of index than the uniform grid for `World`; the baseline does not point at them.
 - Multithreading.
 
 ## Decisions
@@ -85,9 +85,9 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 
 | Step | Kinetra branch | Kinetra pull request | Lab branch | Lab pull request |
 | --- | --- | --- | --- | --- |
-| 1. Fixed bodies indexed once | `perf/world-fixed-index` | | `ccr-perf-engine-hotspots` | |
-| 2. Spatial query | `perf/spatial-query` | | `ccr-perf-engine-hotspots-hotspot3` | |
-| 3. Prediction loop | `perf/priority-prediction` | | `ccr-perf-engine-hotspots-hotspot4` | |
+| 1. Fixed bodies indexed once | `perf/world-fixed-index` | #49 | `ccr-perf-engine-hotspots` | Kinetra-Lab#111 |
+| 2. Spatial query | `perf/spatial-query` | #50 | `ccr-perf-engine-hotspots-hotspot3` | Kinetra-Lab#112 |
+| 3. Prediction loop | `perf/priority-prediction` | #51 | `ccr-perf-engine-hotspots-hotspot4` | Kinetra-Lab#113 |
 | 4. Box bounds | `perf/box-bounds` | | `ccr-perf-engine-hotspots-hotspot5` | |
 
 ## Affected areas
@@ -151,7 +151,14 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 
 ## Pull request
 
-Filled in per step.
+### Step 1
+
+**perf(simulation): index fixed bodies once per change in World::step** (#49, Lab: Kinetra-Lab#111)
+
+- Summary: `World::step` rebuilt its grid from every body at least 14 times per tick; fixed bodies now have an index of their own, rebuilt only when one of them changes, and every simulated value stays the same.
+- Changes: `fixed_grid_` and the change detection at the start of a step; queries merged into the single grid's order; `clear()` drops the index; `SpatialGrid::rebuild` keeps bucket storage; tests for the order (a fingerprint recorded on 73adc66), for every kind of change to a fixed body, and for rebuilds over moving boxes.
+- Design, verification and review: the sections above.
+- Merge order: first in the Kinetra stack, with a merge commit; then Kinetra-Lab#111.
 
 ## Open points
 

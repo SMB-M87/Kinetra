@@ -59,45 +59,56 @@ std::vector<Aabb> random_boxes() {
 }
 
 /// Fingerprint of a mixed world over 360 steps: fixed walls, boxes and polygons interleaved by
-/// index with moving circles, boxes and a polygon, set out symmetrically so that equal-time
-/// events occur. Hashes every body's position, velocity and angles and candidate_pairs().
+/// index with moving circles, boxes and polygons in a container, set out symmetrically so
+/// that equal-time events occur. Hashes every body's position, velocity and angles and
+/// candidate_pairs(). Nothing in it calls `sin` or `cos` away from angle zero, where every C
+/// library gives exact results: boxes and polygons stay unrotated (fixed or controlled, which
+/// receives no torque) and polygons have explicit vertices; only circles spin. The value then
+/// holds wherever float arithmetic is IEEE without contraction into fused multiply-adds.
 std::uint64_t mixed_world_fingerprint() {
     World world(2);
     world.gravity = {0, -10};
     std::mt19937 rng(29);
     std::uniform_real_distribution<float> unit(-1, 1);
+    // Symmetric outlines, so their area centroid is the origin.
+    auto polygon = [](std::vector<Vec2> vertices) {
+        Body body;
+        body.shape = Shape::polygon;
+        body.vertices = std::move(vertices);
+        return body;
+    };
+    const std::vector<Vec2> diamond{{0.6f, 0}, {0, 0.6f}, {-0.6f, 0}, {0, -0.6f}};
+    const std::vector<Vec2> hexagon{{0.5f, 0},  {0.25f, 0.4f},   {-0.25f, 0.4f},
+                                    {-0.5f, 0}, {-0.25f, -0.4f}, {0.25f, -0.4f}};
     for (int i = 0; i < 24; ++i) {
         const float x = float(i % 6) * 3 - 7.5f, y = float(i / 6) * 3 - 4.5f;
         Body fixed;
-        fixed.motion = Motion::fixed;
-        fixed.position = {x, y};
         if (i % 3 == 0) {
             fixed.shape = Shape::box;
             fixed.half_extents = {0.8f, 0.3f};
-            fixed.angle = 0.25f * float(i % 4);
         } else if (i % 3 == 1) {
-            fixed = regular_polygon(5 + i % 3, 0.6f);
-            fixed.motion = Motion::fixed;
-            fixed.position = {x, y};
+            fixed = polygon(i % 2 ? diamond : hexagon);
         } else {
             fixed.radius = 0.4f;
         }
+        fixed.motion = Motion::fixed;
+        fixed.position = {x, y};
         world.add(fixed);
         Body mover;
-        mover.position = {x + 1.5f, y + 1.5f};
-        mover.velocity = {float(i % 2 ? 2 : -2), unit(rng)};
-        mover.motion = i % 4 == 0 ? Motion::controlled : Motion::dynamic;
         if (i % 5 == 0) {
             mover.shape = Shape::box;
             mover.half_extents = {0.4f, 0.4f};
+            mover.motion = Motion::controlled;
         } else if (i % 7 == 0) {
-            mover = regular_polygon(6, 0.45f);
-            mover.position = {x + 1.5f, y + 1.5f};
-            mover.velocity = {-2, 0};
+            mover = polygon(hexagon);
+            mover.motion = Motion::controlled;
         } else {
             mover.radius = 0.35f;
+            mover.motion = i % 4 == 0 ? Motion::controlled : Motion::dynamic;
             mover.angular_velocity = unit(rng);
         }
+        mover.position = {x + 1.5f, y + 1.5f};
+        mover.velocity = {float(i % 2 ? 2 : -2), unit(rng)};
         world.add(mover);
     }
     // A container added last, so that movers resting on it and on each other meet a fixed
@@ -758,7 +769,7 @@ TEST_CASE("a mixed world steps as it did with one grid over all bodies") {
     // The value was recorded with the broad phase before fixed bodies had an index of their
     // own (Kinetra 73adc66). The pairs' order decides ties between equal-time events and the
     // order of the correction passes, so a wrong merge of the two indexes changes it.
-    CHECK(mixed_world_fingerprint() == 0x0d6bd60145972dd1ull);
+    CHECK(mixed_world_fingerprint() == 0xdf591163af8d40a4ull);
 }
 
 TEST_CASE("a fixed body changed between steps acts as in a new world") {
