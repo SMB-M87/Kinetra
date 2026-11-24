@@ -260,6 +260,28 @@ TEST_CASE("rebuilding a spatial grid without boxes drops stale objects") {
     CHECK(grid.query({{-1, -1}, {1, 1}}).empty());
 }
 
+TEST_CASE("a spatial grid rebuilt over moving boxes matches an exhaustive search") {
+    // Rebuilds keep the storage of cells in use; boxes that leave and return must still be found.
+    const auto boxes = random_boxes();
+    SpatialGrid grid(3);
+    for (float shift : {0.f, 60.f, 0.f, -30.f, 0.f}) {
+        CAPTURE(shift);
+        auto moved = boxes;
+        for (std::size_t i = 0; i < moved.size(); i += 2) {
+            moved[i].min.x += shift;
+            moved[i].max.x += shift;
+        }
+        grid.rebuild(moved);
+        for (const auto &area : boxes) {
+            std::vector<std::size_t> expected;
+            for (std::size_t j = 0; j < moved.size(); ++j)
+                if (moved[j].overlaps(area))
+                    expected.push_back(j);
+            CHECK(grid.query(area) == expected);
+        }
+    }
+}
+
 TEST_CASE("an elastic circle collision conserves momentum and energy") {
     World world;
     Body a = circle({-0.48f, 0}), b = circle({0.48f, 0});
@@ -586,6 +608,52 @@ TEST_CASE("a tiny relative projectile step does not tunnel through a circle") {
 
 TEST_CASE("a long grazing projectile hits a tangent circle") {
     CHECK(segment_circle({-10000, 25}, {10000, 25}, {}, 25).has_value());
+}
+
+TEST_CASE("a fixed body changed between steps acts as in a new world") {
+    // World indexes fixed bodies once and must notice every change a caller makes through
+    // body() or add(). A new world with the same bodies has never built an index.
+    struct Change {
+        const char *name;
+        void (*apply)(World &);
+    };
+    const Change changes[] = {
+        {"moved", [](World &w) { w.body(1).position = {0.2f, 0}; }},
+        {"turned", [](World &w) { w.body(1).angle = 0.7f; }},
+        {"resized", [](World &w) { w.body(1).half_extents = {1.2f, 1.6f}; }},
+        {"reshaped", [](World &w) { w.body(1).shape = Shape::circle; }},
+        {"released", [](World &w) { w.body(1).motion = Motion::dynamic; }},
+        {"fixed", [](World &w) { w.body(0).motion = Motion::fixed; }},
+        {"added", [](World &w) {
+             Body extra = box({0.4f, 0}, {0.3f, 2});
+             extra.motion = Motion::fixed;
+             w.add(extra);
+         }},
+    };
+    for (const auto &change : changes) {
+        CAPTURE(change.name);
+        World world;
+        Body mover = circle({-1.5f, 0}, 0.5f);
+        mover.velocity = {4, 0};
+        Body wall = box({3, 0}, {0.3f, 2});
+        wall.motion = Motion::fixed;
+        world.add(mover);
+        world.add(wall);
+        world.step(1.f / 120);
+        change.apply(world);
+        World fresh;
+        for (const auto &b : world.bodies())
+            fresh.add(b);
+        for (int i = 0; i < 60; ++i) {
+            world.step(1.f / 120);
+            fresh.step(1.f / 120);
+            CHECK(world.candidate_pairs() == fresh.candidate_pairs());
+        }
+        for (std::size_t i = 0; i < world.bodies().size(); ++i) {
+            CHECK(world.body(i).position.x == fresh.body(i).position.x);
+            CHECK(world.body(i).position.y == fresh.body(i).position.y);
+        }
+    }
 }
 
 TEST_CASE("fixed and moving contacts do not depend on insertion order") {

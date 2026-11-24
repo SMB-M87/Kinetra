@@ -122,7 +122,7 @@ class World {
   public:
     /// `cell_size` is the broad-phase grid cell in world units; it must be finite and
     /// positive (std::invalid_argument otherwise).
-    explicit World(float cell_size = 4) : grid_(cell_size) {}
+    explicit World(float cell_size = 4) : grid_(cell_size), fixed_grid_(cell_size) {}
     /// Validates and stores a copy of `body`; returns its index. Throws
     /// std::invalid_argument for an invalid body.
     std::size_t add(Body body);
@@ -152,8 +152,22 @@ class World {
     bool sweep_budget_exhausted() const { return sweep_budget_exhausted_; }
 
   private:
+    bool fixed_index_current() const;
+    void index_fixed_bodies();
+    void candidates(Aabb area, bool with_fixed, std::vector<std::size_t> &out) const;
+
     std::vector<Body> bodies_;
+    // Broad phase of step(). Fixed bodies never move during a step, so they have their own
+    // index, rebuilt only when one of them differs from `fixed_bodies_`, the copies it was
+    // built from; `grid_` indexes the moving bodies again for every pass. `fixed_ids_` and
+    // `moving_ids_` give the body index of each grid index, ascending; `boxes_` holds the box
+    // of every body in the current pass.
     SpatialGrid grid_;
+    SpatialGrid fixed_grid_;
+    std::vector<Body> fixed_bodies_;
+    std::vector<std::size_t> fixed_ids_, moving_ids_;
+    std::vector<Aabb> boxes_, moving_boxes_;
+    bool fixed_index_valid_{};
     std::size_t candidate_pairs_{};
     bool sweep_budget_exhausted_{};
 };
