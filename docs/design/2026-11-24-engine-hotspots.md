@@ -1,6 +1,6 @@
 # Engine hotspots
 
-Status: draft · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
+Status: implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
 
 Kinetra-Lab's performance baseline of 2026-11-23 found four hotspots in engine code: `World::step`'s broad phase, `SpatialGrid::query`, `priority_steer`'s prediction loop and `bounds` of a box. This change takes them one per pull request, in that order, without changing a single simulated value: every golden line, fingerprint and benchmark result stays as it is, and only the time goes down. Demo falls behind at time scale 4 because of the first one.
 
@@ -32,7 +32,7 @@ The numbers are Lab's baseline ([performance](https://github.com/SMB-M87/Kinetra
 
 Goals:
 
-- One Kinetra pull request per hotspot, stacked in the order above, each with a Lab pull request that points at it, measures before and after with the baseline's workloads and updates Lab's performance page.
+- One Kinetra pull request per hotspot that is still worth one when its turn comes, stacked in the order above, each with a Lab pull request that points at it, measures before and after with the baseline's workloads and updates Lab's performance page.
 - Behavior to the bit: Demo's crowd characterization lines (a 64-bit fingerprint of every moving body), i4sim's golden and pressure tests, i4sim's motion benchmark CSV apart from `elapsed_ms` (with and without `--predictive-passing`), Dotio's fingerprints and Kinetra's own tests stay identical. A golden line that moves means the step is wrong; none is updated.
 - No public API change that a caller has to follow. A new overload is allowed; a changed meaning is not.
 
@@ -51,7 +51,7 @@ Non-goals:
 | Where the fixed index is rebuilt | At the first pass of a step, where the single grid used to be rebuilt | A bad box throws `std::invalid_argument` at the same point of the step, after the first substep's forces, as before. When a fixed and a moving box are both bad, the fixed one is checked first, so the message can name the other fault; the type and the point stay, and no test or caller reads the message |
 | Which fields mark a fixed body as changed | Per shape, the fields `bounds` reads: a circle's position and radius; a box's position, half extents and angle; a polygon's position, angle and vertices | Turning a fixed circle, or any field `bounds` ignores, keeps the index |
 | Bucket storage | `SpatialGrid::rebuild` keeps the vectors of the cells in use and drops a cell that stayed empty for a whole rebuild | Rebuilding over boxes that barely move then allocates almost nothing; the map stays bounded by the cells of the last two rebuilds |
-| Stack | Four Kinetra pull requests, `perf/world-fixed-index`, then the query, the prediction loop and `bounds` on branches stacked on it; one Lab pull request per step on the Lab stack | One question per pull request, measured on its own |
+| Stack | Kinetra pull requests stacked on `perf/world-fixed-index`, one per hotspot, and one Lab pull request per step on the Lab stack; `bounds` (step 4) only if it is still worth one after the others | One question per pull request, measured on its own |
 
 ## Design
 
@@ -77,18 +77,18 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 For a step `i` of the mover, the float expression gives `diff = mover_i - (other.position + other.velocity * (j * step))`, and its exact value is linear in the neighbor's step `j`. Per axis, the steps whose exact gap is below the extent plus `slack` form an interval, found in double precision and rounded outward with `floor` and `ceil`; the two axes are intersected with `[0, steps]`. `slack` is 1e-5 times the sum of the magnitudes involved (mover, neighbor position, the neighbor's travel over the horizon, the extent), about 40 times the float error of the expression, plus the smallest normal float for subnormal results. A step outside the interval has an exact gap of at least extent plus slack, so its float `diff` cannot pass the strict `<` test; the steps inside are tested in ascending order with the unchanged expression. So the first pair `(i, j)` and its `diff` are those of the old loop over all (horizon + 1)² pairs. A neighbor that stands still on an axis keeps every step or none; an interval that is empty or far off skips the step `i` before any conversion to `int`.
 
-### Step 4: `bounds` of a box with one rotation
+### Step 4: `bounds` of a box, not done
 
-Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` and `cos` once per call with values identical to the bit, or Lab's performance page and both roadmaps record why it is no longer worth a pull request.
+Measured again after Lab's hotspot 2 and steps 1 to 3: `kinetra::bounds` is 3% of i4sim's motion benchmark (2% with predictive passing) and `sincosf` 2% (1%), against 30% and 7% in the baseline, when contact resolution computed bounds for every pair. One rotation per call would save about half of `sincosf`, about 1% of the run, so it is not worth a pull request of its own. Lab's performance page records the decision; neither roadmap keeps an item for it.
 
 ### Steps and branches
 
 | Step | Kinetra branch | Kinetra pull request | Lab branch | Lab pull request |
 | --- | --- | --- | --- | --- |
-| 1. Fixed bodies indexed once | `perf/world-fixed-index` | | `ccr-perf-engine-hotspots` | |
-| 2. Spatial query | `perf/spatial-query` | | `ccr-perf-engine-hotspots-hotspot3` | |
-| 3. Prediction loop | `perf/priority-prediction` | | `ccr-perf-engine-hotspots-hotspot4` | |
-| 4. Box bounds | `perf/box-bounds` | | `ccr-perf-engine-hotspots-hotspot5` | |
+| 1. Fixed bodies indexed once | `perf/world-fixed-index` | #49 | `ccr-perf-engine-hotspots` | Kinetra-Lab#111 |
+| 2. Spatial query | `perf/spatial-query` | #50 | `ccr-perf-engine-hotspots-hotspot3` | Kinetra-Lab#112 |
+| 3. Prediction loop | `perf/priority-prediction` | #51 | `ccr-perf-engine-hotspots-hotspot4` | Kinetra-Lab#113 |
+| 4. Box bounds | not done: 3% of i4sim after steps 1 to 3 | | | |
 
 ## Affected areas
 
