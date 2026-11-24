@@ -22,7 +22,7 @@ class SpatialGrid {
     explicit SpatialGrid(float cell_size = 4);
     /// Replaces the index with a copy of `bounds`; index i in later queries is `bounds[i]`.
     /// Throws std::invalid_argument for a nonfinite, inverted or oversized box, and then
-    /// leaves the previous index intact.
+    /// leaves the previous index intact. If an allocation fails, the index is left empty.
     void rebuild(std::span<const Aabb> bounds);
     /// Indices of the stored boxes that overlap `area` (touching counts), sorted and
     /// unique. Throws std::invalid_argument for a nonfinite, inverted or oversized area.

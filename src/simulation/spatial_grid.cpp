@@ -8,6 +8,11 @@ namespace kinetra {
 namespace {
 // Upper bound of the dense storage, 32 MB of cell offsets; larger areas use the hash map.
 constexpr std::int64_t max_dense_cells = std::int64_t(1) << 22;
+// The dense storage may hold up to this many empty cells per entry, plus a flat allowance for
+// small grids: its offsets then cost at most a few times the entries themselves, and a grid of
+// a few hundred boxes over a compact area always qualifies.
+constexpr std::int64_t dense_cells_per_entry = 4;
+constexpr std::int64_t dense_extra_cells = 1024;
 } // namespace
 
 SpatialGrid::SpatialGrid(float size) : cell_size_(size) {
@@ -58,8 +63,8 @@ void SpatialGrid::rebuild(std::span<const Aabb> bounds) {
         const std::int64_t height = std::int64_t(extent.max_y) - extent.min_y + 1;
         // A dense array of cells when the occupied area is small next to the entries, so its
         // memory stays proportional to the boxes; a hash map of cells otherwise.
-        dense_ =
-            !ranges_.empty() && width * height <= 4 * entries + 1024 && width * height <= max_dense_cells;
+        dense_ = !ranges_.empty() && width * height <= dense_cells_per_entry * entries + dense_extra_cells &&
+                 width * height <= max_dense_cells;
         if (dense_)
             index_dense(int(width), std::size_t(width * height), std::size_t(entries));
         else

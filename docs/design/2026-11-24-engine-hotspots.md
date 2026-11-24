@@ -39,7 +39,7 @@ Goals:
 Non-goals:
 
 - Lab's hotspot 2 (i4sim's `MotionStep::resolve_contacts`) and hotspot 6 (Dotio's shelter search), which are Lab code.
-- Faster narrow phases (`collide`, `sweep_translation`) or a different broad-phase structure for `World`; the baseline does not point at them.
+- Faster narrow phases (`collide`, `sweep_translation`) or another kind of index than the uniform grid for `World`; the baseline does not point at them.
 - Multithreading.
 
 ## Decisions
@@ -67,7 +67,7 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 ### Step 2: `SpatialGrid::query` without hashing, allocation and sort
 
-`rebuild` validates every box first, as before, and keeps each box's cell range. When the cells all boxes cover form a compact area, at most `4 * entries + 1024` cells and at most 2^22 (32 MB of offsets), the grid stores them densely: `starts_` holds, for each cell of that area row by row, where its boxes begin in `ids_`, which is filled in index order, so each cell lists its boxes ascending. Otherwise the hash map of step 1 stays. A rebuild that fails on an allocation leaves an empty index instead of mixed storage.
+`rebuild` validates every box first, as before, and keeps each box's cell range. When the cells all boxes cover form a compact area, at most `4 * entries + 1024` cells and at most 2^22 (32 MB of offsets), the grid stores them densely: `starts_` holds, for each cell of that area row by row, where its boxes begin in `ids_`, which is filled in index order, so each cell lists its boxes ascending. Otherwise the hash map of step 1 stays. A rebuild that fails on an allocation leaves an empty index instead of mixed storage, as the `rebuild` contract says. The thresholds are named constants in spatial_grid.cpp.
 
 `query` clips the query's cell range to the covered area and visits its cells. A box that spans several of them is reported only from the first cell of its overlap with the query, its lowest `x` and `y` there, so the result holds no duplicates and needs no `unique`; overlapping boxes always share that cell, because floor is monotonic. One cell lists its boxes ascending, so a one-cell query skips the sort. A new overload, `query(Aabb, std::vector<std::size_t> &)`, writes into a vector the caller reuses; the old one calls it. The result is the same sorted, unique set; the limits (100,000 cells per box, cell coordinates within ±10^9) and the exceptions stay, and a rejected query leaves the caller's vector unchanged.
 
@@ -136,6 +136,8 @@ Measured again after Lab's hotspot 2 and steps 1 to 3: `kinetra::bounds` is 3% o
 | No test switches one grid between both storages | Fixed: compact, scattered, compact, then a rejected rebuild that keeps the dense index |
 | `<utility>` missing for `std::move` | Fixed |
 
+Agent review round 1 (#50): no blocking point; three should-fix points, all fixed. The hashed storage's bucket reuse lost its moving-boxes test, because the test fell into the dense storage; it now runs on both. The dense thresholds were unnamed numbers; they are now named constants with their reason. Step 2 was missing from this document's record. Of the nits, the `rebuild` contract now states what an allocation failure leaves, the query buffers have a comment, and the status and roadmap are current. The rest are recorded here and left: a `ranges` vector per rebuild, each storage keeping the other's capacity, and `dense_` tested per cell. Each costs less than the measurement's noise.
+
 ### Step 3
 
 `/code-review` at medium on `perf/spatial-query...perf/priority-prediction` checked the bound (the float error is at most about 2.4e-7 times the magnitudes, the slack 1e-5 times), the conversions to `int` and zero, tiny and huge values, found no change to the result and four points:
@@ -170,7 +172,32 @@ Measured again after Lab's hotspot 2 and steps 1 to 3: `kinetra::bounds` is 3% o
 
 ## Pull request
 
-Filled in per step.
+### Step 1
+
+**perf(simulation): index fixed bodies once per change in World::step** (#49, Lab: Kinetra-Lab#111)
+
+- Summary: `World::step` rebuilt its grid from every body at least 14 times per tick; fixed bodies now have an index of their own, rebuilt only when one of them changes, and every simulated value stays the same.
+- Changes: `fixed_grid_` and the change detection at the start of a step; queries merged into the single grid's order; `clear()` drops the index; `SpatialGrid::rebuild` keeps bucket storage; tests for the order (a fingerprint recorded on 73adc66), for every kind of change to a fixed body, and for rebuilds over moving boxes.
+- Design, verification and review: the sections above.
+- Merge order: first in the Kinetra stack, with a merge commit; then Kinetra-Lab#111.
+
+### Step 2
+
+**perf(simulation): SpatialGrid queries a dense cell array into the caller's buffer** (#50, Lab: Kinetra-Lab#112)
+
+- Summary: a compact grid stores its cells densely, a query reports each box from one cell and skips the sort for one cell, and a new overload writes into the caller's vector; results, limits and exceptions are unchanged.
+- Changes: `rebuild` keeps each box's cell range and chooses dense or hashed storage; an allocation failure leaves an empty index; `query(Aabb, std::vector<std::size_t> &)`; `World::step` queries through member vectors; tests for both storages, a switch between them, moving boxes in each, and a rejected query.
+- Design, verification and review: the sections above.
+- Merge order: after #49, with a merge commit; then Kinetra-Lab#112.
+
+### Step 3
+
+**perf(simulation): priority_steer tests only the steps that can overlap** (#51, Lab: Kinetra-Lab#113)
+
+- Summary: for each step of the mover, only the interval of the neighbor's steps that can overlap, widened by a bound on the rounding error, is tested with the unchanged expression, so the first pair and its `diff` stay the same. Step 4 is decided as not worth a pull request, and both roadmap items close.
+- Changes: the interval search in `priority_steer`; a test of 1,800 random scenes at six scales against a copy of the old loop.
+- Design, verification and review: the sections above.
+- Merge order: after #49 and #50, with a merge commit; then Kinetra-Lab#113.
 
 ## Open points
 
