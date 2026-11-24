@@ -28,16 +28,12 @@ Nothing agreed next in Kinetra itself.
 
 ## Later
 
-- **Linux support follow-ups** · build, docs, CI, with Lab · added 2026-11-22
-  One point *Linux beyond Arch* left open: the Fedora command in [development](development.md#dependencies-and-options) is not checked against Fedora's repositories (whether `SDL2-devel` resolves under `sdl2-compat`, whether `mesa-dri-drivers` is needed). The other, whether Ubuntu is a required status, the user settled on 2026-11-23: yes, through the `linux` matrix ([CI Linux matrix](design/2026-11-23-ci-linux-matrix.md)).
-  Next step: the user checks the Fedora command, or has a session that can reach Fedora's package hosts check it; a Fedora matrix entry can follow. Where: [design, open points](design/2026-11-22-linux-beyond-arch.md#open-points).
-
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
   Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR; factory policy (traffic zones, parking, junction rules) stays in i4sim. Decide whether the four overlapping steering models (`steer`, `priority_steer`, `tangent_steer`, `avoid_collisions`, which take different inputs and return acceleration or velocity) can share one agent-motion interface, and move i4sim-shaped defaults, such as the `PrioritySteering` values in millimeters per tick, out of the engine.
   Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
-  CI installs the pinned toolchain from the Arch Linux Archive in every run, and falls back to the current packages when the archive does not answer ([CI falls back to current Arch packages](design/2026-11-21-ci-mirror-fallback.md)). An image with the pinned packages already installed, published to GitHub's container registry, would make CI independent of the archive and faster. It can only be built while the archive answers.
-  Next step: a design: who builds and publishes the image, and how a snapshot bump updates it.
+  The Ubuntu test jobs install packages and the pinned formatter on each run. A prebuilt Ubuntu image could shorten setup and reduce dependence on the package mirrors.
+  Next step: measure setup time and decide how the image would pick up Ubuntu security updates and formatter version changes.
 - **Frame read-back on `Runtime`** · runtime · added 2026-11-21
   A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
   Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).

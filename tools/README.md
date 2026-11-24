@@ -107,7 +107,7 @@ The Claude hooks run on every start and resume of a session. The shared script w
 
 1. Enters setup when the first argument is `--cloud` or `CLAUDE_CODE_REMOTE` is `true`. Otherwise it exits silently.
 2. Installs the Debian and Ubuntu packages of [development](../docs/development.md#dependencies-and-options) that are missing, plus the packages given as arguments, with `--no-install-recommends` like CI's Ubuntu run. The index update and the downloads get two and five minutes, so a stalled mirror cannot hold the session's start; the install from the downloaded files has no limit, because stopping dpkg halfway would break the next run, and a dpkg that an earlier run left halfway is configured first (`dpkg --configure -a` when `dpkg --audit` reports it). An index that does not download, such as that of the image's `download.docker.com` source, stops nothing, because every package is in Ubuntu's archive; the line says so. CI's Ubuntu step fails on it instead (`APT::Update::Error-Mode=any`), because its container lists only Ubuntu's sources and falls back to the image's.
-3. Installs the clang-format version of CI's pinned Arch snapshot, `clang_format_version` in the script, from PyPI with `uv tool install`, when the clang-format that `PATH` finds names another version and uv's tool directory (`uv tool dir --bin`, `~/.local/bin` by default) does not hold it either. PyPI is on a cloud environment's default allowlist; LLVM's apt repository is not. When `PATH` still finds another clang-format first, such as Ubuntu's in `/usr/bin`, the script puts uv's directory first for the session through `CLAUDE_ENV_FILE`, once.
+3. Installs the clang-format version pinned in both CI workflows, `clang_format_version` in the script, from PyPI with `uv tool install`, when the clang-format that `PATH` finds names another version and uv's tool directory (`uv tool dir --bin`, `~/.local/bin` by default) does not hold it either. PyPI is on a cloud environment's default allowlist; LLVM's apt repository is not. When `PATH` still finds another clang-format first, such as Ubuntu's in `/usr/bin`, the script puts uv's directory first for the session through `CLAUDE_ENV_FILE`, once.
 4. Prints one line with the result and commands for any missing dependencies. With `--cloud` it exits 1 on failure so the environment can report the error. The Claude hook invocation exits 0 so Claude Code adds that line to the agent's context.
 
 ```text
@@ -119,7 +119,9 @@ Cloud setup failed: apt-get did not install libsdl2-dev. Log: /tmp/kinetra-cloud
 
 A first start took 9 seconds in a cloud session on 2026-11-23. A session that has everything spends 0.1 to 0.2 seconds. Run `bash tools/cloud_setup.sh --cloud` to retry from inside the cloud environment.
 
-Keep the package set in this script, [development](../docs/development.md#dependencies-and-options) and CI's Ubuntu step in sync. The clang-format version is written only in the script and follows the Arch snapshot, as the comment in [ci.yml](../.github/workflows/ci.yml) and [testing](../docs/testing.md#continuous-integration) say. Claude sessions with several repositories and the threads of a project use the environment's setup script because they load no repository hooks.
+Keep the build package set in the cloud script, development guide and CI in sync. Update `clang_format_version` in the script and `CLANG_FORMAT_VERSION` in both workflows together. [Development](../docs/development.md#dependencies-and-options) · [CI](../.github/workflows/ci.yml) · [Testing](../docs/testing.md#continuous-integration)
+
+Claude sessions with several repositories and the threads of a project use the environment's setup script because they load no repository hooks.
 
 Run `bash tools/tests/check_cloud_setup.sh` to check the entry points and failure status with stubbed package-manager commands.
 
