@@ -14,6 +14,7 @@
 #include <limits>
 #include <random>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 using namespace kinetra;
@@ -612,32 +613,43 @@ TEST_CASE("a long grazing projectile hits a tangent circle") {
 
 TEST_CASE("a fixed body changed between steps acts as in a new world") {
     // World indexes fixed bodies once and must notice every change a caller makes through
-    // body() or add(). A new world with the same bodies has never built an index.
+    // body() or add(). A new world with the same bodies has never built an index. Each
+    // change makes the wall, or a new fixed body, reach the leading mover earlier than the
+    // old wall would, or makes the trailing mover, which comes first in index order and so
+    // starts the query, meet the leading one after it turned fixed.
     struct Change {
         const char *name;
         void (*apply)(World &);
     };
     const Change changes[] = {
-        {"moved", [](World &w) { w.body(1).position = {0.2f, 0}; }},
-        {"turned", [](World &w) { w.body(1).angle = 0.7f; }},
-        {"resized", [](World &w) { w.body(1).half_extents = {1.2f, 1.6f}; }},
-        {"reshaped", [](World &w) { w.body(1).shape = Shape::circle; }},
-        {"released", [](World &w) { w.body(1).motion = Motion::dynamic; }},
-        {"fixed", [](World &w) { w.body(0).motion = Motion::fixed; }},
-        {"added", [](World &w) {
-             Body extra = box({0.4f, 0}, {0.3f, 2});
+        {"moved", [](World &w) { w.body(2).position = {0.7f, 0}; }},
+        {"turned", [](World &w) { w.body(2).angle = 1.5f; }},
+        {"resized", [](World &w) { w.body(2).half_extents = {1.0f, 2}; }},
+        {"reshaped",
+         [](World &w) {
+             w.body(2).shape = Shape::circle;
+             w.body(2).radius = 1;
+         }},
+        {"released", [](World &w) { w.body(2).motion = Motion::dynamic; }},
+        {"fixed", [](World &w) { w.body(1).motion = Motion::fixed; }},
+        {"added",
+         [](World &w) {
+             Body extra = box({0.75f, 0}, {0.1f, 2});
              extra.motion = Motion::fixed;
              w.add(extra);
          }},
     };
     for (const auto &change : changes) {
-        CAPTURE(change.name);
+        const std::string name = change.name;
+        CAPTURE(name);
         World world;
-        Body mover = circle({-1.5f, 0}, 0.5f);
-        mover.velocity = {4, 0};
-        Body wall = box({3, 0}, {0.3f, 2});
+        Body leading = circle({0, 0}), trailing = circle({-1.6f, 0});
+        leading.velocity = {2, 0};
+        trailing.velocity = {4, 0};
+        Body wall = box({1.3f, 0}, {0.3f, 2});
         wall.motion = Motion::fixed;
-        world.add(mover);
+        world.add(trailing);
+        world.add(leading);
         world.add(wall);
         world.step(1.f / 120);
         change.apply(world);
