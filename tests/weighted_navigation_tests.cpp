@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <random>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -74,6 +75,34 @@ Body cruiser_at(Vec2 position, Vec2 velocity) {
 
 /// Vertical wall along x = 0.
 constexpr Segment wall{{0, -100}, {0, 100}};
+/// priority_steer's predictive term computed as before it searched an interval of steps:
+/// every pair of steps (i, j) in order, the first overlapping one per neighbor.
+Vec2 brute_force_predictive(const Body &a, std::span<const Body> neighbors, const PrioritySteering &s) {
+    Vec2 sum{};
+    int predicted = 0;
+    for (const auto &other : neighbors) {
+        if (length(a.velocity) == 0 ||
+            distance(a.position, other.position) >
+                length(a.half_extents) + length(other.half_extents) +
+                    static_cast<float>(2 * s.prediction_steps) * s.prediction_step * s.max_speed)
+            continue;
+        bool found = false;
+        for (int i = 0; i <= s.prediction_steps && !found; ++i)
+            for (int j = 0; j <= s.prediction_steps; ++j) {
+                const Vec2 diff =
+                    (a.position + a.velocity * (static_cast<float>(i) * s.prediction_step)) -
+                    (other.position + other.velocity * (static_cast<float>(j) * s.prediction_step));
+                const Vec2 extent = (a.half_extents + other.half_extents) * s.safety_multiplier;
+                if (std::abs(diff.x) < extent.x && std::abs(diff.y) < extent.y) {
+                    sum += normalized(diff);
+                    ++predicted;
+                    found = true;
+                    break;
+                }
+            }
+    }
+    return predicted ? sum / float(predicted) : sum;
+}
 } // namespace
 
 TEST_CASE("a free weighted path ends exactly at the goal") {
@@ -358,4 +387,57 @@ TEST_CASE("tangent steering stays finite and within its acceleration limit") {
 
 TEST_CASE("tangent steering rejects an unbounded horizon") {
     CHECK_THROWS_AS(tangent_steer(cruiser(), {100, 20}, {}, 2, .6f, 65), std::invalid_argument);
+}
+
+TEST_CASE("priority steering predicts the same first overlap as testing every pair of steps") {
+    // Random scenes at Lab's scales: unit boxes, and i4sim's millimeters with a horizon of 32
+    // steps; whole-number positions and speeds put boxes exactly on the extent at some steps.
+    std::mt19937 rng(41);
+    struct Scale {
+        float position, extent, speed;
+        int steps;
+        bool whole;
+    };
+    for (const Scale scale : {Scale{40, 2, 2, 8, false}, Scale{40, 2, 2, 8, true},
+                              Scale{9000, 400, 12, 32, false}, Scale{9000, 400, 12, 32, true}}) {
+        PrioritySteering settings;
+        settings.max_speed = scale.speed;
+        settings.prediction_steps = scale.steps;
+        std::uniform_real_distribution<float> position(0, scale.position),
+            extent(scale.extent / 4, scale.extent), speed(-scale.speed, scale.speed);
+        auto value = [&](std::uniform_real_distribution<float> &d) {
+            const float v = d(rng);
+            return scale.whole ? std::round(v) : v;
+        };
+        auto box = [&] {
+            Body body;
+            body.shape = Shape::box;
+            body.position = {value(position), value(position)};
+            body.half_extents = {std::max(1.f, value(extent)), std::max(1.f, value(extent))};
+            body.velocity = {value(speed), value(speed)};
+            // Some neighbors stand still or creep along one axis.
+            if (rng() % 4 == 0)
+                body.velocity = {};
+            else if (rng() % 4 == 0)
+                body.velocity.y = 1e-6f;
+            return body;
+        };
+        for (int scene = 0; scene < 300; ++scene) {
+            Body mover = box();
+            if (length(mover.velocity) == 0)
+                mover.velocity = {1, 0};
+            std::vector<Body> neighbors;
+            for (int k = 0; k < 6; ++k) {
+                Body other = box();
+                // Keep them apart at the start, so the predictive term decides.
+                if (collide(mover, other))
+                    continue;
+                neighbors.push_back(other);
+            }
+            const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
+            const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
+            CHECK(actual.x == expected.x);
+            CHECK(actual.y == expected.y);
+        }
+    }
 }

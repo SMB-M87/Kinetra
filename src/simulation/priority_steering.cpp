@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cmath>
 #include <kinetra/simulation/steering.h>
 #include <limits>
 #include <stdexcept>
@@ -107,13 +109,44 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
                 length(a.half_extents) + length(other.half_extents) +
                     static_cast<float>(2 * s.prediction_steps) * s.prediction_step * s.max_speed)
             continue;
+        // The first pair of steps (i, j), in that order, whose predicted boxes overlap. For a
+        // step i of the mover, the gap to the neighbor's step j is linear in j, so only the
+        // steps j of an interval can overlap: where the exact gap is below the extent plus
+        // `slack`, a generous bound on the rounding of the float expression. Testing that
+        // interval in ascending order with the same expression finds the same first pair as
+        // testing every j, and the same `diff`.
+        const int steps = s.prediction_steps;
+        const Vec2 extent = (a.half_extents + other.half_extents) * s.safety_multiplier;
+        // Narrows [lo, hi] to the steps j whose exact gap along one axis is below the extent.
+        auto narrow = [&](float mover, float position, float velocity, float half, double &lo, double &hi) {
+            const double rate = double(velocity) * double(s.prediction_step);
+            const double gap = double(mover) - double(position);
+            const double slack = 1e-5 * (std::abs(double(mover)) + std::abs(double(position)) +
+                                         2 * std::abs(rate) * steps + double(half));
+            const double reach = double(half) + slack;
+            if (rate == 0) {
+                if (std::abs(gap) >= reach)
+                    hi = -1;
+                return;
+            }
+            double first = (gap - reach) / rate, last = (gap + reach) / rate;
+            if (first > last)
+                std::swap(first, last);
+            lo = std::max(lo, std::floor(first));
+            hi = std::min(hi, std::ceil(last));
+        };
         bool found = false;
-        for (int i = 0; i <= s.prediction_steps && !found; ++i)
-            for (int j = 0; j <= s.prediction_steps; ++j) {
+        for (int i = 0; i <= steps && !found; ++i) {
+            const Vec2 mover = a.position + a.velocity * (static_cast<float>(i) * s.prediction_step);
+            double lo = 0, hi = steps;
+            narrow(mover.x, other.position.x, other.velocity.x, extent.x, lo, hi);
+            narrow(mover.y, other.position.y, other.velocity.y, extent.y, lo, hi);
+            if (lo > hi) // Also keeps a far-off bound from reaching the conversion to int.
+                continue;
+            for (int j = int(lo); j <= int(hi); ++j) {
                 const Vec2 diff =
                     (a.position + a.velocity * (static_cast<float>(i) * s.prediction_step)) -
                     (other.position + other.velocity * (static_cast<float>(j) * s.prediction_step));
-                const Vec2 extent = (a.half_extents + other.half_extents) * s.safety_multiplier;
                 if (std::abs(diff.x) < extent.x && std::abs(diff.y) < extent.y) {
                     result.predictive += normalized(diff);
                     ++predicted;
@@ -121,6 +154,7 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
                     break;
                 }
             }
+        }
     }
     if (predicted)
         result.predictive = result.predictive / float(predicted);
