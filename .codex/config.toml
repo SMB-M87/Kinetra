@@ -1,0 +1,20 @@
+# GitHub connector from the Codex GitHub plugin. The account grants repository access.
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools]
+github_fetch_commit_workflow_runs = { approval_mode = "approve" }
+github_fetch_pr = { approval_mode = "approve" }
+github_fetch_pr_comments = { approval_mode = "approve" }
+github_fetch_pr_file_patch = { approval_mode = "approve" }
+github_fetch_pr_patch = { approval_mode = "approve" }
+github_fetch_workflow_run_jobs = { approval_mode = "approve" }
+github_get_commit_combined_status = { approval_mode = "approve" }
+github_get_pr_diff = { approval_mode = "approve" }
+github_get_pr_info = { approval_mode = "approve" }
+github_get_repo = { approval_mode = "approve" }
+github_list_pr_changed_filenames = { approval_mode = "approve" }
+github_list_pull_request_reviews = { approval_mode = "approve" }
+github_list_pull_request_review_threads = { approval_mode = "approve" }
+
+github_add_comment_to_issue = { approval_mode = "approve" }
+github_add_review_to_pr = { approval_mode = "approve" }
+github_reply_to_review_comment = { approval_mode = "approve" }
+github_resolve_review_thread = { approval_mode = "approve" }

@@ -32,7 +32,7 @@ Install them per distribution family. CI tests Arch and Ubuntu 24.04 ([continuou
 
 Other distributions need the same parts: a C++20 compiler, CMake, Ninja, SDL2's and OpenGL's development files, and Mesa (or a GPU driver) for an OpenGL 3.3 context.
 
-CI's formatter is the clang-format of the pinned Arch snapshot; `clang_format_version` in `tools/cloud_setup.sh` names that version. Where the distribution has another, PyPI's `clang-format` package has the same one (`uv tool install clang-format==<version>`, or `pip install` into a virtual environment). A Claude Code cloud session installs the Debian and Ubuntu set and that clang-format when it starts ([cloud_setup.sh](../tools/README.md#cloud_setupsh)); CI's Ubuntu step and that script install the same set as the table, so change the three together.
+CI's formatter is the clang-format of the pinned Arch snapshot. `clang_format_version` in `tools/cloud_setup.sh` names that version. Where the distribution has another, PyPI's `clang-format` package has the same one (`uv tool install clang-format==<version>`, or `pip install` into a virtual environment). Ubuntu cloud sessions can install the Debian and Ubuntu packages and the pinned formatter through [cloud_setup.sh](../tools/README.md#cloud_setupsh). CI's Ubuntu step and that script install the same set as the table, so change the three together.
 
 | Option | Default | Effect |
 | --- | --- | --- |
