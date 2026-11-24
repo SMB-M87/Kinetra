@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-24 | [Vec2 equality in place of component comparisons](2026-11-24-vec2-component-comparisons.md) | accepted |
 | 2026-11-24 | [Codex session settings](2026-11-24-codex-session-settings.md) | implemented |
 | 2026-11-24 | [Review access and merges by the author](2026-11-24-review-access-and-agent-merges.md): a review session attaches every repository it reviews without a prompt; the author merges every change, rules, CI and releases included, and the user checks afterwards | implemented |
 | 2026-11-24 | [Engine hotspots](2026-11-24-engine-hotspots.md): the four engine hotspots of Lab's performance baseline, one pull request each, every simulated value unchanged | implemented |

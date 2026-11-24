@@ -20,7 +20,8 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-Nothing in progress in Kinetra itself.
+- **Vec2 equality in place of component comparisons** · simulation, tests, with Lab · added 2026-11-24
+  Branch `refactor/vec2-component-comparisons` · [design](design/2026-11-24-vec2-component-comparisons.md).
 
 ## Next
 
@@ -47,9 +48,6 @@ Nothing agreed next in Kinetra itself.
 - **Raster route target** · navigation · added 2026-11-21
   A `WeightedGrid` counterpart of `route_target`, so agents that follow a grid route cut corners that are already in sight; Dotio's pursuers would move more smoothly.
   Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
-- **Vec2 equality in place of component comparisons** · simulation, tests, with Lab · added 2026-11-24
-  Since #52, `kinetra::Vec2` has `==`, and Lab's Dotio uses it. Kinetra still compares the components one by one in `same(Vec2, Vec2)` in `src/simulation/physics.cpp` and in `tests/runtime_tests.cpp:250`; both can use `==`. Lab's item of the same name covers i4sim, Demo and the capture tool.
-  Where: [Dotio on `kinetra::Vec2`, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-24-dotio-on-kinetra-vec2.md#open-points).
 
 ## Ideas
 
