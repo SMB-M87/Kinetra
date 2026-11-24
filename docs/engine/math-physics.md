@@ -38,7 +38,7 @@ flowchart TD
     Validate[Validate dt, gravity and bodies] --> Substep[Two substeps per World::step]
     Substep --> Forces[Apply gravity and persistent acceleration to velocity]
     Forces --> Sweep[Repeated earliest-hit search, shared advance and swept impulses]
-    Sweep --> Bounds[Rebuild AABB spatial grid]
+    Sweep --> Bounds[Rebuild the grid of moving bodies; the fixed bodies' grid only when one changed]
     Bounds --> Candidates[Query from movers; unique unordered candidate pairs]
     Candidates --> Narrow[Circle / OBB / convex polygon narrow phase]
     Narrow --> Contact{Contact?}
@@ -49,7 +49,7 @@ flowchart TD
     Pass --> Continue[Next substep, then return updated bodies]
 ```
 
-[World::step](../../src/simulation/physics.cpp) accepts finite `0 < dt <= 0.1`. It does not accumulate forces or clear acceleration for the caller. Rebuilding after each correction pass discovers contacts introduced by corrections.
+[World::step](../../src/simulation/physics.cpp) accepts finite `0 < dt <= 0.1`. It does not accumulate forces or clear acceleration for the caller. Rebuilding after each correction pass discovers contacts introduced by corrections. Fixed bodies never move during a step, so they have a grid of their own, rebuilt only when the caller has changed one of them since the last step; queries merge both grids in body-index order.
 
 ## Collision and queries
 

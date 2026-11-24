@@ -72,6 +72,9 @@ No lessons yet.
 
 ## Code
 
+- **Record a characterization constant only from results the module promises across machines, or name the toolchains it holds on and the commit to record it again from** · added 2026-11-24 · source: #49
+  The first fingerprint of #49 ran a chaotic world through the C library's `sinf` and `cosf`, which the simulation README does not promise to round alike; on another toolchain only the old code it characterizes could record the value again. Build such a scene from operations that round alike everywhere.
+
 - **Sample the transition between opaque and transparent texels when testing filtered images** · added 2026-11-24 · source: [#48](https://github.com/SMB-M87/Kinetra/pull/48)
   A check at each texel center can pass while linear filtering mixes hidden RGB into the edge and creates a fringe. Sample the scaled boundary over a contrasting background.
 
