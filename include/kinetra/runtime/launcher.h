@@ -15,13 +15,16 @@ inline constexpr std::string_view launcher_window_title = "Launcher";
 struct LaunchChoice {
     /// Row label; must not be empty.
     std::string name;
-    /// Text the application can show about itself; the menu does not draw it.
+    /// Text for the main menu's preview panel. Wraps to four lines when previews are enabled.
     std::string description;
     /// Names of the variants shown on the second menu page; empty skips that page. The
     /// names mean nothing to the engine: the application factory interprets the index.
     std::vector<std::string> configurations;
     /// Index into `configurations` selected first; zero when there are none.
     std::size_t default_configuration{};
+    /// Optional still shown when this application is highlighted. One image enables
+    /// the preview panel for the whole application list.
+    std::shared_ptr<const RgbaImage> preview{};
 };
 /// Application and configuration index picked in the menu.
 struct LaunchSelection {
@@ -29,9 +32,8 @@ struct LaunchSelection {
 };
 /// Shared logical-pixel geometry for both rendering and picking.
 ///
-/// The menu is a 300-pixel-wide panel, scaled to the viewport (at most 2x) and centered:
-/// a heading, up to page_size rows of 40 pixels, and a footer with EXIT and, for longer
-/// lists, PREVIOUS and NEXT.
+/// The list is 300 panel pixels wide, with a heading, up to page_size rows of 40 pixels,
+/// and a footer. It is centered with its preview panel when present. Scale is at most 2x.
 struct MenuLayout {
     /// Top-left corner of the panel in logical window pixels.
     Vec2 origin;
@@ -48,11 +50,17 @@ struct MenuLayout {
     static constexpr std::size_t page_size = 6;
     /// Rows on screen: the row count, at most page_size.
     std::size_t visible_rows;
+    /// Top-left of the optional preview panel in logical window pixels.
+    std::optional<Vec2> preview_origin;
     /// Center of the footer button at panel x-coordinate `x` (EXIT 150, PREVIOUS 50,
     /// NEXT 250), in window pixels.
     Vec2 footer_center(float x = 150) const;
     /// Whether `point` (window pixels) hits the footer button at panel x-coordinate `x`.
     bool footer_contains(Vec2 point, float x) const;
+
+  private:
+    friend class LaunchMenu;
+    MenuLayout(Vec2 viewport, std::size_t rows, bool with_preview);
 };
 /// Value-owned registration metadata; configuration names have no engine semantics.
 ///
@@ -82,6 +90,8 @@ class LaunchMenu {
     std::string_view row_name(std::size_t row) const;
     /// Description of the highlighted application; valid as long as the menu.
     std::string_view description() const;
+    /// Layout of the current page in logical window pixels, shared by drawing and picking.
+    MenuLayout layout(Vec2 viewport) const;
     /// Draws a whole frame (begin() to end()) showing the menu, with an optional status
     /// line of at most 80 characters at the bottom.
     void draw(Runtime &runtime, std::string_view status = {}) const;
@@ -92,6 +102,7 @@ class LaunchMenu {
     std::vector<std::size_t> configurations_;
     std::size_t application_{};
     bool configuring_{}, exit_requested_{};
+    bool has_previews_{};
     Vec2 pointer_{-1, -1};
 };
 /// An application the launcher can start.

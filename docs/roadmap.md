@@ -20,8 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Images in the launcher menu** · runtime, launcher, with Lab · added 2026-11-23
-  Branch `feat/launcher-images`. See [the shared design](design/2026-11-24-launcher-images.md).
+Nothing in progress in Kinetra itself.
 
 ## Next
 

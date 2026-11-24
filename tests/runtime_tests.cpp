@@ -363,6 +363,55 @@ bool presented(const Runtime &runtime, Vec2 point, Color expected) {
 }
 } // namespace
 
+TEST_CASE("RGBA images keep their row order and blend between ordinary shapes") {
+    const std::uint8_t pixels[]{255, 0, 0, 255, 255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0};
+    CHECK_THROWS_AS(RgbaImage(0, 2, pixels), std::invalid_argument);
+    CHECK_THROWS_AS(RgbaImage(2, 3, pixels), std::invalid_argument);
+    const auto image = std::make_shared<const RgbaImage>(2, 2, pixels);
+    Runtime runtime("RGBA images", 320, 240);
+    runtime.camera.position = {4, -9};
+    const auto world = [&](Vec2 point) { return runtime.camera.screen_to_world(point); };
+    const auto units = runtime.camera.pixels_per_unit;
+    runtime.begin();
+    runtime.box(world({160, 120}), Vec2{100, 100} / units, 0, {0, 0, 1});
+    runtime.image(image, world({60, 20}), Vec2{200, 200} / units);
+    runtime.box(world({230, 50}), Vec2{10, 10} / units, 0, {1, 1, 1});
+    runtime.end();
+    CHECK(presented(runtime, {90, 50}, {1, 0, 0}));
+    CHECK(presented(runtime, {90, 190}, {0, 1, 0}));
+    CHECK(presented(runtime, {230, 190}, {0, 0, 1}));
+    CHECK(presented(runtime, {230, 50}, {1, 1, 1}));
+}
+
+TEST_CASE("the drawn preview and its description follow the highlighted application") {
+    const std::uint8_t red[]{255, 0, 0, 255}, green[]{0, 255, 0, 255};
+    LaunchMenu menu({{"FIRST", "FIRST", {}, 0, std::make_shared<const RgbaImage>(1, 1, red)},
+                     {"SECOND", "I AM NEXT", {}, 0, std::make_shared<const RgbaImage>(1, 1, green)}});
+    Runtime runtime("Launcher previews", 1280, 800);
+    const auto layout = menu.layout(runtime.camera.viewport);
+    REQUIRE(layout.preview_origin);
+    const auto image_center = *layout.preview_origin + Vec2{135, 80} * layout.scale;
+    const auto caption_start = *layout.preview_origin + Vec2{10.5f, 160.5f} * layout.scale;
+    const auto draw = [&] {
+        menu.draw(runtime);
+        menu.draw(runtime);
+    };
+    draw();
+    CHECK(presented(runtime, image_center, {1, 0, 0}));
+    CHECK(presented(runtime, caption_start, {0.85f, 0.9f, 1})); // First pixel of F.
+    Input input;
+    input.mouse = layout.row_center(1);
+    CHECK_FALSE(menu.update(input, runtime.camera.viewport));
+    draw();
+    CHECK(presented(runtime, image_center, {0, 1, 0}));
+    CHECK(presented(runtime, caption_start, {0.06f, 0.1f, 0.16f})); // First pixel of I is blank.
+    input.pressed[std::size_t(Key::up)] = true;
+    CHECK_FALSE(menu.update(input, runtime.camera.viewport));
+    draw();
+    CHECK(presented(runtime, image_center, {1, 0, 0}));
+    CHECK(presented(runtime, caption_start, {0.85f, 0.9f, 1}));
+}
+
 TEST_CASE("the inspector scrolls wrapped values while its close button stays in place") {
     Runtime runtime("Kinetra inspector", 640, 480);
     InspectorView view;

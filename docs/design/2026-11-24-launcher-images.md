@@ -1,6 +1,6 @@
 # Lab previews in the launcher
 
-Status: accepted · Branches `feat/launcher-images` in Kinetra and `feat/lab-launcher-preview` in Lab · Related [original request](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-23-roadmap-media-labs-cycle.md)
+Status: implemented · Branches `feat/launcher-images` in Kinetra and `feat/lab-launcher-preview` in Lab · Related [original request](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-23-roadmap-media-labs-cycle.md)
 
 The launcher shows a capture and a short description of the highlighted lab before the user chooses whether to start it.
 
@@ -60,12 +60,18 @@ Kinetra's runtime, launcher API, graphics and menu tests, and launcher contracts
 
 ## Verification
 
-Pending implementation.
+Kinetra's `cmake --workflow --preset graphics` passed all 288 tests under offscreen SDL and software Mesa, with engine warnings as errors enabled. The new cases verify texture orientation, alpha, rendering order, menu selection and description pixels. Clang-format 23.1.5 and the documentation link check passed.
 
 ## Review
 
-Pending implementation.
+Reviewed the drawing and picking geometry, context ownership, shape order and consumers without previews. The refreshed screenshot and GIF show Demo, Dotio and i4sim with their own images and descriptions, and the Demo configuration page.
 
 ## Pull request
 
-Kinetra provides the textured draw and opt-in preview panel. Lab supplies and embeds the previews and updates its captures. Kinetra merges first.
+**feat(launcher): show previews for highlighted applications**
+
+- Add immutable RGBA images and textured drawing that preserves draw order with the shape batch.
+- Let registrations supply an optional still. The application list follows hover or arrow selection and draws the image and description in the same layout used for input.
+- Refresh the shared launcher GIF. The Lab pull request supplies the three captured stills, updates the capture scripts and records this branch's submodule commit.
+
+Verification ran through the graphics workflow. Kinetra merges first with a merge commit.

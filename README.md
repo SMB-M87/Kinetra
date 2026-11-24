@@ -26,7 +26,7 @@ Directory guides: [docs](docs/README.md), [media](docs/media/README.md), [tests]
 ## Features
 
 - Headless geometry, collisions, physics, spatial queries, navigation and steering.
-- Optional window, input, camera, colored primitives, bitmap text and direct sessions.
+- Optional window, input, camera, colored primitives, RGBA image drawing, bitmap text and direct sessions.
 - Public C++ headers under `include/kinetra/`, grouped by layer in `simulation/`, `view/` and `runtime/`; CMake targets `Kinetra::Simulation`, optional `Kinetra::Runtime` and `Kinetra::Launcher`.
 - Optional reusable launcher menu and session host in `<kinetra/runtime/launcher.h>`; application registration and gameplay remain in Lab.
 
@@ -103,7 +103,7 @@ Contributors follow the [development workflow](docs/workflow.md): every code cha
 
 Linux is supported: CI builds and tests on a pinned Arch toolchain, the reference, and on Ubuntu 24.04 LTS ([dependencies per distribution](docs/development.md#dependencies-and-options)); Artix/Linux is the desktop target. Windows/macOS and 3D are unsupported.
 Continuous collision detection covers circles and nonrotating boxes and polygons; rotating boxes and polygons are checked discretely and can tunnel. Navigation does not guarantee arrival in moving crowds.
-Rendering has no texture system or pose interpolation. Cross-machine bitwise determinism is not promised.
+Rendering supports standalone RGBA images supplied by the caller. Applications own pose interpolation. Cross-machine bitwise determinism is not promised.
 
 ## License
 

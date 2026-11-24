@@ -142,12 +142,54 @@ GLuint shader(GLenum type, const char *source) {
     return id;
 }
 
+GLuint shader_program(const char *vertex, const char *fragment) {
+    const GLuint vs = shader(GL_VERTEX_SHADER, vertex);
+    GLuint fs;
+    try {
+        fs = shader(GL_FRAGMENT_SHADER, fragment);
+    } catch (...) {
+        glDeleteShader(vs);
+        throw;
+    }
+    const GLuint program = glCreateProgram();
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+    GLint linked;
+    glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    if (!linked) {
+        char message[2048]{};
+        glGetProgramInfoLog(program, sizeof(message), nullptr, message);
+        glDeleteProgram(program);
+        throw std::runtime_error(std::string("Shader link failed: ") + message);
+    }
+    return program;
+}
+
 } // namespace
+
+RgbaImage::RgbaImage(int width, int height, std::span<const std::uint8_t> pixels)
+    : width_(width), height_(height) {
+    // Divide the byte count before comparing dimensions so their product cannot overflow.
+    constexpr std::size_t channels = 4;
+    if (width <= 0 || height <= 0 || pixels.size() % channels != 0)
+        throw std::invalid_argument("Invalid RGBA image dimensions or pixel count");
+    const auto w = static_cast<std::size_t>(width);
+    const auto pixel_count = pixels.size() / channels;
+    if (pixel_count % w != 0 || pixel_count / w != static_cast<std::size_t>(height))
+        throw std::invalid_argument("Invalid RGBA image dimensions or pixel count");
+    pixels_.assign(pixels.begin(), pixels.end());
+}
 
 struct Runtime::Impl {
     SDL_Window *window{};
     SDL_GLContext context{};
     GLuint program{}, vao{}, vbo{};
+    GLuint image_program{}, texture{};
+    GLint image_bounds{};
+    std::weak_ptr<const RgbaImage> uploaded_image;
     Input input;
     std::string title;
     float drawable_scale{1};
@@ -168,8 +210,14 @@ struct Runtime::Impl {
     FrameLimiter limiter{1.0 / fallback_refresh_rate};
     std::chrono::steady_clock::time_point epoch{std::chrono::steady_clock::now()};
 
+    void flush_shapes();
+    void bind_image_texture(const std::shared_ptr<const RgbaImage> &image,
+                            std::span<const std::uint8_t> pixels);
+
     ~Impl() {
         if (gl_ready) {
+            glDeleteTextures(1, &texture);
+            glDeleteProgram(image_program);
             glDeleteBuffers(1, &vbo);
             glDeleteVertexArrays(1, &vao);
             glDeleteProgram(program);
@@ -184,6 +232,33 @@ struct Runtime::Impl {
         }
     }
 };
+
+void Runtime::Impl::bind_image_texture(const std::shared_ptr<const RgbaImage> &image,
+                                       std::span<const std::uint8_t> pixels) {
+    glActiveTexture(GL_TEXTURE0); // The shader's sampler uses the default unit, zero.
+    if (uploaded_image.lock() == image) {
+        glBindTexture(GL_TEXTURE_2D, texture);
+        return;
+    }
+    GLint max_size;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_size);
+    if (image->width() > max_size || image->height() > max_size)
+        throw std::invalid_argument("Image exceeds the OpenGL texture size limit");
+    if (!texture) {
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    } else
+        glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image->width(), image->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixels.data());
+    if (glGetError() != GL_NO_ERROR)
+        throw std::runtime_error("OpenGL could not upload the RGBA image");
+    uploaded_image = image;
+}
 
 Runtime::Runtime(const std::string &text, int width, int height) : impl_(std::make_unique<Impl>()) {
     if (runtime_active)
@@ -217,36 +292,17 @@ Runtime::Runtime(const std::string &text, int width, int height) : impl_(std::ma
     if (!impl_->vsync)
         SDL_Log("VSync unavailable (%s); pacing frames at %.0f per second", SDL_GetError(),
                 1 / impl_->limiter.interval());
-    const GLuint vs = shader(GL_VERTEX_SHADER, R"(#version 330 core
+    impl_->program = shader_program(R"(#version 330 core
 layout(location=0) in vec2 point;
 layout(location=1) in vec4 tint;
 out vec4 color;
 void main() { gl_Position=vec4(point,0,1); color=tint; }
-)");
-    GLuint fs{};
-    try {
-        fs = shader(GL_FRAGMENT_SHADER, R"(#version 330 core
+)",
+                                    R"(#version 330 core
 in vec4 color;
 out vec4 pixel;
 void main() { pixel=color; }
 )");
-    } catch (...) {
-        glDeleteShader(vs);
-        throw;
-    }
-    impl_->program = glCreateProgram();
-    glAttachShader(impl_->program, vs);
-    glAttachShader(impl_->program, fs);
-    glLinkProgram(impl_->program);
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-    GLint linked;
-    glGetProgramiv(impl_->program, GL_LINK_STATUS, &linked);
-    if (!linked) {
-        char message[2048]{};
-        glGetProgramInfoLog(impl_->program, sizeof(message), nullptr, message);
-        throw std::runtime_error(std::string("Shader link failed: ") + message);
-    }
     glGenVertexArrays(1, &impl_->vao);
     glGenBuffers(1, &impl_->vbo);
     glBindVertexArray(impl_->vao);
@@ -345,11 +401,15 @@ void Runtime::triangle(Vec2 a, Vec2 b, Vec2 c, Color ca, Color cb, Color cc) {
     const Vec2 points[]{a, b, c};
     const Color colors[]{ca, cb, cc};
     for (int i = 0; i < 3; ++i) {
-        const Vec2 screen = camera.world_to_screen(points[i]);
+        const Vec2 point = clip_point(points[i]);
         const auto color = colors[i];
-        impl_->vertices.push_back({screen.x * 2 / camera.viewport.x - 1, 1 - screen.y * 2 / camera.viewport.y,
-                                   color.r, color.g, color.b, color.a});
+        impl_->vertices.push_back({point.x, point.y, color.r, color.g, color.b, color.a});
     }
+}
+
+Vec2 Runtime::clip_point(Vec2 world) const {
+    const auto screen = camera.world_to_screen(world);
+    return {screen.x * 2 / camera.viewport.x - 1, 1 - screen.y * 2 / camera.viewport.y};
 }
 
 void Runtime::circle(Vec2 center, float radius, Color color) {
@@ -402,13 +462,50 @@ void Runtime::line(Vec2 from, Vec2 to, float width, Color color) {
     triangle(from - side, to + side, from + side, color);
 }
 
-void Runtime::end() {
-    glUseProgram(impl_->program);
+void Runtime::Impl::flush_shapes() {
+    if (vertices.empty())
+        return;
+    glUseProgram(program);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vertices.size() * sizeof(Vertex)), vertices.data(),
+                 GL_STREAM_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, GLsizei(vertices.size()));
+    vertices.clear();
+}
+
+void Runtime::image(const std::shared_ptr<const RgbaImage> &image, Vec2 top_left, Vec2 size) {
+    const Vec2 first = clip_point(top_left), last = clip_point(top_left + Vec2{size.x, -size.y});
+    if (!image || !finite(first) || !finite(last) || size.x <= 0 || size.y <= 0)
+        throw std::invalid_argument("Image drawing requires an image and valid bounds");
+    if (!impl_->image_program) {
+        // A quad from the vertex ID keeps texture coordinates out of the shape batch.
+        impl_->image_program = shader_program(R"(#version 330 core
+uniform vec4 bounds;
+out vec2 uv;
+void main() {
+    uv = vec2(gl_VertexID & 1, gl_VertexID >> 1);
+    gl_Position = vec4(mix(bounds.xy, bounds.zw, uv), 0, 1);
+}
+)",
+                                              R"(#version 330 core
+uniform sampler2D picture;
+in vec2 uv;
+out vec4 pixel;
+void main() { pixel = texture(picture, uv); }
+)");
+        impl_->image_bounds = glGetUniformLocation(impl_->image_program, "bounds");
+    }
+    impl_->bind_image_texture(image, image->pixels_);
+    impl_->flush_shapes();
+    glUseProgram(impl_->image_program);
     glBindVertexArray(impl_->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, impl_->vbo);
-    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(impl_->vertices.size() * sizeof(Impl::Vertex)),
-                 impl_->vertices.data(), GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, GLsizei(impl_->vertices.size()));
+    glUniform4f(impl_->image_bounds, first.x, first.y, last.x, last.y);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+void Runtime::end() {
+    impl_->flush_shapes();
     SDL_GL_SwapWindow(impl_->window);
     if (pacing() == FramePacing::limited) {
         const auto seconds = [&](std::chrono::steady_clock::time_point time) {
