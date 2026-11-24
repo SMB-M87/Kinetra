@@ -115,8 +115,7 @@ void SpatialGrid::query(Aabb area, std::vector<std::size_t> &result) const {
     // its lowest x and y in the query, so no result repeats.
     auto visit = [&](int x, int y, std::size_t id) {
         const auto &r = ranges_[id];
-        if (x == std::max(r.min_x, q.min_x) && y == std::max(r.min_y, q.min_y) &&
-            bounds_[id].overlaps(area))
+        if (x == std::max(r.min_x, q.min_x) && y == std::max(r.min_y, q.min_y) && bounds_[id].overlaps(area))
             result.push_back(id);
     };
     for (int y = y0; y <= y1; ++y)
