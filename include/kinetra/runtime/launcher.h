@@ -157,8 +157,8 @@ class SessionHost {
 };
 /// Keys the standard launcher loop handles itself; sessions receive all other input.
 struct LauncherBindings {
-    /// Returns from a running session to the menu. std::nullopt leaves leaving to
-    /// SessionRequest::menu alone.
+    /// Returns from a running session to the menu. std::nullopt leaves leaving to the
+    /// session's own requests, SessionRequest::menu and SessionRequest::configurations.
     std::optional<Key> menu_key = Key::m;
     /// Whether Escape closes the window while the menu shows. During a run,
     /// Session::close_on_escape() decides instead.
