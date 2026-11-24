@@ -97,7 +97,7 @@ classDiagram
         +float penetration
     }
     World "1" *-- "0..*" Body : stores by value
-    World "1" *-- "1" SpatialGrid : broad phase
+    World "1" *-- "2" SpatialGrid : broad phase
     World ..> Contact : resolves detected contacts
 ```
 
@@ -105,7 +105,7 @@ classDiagram
 
 ## How it works
 
-**Physics step.** `World::step` splits the step in two substeps. Each substep applies gravity and acceleration, then moves all bodies along one shared timeline: it finds the earliest approaching contact among swept pairs, advances everyone to that moment, resolves the pair's velocities, and repeats until the substep is used up or its event budget runs out. Six discrete correction passes then push apart remaining overlaps, rebuilding the broad phase after each pass because a correction can create a new contact. The [physics update flow](../../docs/engine/math-physics.md#physics-update-flow) draws this, and its *Collision and queries* section explains the tolerances.
+**Physics step.** `World::step` splits the step in two substeps. Each substep applies gravity and acceleration, then moves all bodies along one shared timeline: it finds the earliest approaching contact among swept pairs, advances everyone to that moment, resolves the pair's velocities, and repeats until the substep is used up or its event budget runs out. Six discrete correction passes then push apart remaining overlaps, rebuilding the broad phase after each pass because a correction can create a new contact. The broad phase keeps the fixed bodies in an index of their own, rebuilt only when the caller has changed one of them since the last step, and indexes the moving bodies again for every event and pass; a query merges both indexes, so the pairs still come in body-index order, which breaks ties between equal-time events. The [physics update flow](../../docs/engine/math-physics.md#physics-update-flow) draws this, and its *Collision and queries* section explains the tolerances.
 
 *Why a shared timeline:* resolving pairs one by one at their own impact times lets a third body pass through a pair that has not been resolved yet. Advancing everything to the earliest event keeps chains of contacts in order. The cost is the event budget: when bodies bounce more than `8 * moving bodies` times in a substep, the rest of the travel is dropped (`sweep_budget_exhausted()`), which favors containment over exact distance.
 
