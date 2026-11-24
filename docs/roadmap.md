@@ -20,7 +20,9 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-Nothing in progress in Kinetra itself.
+- **Engine performance** · simulation, with Lab · added 2026-11-21
+  Optimize the engine code that Lab's benchmarks spend their time in, one hotspot per pull request, with a benchmark before and after and the golden lines unchanged. Lab's baseline of 2026-11-23 named four: `World::step`'s grid rebuilds, `SpatialGrid::query`, `priority_steer`'s prediction loop and `bounds` of a box, taken in that order as a stack, with Lab's item *Engine hotspots from the performance baseline*.
+  Next step: step 1, fixed bodies indexed once, on `perf/world-fixed-index`. Where: [design](design/2026-11-24-engine-hotspots.md).
 
 ## Next
 
@@ -35,9 +37,6 @@ Nothing planned next; the items of *Later* follow.
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
   Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR; factory policy (traffic zones, parking, junction rules) stays in i4sim. Decide whether the four overlapping steering models (`steer`, `priority_steer`, `tangent_steer`, `avoid_collisions`, which take different inputs and return acceleration or velocity) can share one agent-motion interface, and move i4sim-shaped defaults, such as the `PrioritySteering` values in millimeters per tick, out of the engine.
   Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.
-- **Engine performance** · simulation, with Lab · added 2026-11-21
-  Optimize the engine code that Lab's benchmarks spend their time in (spatial queries, steering, weighted-grid search, contact response), one hotspot per pull request, with a benchmark before and after and the golden lines unchanged.
-  Depends on: Lab's *Performance baseline and hotspots*.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
   CI installs the pinned toolchain from the Arch Linux Archive in every run, and falls back to the current packages when the archive does not answer ([CI falls back to current Arch packages](design/2026-11-21-ci-mirror-fallback.md)). An image with the pinned packages already installed, published to GitHub's container registry, would make CI independent of the archive and faster. It can only be built while the archive answers.
   Next step: a design: who builds and publishes the image, and how a snapshot bump updates it.
