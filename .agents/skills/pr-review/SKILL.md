@@ -6,7 +6,7 @@ argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole s
 
 # PR review: an agent reviews a pull request
 
-The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a docs-only one (only Markdown, `docs/` or `.agents/`, and none of the agent rules) and a pointer-only Lab pull request ([rule](../../../AGENTS.md#git)): the author starts it in a separate session once the pull request's CI is green, and the user can start it too. The reviewer only reads the code and comments on it: CI runs the builds and tests, and the author runs what CI cannot (a screenshot of a changed scene). The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
+The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a docs-only one (only Markdown, `docs/` or `.agents/`) that leaves the agent rules alone, and a pointer-only Lab pull request ([rule](../../../AGENTS.md#git)): the author starts it in a separate session once the pull request's CI is green, and the user can start it too. The reviewer only reads the code and comments on it: CI runs the builds and tests, and the author runs what CI cannot (a screenshot of a changed scene). The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
 
 Everything on GitHub is in English: the inline comments, the summary and its conclusion. Only the hand-over in the chat (step 10) is in Dutch.
 
@@ -57,7 +57,7 @@ The names below describe depth, not a product: map them onto whatever the agent 
 
 ## 3. Goals
 
-List every goal of the roadmap item and of the design document's *Goals* (for a docs-only pull request reviewed on request, of its description). For each, find where the diff meets it and what proves it: a test, or a recorded run in *Verification*. Check that the non-goals were left alone.
+List every goal of the roadmap item and of the design document's *Goals* (for a docs-only pull request, of its description). For each, find where the diff meets it and what proves it: a test, or a recorded run in *Verification*. Check that the non-goals were left alone.
 
 - A goal that is not met, or met without proof, is a **blocking** finding.
 - A goal that is vague or contradicts another is a **question**: the author settles it in the design document, and the summary lists it under *For the user*, so the user can check the choice after the merge.
