@@ -121,8 +121,11 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
         auto narrow = [&](float mover, float position, float velocity, float half, double &lo, double &hi) {
             const double rate = double(velocity) * double(s.prediction_step);
             const double gap = double(mover) - double(position);
+            // Relative to the magnitudes involved, about 40 times the float error, plus the
+            // smallest normal float for the absolute error of subnormal results.
             const double slack = 1e-5 * (std::abs(double(mover)) + std::abs(double(position)) +
-                                         2 * std::abs(rate) * steps + double(half));
+                                         2 * std::abs(rate) * steps + double(half)) +
+                                 double(std::numeric_limits<float>::min());
             const double reach = double(half) + slack;
             if (rate == 0) {
                 if (std::abs(gap) >= reach)

@@ -75,7 +75,7 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 ### Step 3: `priority_steer` finds the first overlapping pair per step
 
-To be designed on its branch, from this direction: for each step `i` of the mover, the predicted gap to the neighbor is linear in the neighbor's step `j`, so the steps `j` that can overlap form an interval. Only the steps of that interval, widened by a bound on the rounding error, are tested with the existing expression, in ascending order, so the first pair `(i, j)` and its `diff` stay the same.
+For a step `i` of the mover, the float expression gives `diff = mover_i - (other.position + other.velocity * (j * step))`, and its exact value is linear in the neighbor's step `j`. Per axis, the steps whose exact gap is below the extent plus `slack` form an interval, found in double precision and rounded outward with `floor` and `ceil`; the two axes are intersected with `[0, steps]`. `slack` is 1e-5 times the sum of the magnitudes involved (mover, neighbor position, the neighbor's travel over the horizon, the extent), about 40 times the float error of the expression, plus the smallest normal float for subnormal results. A step outside the interval has an exact gap of at least extent plus slack, so its float `diff` cannot pass the strict `<` test; the steps inside are tested in ascending order with the unchanged expression. So the first pair `(i, j)` and its `diff` are those of the old loop over all (horizon + 1)² pairs. A neighbor that stands still on an axis keeps every step or none; an interval that is empty or far off skips the step `i` before any conversion to `int`.
 
 ### Step 4: `bounds` of a box with one rotation
 
@@ -94,6 +94,7 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 
 - Step 1: `World` in [physics.h](../../include/kinetra/simulation/physics.h) (private members only) and [physics.cpp](../../src/simulation/physics.cpp); `SpatialGrid::rebuild` in [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp). No public signature or documented behavior changes.
 - Step 2: `SpatialGrid` in [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) (a new `query` overload; private members) and [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp); `World::candidates` in physics.cpp. Behavior and limits unchanged.
+- Step 3: `priority_steer` in [priority_steering.cpp](../../src/simulation/priority_steering.cpp). Behavior unchanged.
 - Lab: [performance](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md) per step, the roadmap items in both repositories.
 
 ## Test plan
@@ -104,6 +105,7 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | Step 1: the candidate pairs and their order are unchanged | New characterization case in `simulation_tests.cpp`: a 51-body world of fixed boxes, polygons and circles interleaved with moving ones in a container added last, whose fingerprint over 360 steps (every position, velocity, angle and `candidate_pairs()`) was recorded on Kinetra `73adc66`; putting the fixed candidates first in the merge changes it. Existing `moving_contact_tests.cpp` and `simulation_tests.cpp` (`candidate_pairs()`), Lab's Demo crowd characterization lines, i4sim golden and pressure tests, Dotio fingerprints | Full |
 | Step 1: a rebuild keeps the grid's results | Existing spatial grid tests, plus a case that rebuilds with boxes that move away and back and queries after each rebuild | Targeted |
 | Step 2: queries give the same sorted, unique indices in both storages, also through the caller's buffer | New cases in `simulation_tests.cpp`: a compact and a scattered set (one far box) against an exhaustive search, with large and empty areas; one grid switched between both storages and a rejected rebuild after a dense one; a rejected query leaves the buffer unchanged. The existing grid cases | Targeted |
+| Step 3: the same first overlap and `diff` as the loop over every pair of steps | New case in `weighted_navigation_tests.cpp`: 1,800 random scenes at six scales (unit boxes, i4sim's millimeters with a horizon of 32, whole numbers that land on the extent, a fractional step, a different safety margin, negative and large coordinates), compared bit for bit with a copy of the old loop, with at least five overlaps per scale; shifting the interval by two steps fails it | Targeted |
 | Every step: no simulated value changes | Lab's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline apart from `elapsed_ms` | Full (Lab) |
 
 ## Review

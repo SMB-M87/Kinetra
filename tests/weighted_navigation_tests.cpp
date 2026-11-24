@@ -392,17 +392,28 @@ TEST_CASE("tangent steering rejects an unbounded horizon") {
 TEST_CASE("priority steering predicts the same first overlap as testing every pair of steps") {
     // Random scenes at Lab's scales: unit boxes, and i4sim's millimeters with a horizon of 32
     // steps; whole-number positions and speeds put boxes exactly on the extent at some steps.
+    // Further scales use a fractional step, a non-default safety margin, negative and large
+    // coordinates. The reference is compiled in this file, so both copies of the expression
+    // must round alike: this holds without contraction into fused multiply-adds, as on the
+    // targets CI builds.
     std::mt19937 rng(41);
     struct Scale {
-        float position, extent, speed;
+        float base, position, extent, speed, step, safety;
         int steps;
         bool whole;
     };
-    for (const Scale scale : {Scale{40, 2, 2, 8, false}, Scale{40, 2, 2, 8, true},
-                              Scale{9000, 400, 12, 32, false}, Scale{9000, 400, 12, 32, true}}) {
+    for (const Scale scale :
+         {Scale{0, 40, 2, 2, 1, 1.025f, 8, false}, Scale{0, 40, 2, 2, 1, 1.025f, 8, true},
+          Scale{0, 9000, 400, 12, 1, 1.025f, 32, false}, Scale{0, 9000, 400, 12, 1, 1.025f, 32, true},
+          Scale{-500, 40, 2, 2, 0.1f, 1.5f, 24, false},
+          Scale{1000000, 9000, 400, 12, 1.f / 3, 1.1f, 32, false}}) {
+        CAPTURE(scale.base);
+        CAPTURE(scale.step);
         PrioritySteering settings;
         settings.max_speed = scale.speed;
         settings.prediction_steps = scale.steps;
+        settings.prediction_step = scale.step;
+        settings.safety_multiplier = scale.safety;
         std::uniform_real_distribution<float> position(0, scale.position),
             extent(scale.extent / 4, scale.extent), speed(-scale.speed, scale.speed);
         auto value = [&](std::uniform_real_distribution<float> &d) {
@@ -412,7 +423,7 @@ TEST_CASE("priority steering predicts the same first overlap as testing every pa
         auto box = [&] {
             Body body;
             body.shape = Shape::box;
-            body.position = {value(position), value(position)};
+            body.position = {scale.base + value(position), scale.base + value(position)};
             body.half_extents = {std::max(1.f, value(extent)), std::max(1.f, value(extent))};
             body.velocity = {value(speed), value(speed)};
             // Some neighbors stand still or creep along one axis.
@@ -422,6 +433,7 @@ TEST_CASE("priority steering predicts the same first overlap as testing every pa
                 body.velocity.y = 1e-6f;
             return body;
         };
+        int overlaps = 0;
         for (int scene = 0; scene < 300; ++scene) {
             Body mover = box();
             if (length(mover.velocity) == 0)
@@ -436,8 +448,12 @@ TEST_CASE("priority steering predicts the same first overlap as testing every pa
             }
             const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
             const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
+            if (expected.x != 0 || expected.y != 0)
+                ++overlaps;
             CHECK(actual.x == expected.x);
             CHECK(actual.y == expected.y);
         }
+        // Enough scenes predict an overlap for the comparison to mean something.
+        CHECK(overlaps >= 5);
     }
 }
