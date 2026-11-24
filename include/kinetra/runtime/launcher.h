@@ -81,6 +81,12 @@ class LaunchMenu {
     bool exit_requested() const { return exit_requested_; }
     /// Whether the configuration page is showing.
     bool configuring() const { return configuring_; }
+    /// Shows the configuration page of `selection.application` with
+    /// `selection.configuration` selected, as a host does when a session asks for
+    /// SessionRequest::configurations. For an application without configurations it shows
+    /// the application list with that application selected. Throws std::out_of_range for an
+    /// unknown application or configuration, and changes nothing then.
+    void show_configurations(LaunchSelection selection);
     /// Configuration currently chosen for the highlighted application.
     std::size_t configuration() const { return configurations_[application_]; }
     /// Number of rows in the current list.
@@ -133,6 +139,8 @@ class SessionHost {
     void return_to_menu();
     /// The running session, or null in the menu. Owned by the host.
     Session *session() const { return session_.get(); }
+    /// Application and configuration of the running session; std::nullopt in the menu.
+    std::optional<LaunchSelection> selection() const { return selection_; }
     /// Advances the running session. Its first advance after start() gets zero elapsed time
     /// and empty input, so the click that started it is not replayed. No-op in the menu.
     void advance(double elapsed, const Input &input, Camera2D &camera);
@@ -140,6 +148,7 @@ class SessionHost {
   private:
     std::vector<ApplicationRegistration> applications_;
     std::unique_ptr<Session> session_;
+    std::optional<LaunchSelection> selection_;
     bool fresh_{};
 };
 /// Keys the standard launcher loop handles itself; sessions receive all other input.
@@ -154,7 +163,9 @@ struct LauncherBindings {
 /// Standard menu/session event loop.
 ///
 /// After every advance it reads Session::request(): `menu` destroys the session and draws
-/// the menu in the same frame, `exit` ends the loop without rendering. `bindings` adds the
+/// the menu in the same frame, `configurations` does the same on the configuration page of
+/// the application that ran (LaunchMenu::show_configurations), and `exit` ends the loop
+/// without rendering. `bindings` adds the
 /// menu key and the Escape policy. Factories own application configuration. Zero frame
 /// limit means unlimited; returns the frames presented. Throws std::invalid_argument for a
 /// negative frame limit; factory exceptions propagate.

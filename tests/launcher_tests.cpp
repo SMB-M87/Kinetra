@@ -40,6 +40,34 @@ TEST_CASE("a configurable application asks for its configuration before launchin
     CHECK_MESSAGE(selection->configuration == 1, "default configuration lost");
 }
 
+TEST_CASE("show_configurations opens an application's page with its configuration selected") {
+    LaunchMenu menu({{"PLAIN", "NO CONFIGURATIONS", {}, 0}, {"SIZED", "TWO SIZES", {"SMALL", "LARGE"}, 0}});
+    const Vec2 viewport{800, 600};
+    menu.show_configurations({1, 1});
+    CHECK(menu.configuring());
+    CHECK(menu.description() == "TWO SIZES");
+    CHECK(menu.row_name(menu.selected()) == "LARGE");
+    Input confirm;
+    confirm.pressed[std::size_t(Key::enter)] = true;
+    const auto again = menu.update(confirm, viewport);
+    REQUIRE_MESSAGE(again, "Enter on the page did not start the configuration");
+    CHECK((again->application == 1 && again->configuration == 1));
+    Input back;
+    back.pressed[std::size_t(Key::m)] = true;
+    menu.show_configurations({1, 0});
+    menu.update(back, viewport);
+    CHECK_MESSAGE((!menu.configuring() && menu.selected() == 1), "M leaves the page for the list");
+    menu.show_configurations({0, 0});
+    CHECK_MESSAGE((!menu.configuring() && menu.selected() == 0),
+                  "an application without configurations shows the list");
+    menu.show_configurations({1, 1});
+    CHECK_THROWS_AS(menu.show_configurations({2, 0}), std::out_of_range);
+    CHECK_THROWS_AS(menu.show_configurations({1, 2}), std::out_of_range);
+    CHECK_THROWS_AS(menu.show_configurations({0, 1}), std::out_of_range);
+    CHECK_MESSAGE((menu.configuring() && menu.row_name(menu.selected()) == "LARGE"),
+                  "a rejected selection changed the menu");
+}
+
 TEST_CASE("preview layout follows selection and only applies to the application list") {
     const std::uint8_t pixel[]{0, 0, 0, 255};
     const auto image = std::make_shared<const RgbaImage>(1, 1, pixel);
@@ -115,9 +143,12 @@ TEST_CASE("session host isolates transitions and releases sessions") {
               return std::make_unique<TestSession>(destroyed);
           }}});
     Camera2D camera;
+    CHECK_FALSE(host.selection());
     host.start({0, 0}, camera);
     auto *session = static_cast<TestSession *>(host.session());
     REQUIRE(session);
+    REQUIRE(host.selection());
+    CHECK((host.selection()->application == 0 && host.selection()->configuration == 0));
     Input click;
     click.clicked = true;
     host.advance(5, click, camera);
@@ -129,8 +160,10 @@ TEST_CASE("session host isolates transitions and releases sessions") {
     CHECK_THROWS_AS(host.start({0, 0}, camera), std::runtime_error);
     CHECK_MESSAGE((host.session() == session && camera.position.x == 7 && destroyed == 0),
                   "failed transition changed session");
+    CHECK_MESSAGE(host.selection(), "failed transition forgot the running selection");
     host.return_to_menu();
     CHECK_MESSAGE((!host.session() && destroyed == 1), "return did not release session");
+    CHECK_MESSAGE(!host.selection(), "the menu still reports a running selection");
 }
 
 namespace {

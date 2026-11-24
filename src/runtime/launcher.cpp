@@ -109,6 +109,15 @@ std::string_view LaunchMenu::row_name(std::size_t row) const {
 std::string_view LaunchMenu::description() const {
     return choices_[application_].description;
 }
+void LaunchMenu::show_configurations(LaunchSelection selection) {
+    const auto &choice = choices_.at(selection.application);
+    const auto count = choice.configurations.size();
+    if ((count == 0 && selection.configuration != 0) || (count && selection.configuration >= count))
+        throw std::out_of_range("Unknown application configuration");
+    application_ = selection.application;
+    configurations_[application_] = selection.configuration;
+    configuring_ = count != 0;
+}
 MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
 }
@@ -225,11 +234,13 @@ void SessionHost::start(LaunchSelection selection, Camera2D &camera) {
     if (!next)
         throw std::runtime_error("Application factory returned no session");
     session_ = std::move(next);
+    selection_ = selection;
     camera = next_camera;
     fresh_ = true;
 }
 void SessionHost::return_to_menu() {
     session_.reset();
+    selection_.reset();
     fresh_ = false;
 }
 void SessionHost::advance(double elapsed, const Input &input, Camera2D &camera) {
@@ -280,9 +291,12 @@ int run_launcher(Runtime &runtime, std::vector<ApplicationRegistration> applicat
             const SessionRequest request = host.session()->request();
             if (request == SessionRequest::exit)
                 break;
-            if (request == SessionRequest::menu) {
+            if (request == SessionRequest::menu || request == SessionRequest::configurations) {
+                const auto ran = host.selection();
                 // Destroy before the menu draws, so a session never coexists with the next one.
                 host.return_to_menu();
+                if (request == SessionRequest::configurations && ran)
+                    menu.show_configurations(*ran);
                 switched = true;
             }
         }
