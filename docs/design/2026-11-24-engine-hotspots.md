@@ -105,7 +105,7 @@ Measured again after Lab's hotspot 2 and steps 1 to 3: `kinetra::bounds` is 3% o
 | Step 1: the candidate pairs and their order are unchanged | New characterization case in `simulation_tests.cpp`: a 51-body world of fixed boxes, polygons and circles interleaved with moving ones in a container added last, whose fingerprint over 360 steps (every position, velocity, angle and `candidate_pairs()`) was recorded on Kinetra `73adc66`; putting the fixed candidates first in the merge changes it. Existing `moving_contact_tests.cpp` and `simulation_tests.cpp` (`candidate_pairs()`), Lab's Demo crowd characterization lines, i4sim golden and pressure tests, Dotio fingerprints | Full |
 | Step 1: a rebuild keeps the grid's results | Existing spatial grid tests, plus a case that rebuilds with boxes that move away and back and queries after each rebuild | Targeted |
 | Step 2: queries give the same sorted, unique indices in both storages, also through the caller's buffer | New cases in `simulation_tests.cpp`: a compact and a scattered set (one far box) against an exhaustive search, with large and empty areas; one grid switched between both storages and a rejected rebuild after a dense one; a rejected query leaves the buffer unchanged. The existing grid cases | Targeted |
-| Step 3: the same first overlap and `diff` as the loop over every pair of steps | New case in `weighted_navigation_tests.cpp`: 1,800 random scenes at six scales (unit boxes, i4sim's millimeters with a horizon of 32, whole numbers that land on the extent, a fractional step, a different safety margin, negative and large coordinates), compared bit for bit with a copy of the old loop, with at least five overlaps per scale; shifting the interval by two steps fails it | Targeted |
+| Step 3: the same first overlap and `diff` as the loop over every pair of steps | New case in `weighted_navigation_tests.cpp`: 1,800 random scenes at six scales (unit boxes, i4sim's millimeters with a horizon of 32, whole numbers that land on the extent, a fractional step, a different safety margin, negative and large coordinates), compared bit for bit with a copy of the old loop, with at least five overlaps per scale; shifting the interval by two steps fails it. A constructed case, a neighbor creeping below the float spacing at y = 10,002, which only the slack keeps right: it fails with the slack set to zero | Targeted |
 | Every step: no simulated value changes | Lab's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline apart from `elapsed_ms` | Full (Lab) |
 
 ## Review
@@ -188,7 +188,7 @@ Agent review round 1 (#51 and Kinetra-Lab#113, both *Fix first*): the interval a
 
 ### Step 3
 
-- Kinetra: `ctest --preset dev`, 277 of 277 passed; `clang-format --dry-run --Werror` on the changed files. Shifting the interval by two steps fails the new case 369 times (lower end) and 174 times (upper end).
+- Kinetra: `ctest --preset dev`, 277 of 277 passed, and 278 of 278 with the review's constructed case; `clang-format --dry-run --Werror` on the changed files. Shifting the interval by two steps fails the random case 369 times (lower end) and 174 times (upper end); a slack of zero fails the constructed case.
 - Bit identity on the release build: i4sim's CSV with and without `--predictive-passing` and Dotio's output identical in all three runs, and again after the review's fixes; Demo's characterization lines pass.
 - Time, median of three runs interleaved with step 2 on the same machine: i4sim 15.8 to 11.4 s, with passing 22.5 to 18.4 s; Demo and Dotio unchanged.
 
@@ -217,7 +217,7 @@ Agent review round 1 (#51 and Kinetra-Lab#113, both *Fix first*): the interval a
 **perf(simulation): priority_steer tests only the steps that can overlap** (#51, Lab: Kinetra-Lab#113)
 
 - Summary: for each step of the mover, only the interval of the neighbor's steps that can overlap, widened by a bound on the rounding error, is tested with the unchanged expression, so the first pair and its `diff` stay the same. Step 4 is decided as not worth a pull request, and both roadmap items close.
-- Changes: the interval search in `priority_steer`; a test of 1,800 random scenes at six scales against a copy of the old loop.
+- Changes: the interval search in `priority_steer`, with `diff` reusing the mover's predicted position; a test of 1,800 random scenes at six scales against a copy of the old loop, and a constructed case that only the slack keeps right.
 - Design, verification and review: the sections above.
 - Merge order: after #49 and #50, with a merge commit; then Kinetra-Lab#113.
 
