@@ -1,6 +1,6 @@
 # Review access and merges by the author
 
-Status: implemented · Branch: `chore/review-access-and-merges`, in Kinetra-Lab `ccr-f93b2da2-0j3r2i` · Related: roadmap item *Review sessions that can post on both repositories* (both repositories), [Review loop and merges by agents](2026-11-22-pr-review-loop.md), Kinetra#42, Kinetra#52, Kinetra-Lab#114
+Status: implemented · Branch: `chore/review-access-and-merges` and, after the review, `chore/review-access-follow-ups`; in Kinetra-Lab `ccr-f93b2da2-0j3r2i` · Related: roadmap item *Review sessions that can post on both repositories* (both repositories), [Review loop and merges by agents](2026-11-22-pr-review-loop.md), Kinetra#42, Kinetra#52, Kinetra-Lab#114
 
 A review session must write to every repository it reviews, and on 2026-11-24 the user asked that agents merge without waiting for them. Both repositories' `.claude/settings.json` now let a Claude Code session attach the other repository with push access and post its review without a prompt, and the workflow says how the author starts the reviewer and checks its access. No kind of change waits for the user any more: the author merges agent rules, skills, CI and releases under the same merge rule, after two rounds on one point the author's answer stands, and the user checks merged work afterwards.
 
@@ -77,14 +77,14 @@ sequenceDiagram
 
 - **Settings.** Both `.claude/settings.json` files get the same `permissions.allow` list beside the existing hook.
 - **Workflow.** Step 6 of the [workflow](../workflow.md#review-access) gets a *Review access* part: why, the permission rules, how the author starts the reviewer and checks its access. [AGENTS.md](../../AGENTS.md#git) names the rule and links there; `pr-review` step 0 checks and attaches each repository; `feature` step 9.7 starts the reviewer that way.
-- **Merges.** The merge rule loses its list of reserved changes and says that no kind of change waits for the user. The two-round limit ends with the author's answer, resolved by the reviewer. The review summary lists what the user should check afterwards under *For the user*. Every copy changes with it: the workflow's cycle, review, feedback and stack text and its cross-repository diagram, `pr-review`, `pr-feedback`, `feature` and their READMEs, `verify` and the [testing](../testing.md#full) page for the playtest.
+- **Merges.** The merge rule loses its list of reserved changes and says that no kind of change waits for the user. The two-round limit ends with the author's answer, resolved by the reviewer. The review summary lists what the user should check afterwards under *For the user*. Every copy changes with it: the workflow's cycle, review, feedback and stack text and its cross-repository diagram, `pr-review`, `pr-feedback`, `feature` and their READMEs, `verify` and the [testing](../testing.md#full) page for the playtest. A change to the agent rules keeps its agent review even when it is docs-only, and a commit to them after a *Ready to merge* gets a new round, so a rule change never merges unchecked.
 
 ## Affected areas
 
 | Repository | Files |
 | --- | --- |
-| Kinetra | `.claude/settings.json`; `AGENTS.md` (Git); `docs/workflow.md` (cycle, step 6 with *Review access*, step 8, review feedback, branches, stacks, changes across Kinetra and Lab); `docs/testing.md` (Full); `.agents/skills/pr-review/`, `feature/`, `pr-feedback/` (skill and README), `verify/SKILL.md`; `docs/roadmap.md`; this document and the index |
-| Kinetra-Lab | `.claude/settings.json`; `README.md` (the cloud-session paragraph); `docs/roadmap.md` |
+| Kinetra | `.claude/settings.json`; `AGENTS.md` (Git); `docs/workflow.md` (cycle, step 6 with *Review access*, step 8, review feedback, branches, stacks, changes across Kinetra and Lab); `docs/testing.md` (Full); `.agents/skills/pr-review/`, `feature/`, `pr-feedback/` (skill and README), `verify/SKILL.md`, `.agents/skills/README.md`; `docs/review-lessons.md`; `docs/roadmap.md`; this document and the index |
+| Kinetra-Lab | `.claude/settings.json`; `AGENTS.md` (verification table, docs-only paragraph); `README.md` (the cloud-session paragraph); `docs/roadmap.md` |
 
 ## Test plan
 
@@ -114,13 +114,25 @@ sequenceDiagram
 
 Lessons added to the [review lessons](../review-lessons.md): *When a change removes a gate, check every exemption that the gate made safe*; *When a permission list is meant to unblock a procedure, list every tool call of that procedure, in each session that runs it*.
 
+**Agent review, round 2** (Kinetra#57 at ddf4496, the commits since round 1): *Fix first*. The allow list, the design document and the nits of round 1 settled; the rule change missed two copies.
+
+| Finding | Resolution |
+| --- | --- |
+| Blocking: `pr-feedback` step 5.5 let an old *Ready to merge* cover a commit to the agent rules | "and none of the agent rules" added to its *Ready to merge* clause |
+| Blocking: `AGENTS.md` development cycle still said a docs-only change skips the agent review | Reworded as the workflow's opening: no agent review unless it changes the agent rules |
+| Should fix: "docs-only" was redefined in the workflow and `pr-review` but given an exception in `AGENTS.md` | The exception form everywhere: "a docs-only one that leaves the agent rules alone"; a skill-only pull request stays docs-only and needs no design document |
+| Should fix: *Branch*, *Design*, *Affected areas*, the copies claim and CI in this document | Updated |
+| Nits: `pr-review` step 3 "reviewed on request"; "have" in the `pr-feedback` README; a Lab pointer range with Kinetra rule pages | Carried out; `AGENTS.md` says such a pointer range is not a rule change, as Lab's copy does |
+
+Lesson added: *Add an exception to a defined term in the same form on every page, never by redefining the term on some of them*.
+
 ## Verification
 
 - `python3 -m json.tool` on both `.claude/settings.json`: valid; `diff` of the two: identical.
 - `python3 tools/check_docs.py` in Kinetra and Kinetra-Lab: all links resolve.
-- `check_copies.py` from Kinetra-Lab with the old wordings (`wait for the user`, `waits for the user`, `waiting for you`, `Needs the user`, `Merge line`, `always wait`, `user merges`, `open for the user`, `user's decision`, `reserved for you`, `otherwise the user`, `point is the user`, `check by the user`, `write access`, `push access`), and after round 1 with `docs-only`, `no agent review`, `needs no review` and `Markdown-only`: every remaining hit is new text or has another meaning.
+- `check_copies.py` from Kinetra-Lab with the old wordings (`wait for the user`, `waits for the user`, `waiting for you`, `Needs the user`, `Merge line`, `always wait`, `user merges`, `open for the user`, `user's decision`, `reserved for you`, `otherwise the user`, `point is the user`, `check by the user`, `write access`, `push access`), and after rounds 1 and 2 with `docs-only`, `no agent review`, `needs no review`, `Markdown-only`, `keeps a *Ready`, `keeps this conclusion`, `still holds`, `skips the design document` and `only Markdown`: every remaining hit is new text, has another meaning, or names the pointer-only or docs-only exception in its full form. Round 2 found two copies that round 1's search had listed and that were judged wrongly (`AGENTS.md` development cycle, `pr-feedback` step 5.5).
 - **The recorded run.** The agent review of Kinetra#56 and Kinetra-Lab#117 was started with `create_session` from Kinetra-Lab on `ccr-f93b2da2-0j3r2i`, which held the new rules. Its events show `check_repo_access` on Kinetra (`attachable`, push) at 10:47:14, `add_repo` with push access at 10:47:18 and `register_repo_root`, with no permission request between them; it then posted its reviews on both pull requests. The session ran in permission mode `auto`, inherited from the author's session, and that mode can allow these calls without the rules; on 2026-11-24 the same mode had refused the attach before the rules existed. A session in default mode would show whether the rules alone suffice.
-- CI: green on Kinetra#56 (286784f) and on Kinetra-Lab#117 (17a6c1d, and 53d73fb after `main` was merged in).
+- CI: green on Kinetra#56 (286784f), on the follow-up Kinetra#57 (ddf4496, and its head after round 2) and on Kinetra-Lab#117 (17a6c1d, 53d73fb after `main` was merged in, fbea613).
 
 ## Pull request
 
