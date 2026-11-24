@@ -124,6 +124,19 @@ Measured again after Lab's hotspot 2 and steps 1 to 3: `kinetra::bounds` is 3% o
 | The member comment misstates `boxes_` | Fixed |
 | The kept buckets cost a walk over the cells of two rebuilds | Kept: one walk over the cells against freeing and allocating every bucket; the measurement shows the gain. Step 2 replaces the hash map for compact areas |
 
+Agent review round 1 (#49 and Kinetra-Lab#111, both *Fix first*):
+
+| Finding | Resolution |
+| --- | --- |
+| The fingerprint holds only on toolchains whose `sinf` and `cosf` round as CI's | Fixed: the scene calls no `sin` or `cos` away from angle zero, checked by wrapping them at link time, and was recorded again on 73adc66; a review lesson |
+| This document did not record step 1's pull requests, its *Pull request* or its status | Fixed |
+| Kinetra-Lab#111 conflicted with Lab `main` after #110 | Lab `main` merged, the pointer kept at this branch, which contains #110's Kinetra commit |
+| Demo's README still gave 0.64 s of every second | Fixed, with a Lab review lesson on searching for old figures |
+| The Demo profile said every query goes into both indexes | Fixed: a fixed body in a sweep pass queries only the moving one |
+| Nits: `math-physics.md`, the non-goal's wording, vertex reuse in `index_fixed_bodies`, the descriptions | Fixed |
+
+Round 2: Kinetra-Lab#111 *Ready to merge*; #49 asked for this record of round 1 and the test count after the merge.
+
 ### Step 2
 
 `/code-review` at medium on `perf/world-fixed-index...perf/spatial-query` found no change to the query results and five points:
@@ -153,7 +166,7 @@ Agent review round 1 (#50): no blocking point; three should-fix points, all fixe
 
 ### Step 1
 
-- Kinetra: `cmake --preset dev && cmake --build --preset dev && ctest --preset dev`: 272 of 272 passed. `clang-format --dry-run --Werror` on the changed files, `python3 tools/check_docs.py` and `python3 tools/check_copies.py --term 'rebuilds its grid' --term 'broad phase'` (every hit still true) pass.
+- Kinetra: `cmake --preset dev && cmake --build --preset dev && ctest --preset dev`: 272 of 272 passed, and 273 of 273 after merging Kinetra `main` and the review's fixes, the fingerprint recorded again included. `clang-format --dry-run --Werror` on the changed files, `python3 tools/check_docs.py` and `python3 tools/check_copies.py --term 'rebuilds its grid' --term 'broad phase'` (every hit still true) pass.
 - Lab at the pointer: `ctest --preset dev` without the graphics cases, 318 of 318 passed, golden and pressure tests included.
 - Bit identity on the release build: i4sim's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline's apart from `elapsed_ms` in all three runs; Dotio's output, fingerprints included, identical; Demo's characterization lines pass.
 - Time, release preset, median of three runs on one cloud machine (four cores of an Intel Xeon at 2.1 GHz, about 1.25 times slower than the baseline's on Demo): Demo's soak at 48 agents 12.1 to 2.7 s (steering) and 12.0 to 2.5 s (route), at 240 agents 28.0 to 18.1 s, 28.9 to 18.5 s and 26.0 to 16.3 s; i4sim and Dotio within run-to-run noise. Lab's performance page has the row and the new Demo profile.
