@@ -283,6 +283,42 @@ TEST_CASE("a spatial grid rebuilt over moving boxes matches an exhaustive search
     }
 }
 
+TEST_CASE("a spatial grid gives the same results over a compact and a scattered set") {
+    // A compact set fills a dense array of cells; one far box makes the grid fall back to its
+    // hash map. Both must match an exhaustive search, also through the caller's buffer.
+    auto compact = random_boxes();
+    auto scattered = compact;
+    scattered.push_back({{1000000, -1}, {1000001, 1}});
+    for (const auto *boxes : {&compact, &scattered}) {
+        CAPTURE(boxes->size());
+        SpatialGrid grid(3);
+        grid.rebuild(*boxes);
+        std::vector<std::size_t> buffer{99};
+        auto areas = *boxes;
+        areas.push_back({{-1000, -1000}, {1000, 1000}});
+        areas.push_back({{999999, -5}, {1000002, 0}});
+        areas.push_back({{500, 500}, {501, 501}});
+        for (const auto &area : areas) {
+            std::vector<std::size_t> expected;
+            for (std::size_t j = 0; j < boxes->size(); ++j)
+                if ((*boxes)[j].overlaps(area))
+                    expected.push_back(j);
+            CHECK(grid.query(area) == expected);
+            grid.query(area, buffer);
+            CHECK(buffer == expected);
+        }
+    }
+}
+
+TEST_CASE("a rejected spatial query leaves the caller's buffer unchanged") {
+    SpatialGrid grid(1);
+    grid.rebuild(random_boxes());
+    std::vector<std::size_t> buffer{1, 2, 3};
+    CHECK_THROWS_AS(grid.query({{0, 0}, {1000, 1000}}, buffer), std::invalid_argument);
+    CHECK_THROWS_AS(grid.query({{1, 0}, {0, 1}}, buffer), std::invalid_argument);
+    CHECK(buffer == std::vector<std::size_t>{1, 2, 3});
+}
+
 TEST_CASE("an elastic circle collision conserves momentum and energy") {
     World world;
     Body a = circle({-0.48f, 0}), b = circle({0.48f, 0});
