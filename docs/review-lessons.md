@@ -87,6 +87,9 @@ No lessons yet.
 
 ## Code
 
+- **Count the total cells visited when a route follower repeats a raster clearance query** · added 2026-11-24 · source: [#61](https://github.com/SMB-M87/Kinetra/pull/61)
+  One sweep scans a bounding rectangle. Repeating it for every point along an open diagonal made the first target selection cubic in the number of waypoints.
+
 - **Keep assertion operands printable when replacing scalar checks with value-type comparisons** · added 2026-11-24 · source: #60
   Doctest prints `{?}` for a type it cannot format. Add coordinate context when replacing scalar assertions with a vector comparison so failures still show the values.
 

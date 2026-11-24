@@ -45,7 +45,7 @@ flowchart TD
     Physics["physics.h<br/>Body, Contact, World, sweeps"]
     CGrid["collision_grid.h<br/>CollisionGrid"]
     Nav["navigation.h<br/>Navigation, route_target"]
-    WGrid["weighted_grid.h<br/>WeightedGrid"]
+    WGrid["weighted_grid.h<br/>WeightedGrid, route_target"]
     Steer["steering.h<br/>steer, priority_steer, tangent_steer"]
     Avoid["avoidance.h<br/>avoid_collisions"]
     Traffic["traffic.h<br/>TrafficGate"]
@@ -149,8 +149,8 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 | `kinetra_sweeps` | `kinetra_sweep_tests` | Circle sweeps: timing, corners, containment, thin walls |
 | `kinetra_translation_sweeps` | `kinetra_translation_sweep_tests` | Every convex translation pair |
 | `kinetra_moving_contacts` | `kinetra_moving_contact_tests` | Moving/moving contacts, chains, resting gaps, the event-budget fallback |
-| `kinetra_navigation` | `kinetra_navigation_tests` | Settings validation, swept clearance, exact and projected goals |
-| `kinetra_weighted_navigation` | `kinetra_weighted_navigation_tests` | Weighted grid planning, footprints, borders and priority steering |
+| `kinetra_navigation` | `kinetra_navigation_tests` | Settings validation, swept clearance, exact and projected goals, corner lookahead |
+| `kinetra_weighted_navigation` | `kinetra_weighted_navigation_tests` | Weighted grid planning, raster route targets, footprints, borders and priority steering |
 | `kinetra_avoidance` | `kinetra_avoidance_tests` | Limits, infeasibility, rectangles and crowds of 2 to 16 agents |
 | `kinetra_traffic` | `kinetra_traffic_tests` | FIFO order, eligibility, occupancy and invalid snapshots |
 

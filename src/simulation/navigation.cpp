@@ -1,9 +1,13 @@
 #include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <kinetra/simulation/navigation.h>
+#include <kinetra/simulation/weighted_grid.h>
 #include <limits>
 #include <queue>
+#include <span>
 #include <stdexcept>
+#include <utility>
 
 namespace kinetra {
 
@@ -264,22 +268,76 @@ kinetra::Vec2 Navigation::point(int id) const {
     return area.min + kinetra::Vec2{float(id % width) * spacing, float(id / width) * spacing};
 }
 
-kinetra::Vec2 route_target(kinetra::Vec2 position, std::vector<kinetra::Vec2> &route,
-                           const Navigation &navigation) {
-    while (route.size() > 1 && navigation.clear(position, route[1]))
-        route.erase(route.begin());
-    if (route.empty())
-        return position;
-    if (route.size() == 1)
-        return route.front();
-    const auto corner = route.front();
-    const float distance = kinetra::length(corner - position);
-    if (distance < 2) {
-        const auto ahead = corner + kinetra::limited(route[1] - corner, 2 - distance);
-        if (navigation.clear(position, ahead))
-            return ahead;
+namespace {
+// A clear sweep to the end of a straight run covers the interiors of shorter sweeps on that ray.
+// Intermediate endpoints must also be in free cells, even when a point sweep only touches a corner.
+std::size_t straight_prefix_end(Vec2 position, std::span<const Vec2> route, const WeightedGrid &grid) {
+    if (route.size() < 3)
+        return 0;
+    const double ray_x = double(route.front().x) - position.x;
+    const double ray_y = double(route.front().y) - position.y;
+    double projection = ray_x * ray_x + ray_y * ray_y;
+    std::size_t end = 0;
+    while (end + 1 < route.size()) {
+        const double x = double(route[end + 1].x) - position.x;
+        const double y = double(route[end + 1].y) - position.y;
+        const double next_projection = ray_x * x + ray_y * y;
+        // An angular tolerance could group a waypoint on the other side of an obstacle.
+        if (ray_x * y != ray_y * x || !(next_projection > projection) ||
+            grid.blocked(grid.cell(route[end + 1])))
+            break;
+        projection = next_projection;
+        ++end;
     }
-    return corner;
+    return end;
+}
+
+template <typename Clear>
+std::pair<Vec2, std::size_t> visible_route_target(Vec2 position, std::span<const Vec2> route, float lookahead,
+                                                  Clear clear) {
+    if (route.empty())
+        return {position, 0};
+
+    std::size_t corner = 0;
+    while (corner + 1 < route.size() && clear(position, route[corner + 1]))
+        ++corner;
+
+    auto target = route[corner];
+    if (corner + 1 < route.size()) {
+        // Spend the budget getting to the corner before looking along the next leg.
+        const float remaining = lookahead - distance(position, route[corner]);
+        if (remaining > 0) {
+            const auto ahead = route[corner] + limited(route[corner + 1] - route[corner], remaining);
+            if (clear(position, ahead))
+                target = ahead;
+        }
+    }
+    return {target, corner};
+}
+} // namespace
+
+Vec2 route_target(Vec2 position, std::vector<Vec2> &route, const Navigation &navigation) {
+    // Preserve the body-navigation lookahead in world units used by existing callers.
+    constexpr float lookahead = 2;
+    const auto [target, passed] = visible_route_target(
+        position, route, lookahead, [&](Vec2 start, Vec2 goal) { return navigation.clear(start, goal); });
+    route.erase(route.begin(), route.begin() + static_cast<std::ptrdiff_t>(passed));
+    return target;
+}
+
+Vec2 route_target(Vec2 position, std::vector<Vec2> &route, const WeightedGrid &grid,
+                  GridRouteOptions options) {
+    if (!finite(position) || !std::isfinite(options.lookahead) || options.lookahead < 0 ||
+        !finite(options.half_extents) || options.half_extents.x < 0 || options.half_extents.y < 0)
+        throw std::invalid_argument("Raster route target requires a finite position and finite, "
+                                    "nonnegative lookahead and half extents");
+    const auto clear = [&](Vec2 start, Vec2 goal) { return grid.clear(start, goal, options.half_extents); };
+    const auto straight_end = straight_prefix_end(position, route, grid);
+    const auto visible_end = straight_end > 1 && clear(position, route[straight_end]) ? straight_end : 0;
+    const auto [target, passed] = visible_route_target(
+        position, std::span<const Vec2>{route}.subspan(visible_end), options.lookahead, clear);
+    route.erase(route.begin(), route.begin() + static_cast<std::ptrdiff_t>(visible_end + passed));
+    return target;
 }
 
 } // namespace kinetra
