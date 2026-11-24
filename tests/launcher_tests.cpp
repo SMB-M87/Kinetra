@@ -52,6 +52,15 @@ TEST_CASE("show_configurations opens an application's page with its configuratio
     const auto again = menu.update(confirm, viewport);
     REQUIRE_MESSAGE(again, "Enter on the page did not start the configuration");
     CHECK((again->application == 1 && again->configuration == 1));
+    // A pointer that the session left over another row keeps the selection until it moves.
+    menu.show_configurations({1, 1});
+    Input resting;
+    resting.mouse = menu.layout(viewport).row_center(0);
+    CHECK_FALSE(menu.update(resting, viewport));
+    CHECK_MESSAGE(menu.row_name(menu.selected()) == "LARGE", "a resting pointer replaced the selection");
+    resting.mouse.x += 1;
+    menu.update(resting, viewport);
+    CHECK_MESSAGE(menu.row_name(menu.selected()) == "SMALL", "a moving pointer no longer hovers");
     Input back;
     back.pressed[std::size_t(Key::m)] = true;
     menu.show_configurations({1, 0});

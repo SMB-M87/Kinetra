@@ -675,7 +675,7 @@ TEST_CASE("run_session honors the frame limit") {
     CHECK_THROWS_AS(run_session(runtime, direct, -1), std::invalid_argument);
 }
 
-TEST_CASE("run_session ends on a menu or exit request without rendering that frame") {
+TEST_CASE("run_session ends on any request without rendering that frame") {
     Runtime runtime("Kinetra session", 160, 120);
     for (const auto request : {SessionRequest::menu, SessionRequest::configurations, SessionRequest::exit}) {
         CAPTURE(static_cast<int>(request));

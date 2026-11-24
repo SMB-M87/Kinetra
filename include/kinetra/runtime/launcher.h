@@ -84,7 +84,9 @@ class LaunchMenu {
     /// Shows the configuration page of `selection.application` with
     /// `selection.configuration` selected, as a host does when a session asks for
     /// SessionRequest::configurations. For an application without configurations it shows
-    /// the application list with that application selected. Throws std::out_of_range for an
+    /// the application list with that application selected. The next update() takes the
+    /// pointer as resting where it finds it, so a pointer that the session left over another
+    /// row does not replace the selection until it moves. Throws std::out_of_range for an
     /// unknown application or configuration, and changes nothing then.
     void show_configurations(LaunchSelection selection);
     /// Configuration currently chosen for the highlighted application.
@@ -110,6 +112,8 @@ class LaunchMenu {
     bool configuring_{}, exit_requested_{};
     bool has_previews_{};
     Vec2 pointer_{-1, -1};
+    /// Set by show_configurations: the next update() records the pointer without hovering.
+    bool settle_pointer_{};
 };
 /// An application the launcher can start.
 struct ApplicationRegistration {
