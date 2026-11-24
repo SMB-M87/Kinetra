@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <random>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -74,6 +75,34 @@ Body cruiser_at(Vec2 position, Vec2 velocity) {
 
 /// Vertical wall along x = 0.
 constexpr Segment wall{{0, -100}, {0, 100}};
+/// priority_steer's predictive term computed as before it searched an interval of steps:
+/// every pair of steps (i, j) in order, the first overlapping one per neighbor.
+Vec2 brute_force_predictive(const Body &a, std::span<const Body> neighbors, const PrioritySteering &s) {
+    Vec2 sum{};
+    int predicted = 0;
+    for (const auto &other : neighbors) {
+        if (length(a.velocity) == 0 ||
+            distance(a.position, other.position) >
+                length(a.half_extents) + length(other.half_extents) +
+                    static_cast<float>(2 * s.prediction_steps) * s.prediction_step * s.max_speed)
+            continue;
+        bool found = false;
+        for (int i = 0; i <= s.prediction_steps && !found; ++i)
+            for (int j = 0; j <= s.prediction_steps; ++j) {
+                const Vec2 diff =
+                    (a.position + a.velocity * (static_cast<float>(i) * s.prediction_step)) -
+                    (other.position + other.velocity * (static_cast<float>(j) * s.prediction_step));
+                const Vec2 extent = (a.half_extents + other.half_extents) * s.safety_multiplier;
+                if (std::abs(diff.x) < extent.x && std::abs(diff.y) < extent.y) {
+                    sum += normalized(diff);
+                    ++predicted;
+                    found = true;
+                    break;
+                }
+            }
+    }
+    return predicted ? sum / float(predicted) : sum;
+}
 } // namespace
 
 TEST_CASE("a free weighted path ends exactly at the goal") {
@@ -358,4 +387,92 @@ TEST_CASE("tangent steering stays finite and within its acceleration limit") {
 
 TEST_CASE("tangent steering rejects an unbounded horizon") {
     CHECK_THROWS_AS(tangent_steer(cruiser(), {100, 20}, {}, 2, .6f, 65), std::invalid_argument);
+}
+
+TEST_CASE("priority steering keeps a step that only rounding puts inside the extent") {
+    // A neighbor creeps along y below the float spacing at y = 10,002, so every float gap rounds
+    // to -2, inside the extent of 2.00001, while the exact gap leaves it after ten steps. The
+    // loop over every pair finds (0, 19); without the slack the search would skip i = 0.
+    PrioritySteering settings;
+    settings.prediction_steps = 32;
+    settings.safety_multiplier = 1;
+    Body mover = cruiser_at({0, 10000}, {0, 1});
+    mover.half_extents = {1, 1};
+    Body other = cruiser_at({20, 10002}, {-1, 1e-6f});
+    other.half_extents = {1, 1.00001f};
+    const Body neighbors[]{other};
+    const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
+    const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
+    REQUIRE((expected.x != 0 || expected.y != 0));
+    CHECK(actual.x == expected.x);
+    CHECK(actual.y == expected.y);
+}
+
+TEST_CASE("priority steering predicts the same first overlap as testing every pair of steps") {
+    // Random scenes at Lab's scales: unit boxes, and i4sim's millimeters with a horizon of 32
+    // steps; whole-number positions and speeds make exact ties between steps more likely.
+    // Further scales use a fractional step, a non-default safety margin, negative and large
+    // coordinates. The reference is compiled in this file, so both copies of the expression
+    // must round alike: this holds without contraction into fused multiply-adds, as on the
+    // targets CI builds.
+    std::mt19937 rng(41);
+    struct Scale {
+        float base, position, extent, speed, step, safety;
+        int steps;
+        bool whole;
+    };
+    for (const Scale scale :
+         {Scale{0, 40, 2, 2, 1, 1.025f, 8, false}, Scale{0, 40, 2, 2, 1, 1.025f, 8, true},
+          Scale{0, 9000, 400, 12, 1, 1.025f, 32, false}, Scale{0, 9000, 400, 12, 1, 1.025f, 32, true},
+          Scale{-500, 40, 2, 2, 0.1f, 1.5f, 24, false},
+          Scale{1000000, 9000, 400, 12, 1.f / 3, 1.1f, 32, false}}) {
+        CAPTURE(scale.base);
+        CAPTURE(scale.step);
+        PrioritySteering settings;
+        settings.max_speed = scale.speed;
+        settings.prediction_steps = scale.steps;
+        settings.prediction_step = scale.step;
+        settings.safety_multiplier = scale.safety;
+        std::uniform_real_distribution<float> position(0, scale.position),
+            extent(scale.extent / 4, scale.extent), speed(-scale.speed, scale.speed);
+        auto value = [&](std::uniform_real_distribution<float> &d) {
+            const float v = d(rng);
+            return scale.whole ? std::round(v) : v;
+        };
+        auto box = [&] {
+            Body body;
+            body.shape = Shape::box;
+            body.position = {scale.base + value(position), scale.base + value(position)};
+            body.half_extents = {std::max(1.f, value(extent)), std::max(1.f, value(extent))};
+            body.velocity = {value(speed), value(speed)};
+            // Some neighbors stand still or creep along one axis.
+            if (rng() % 4 == 0)
+                body.velocity = {};
+            else if (rng() % 4 == 0)
+                body.velocity.y = 1e-6f;
+            return body;
+        };
+        int overlaps = 0;
+        for (int scene = 0; scene < 300; ++scene) {
+            Body mover = box();
+            if (length(mover.velocity) == 0)
+                mover.velocity = {1, 0};
+            std::vector<Body> neighbors;
+            for (int k = 0; k < 6; ++k) {
+                Body other = box();
+                // Keep them apart at the start, so the predictive term decides.
+                if (collide(mover, other))
+                    continue;
+                neighbors.push_back(other);
+            }
+            const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
+            const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
+            if (expected.x != 0 || expected.y != 0)
+                ++overlaps;
+            CHECK(actual.x == expected.x);
+            CHECK(actual.y == expected.y);
+        }
+        // Enough scenes predict an overlap for the comparison to mean something.
+        CHECK(overlaps >= 5);
+    }
 }

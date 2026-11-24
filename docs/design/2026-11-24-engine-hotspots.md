@@ -1,6 +1,6 @@
 # Engine hotspots
 
-Status: accepted, steps 1 and 2 implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: [roadmap, *Engine performance*](../roadmap.md#now), Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
+Status: implemented · Branch: `perf/world-fixed-index` (step 1 of a stack) · Related: the roadmap item *Engine performance*, closed by step 3, Kinetra-Lab's [performance baseline](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md#hotspots) and its roadmap item *Engine hotspots from the performance baseline*
 
 Kinetra-Lab's performance baseline of 2026-11-23 found four hotspots in engine code: `World::step`'s broad phase, `SpatialGrid::query`, `priority_steer`'s prediction loop and `bounds` of a box. This change takes them one per pull request, in that order, without changing a single simulated value: every golden line, fingerprint and benchmark result stays as it is, and only the time goes down. Demo falls behind at time scale 4 because of the first one.
 
@@ -32,7 +32,7 @@ The numbers are Lab's baseline ([performance](https://github.com/SMB-M87/Kinetra
 
 Goals:
 
-- One Kinetra pull request per hotspot, stacked in the order above, each with a Lab pull request that points at it, measures before and after with the baseline's workloads and updates Lab's performance page.
+- One Kinetra pull request per hotspot that is still worth one when its turn comes, stacked in the order above, each with a Lab pull request that points at it, measures before and after with the baseline's workloads and updates Lab's performance page.
 - Behavior to the bit: Demo's crowd characterization lines (a 64-bit fingerprint of every moving body), i4sim's golden and pressure tests, i4sim's motion benchmark CSV apart from `elapsed_ms` (with and without `--predictive-passing`), Dotio's fingerprints and Kinetra's own tests stay identical. A golden line that moves means the step is wrong; none is updated.
 - No public API change that a caller has to follow. A new overload is allowed; a changed meaning is not.
 
@@ -51,7 +51,7 @@ Non-goals:
 | Where the fixed index is rebuilt | At the first pass of a step, where the single grid used to be rebuilt | A bad box throws `std::invalid_argument` at the same point of the step, after the first substep's forces, as before. When a fixed and a moving box are both bad, the fixed one is checked first, so the message can name the other fault; the type and the point stay, and no test or caller reads the message |
 | Which fields mark a fixed body as changed | Per shape, the fields `bounds` reads: a circle's position and radius; a box's position, half extents and angle; a polygon's position, angle and vertices | Turning a fixed circle, or any field `bounds` ignores, keeps the index |
 | Bucket storage | `SpatialGrid::rebuild` keeps the vectors of the cells in use and drops a cell that stayed empty for a whole rebuild | Rebuilding over boxes that barely move then allocates almost nothing; the map stays bounded by the cells of the last two rebuilds |
-| Stack | Four Kinetra pull requests, `perf/world-fixed-index`, then the query, the prediction loop and `bounds` on branches stacked on it; one Lab pull request per step on the Lab stack | One question per pull request, measured on its own |
+| Stack | Kinetra pull requests stacked on `perf/world-fixed-index`, one per hotspot, and one Lab pull request per step on the Lab stack; `bounds` (step 4) only if it is still worth one after the others | One question per pull request, measured on its own |
 
 ## Design
 
@@ -75,11 +75,11 @@ A query merges the two grids' results: both ascend in body index, so the merge g
 
 ### Step 3: `priority_steer` finds the first overlapping pair per step
 
-To be designed on its branch, from this direction: for each step `i` of the mover, the predicted gap to the neighbor is linear in the neighbor's step `j`, so the steps `j` that can overlap form an interval. Only the steps of that interval, widened by a bound on the rounding error, are tested with the existing expression, in ascending order, so the first pair `(i, j)` and its `diff` stay the same.
+For a step `i` of the mover, the float expression gives `diff = mover_i - (other.position + other.velocity * (j * step))`, and its exact value is linear in the neighbor's step `j`. Per axis, the steps whose exact gap is below the extent plus `slack` form an interval, found in double precision and rounded outward with `floor` and `ceil`; the two axes are intersected with `[0, steps]`. `slack` is 1e-5 times the sum of the magnitudes involved (mover, neighbor position, the neighbor's travel over the horizon, the extent), about 40 times the float error of the expression, plus the smallest normal float for subnormal results. A step outside the interval has an exact gap of at least extent plus slack, so its float `diff` cannot pass the strict `<` test; the steps inside are tested in ascending order with the unchanged expression. So the first pair `(i, j)` and its `diff` are those of the old loop over all (horizon + 1)² pairs. A neighbor that stands still on an axis keeps every step or none; an interval that is empty or far off skips the step `i` before any conversion to `int`.
 
-### Step 4: `bounds` of a box with one rotation
+### Step 4: box bounds, not done
 
-Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` and `cos` once per call with values identical to the bit, or Lab's performance page and both roadmaps record why it is no longer worth a pull request.
+Measured again after Lab's hotspot 2 and steps 1 to 3: `kinetra::bounds` is 3% of i4sim's motion benchmark (2% with predictive passing) and `sincosf` 2% (1%), against 30% and 7% in the baseline, when contact resolution computed bounds for every pair. One rotation per call would save about half of `sincosf`, about 1% of the run, so it is not worth a pull request of its own. Lab's performance page records the decision; neither roadmap keeps an item for it.
 
 ### Steps and branches
 
@@ -88,12 +88,13 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | 1. Fixed bodies indexed once | `perf/world-fixed-index` | #49 | `ccr-perf-engine-hotspots` | Kinetra-Lab#111 |
 | 2. Spatial query | `perf/spatial-query` | #50 | `ccr-perf-engine-hotspots-hotspot3` | Kinetra-Lab#112 |
 | 3. Prediction loop | `perf/priority-prediction` | #51 | `ccr-perf-engine-hotspots-hotspot4` | Kinetra-Lab#113 |
-| 4. Box bounds | `perf/box-bounds` | | `ccr-perf-engine-hotspots-hotspot5` | |
+| 4. Box bounds | not done: 3% of i4sim after steps 1 to 3 | | | |
 
 ## Affected areas
 
 - Step 1: `World` in [physics.h](../../include/kinetra/simulation/physics.h) (private members only) and [physics.cpp](../../src/simulation/physics.cpp); `SpatialGrid::rebuild` in [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp). No public signature or documented behavior changes.
 - Step 2: `SpatialGrid` in [spatial_grid.h](../../include/kinetra/simulation/spatial_grid.h) (a new `query` overload; private members) and [spatial_grid.cpp](../../src/simulation/spatial_grid.cpp); `World::candidates` in physics.cpp. Behavior and limits unchanged.
+- Step 3: `priority_steer` in [priority_steering.cpp](../../src/simulation/priority_steering.cpp). Behavior unchanged.
 - Lab: [performance](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/performance.md) per step, the roadmap items in both repositories.
 
 ## Test plan
@@ -104,6 +105,7 @@ Measured again after Lab's hotspot 2 has merged: either `bounds` computes `sin` 
 | Step 1: the candidate pairs and their order are unchanged | New characterization case in `simulation_tests.cpp`: a 51-body world of fixed boxes, polygons and circles interleaved with moving ones in a container added last, whose fingerprint over 360 steps (every position, velocity, angle and `candidate_pairs()`) was recorded on Kinetra `73adc66`; putting the fixed candidates first in the merge changes it. Existing `moving_contact_tests.cpp` and `simulation_tests.cpp` (`candidate_pairs()`), Lab's Demo crowd characterization lines, i4sim golden and pressure tests, Dotio fingerprints | Full |
 | Step 1: a rebuild keeps the grid's results | Existing spatial grid tests, plus a case that rebuilds with boxes that move away and back and queries after each rebuild | Targeted |
 | Step 2: queries give the same sorted, unique indices in both storages, also through the caller's buffer | New cases in `simulation_tests.cpp`: a compact and a scattered set (one far box) against an exhaustive search, with large and empty areas; one grid switched between both storages and a rejected rebuild after a dense one; a rejected query leaves the buffer unchanged. The existing grid cases | Targeted |
+| Step 3: the same first overlap and `diff` as the loop over every pair of steps | New case in `weighted_navigation_tests.cpp`: 1,800 random scenes at six scales (unit boxes, i4sim's millimeters with a horizon of 32, whole numbers, which make exact ties more likely, a fractional step, a different safety margin, negative and large coordinates), compared bit for bit with a copy of the old loop, with at least five overlaps per scale; shifting the interval by two steps fails it. A constructed case, a neighbor creeping below the float spacing at y = 10,002, which only the slack keeps right: it fails with the slack set to zero | Targeted |
 | Every step: no simulated value changes | Lab's motion benchmark CSV, with and without `--predictive-passing`, identical to the baseline apart from `elapsed_ms` | Full (Lab) |
 
 ## Review
@@ -149,6 +151,26 @@ Round 2: Kinetra-Lab#111 *Ready to merge*; #49 asked for this record of round 1 
 
 Agent review round 1 (#50): no blocking point; three should-fix points, all fixed. The hashed storage's bucket reuse lost its moving-boxes test, because the test fell into the dense storage; it now runs on both. The dense thresholds were unnamed numbers; they are now named constants with their reason. Step 2 was missing from this document's record. Of the nits, the `rebuild` contract now states what an allocation failure leaves, the query buffers have a comment, and the status and roadmap are current. The rest are recorded here and left: a `ranges` vector per rebuild, each storage keeping the other's capacity, and `dense_` tested per cell. Each costs less than the measurement's noise.
 
+### Step 3
+
+`/code-review` at medium on `perf/spatial-query...perf/priority-prediction` checked the bound (the float error is at most about 2.4e-7 times the magnitudes, the slack 1e-5 times), the conversions to `int` and zero, tiny and huge values, found no change to the result and four points:
+
+| Finding | Resolution |
+| --- | --- |
+| The relative slack cannot cover the absolute error of subnormal results (a safety multiplier near 1e-36) | Fixed: the smallest normal float is added |
+| The test never uses a fractional step, another safety margin, negative or large coordinates | Fixed: two more scales |
+| The test would pass if no scene predicted an overlap | Fixed: at least five overlaps per scale |
+| The reference copy in the test rounds alike only without contraction into fused multiply-adds | Stated in the test; CI's targets do not contract. The golden lines elsewhere rest on the same assumption |
+
+Agent review round 1 (#51 and Kinetra-Lab#113, both *Fix first*): the interval argument holds (slack more than 80 times the float error) and step 4's decision matches the numbers.
+
+| Finding | Resolution |
+| --- | --- |
+| No scene reaches a case where the slack decides; `floor` and `ceil` already widen by a step | Fixed: a constructed case (a neighbor creeping below the float spacing at y = 10,002) that fails with the slack set to zero, and passes with it; a review lesson |
+| The descriptions of both pull requests were out of date (step 4, roadmap, pointer, design link) | Fixed in the descriptions |
+| Nits: `diff` computed from `mover`, the narrowing comment, the NaN handling, the whole-number claim in the test | Fixed; `diff` reuses `mover`, which is bit-identical without contraction (i4sim's CSV checked again) |
+| Lab's open point on border distances still said 3% of the run | Fixed on Kinetra-Lab#113: about 5% after steps 1 to 3 |
+
 ## Verification
 
 ### Step 1
@@ -163,6 +185,12 @@ Agent review round 1 (#50): no blocking point; three should-fix points, all fixe
 - Kinetra: `ctest --preset dev`, 276 of 276 passed; `clang-format --dry-run --Werror` on the changed files.
 - Bit identity on the release build, on Lab `main` with hotspot 2: i4sim's CSV with and without `--predictive-passing` and Dotio's output identical in all three runs; Demo's characterization lines pass.
 - Time, median of three runs interleaved with step 1 on the same machine: i4sim 19.8 to 15.8 s, with passing 34.3 to 23.1 s; Demo's soak 2.9 to 1.6 s at 48 agents, 18.8 to 13.3 s at 240; Dotio unchanged. A query that tested every box when it would visit more entries than there are boxes measured the same on Demo (13.2 against 13.4 s over three interleaved runs) and was left out.
+
+### Step 3
+
+- Kinetra: `ctest --preset dev`, 277 of 277 passed, and 278 of 278 with the review's constructed case; `clang-format --dry-run --Werror` on the changed files. Shifting the interval by two steps fails the random case 369 times (lower end) and 174 times (upper end); a slack of zero fails the constructed case.
+- Bit identity on the release build: i4sim's CSV with and without `--predictive-passing` and Dotio's output identical in all three runs, and again after the review's fixes; Demo's characterization lines pass.
+- Time, median of three runs interleaved with step 2 on the same machine: i4sim 15.8 to 11.4 s, with passing 22.5 to 18.4 s; Demo and Dotio unchanged.
 
 ## Pull request
 
@@ -184,6 +212,15 @@ Agent review round 1 (#50): no blocking point; three should-fix points, all fixe
 - Design, verification and review: the sections above.
 - Merge order: after #49, with a merge commit; then Kinetra-Lab#112.
 
+### Step 3
+
+**perf(simulation): priority_steer tests only the steps that can overlap** (#51, Lab: Kinetra-Lab#113)
+
+- Summary: for each step of the mover, only the interval of the neighbor's steps that can overlap, widened by a bound on the rounding error, is tested with the unchanged expression, so the first pair and its `diff` stay the same. Step 4 is decided as not worth a pull request, and both roadmap items close.
+- Changes: the interval search in `priority_steer`, with `diff` reusing the mover's predicted position; a test of 1,800 random scenes at six scales against a copy of the old loop, and a constructed case that only the slack keeps right.
+- Design, verification and review: the sections above.
+- Merge order: after #49 and #50, with a merge commit; then Kinetra-Lab#113.
+
 ## Open points
 
-None yet.
+- The commit type `perf` is not in the types of [AGENTS.md](../../AGENTS.md#git); this stack used it for its optimizations. Whether to add it is the user's decision.
