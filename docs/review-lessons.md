@@ -72,6 +72,9 @@ No lessons yet.
 
 ## Code
 
+- **Sample the transition between opaque and transparent texels when testing filtered images** · added 2026-11-24 · source: [#48](https://github.com/SMB-M87/Kinetra/pull/48)
+  A check at each texel center can pass while linear filtering mixes hidden RGB into the edge and creates a fringe. Sample the scaled boundary over a contrasting background.
+
 - **After a layout change, assert the content whose position must change** · added 2026-11-22 · source: #31
   A fixed close button can keep responding even when scroll offsets or a neighbouring overlay are wrong. Check which rows, bars or captions appear at the new positions.
 
