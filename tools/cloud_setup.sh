@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
-# Prepares a Claude Code cloud session on Ubuntu to build, test and format-check Kinetra as CI
+# Prepares a cloud session on Ubuntu to build, test and format-check Kinetra as CI
 # does: the Debian and Ubuntu packages of docs/development.md#dependencies-and-options and
 # CI's clang-format version. .claude/settings.json runs it as a SessionStart hook, and
 # Kinetra-Lab's tools/cloud_setup.sh runs it with Lab's own package. See
 # tools/README.md#cloud_setupsh.
 #
-# Usage: tools/cloud_setup.sh [extra apt package...]
-#   Does nothing outside a cloud session (CLAUDE_CODE_REMOTE other than "true"). Installs only
-#   what is missing, so a session that has everything spends well under a second here. Always
-#   exits 0 and prints one line, which Claude Code adds to the agent's context; the output of
-#   apt and uv goes to the log it names.
+# Usage: tools/cloud_setup.sh [--cloud] [extra apt package...]
+#   Runs when called with --cloud or in a Claude Code cloud session (CLAUDE_CODE_REMOTE=true).
+#   Installs only missing tools and packages. Always exits 0 and prints one status line when
+#   active. The output of apt and uv goes to the log it names.
 set -uo pipefail
 
-[[ "${CLAUDE_CODE_REMOTE:-}" == "true" ]] || exit 0
+if [[ "${1:-}" == "--cloud" ]]; then
+    shift
+elif [[ "${CLAUDE_CODE_REMOTE:-}" != "true" ]]; then
+    exit 0
+fi
 
 # The Debian and Ubuntu package set of docs/development.md, which CI's Ubuntu run installs
 # too (with git and ca-certificates, which a cloud session already has). Change all three
