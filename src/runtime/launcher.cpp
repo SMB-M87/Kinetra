@@ -10,6 +10,12 @@ constexpr Vec2 preview_inset{10, 10};
 constexpr Vec2 image_slot{250, 140};
 constexpr float panel_gap = 18;
 
+/// Whether `configuration` exists for `choice`: zero for one without configurations.
+bool known_configuration(const LaunchChoice &choice, std::size_t configuration) {
+    const auto count = choice.configurations.size();
+    return count == 0 ? configuration == 0 : configuration < count;
+}
+
 void draw_preview(Runtime &runtime, const LaunchChoice &choice, Vec2 origin, float scale) {
     const auto world = [&](Vec2 point) { return runtime.camera.screen_to_world(origin + point * scale); };
     const float units = scale / runtime.camera.pixels_per_unit;
@@ -111,12 +117,11 @@ std::string_view LaunchMenu::description() const {
 }
 void LaunchMenu::show_configurations(LaunchSelection selection) {
     const auto &choice = choices_.at(selection.application);
-    const auto count = choice.configurations.size();
-    if ((count == 0 && selection.configuration != 0) || (count && selection.configuration >= count))
+    if (!known_configuration(choice, selection.configuration))
         throw std::out_of_range("Unknown application configuration");
     application_ = selection.application;
     configurations_[application_] = selection.configuration;
-    configuring_ = count != 0;
+    configuring_ = !choice.configurations.empty();
 }
 MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
@@ -226,8 +231,7 @@ std::vector<LaunchChoice> SessionHost::choices() const {
 }
 void SessionHost::start(LaunchSelection selection, Camera2D &camera) {
     const auto &entry = applications_.at(selection.application);
-    const auto count = entry.choice.configurations.size();
-    if ((count == 0 && selection.configuration != 0) || (count && selection.configuration >= count))
+    if (!known_configuration(entry.choice, selection.configuration))
         throw std::out_of_range("Unknown application configuration");
     auto next_camera = camera;
     auto next = entry.create(next_camera, selection.configuration);

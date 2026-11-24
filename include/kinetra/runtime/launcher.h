@@ -165,10 +165,10 @@ struct LauncherBindings {
 /// After every advance it reads Session::request(): `menu` destroys the session and draws
 /// the menu in the same frame, `configurations` does the same on the configuration page of
 /// the application that ran (LaunchMenu::show_configurations), and `exit` ends the loop
-/// without rendering. `bindings` adds the
-/// menu key and the Escape policy. Factories own application configuration. Zero frame
-/// limit means unlimited; returns the frames presented. Throws std::invalid_argument for a
-/// negative frame limit; factory exceptions propagate.
+/// without rendering. `bindings` adds the menu key and the Escape policy. Factories own
+/// application configuration. Zero frame limit means unlimited; returns the frames
+/// presented. Throws std::invalid_argument for a negative frame limit; factory exceptions
+/// propagate.
 ///
 /// `initial` starts that session immediately instead of showing the menu. The loop also
 /// ends when the window closes or EXIT is clicked in the menu.
