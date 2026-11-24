@@ -26,16 +26,15 @@ void validate_agent(const AvoidanceAgent &agent) {
         !std::isfinite(agent.radius) || agent.radius <= 0)
         throw std::invalid_argument("Avoidance agents require finite state and a positive radius");
     const auto half = agent.half_extents;
-    if (!finite(half) ||
-        !((half.x == 0 && half.y == 0) ||
-          (half.x > 0 && half.y > 0 && std::isfinite(length(half)) && agent.radius >= length(half))))
+    if (!finite(half) || !(half == Vec2{} || (half.x > 0 && half.y > 0 && std::isfinite(length(half)) &&
+                                              agent.radius >= length(half))))
         throw std::invalid_argument("Avoidance rectangles require positive extents and an enclosing radius");
 }
 
 bool inside(Vec2 point, const Disc &disc) {
     const auto offset = point - disc.center;
     if (disc.radius == 0)
-        return offset.x == 0 && offset.y == 0;
+        return offset == Vec2{};
     const double radius = disc.radius + epsilon;
     return dot_precise(offset, offset) <= radius * radius;
 }

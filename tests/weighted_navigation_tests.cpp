@@ -403,9 +403,9 @@ TEST_CASE("priority steering keeps a step that only rounding puts inside the ext
     const Body neighbors[]{other};
     const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
     const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
-    REQUIRE((expected.x != 0 || expected.y != 0));
-    CHECK(actual.x == expected.x);
-    CHECK(actual.y == expected.y);
+    INFO("actual (", actual.x, ", ", actual.y, "), expected (", expected.x, ", ", expected.y, ")");
+    REQUIRE(expected != Vec2{});
+    CHECK(actual == expected);
 }
 
 TEST_CASE("priority steering predicts the same first overlap as testing every pair of steps") {
@@ -467,10 +467,10 @@ TEST_CASE("priority steering predicts the same first overlap as testing every pa
             }
             const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
             const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
-            if (expected.x != 0 || expected.y != 0)
+            if (expected != Vec2{})
                 ++overlaps;
-            CHECK(actual.x == expected.x);
-            CHECK(actual.y == expected.y);
+            INFO("actual (", actual.x, ", ", actual.y, "), expected (", expected.x, ", ", expected.y, ")");
+            CHECK(actual == expected);
         }
         // Enough scenes predict an overlap for the comparison to mean something.
         CHECK(overlaps >= 5);

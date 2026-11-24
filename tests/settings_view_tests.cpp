@@ -142,8 +142,9 @@ TEST_CASE("rows are evenly spaced and help sections follow a gap") {
         CHECK(h.overlay.row_y(sim_row) == 91);
         CHECK(h.overlay.row_y(debug_controls_row) == 109);
         CHECK(h.overlay.actions_y() == 139);
-        CHECK(h.overlay.half_extent().x == SettingsOverlay::panel_width / 2);
-        CHECK(h.overlay.half_extent().y == (139 + 22) / 2.f);
+        const auto half_extent = h.overlay.half_extent();
+        INFO("half extent (", half_extent.x, ", ", half_extent.y, ")");
+        CHECK(half_extent == Vec2{SettingsOverlay::panel_width / 2, (139 + 22) / 2.f});
     });
 }
 
@@ -469,8 +470,9 @@ TEST_CASE("the debug button opens captures and closes the debug menu") {
     CHECK_FALSE(h.layer);
 
     INFO("the debug menu leaves room for the toolbar");
-    CHECK(h.menu.origin(h.viewport).x == 8);
-    CHECK(h.menu.origin(h.viewport).y == 32);
+    const auto origin = h.menu.origin(h.viewport);
+    INFO("origin (", origin.x, ", ", origin.y, ")");
+    CHECK(origin == Vec2{8, 32});
 
     input.clicked = false;
     CHECK(h.frame(input));
@@ -512,8 +514,8 @@ TEST_CASE("inspector layout wraps long values and snaps its input bounds inward"
     snapshot.groups[0].rows[0].value.assign(96, 'A');
     const auto long_box = inspector.bounds(snapshot, area);
     CHECK(long_box.max.y - short_box.max.y == 4 * 13);
-    CHECK(long_box.min.x == 267);
-    CHECK(long_box.min.y == 9);
+    INFO("minimum (", long_box.min.x, ", ", long_box.min.y, ")");
+    CHECK(long_box.min == Vec2{267, 9});
     CHECK(long_box.max.x == 530);
     kinetra::Input input;
     input.clicked = true;
