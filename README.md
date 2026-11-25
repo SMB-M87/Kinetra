@@ -36,11 +36,11 @@ Every Kinetra-Lab application runs in the same shell: the launcher menu and sess
 
 | Part | In use |
 | --- | --- |
-| **Launcher menu** (`LaunchMenu`, `SessionHost`): hover preselects an application, and one with configurations asks for one first, here Demo's scenarios; a session can return to that page (`SessionRequest::configurations`), here through Demo's SCENARIOS | ![The launcher menu with Demo, Dotio and i4sim, then Demo's configuration page with Terrain, Gravity, Maze and Doorway, Doorway starting, and the debug menu's Scenarios back on the page with Doorway selected](docs/media/ui-launcher.gif) |
-| **Settings panel** (`SettingsOverlay`): Ctrl opens it and pauses the application; toggles, help sections that open on a click, and LAUNCHER, RESUME and EXIT | ![The settings panel over Demo: Statistics off and on, the help of Sim Controls and Debug Controls, and Resume](docs/media/ui-settings.gif) |
-| **Debug menu** (`DebugMenu`): Shift+Ctrl opens a tree with one section open at a time; rows with `[-]` and `[+]` steppers, choices and color swatches change the running simulation | ![The debug menu over Demo: Speed and Max Speed stepped up, Avoidance switched to Legacy and back, and the Layers section](docs/media/ui-debug-menu.gif) |
-| **Agent inspector and frame times** (`InspectorView`, `draw_frame_times`): a selected agent's state in a panel at the top right, with the frame-time graph below it | ![A click on a Demo agent opens the inspector; Frame Times puts the graph below it; another agent is selected, and X closes the inspector](docs/media/ui-inspector.gif) |
-| **Debug layers**: what Debug Mode draws, each layer toggled in the menu in its own color, and the wheel's zoom | ![Demo's terrain with Vectors, Steering Probes, Paths, Collision Shapes and Active Agents toggled off and on, Home Range on, and the view zooming out](docs/media/ui-debug-layers.gif) |
+| **Launcher menu** (`LaunchMenu`, `SessionHost`) | ![The launcher menu with Demo, Dotio and i4sim, then Demo's configuration page with Terrain, Gravity, Maze and Doorway, Doorway starting, and the debug menu's Scenarios back on the page with Doorway selected](docs/media/ui-launcher.gif) |
+| **Settings panel** (`SettingsOverlay`) | ![The settings panel over Demo: Statistics off and on, the help of Sim Controls and Debug Controls, and Resume](docs/media/ui-settings.gif) |
+| **Debug menu** (`DebugMenu`) | ![The debug menu over Demo: Speed and Max Speed stepped up, Avoidance switched to Legacy and back, and the Layers section](docs/media/ui-debug-menu.gif) |
+| **Agent inspector and frame times** (`InspectorView`, `draw_frame_times`) | ![A click on a Demo agent opens the inspector; Frame Times puts the graph below it; another agent is selected, and X closes the inspector](docs/media/ui-inspector.gif) |
+| **Debug layers** | ![Demo's terrain with Vectors, Steering Probes, Paths, Collision Shapes and Active Agents toggled off and on, Home Range on, and the view zooming out](docs/media/ui-debug-layers.gif) |
 
 ## Modules
 
