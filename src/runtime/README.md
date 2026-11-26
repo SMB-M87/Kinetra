@@ -73,7 +73,7 @@ flowchart LR
 
 | Public header | Responsibility | Linking | Contract |
 | --- | --- | --- | --- |
-| [engine.h](../../include/kinetra/runtime/engine.h) | `Runtime`, `RgbaImage`, `FramePacing` | `Kinetra::Runtime` | [Runtime](../../docs/engine/runtime.md) |
+| [engine.h](../../include/kinetra/runtime/engine.h) | `Runtime`, `RgbaImage`, `FramePixels`, `FramePacing` | `Kinetra::Runtime` | [Runtime](../../docs/engine/runtime.md) |
 | [input.h](../../include/kinetra/view/input.h) | `Input`, `Key`, `Color` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md) |
 | [session.h](../../include/kinetra/runtime/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
 | [settings_view.h](../../include/kinetra/runtime/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
