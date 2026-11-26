@@ -17,7 +17,7 @@ git diff --name-only main...HEAD      # committed on this branch
 git status --short                    # uncommitted and untracked
 ```
 
-A changed submodule pointer (`external/Kinetra` in Lab's diff) counts as an engine change, unless Kinetra changed only Markdown, `docs/`, `.agents/`, `.claude/`, `.github/` or `tools/` between the two pointers (`git -C external/Kinetra diff --name-only <old> <new>`), which Lab's build does not read: then it is the Docs level, and Lab's CI runs only the docs check for it, unless the range changes Kinetra's `README.md` or `docs/media/`, which a Lab test reads.
+For a changed `external/Kinetra` pointer, inspect `git -C external/Kinetra diff --no-renames --name-only <old> <new>` and use Lab's verification rules to decide between Docs and Full. Use Full when the comparison is inconclusive. [Verification in Lab](https://github.com/SMB-M87/Kinetra-Lab/blob/main/AGENTS.md#verification-in-lab)
 
 ## 2. Classify each file; the highest level wins
 
@@ -26,7 +26,7 @@ A changed submodule pointer (`external/Kinetra` in Lab's diff) counts as an engi
 | `*.md`, `.agents/**`, `AGENTS.md`, `docs/**`, `tools/README.md` | Docs |
 | `.cpp` or private `.h` within one module, or comment-only edits in code | Targeted (comment-only edits: Docs) |
 | `include/kinetra/**`, any `CMakeLists.txt`, `build.sh`, `.clang-format`, `tools/*.py`, dependency files | Full |
-| Files in more than one module, the submodule pointer (unless its Kinetra range is only Markdown, `docs/`, `.agents/`, `.claude/`, `.github/` or `tools/`, see above), runtime/launcher sources (`src/runtime/**`, `launcher/**`, presentation `session.cpp`) | Full |
+| Files in more than one module, Lab pointer updates rated Full above, runtime/launcher sources (`src/runtime/**`, `launcher/**`, presentation `session.cpp`) | Full |
 | Last verification of a branch that changed code | Full |
 
 An explicit argument (`docs`, `targeted`, `full`) overrides the result, but never downward when code changed: say so if asked.
@@ -51,7 +51,7 @@ Pick targets and tests from the mapping tables: Kinetra in [testing](../../../do
 **Full.**
 
 - Locally, the Targeted checks of every changed area, so the push compiles and its tests pass. For runtime, launcher or presentation changes, the graphics cases of that area are optional quick feedback: `ctest --preset graphics -L graphics -R '<regex>'` after building its targets in the `graphics` preset (offscreen SDL, software Mesa).
-- Do not run `ci`, `headless`, `graphics` or `windows` as a whole locally: the pull request's CI runs them on every push (with format, docs, the external consumer, a second Linux job on Ubuntu LTS and, in Lab, the smoke runs and Windows), the graphics cases included. Run one locally only to reproduce a CI failure.
+- Use pull request CI for the full presets. Ubuntu 24.04 LTS runs format, docs, `headless` and `ci`, including the graphics tests. Kinetra also runs the external consumer check. Lab runs application smoke tests and a native Windows job. Run a full preset locally to reproduce a CI failure.
 - After pushing, read the pull request's checks (`gh pr checks <number>`). The change is verified when the checks are green; until then report "pushed, CI pending".
 - When the change alters what a scene shows, take a screenshot of it with Lab's capture tool, look at it and add it to the pull request; the reviewer runs nothing. Refresh the captures that the media guides' tables name for the change with `tools/capture/capture_media.sh`, look at every refreshed file and commit them with the change, and no others ([rule](../../../AGENTS.md#repository-documentation)).
 - A change that depends on desktop feel, a real GPU driver or performance also needs the user's playtest, which software rendering cannot replace. Report it as open for the user, who plays it after the merge.

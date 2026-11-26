@@ -25,9 +25,8 @@ fi
 # together.
 packages=(build-essential cmake ninja-build ccache libsdl2-dev libgl-dev libegl-dev
     libgl1-mesa-dri libegl-mesa0 "$@")
-# The clang-format of CI's pinned Arch snapshot (.github/workflows/ci.yml); Ubuntu's own is
-# 18. PyPI's clang-format package carries the same release, and pypi.org is on the default
-# allowlist of a cloud environment, where LLVM's apt repository is not.
+# Match CLANG_FORMAT_VERSION in both CI workflows. CI and cloud sessions install the same
+# PyPI release so formatting is consistent across environments.
 clang_format_version=23.1.5
 log="${TMPDIR:-/tmp}/kinetra-cloud-setup.log"
 

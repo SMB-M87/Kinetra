@@ -22,17 +22,17 @@ Requirements:
 - **Presets:** CMake 3.25 or newer and Ninja; ccache speeds up rebuilds.
 - **Runtime:** SDL2 2.0.18 or newer (on Arch: `sdl2-compat`) and OpenGL development files, plus an OpenGL 3.3 context.
 
-Install them per distribution family. CI tests Arch and Ubuntu 24.04 ([continuous integration](testing.md#continuous-integration)); the pinned Arch toolchain is the reference for warnings and formatting.
+Install the dependencies for your distribution. CI uses Ubuntu 24.04 LTS as its Linux reference. [Continuous integration](testing.md#continuous-integration)
 
-| Family | Command | Tested |
+| Family | Command | Notes |
 | --- | --- | --- |
-| Arch, Artix | `sudo pacman -S --needed base-devel cmake ninja ccache clang sdl2-compat libglvnd mesa` | CI's `linux (arch)` run, on a pinned snapshot; `clang` provides clang-format |
-| Debian, Ubuntu | `sudo apt update && sudo apt install build-essential cmake ninja-build ccache libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0` | CI's `linux (ubuntu)` run, in an Ubuntu 24.04 LTS container (GCC 13, glibc 2.39, CMake 3.28); clang-format is the `clang-format` package, but only the Arch version decides the format |
-| Fedora | `sudo dnf install gcc-c++ cmake ninja-build ccache SDL2-devel mesa-libGL-devel mesa-libEGL-devel mesa-dri-drivers` | Not tested, and the package names are not yet checked against Fedora's repositories |
+| Arch, Artix | `sudo pacman -S --needed base-devel cmake ninja ccache clang sdl2-compat libglvnd mesa` | Local installation example with SDL2 provided by `sdl2-compat` |
+| Debian, Ubuntu | `sudo apt update && sudo apt install build-essential cmake ninja-build ccache libsdl2-dev libgl-dev libegl-dev libgl1-mesa-dri libegl-mesa0` | The CI environment uses Ubuntu 24.04 LTS with GCC 13, glibc 2.39 and CMake 3.28 |
+| Fedora | `sudo dnf install gcc-c++ cmake ninja-build ccache SDL2-devel mesa-libGL-devel mesa-libEGL-devel mesa-dri-drivers` | Package names may vary by Fedora release |
 
 Other distributions need the same parts: a C++20 compiler, CMake, Ninja, SDL2's and OpenGL's development files, and Mesa (or a GPU driver) for an OpenGL 3.3 context.
 
-CI's formatter is the clang-format of the pinned Arch snapshot. `clang_format_version` in `tools/cloud_setup.sh` names that version. Where the distribution has another, PyPI's `clang-format` package has the same one (`uv tool install clang-format==<version>`, or `pip install` into a virtual environment). Ubuntu cloud sessions can install the Debian and Ubuntu packages and the pinned formatter through [cloud_setup.sh](../tools/README.md#cloud_setupsh). CI's Ubuntu step and that script install the same set as the table, so change the three together.
+CI installs clang-format 23.1.5 from PyPI in a Python virtual environment. Install the same version locally with `uv tool install clang-format==23.1.5` or `pip` in a virtual environment. Ubuntu cloud sessions can install the build packages and the formatter through [cloud_setup.sh](../tools/README.md#cloud_setupsh). Keep the build package set in the table, the cloud script and the CI workflow in sync.
 
 | Option | Default | Effect |
 | --- | --- | --- |

@@ -18,7 +18,7 @@ Choose a skill below to see example requests and expected results. Each guide li
 | --- | --- | --- |
 | [feature](feature/README.md) | Run a change through the full development cycle, up to an open pull request or a stack of them | At the start of every change, or `/feature` |
 | [grilling](grilling/README.md) | Settle open decisions with the user in rounds of forms | On request, or from `feature` |
-| [verify](verify/README.md) | Choose and run the verification level for the diff | After changes, before committing |
+| [verify](verify/README.md) | Choose checks by impact and confirm pull request CI for full verification | After changes, before committing |
 | [doc-module](doc-module/README.md) | Write a module README and `///` header summaries | On request, or from `feature` |
 | [refactor](refactor/README.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/README.md) | Record an architecture decision | When a decision qualifies |

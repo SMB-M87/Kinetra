@@ -101,7 +101,7 @@ Contributors follow the [development workflow](docs/workflow.md): every code cha
 
 ## Platform support
 
-Linux is supported: CI builds and tests on a pinned Arch toolchain, the reference, and on Ubuntu 24.04 LTS ([dependencies per distribution](docs/development.md#dependencies-and-options)); Artix/Linux is the desktop target. Windows/macOS and 3D are unsupported.
+Kinetra is built from source on Linux. Ubuntu 24.04 LTS is the Linux reference for CI. See the [dependencies per distribution](docs/development.md#dependencies-and-options).
 Continuous collision detection covers circles and nonrotating boxes and polygons; rotating boxes and polygons are checked discretely and can tunnel. Navigation does not guarantee arrival in moving crowds.
 Rendering supports standalone RGBA images supplied by the caller. Applications own pose interpolation. Cross-machine bitwise determinism is not promised.
 
