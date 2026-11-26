@@ -318,6 +318,33 @@ TEST_CASE("read-back frames hold the drawn pixels from the top left until switch
     CHECK(glGetError() == GL_NO_ERROR);
 }
 
+TEST_CASE("read-back packs rows unpadded under any pack alignment and restores it") {
+    // An odd width: at an alignment of 8, OpenGL would pad each 4 * 161-byte row to 648.
+    Runtime runtime("Kinetra read-back alignment", 161, 121);
+    REQUIRE(runtime.poll());
+    runtime.read_back(true);
+    glPixelStorei(GL_PACK_ALIGNMENT, 8);
+    // A red box at the top-left corner, on blue: a padded read would shift every row after the first.
+    const auto units = runtime.camera.pixels_per_unit;
+    runtime.begin({0, 0, 1, 1});
+    runtime.box(runtime.camera.screen_to_world({10, 10}), Vec2{10, 10} / units, 0, {1, 0, 0, 1});
+    runtime.end();
+    const auto &frame = runtime.frame();
+    REQUIRE(frame.rgba.size() == std::size_t(frame.width) * std::size_t(frame.height) * 4);
+    const auto at = [&](Vec2 point) {
+        return frame.pixel(int(point.x * float(frame.width) / runtime.camera.viewport.x),
+                           int(point.y * float(frame.height) / runtime.camera.viewport.y));
+    };
+    CHECK(at({10, 19.5f})[0] == 255);
+    CHECK(at({10, 25})[2] == 255);
+    CHECK(at({160, 120})[2] == 255);
+    GLint alignment{};
+    glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+    CHECK_MESSAGE(alignment == 8, "read-back must leave the caller's pack alignment");
+    glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    CHECK(glGetError() == GL_NO_ERROR);
+}
+
 TEST_CASE("presented frames are timed and the frame-time graph draws them") {
     Runtime runtime("Kinetra frame times", 320, 200);
     runtime.read_back(true);
@@ -337,7 +364,7 @@ TEST_CASE("presented frames are timed and the frame-time graph draws them") {
     runtime.end();
     // Read the bar area's bottom row, just above the bars' base, from the presented frame.
     const Vec2 origin = FrameTimeGraph::origin(runtime.camera.viewport);
-    const int row = int(origin.y + FrameTimeGraph::height) - 3;
+    const int row = int(std::ceil(origin.y + FrameTimeGraph::height - 2)) - 1;
     int green = 0;
     for (int x = int(origin.x); x < int(origin.x) + 240; ++x) {
         const auto pixel = runtime.frame().pixel(x, row);

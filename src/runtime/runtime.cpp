@@ -541,8 +541,13 @@ void Runtime::Impl::read_frame() {
                height = static_cast<std::size_t>(std::max(frame_height, 0));
     const std::size_t stride = width * 4;
     read_rows.resize(stride * height);
-    // RGBA rows are a multiple of four bytes, so any GL_PACK_ALIGNMENT packs them unpadded.
+    // Rows without padding, whatever alignment the caller left: at 8 an odd width would pad
+    // each row and overrun `read_rows`.
+    GLint alignment{};
+    glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, frame_width, frame_height, GL_RGBA, GL_UNSIGNED_BYTE, read_rows.data());
+    glPixelStorei(GL_PACK_ALIGNMENT, alignment);
     frame.width = frame_width;
     frame.height = frame_height;
     frame.rgba.resize(read_rows.size());
@@ -596,6 +601,8 @@ const FramePixels &Runtime::frame() const {
 std::array<std::uint8_t, 4> FramePixels::pixel(int x, int y) const {
     if (x < 0 || y < 0 || x >= width || y >= height)
         throw std::out_of_range("Pixel outside the frame");
+    if (rgba.size() < static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4)
+        throw std::out_of_range("Frame holds fewer bytes than its size needs");
     const auto *p =
         rgba.data() +
         (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) + static_cast<std::size_t>(x)) * 4;

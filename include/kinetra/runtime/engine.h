@@ -55,7 +55,8 @@ struct FramePixels {
     /// because the window is opaque.
     std::vector<std::uint8_t> rgba;
     /// Red, green, blue and alpha of the drawable pixel at column `x` and row `y`, counted
-    /// from the top left. Throws std::out_of_range outside the frame.
+    /// from the top left. Throws std::out_of_range outside the frame, or when `rgba` holds
+    /// fewer than `width * height * 4` bytes.
     std::array<std::uint8_t, 4> pixel(int x, int y) const;
 };
 
@@ -135,11 +136,13 @@ class Runtime {
     /// presenting it, or stops that and releases the copy for false, the default. The copy is
     /// taken before the buffer swap, when the drawn buffer is defined on every platform; after
     /// the swap it is not. For tests and programs that render frames into files: each frame
-    /// then waits for the GPU and copies the whole drawable.
+    /// then waits for the GPU and copies the whole drawable. Switching it on while it is on
+    /// changes nothing.
     void read_back(bool enabled);
     /// The frame that the last end() read back. The reference stays valid for the Runtime's
     /// lifetime; the next end() overwrites what it refers to, and read_back(false) empties it.
-    /// Throws std::logic_error when no frame was read back since read_back(true).
+    /// Throws std::logic_error while read-back is off, and while no end() has read a frame since
+    /// it was switched on.
     const FramePixels &frame() const;
     /// The view used by all drawing calls. poll() sets its viewport; the application owns
     /// position and zoom.
