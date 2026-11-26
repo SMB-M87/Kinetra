@@ -121,7 +121,7 @@ Kinetra-Lab (`ccr-3cd68603-h1b79l`):
 | `pixel` throws `std::out_of_range` outside the frame | Same case | Full |
 | Rows stay unpadded and in place under a caller's pack state (alignment 8 at an odd width, row length, skips, a bound pack buffer) and read buffer, and that state is restored | `read-back ignores the caller's pack state and restores it`; fails without the fix | Full |
 | `read_back(true)` while on keeps the stored frame | The contract case | Full |
-| The read-back is right in a real window, not only offscreen | Kinetra's graphics cases and Lab's four suites run under SDL's `x11` driver in Xvfb, recorded in *Verification*; a composited desktop is the user's check after the merge | Full, local |
+| The read-back is right in a real window, not only offscreen | Kinetra's graphics cases and Lab's four suites run under SDL's `x11` driver in Xvfb, recorded in *Verification*; a composited desktop and native Windows are the user's check after the merge | Full, local |
 | A frame drawn without read-back leaves the stored frame alone | Not tested: switching it off releases the frame, which the throw above proves | |
 | Existing primitive, circle, resize, frame-time graph and overlay reads find the same pixels through `frame()` | The existing cases in Kinetra's `runtime_tests.cpp`, rewritten onto `frame()` with y flipped once | Full |
 | The capture tool writes the same images | `kinetra_capture_tests`, and `kinetra_capture_smoke` in the `graphics` preset (CI) | Full |
@@ -145,11 +145,11 @@ While moving the resize case, the read-back showed that its old center pixel lay
 
 ### Agent review, round 1
 
-[Review](https://github.com/SMB-M87/Kinetra/pull/67#pullrequestreview-6079149356) of 5d009b3: *Fix first*.
+[Review of Kinetra#67](https://github.com/SMB-M87/Kinetra/pull/67#pullrequestreview-6079149356) at 5d009b3 and [of Kinetra-Lab#134](https://github.com/SMB-M87/Kinetra-Lab/pull/134#pullrequestreview-6079153514) at 0e445d2: *Fix first* on both.
 
 | Finding | Resolution |
 | --- | --- |
-| Blocking: the goal of a read-back that is reliable in a window had no run outside SDL's offscreen driver | Kinetra's graphics cases and Lab's four graphics suites pass under SDL's `x11` driver in Xvfb, a real window without a compositor, and the capture tool writes the same launcher screenshot there; recorded in *Verification*. A composited desktop is the user's check after the merge |
+| Blocking: the goal of a read-back that is reliable in a window had no run outside SDL's offscreen driver | Kinetra's graphics cases and Lab's four graphics suites pass under SDL's `x11` driver in Xvfb, a real window without a compositor, and the capture tool writes the same launcher screenshot there; recorded in *Verification*. A composited desktop and native Windows are the user's check after the merge; Lab's capture README says where it was checked |
 | Should fix: the read reset only the pack alignment, not the row length, the skips or the pack buffer | Fixed in 5520f38: the read sets OpenGL's default read state, read buffer and read framebuffer included, and restores the caller's; the pack-state case covers each and fails without the fix |
 | Nit: the read left `GL_READ_BUFFER` changed | Fixed in 5520f38, with the rest of the read state |
 | Nit: `end()`'s summary did not name the read-back | Fixed in 5520f38 |
@@ -157,6 +157,8 @@ While moving the resize case, the read-back showed that its old center pixel lay
 | Nit: the open point named only Lab's tests, and *Follow-up* said none while open points remain | Open points name Kinetra's cases too and say why they need no roadmap item |
 | Nit: the *Pull request* section had another Lab title and lacked the live descriptions' notes | The section now holds the live descriptions |
 | Lessons proposed | Both added to [review lessons](../review-lessons.md) |
+| Kinetra-Lab#134, blocking: the capture README's "in the same way offscreen and in a window" had no run behind it | Settled with the Kinetra thread: the README now says where it was checked (offscreen and an X11 window) and that a composited desktop and Windows are not yet, in Kinetra-Lab e158a21 |
+| Kinetra-Lab#134, nit: the README did not say that the tour needs a drawable of its canvas size | Added in the same commit |
 
 ## Verification
 
@@ -175,7 +177,7 @@ In a real window, SDL's `x11` driver under Xvfb with software Mesa and no compos
 - Kinetra-Lab's `kinetra_runtime_tests`, `kinetra_demo_presentation_tests`, `kinetra_dotio_presentation_tests` and `kinetra_i4sim_presentation_tests`: 11, 2, 5 and 4 cases, all passed.
 - `kinetra_capture <dir> launcher` writes a `launcher.png` byte-identical to the committed one.
 
-The Full level is the pull requests' CI, which runs the graphics cases offscreen. A composited desktop (a Wayland or X11 desktop with a compositor, or WSLg) is the user's check after the merge: run a graphics suite's binary there with `SDL_VIDEODRIVER` unset.
+The Full level is the pull requests' CI, which runs the graphics cases offscreen. A composited desktop (a Wayland or X11 desktop with a compositor, or WSLg) and native Windows, where Kinetra-Lab's capture tool renders in a real window, are the user's check after the merge: run a graphics suite's binary there with `SDL_VIDEODRIVER` unset, and on Windows `kinetra_capture <dir> launcher`.
 
 ## Pull request
 
@@ -198,7 +200,7 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 > - The graphics cases also pass in a real window: SDL's `x11` driver under Xvfb, with no compositor. That is 22 of 22 here, and Kinetra-Lab's four graphics suites pass on this branch as well.
 > - In that window, Lab's capture tool writes a launcher screenshot byte-identical to the committed one.
 > - `tools/check_docs.py` passes.
-> - CI is the Full level. A composited desktop is the user's check after the merge.
+> - CI is the Full level. A composited desktop and native Windows are the user's check after the merge.
 >
 > ## Review notes
 > - Agent review round 1 asked for two fixes, both done. Its goal of a read-back that is reliable in a window now has the X11 run above. The read resets the whole read state, not only the alignment.
@@ -210,7 +212,7 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 > - Merge this one with a merge commit, not a squash.
 >
 > ## Follow-up
-> None. The three open points in the design document need no roadmap item: a limit of SDL's offscreen driver, the user's check on a composited desktop, and reads that assume no display scaling, which holds for every graphics run.
+> None. The three open points in the design document need no roadmap item: a limit of SDL's offscreen driver, the user's check on a composited desktop and Windows, and reads that assume no display scaling, which holds for every graphics run.
 
 **Kinetra-Lab** #134: `refactor(capture): read frames through Kinetra's frame read-back`
 
@@ -235,7 +237,7 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 > - `kinetra_capture <dir> launcher` writes a `launcher.png` that is byte-identical to the committed `docs/media/launcher.png`, both offscreen and in that window.
 > - `check_docs.py` passes.
 > - `check_copies.py` with `glReadPixels`, `front buffer`, `GL_FRONT`, `both swap buffers` and `read back`: the hits left are only the roadmap items this stack closes and correct uses of the words.
-> - CI is the Full level. A composited desktop is the user's check after the merge.
+> - CI is the Full level. A composited desktop and native Windows are the user's check after the merge.
 >
 > ## Review notes
 > - The branch name is the session's assigned development branch, not `<type>/<topic>`.
@@ -252,7 +254,7 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 ## Open points
 
 - SDL's offscreen driver does not resize its surface with the window, so after a window grows there the read-back frame is undefined beyond its first size. The graphics tests keep their reads inside it.
-- No run on a composited desktop is recorded; it is the user's check after the merge (*Verification*).
+- No run on a composited desktop or on native Windows is recorded; both are the user's check after the merge (*Verification*).
 - Some reads index frames with logical sizes, which equal drawable sizes only without display scaling, as the old reads did: in Kinetra the full-frame size check of the circle case, the reads at (160, 119) and (168, 119) and the frame-time row; in Kinetra-Lab Dotio's AI-label case and i4sim's row slices. Every graphics run, in CI and locally, has no scaling.
 
-None of these has a roadmap item: the offscreen surface is a limit of SDL's driver that no test meets any more, the composited desktop is a check rather than work, and the logical sizes matter only if graphics tests ever run with display scaling, which would need a new test setup first.
+None of these has a roadmap item: the offscreen surface is a limit of SDL's driver that no test meets any more, the composited desktop and Windows are a check rather than work, and the logical sizes matter only if graphics tests ever run with display scaling, which would need a new test setup first.
