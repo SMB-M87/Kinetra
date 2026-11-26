@@ -82,7 +82,7 @@ flowchart LR
 | [launcher.h](../../include/kinetra/runtime/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
 | [bitmap_text.h](../../include/kinetra/runtime/bitmap_text.h), [overlay_style.h](../../include/kinetra/runtime/overlay_style.h), [debug_view.h](../../include/kinetra/runtime/debug_view.h), [help_view.h](../../include/kinetra/runtime/help_view.h) | Glyphs and text, the panels' shared style, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
 | [debug_menu.h](../../include/kinetra/view/debug_menu.h) | `DebugEntry`, `DebugFolds` and the row helpers: a debug menu as data | Header-only; usable headless | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
-| [camera.h](../../include/kinetra/view/camera.h), [timing.h](../../include/kinetra/runtime/timing.h) | `Camera2D` and zoom, `FixedClock`, `RateCounter`, `FrameTimes`, `FrameLimiter` | Header-only; usable headless (`timing.h` stays with the runtime: it paces the main loop) | [Runtime](../../docs/engine/runtime.md), [presentation helpers](../../docs/engine/launcher-overlays.md#presentation-helpers) |
+| [camera.h](../../include/kinetra/view/camera.h), [timing.h](../../include/kinetra/view/timing.h) | `Camera2D` and zoom, `RateCounter`, `FrameTimes`, `FrameLimiter` | Header-only; usable headless. `FixedClock` is in the simulation layer ([clock.h](../../include/kinetra/simulation/clock.h)) | [Runtime](../../docs/engine/runtime.md), [presentation helpers](../../docs/engine/launcher-overlays.md#presentation-helpers) |
 
 ## How it works
 

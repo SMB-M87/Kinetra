@@ -50,6 +50,7 @@ flowchart TD
     Avoid["avoidance.h<br/>avoid_collisions"]
     Traffic["traffic.h<br/>TrafficGate"]
     Passing["passing.h<br/>passing lanes and guard"]
+    Clock["clock.h<br/>FixedClock (header-only)"]
     Grid --> Math
     Physics --> Grid
     CGrid --> Physics
@@ -60,7 +61,7 @@ flowchart TD
     Passing --> Physics
 ```
 
-*Takeaway:* physics, planning and steering build on one geometry header; the weighted grid, avoidance and traffic admission stand alone, so a consumer can use one without the others.
+*Takeaway:* physics, planning and steering build on one geometry header; the weighted grid, avoidance, traffic admission and the fixed clock stand alone, so a consumer can use one without the others.
 
 | Public header | Source | Responsibility | Contract |
 | --- | --- | --- | --- |
@@ -74,6 +75,7 @@ flowchart TD
 | [avoidance.h](../../include/kinetra/simulation/avoidance.h) | [avoidance.cpp](avoidance.cpp) | ORCA-style velocity selection under speed and acceleration limits | [Navigation](../../docs/engine/navigation.md#reciprocal-local-avoidance) |
 | [passing.h](../../include/kinetra/simulation/passing.h) | [passing.cpp](passing.cpp) | Head-on conflict timing, lane candidates and obstruction checks | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [traffic.h](../../include/kinetra/simulation/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
+| [clock.h](../../include/kinetra/simulation/clock.h) | header-only | `FixedClock`: elapsed seconds to whole simulation ticks, with a bounded backlog | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 
 The header summaries (`///`) state each function's units, preconditions and errors; the contract pages explain the behavior in depth.
 

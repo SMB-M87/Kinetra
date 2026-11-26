@@ -22,7 +22,7 @@ Status: accepted · Branch: `refactor/headless-timing` (Kinetra), `ccr-28fc7b5d-
 ## Problem
 
 - The include layout ([design](2026-11-20-include-layout.md#design)) says that Lab logic includes `simulation/` and `view/` only, and that `runtime/` is the layer of `Kinetra::Runtime`. It left `timing.h` in `runtime/` as an open point, because its frame limiter serves the main loop.
-- `timing.h` has no runtime dependency: it includes only the standard library ([timing.h](../../include/kinetra/runtime/timing.h)), and the `kinetra_behavior` and `kinetra_presentation` suites test it against `Kinetra::Simulation` alone ([CMakeLists.txt](../../CMakeLists.txt)).
+- `timing.h` has no runtime dependency: it includes only the standard library, and the `kinetra_behavior` and `kinetra_presentation` suites test it against `Kinetra::Simulation` alone ([CMakeLists.txt](../../CMakeLists.txt)).
 - Kinetra-Lab's headless logic includes it from `runtime/`: `demo/application.h:7`, `dotio/application.h:11` and `i4sim/simulation/detail/simulation_core.h:14`. An include line there suggests a runtime dependency that does not exist. Kinetra's `simulation_tests.cpp:4` does the same for `FixedClock`.
 - The four types belong to different layers. `FixedClock` turns elapsed time into simulation ticks and is a member of the simulation state of Demo, Dotio and i4sim. `RateCounter` and `FrameTimes` are statistics data for overlays, and `FrameLimiter` decides frame deadlines from given times; all three are headless view helpers.
 

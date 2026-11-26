@@ -1,6 +1,6 @@
 # Architecture
 
-The public API is under `include/kinetra/`, in one folder per layer: `simulation/` for `Kinetra::Simulation`, `view/` for the header-only camera, input and debug-menu types that headless logic may use, and `runtime/` for `Kinetra::Runtime` and `Kinetra::Launcher` ([ADR 0015](decisions/0015-include-layout.md)). Three core CMake targets express linking boundaries; directories are not separate libraries.
+The public API is under `include/kinetra/`, in one folder per layer: `simulation/` for `Kinetra::Simulation`, `view/` for the header-only camera, input, debug-menu and frame-timing types that headless logic may use, and `runtime/` for `Kinetra::Runtime` and `Kinetra::Launcher` ([ADR 0015](decisions/0015-include-layout.md)). Three core CMake targets express linking boundaries; directories are not separate libraries.
 
 ## Table of contents
 
@@ -41,7 +41,7 @@ flowchart TD
     Parts --> Platform[SDL2 / OpenGL 3.3 / GLAD, private]
 ```
 
-Arrows denote consumption; the header-only UI calls Runtime drawing methods rather than adding a linked module, while `SettingsOverlay` is compiled into Runtime. `Camera2D`, `FixedClock` and `RateCounter` are header-only utilities that need no runtime. Runtime does not link Simulation, and engine source never includes application headers. [CMake](../CMakeLists.txt) is authoritative for target composition.
+Arrows denote consumption; the header-only UI calls Runtime drawing methods rather than adding a linked module, while `SettingsOverlay` is compiled into Runtime. `FixedClock` (`simulation/clock.h`) and `Camera2D`, `RateCounter`, `FrameTimes` and `FrameLimiter` (`view/`) are header-only utilities that need no runtime. Runtime does not link Simulation, and engine source never includes application headers. [CMake](../CMakeLists.txt) is authoritative for target composition.
 
 ## Object ownership
 
