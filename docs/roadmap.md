@@ -20,7 +20,8 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-Nothing in progress in Kinetra itself.
+- **Shared passing mechanism** · navigation, with Lab · `refactor/shared-passing` · [design](design/2026-11-26-shared-passing.md)
+  Extract conflict prediction, lane candidates and lane guards, and give steering consumers explicit tuning.
 
 ## Next
 
