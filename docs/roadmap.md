@@ -20,9 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Frame read-back on `Runtime`** · runtime, with Lab · added 2026-11-21
-  A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
-  Where: branch `feat/frame-read-back`, [design](design/2026-11-26-frame-read-back.md).
+Nothing in progress in Kinetra itself.
 
 ## Next
 

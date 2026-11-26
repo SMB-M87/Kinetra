@@ -1,6 +1,6 @@
 # Frame read-back on Runtime
 
-Status: accepted · Branch: `feat/frame-read-back` (Kinetra), `ccr-3cd68603-h1b79l` (Kinetra-Lab) · Related: [roadmap](../roadmap.md#later) *Frame read-back on `Runtime`*, Kinetra-Lab's *Capture on Kinetra's frame read-back*
+Status: implemented · Branch: `feat/frame-read-back` (Kinetra), `ccr-3cd68603-h1b79l` (Kinetra-Lab) · Related: roadmap items *Frame read-back on `Runtime`* (Kinetra) and *Capture on Kinetra's frame read-back* (Kinetra-Lab)
 
 `Runtime` gets an opt-in read-back: with `read_back(true)`, `end()` copies each frame into CPU memory before it presents it, and `frame()` returns that copy. Kinetra's own graphics tests and, in Kinetra-Lab, the capture tool and every graphics suite use it instead of calling `glReadPixels` themselves.
 
@@ -91,7 +91,8 @@ sequenceDiagram
 
 - `begin()` stores the drawable size it set as the viewport; `end()` reads that rectangle, so a resize between `begin()` and `end()` cannot mismatch the frame.
 - The read buffer is the current draw buffer (`GL_DRAW_BUFFER`), which is `GL_BACK` for the double-buffered window the runtime asks for, and the right buffer if a platform gives a single-buffered surface.
-- `GL_PACK_ALIGNMENT` stays as it is: RGBA rows are a multiple of four bytes, so every alignment packs them without padding.
+- The read packs at `GL_PACK_ALIGNMENT` 1 and restores the caller's alignment afterwards: at 8, an odd-width drawable would pad each row and overrun the buffer.
+- `FramePixels::pixel` also throws `std::out_of_range` when `rgba` holds fewer bytes than its size needs, since callers can build or change the plain struct.
 - The frame's vector keeps its capacity between frames, so a loop that reads every frame allocates once.
 - `read_back(false)` releases the stored frame.
 
@@ -102,12 +103,12 @@ Kinetra (`feat/frame-read-back`):
 - Public API: `include/kinetra/runtime/engine.h` gains `FramePixels`, `Runtime::read_back` and `Runtime::frame`. No existing signature changes.
 - `src/runtime/runtime.cpp`: the read in `end()`.
 - `tests/runtime_tests.cpp`: a new case for the contract; the nine existing reads move onto `frame()`.
-- Docs: [runtime guide](../engine/runtime.md), [runtime module README](../../src/runtime/README.md) if it lists the frame calls, the roadmap.
+- Docs: [runtime guide](../engine/runtime.md) (contract row and a *Read-back* paragraph), [runtime module README](../../src/runtime/README.md) (rendering and tests), the roadmap.
 
 Kinetra-Lab (`ccr-3cd68603-h1b79l`):
 
 - The `external/Kinetra` pointer.
-- `tools/capture/src/stage.cpp` and `tools/capture/src/tour/tour.cpp`: read through `frame()` and drop RGBA's alpha for the PNG and the tour canvas; the capture README and its open point.
+- `tools/capture/src/stage.cpp` and `tools/capture/src/tour/tour.cpp`: switch read-back on in the `Stage` and `Tour` constructors, read through `frame()` and drop RGBA's alpha for the PNG and the tour canvas; the tour checks that the drawable has its canvas size. `main.cpp`'s comment on the offscreen driver, the capture README (diagrams, *Frames*, its open point) and Lab's media guide.
 - The graphics suites `launcher/tests/runtime_tests.cpp`, `labs/demo/tests/presentation_tests.cpp`, `labs/dotio/tests/presentation_tests.cpp` and `labs/i4sim/tests/presentation_tests.cpp`.
 - Lab's roadmap item *Capture on Kinetra's frame read-back* and the pages that say the tool reads with `glReadPixels`.
 
@@ -118,6 +119,7 @@ Kinetra-Lab (`ccr-3cd68603-h1b79l`):
 | `frame()` throws before a read-back frame, after `read_back(true)` without `end()`, and after `read_back(false)` | New case in Kinetra's `runtime_tests.cpp` | Full (graphics, CI) |
 | The frame has the drawable size, rows from the top (a box drawn in the top-left quarter shows at small `y`, not at large `y`), and alpha 255 | Same case | Full |
 | `pixel` throws `std::out_of_range` outside the frame | Same case | Full |
+| Rows stay unpadded under a caller's `GL_PACK_ALIGNMENT` of 8 at an odd width, and that alignment is restored | `read-back packs rows unpadded under any pack alignment and restores it`; fails without the fix | Full |
 | A frame drawn without read-back leaves the stored frame alone | Not tested: switching it off releases the frame, which the throw above proves | |
 | Existing primitive, circle, resize, frame-time graph and overlay reads find the same pixels through `frame()` | The existing cases in Kinetra's `runtime_tests.cpp`, rewritten onto `frame()` with y flipped once | Full |
 | The capture tool writes the same images | `kinetra_capture_tests`, and `kinetra_capture_smoke` in the `graphics` preset (CI) | Full |
@@ -125,16 +127,85 @@ Kinetra-Lab (`ccr-3cd68603-h1b79l`):
 
 ## Review
 
-To be filled in.
+`code-review` (medium) over the Kinetra branch and Lab's working tree:
+
+| Finding | Resolution |
+| --- | --- |
+| The read assumed every `GL_PACK_ALIGNMENT` packs RGBA rows unpadded; at 8 an odd width pads them and overruns the buffer | Fixed: the read packs at 1 and restores the caller's alignment; a regression case fails without it |
+| `pixel` checked only `width` and `height`, not the bytes of a caller-built frame | Fixed: it throws `std::out_of_range` for too few bytes |
+| `read_back(true)` while on keeps the stored frame, which the contract did not say | Contract now says it changes nothing |
+| The frame-time row conversion was off by one for a fractional origin | Fixed: the exact conversion `ceil(origin.y + height - 2) - 1` |
+| A comment in the capture tool's `main.cpp` still said frames come from the front buffer | Fixed |
+| SDL's offscreen driver keeps the first surface size, so a grown frame is undefined beyond it | Documented in the [runtime guide](../engine/runtime.md#input-and-drawing) and at the resize case; nothing the runtime can detect |
+| Some Lab tests index frames with logical sizes, which equal drawable sizes only without display scaling | Pre-existing: the old reads made the same assumption, and the suites run without scaling; left alone |
+
+While moving the resize case, the read-back showed that its old center pixel lay outside the offscreen surface after the window grew to 640 x 360, and the old front-or-back fallback had passed on whatever was left there. The case now reads the pixel just above and left of the center.
 
 ## Verification
 
-To be filled in.
+Kinetra, `cmake --preset ci` (warnings as errors, offscreen SDL, software Mesa), `cmake --build build-ci` and `ctest --preset ci`: 317 of 317 passed, the 22 graphics cases included. `python3 tools/check_docs.py`: all links resolve.
+
+Kinetra-Lab, with the pointer on this branch:
+
+- `cmake --build --preset graphics --target kinetra_runtime_tests kinetra_demo_presentation_tests kinetra_dotio_presentation_tests kinetra_i4sim_presentation_tests kinetra_capture kinetra_capture_tests`, then `ctest --preset graphics -R 'kinetra_graphics|kinetra_demo_graphics|kinetra_dotio_graphics|kinetra_i4sim_graphics|^kinetra_capture'`: 57 of 57 passed, `kinetra_capture_smoke` included.
+- The same targets in the `ci` preset build without a warning, so the warning-free modules stay so.
+- `kinetra_capture <dir> launcher` writes a `launcher.png` byte-identical to the committed `docs/media/launcher.png`: row order and channels match the old read.
+- `python3 external/Kinetra/tools/check_docs.py` and `check_copies.py` with the terms `glReadPixels`, `front buffer`, `GL_FRONT`, `both swap buffers` and `read back`: the remaining hits are the roadmap items this change closes and correct uses of the words.
+
+The Full level is the pull requests' CI.
 
 ## Pull request
 
-To be filled in.
+**Kinetra:** `feat(runtime): read frames back before the swap`
+
+> ## Summary
+> `Runtime::read_back(true)` makes every following `end()` copy the frame it drew into `frame()` before the buffer swap: `FramePixels`, RGBA rows from the top left in drawable pixels, alpha 255. Tests and capture tools get the pixels without GLAD and without guessing whether the front or the back buffer holds the frame after the swap.
+>
+> ## Changes
+> - `engine.h`: `FramePixels` with `pixel(x, y)`, `Runtime::read_back(bool)` and `Runtime::frame()`.
+> - `runtime.cpp`: the read in `end()`, from the draw buffer, packed at alignment 1, flipped to top-down, alpha set to 255.
+> - `runtime_tests.cpp`: two contract cases (orientation, size, alpha, errors, replacement in place; pack alignment); the nine existing reads move onto `frame()`.
+> - Runtime guide and module README; roadmap item closed.
+>
+> ## Design
+> [docs/design/2026-11-26-frame-read-back.md](https://github.com/SMB-M87/Kinetra/blob/feat/frame-read-back/docs/design/2026-11-26-frame-read-back.md). Decisions settled with the user: a stack with Kinetra-Lab, opt-in read before the swap, RGBA from the top.
+>
+> ## Verification
+> `ctest --preset ci`: 317 of 317 passed locally. Kinetra-Lab's graphics suites and capture smoke test pass on this branch. CI is the Full level.
+>
+> ## Review notes
+> The resize case read a pixel outside SDL's offscreen surface after the window grew; it now reads one inside. See *Review* in the design document.
+>
+> ## Dependencies and merge order
+> Kinetra-Lab's pull request on `ccr-3cd68603-h1b79l` records this branch and merges after this one. Merge this one with a merge commit.
+>
+> ## Follow-up
+> None.
+
+**Kinetra-Lab:** `test(capture): read frames through Kinetra's frame read-back`
+
+> ## Summary
+> The capture tool and the graphics suites of the launcher, Demo, Dotio and i4sim read pixels through Kinetra's new `Runtime::read_back` and `frame()` instead of `glReadPixels` from the front or back buffer after the swap.
+>
+> ## Changes
+> - Pointer to Kinetra's `feat/frame-read-back`.
+> - Capture tool: `Stage` and `Tour` switch read-back on and write the frame's RGB; no GLAD include left.
+> - Graphics suites: every pixel read uses `frame()`, the front-or-back fallbacks and the second renders that filled both buffers are gone.
+> - Capture README, media guide, roadmap.
+>
+> ## Design
+> In Kinetra: [Frame read-back on Runtime](https://github.com/SMB-M87/Kinetra/blob/feat/frame-read-back/docs/design/2026-11-26-frame-read-back.md).
+>
+> ## Verification
+> The graphics suites and the capture tests and smoke test: 57 of 57 passed; the `ci` preset builds them without a warning; the launcher screenshot is byte-identical to the committed one.
+>
+> ## Dependencies and merge order
+> Kinetra's pull request merges first, with a merge commit; then this one, with its pointer at the Kinetra branch commit; then the `lab-pointer` workflow's pointer-only pull request.
+>
+> ## Follow-up
+> None.
 
 ## Open points
 
-None yet.
+- SDL's offscreen driver does not resize its surface with the window, so after a window grows there the read-back frame is undefined beyond its first size. The graphics tests keep their reads inside it.
+- Tests in Kinetra-Lab index frames with logical sizes in places; that holds only without display scaling, as the old reads did.
