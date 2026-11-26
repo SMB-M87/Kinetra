@@ -1,11 +1,12 @@
-#include <kinetra/runtime/timing.h>
 #include <kinetra/simulation/avoidance.h>
+#include <kinetra/simulation/clock.h>
 #include <kinetra/simulation/navigation.h>
 #include <kinetra/simulation/passing.h>
 #include <kinetra/simulation/steering.h>
 #include <kinetra/simulation/traffic.h>
 #include <kinetra/simulation/weighted_grid.h>
 #include <kinetra/view/camera.h>
+#include <kinetra/view/timing.h>
 
 #ifdef CONSUMER_GRAPHICS
 #include <kinetra/runtime/inspector_view.h>

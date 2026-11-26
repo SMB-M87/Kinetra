@@ -1,7 +1,7 @@
 // Contract tests for the core simulation: collision geometry, world stepping and contact
 // response (physics.h), spatial and collision grids, steering, the fixed clock and camera,
 // invalid input, and a 400-body stability run.
-#include <kinetra/runtime/timing.h>
+#include <kinetra/simulation/clock.h>
 #include <kinetra/simulation/collision_grid.h>
 #include <kinetra/simulation/steering.h>
 #include <kinetra/view/camera.h>

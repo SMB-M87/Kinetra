@@ -2,9 +2,9 @@
 
 #include <array>
 #include <cstdint>
-#include <kinetra/runtime/timing.h>
 #include <kinetra/view/camera.h>
 #include <kinetra/view/input.h>
+#include <kinetra/view/timing.h>
 #include <memory>
 #include <optional>
 #include <span>

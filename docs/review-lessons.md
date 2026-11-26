@@ -93,6 +93,9 @@ No lessons yet.
 - **When a fix resets one piece of state that a call depends on, reset its whole group** · added 2026-11-26 · source: #67
   #67 reset the caller's `GL_PACK_ALIGNMENT`, which overran the read buffer, and kept the pack row length, the skips and the pack buffer, which overrun or bypass the same buffer.
 
+- **Prove a goal with a check as wide as its wording, not with a search for the file the change moves** · added 2026-11-26 · source: #66, Kinetra-Lab#133
+  The goal said that no Lab logic header includes `runtime/`, but the check searched only for `runtime/timing.h`. It missed `i4sim/controller.h` and `kinetra_lab/input.h`, which still included `runtime/engine.h` for the view types that ADR 0015 had moved out of it.
+
 - **Count the total cells visited when a route follower repeats a raster clearance query** · added 2026-11-24 · source: [#61](https://github.com/SMB-M87/Kinetra/pull/61)
   One sweep scans a bounding rectangle. Repeating it for every point along an open diagonal made the first target selection cubic in the number of waypoints.
 

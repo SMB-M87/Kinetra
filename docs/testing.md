@@ -140,7 +140,7 @@ When a change alters what a scene shows, the author also takes a screenshot of i
 | Traffic admission (`traffic.cpp`) | `kinetra_traffic_tests` | `^kinetra_traffic` |
 | Runtime and launcher (`src/runtime/`) | Full level; locally, as quick feedback, `kinetra_engine_runtime_tests` in the `graphics` preset | `^kinetra_engine_graphics` (`ctest --preset graphics`) |
 
-Runtime and launcher behavior is always Full level. While iterating on `settings_view.cpp` or `launcher.cpp`, the window-free suites `kinetra_settings_view` and `kinetra_launcher` give quick feedback in the `dev` build. The header-only helpers (`bitmap_text.h`, `camera.h`, `timing.h`, `debug_view.h`, `help_view.h`) are public headers, so changing them is Full level; their window-free cases are in `kinetra_presentation` and `kinetra_behavior`. Build target and CTest prefix differ for some suites; the [test map](../tests/README.md#test-map) lists both.
+Runtime and launcher behavior is always Full level. While iterating on `settings_view.cpp` or `launcher.cpp`, the window-free suites `kinetra_settings_view` and `kinetra_launcher` give quick feedback in the `dev` build. The header-only helpers (`bitmap_text.h`, `camera.h`, `clock.h`, `timing.h`, `debug_view.h`, `help_view.h`) are public headers, so changing them is Full level; their window-free cases are in `kinetra_presentation` and `kinetra_behavior`. Build target and CTest prefix differ for some suites; the [test map](../tests/README.md#test-map) lists both.
 
 Lab keeps its own mapping in its [AGENTS.md](https://github.com/SMB-M87/Kinetra-Lab/blob/main/AGENTS.md).
 

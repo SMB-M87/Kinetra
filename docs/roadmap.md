@@ -34,9 +34,6 @@ Nothing agreed next in Kinetra itself.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
   The Ubuntu test jobs install packages and the pinned formatter on each run. A prebuilt Ubuntu image could shorten setup and reduce dependence on the package mirrors.
   Next step: measure setup time and decide how the image would pick up Ubuntu security updates and formatter version changes.
-- **Headless timing outside `runtime/`** · include layout, with Lab · added 2026-11-21
-  `<kinetra/runtime/timing.h>` (`FixedClock`, `RateCounter`) is header-only and headless, yet sits under `runtime/`, and the Demo, Dotio and i4sim logic include it. Move it to `simulation/` or `view/`.
-  Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
 ## Ideas
 
 Wishes of the user, not yet agreed or shaped. Each needs a design session (`grilling`) before it moves up.
