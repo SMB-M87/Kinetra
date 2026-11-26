@@ -2,11 +2,11 @@
 // (bitmap_text.h), camera zoom stepping (camera.h), the rate counter, frame times and frame
 // limiter (timing.h), angle interpolation (math.h) and debug-menu rows (debug_menu.h).
 #include <kinetra/runtime/bitmap_text.h>
-#include <kinetra/runtime/timing.h>
 #include <kinetra/simulation/math.h>
 #include <kinetra/view/camera.h>
 #include <kinetra/view/debug_menu.h>
 #include <kinetra/view/inspector.h>
+#include <kinetra/view/timing.h>
 
 #include <doctest/doctest.h>
 

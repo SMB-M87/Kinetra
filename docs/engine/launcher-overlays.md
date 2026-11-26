@@ -125,7 +125,7 @@ An application supplies one `InspectorSnapshot` with a title and ordered groups 
 
 Header-only helpers for the glue every interactive session needs:
 - `zoom(camera, steps, limits)` ([camera.h](../../include/kinetra/view/camera.h)) applies `zoom_factor` per wheel step and clamps to `ZoomLimits`. Zero steps still clamp, so new limits take effect at once.
-- `RateCounter` ([timing.h](../../include/kinetra/runtime/timing.h)) turns counted frames, updates or decisions into a per-second rate over fixed windows (0.5 s by default).
+- `RateCounter` ([timing.h](../../include/kinetra/view/timing.h)) turns counted frames, updates or decisions into a per-second rate over fixed windows (0.5 s by default).
 
 ## Tests
 
