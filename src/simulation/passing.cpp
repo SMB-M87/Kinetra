@@ -10,7 +10,6 @@ namespace {
 constexpr float oncoming_cosine = -0.8f;
 /// A neighbor traveling against the lane faster than this share of the speed limit blocks it.
 constexpr float oncoming_speed_fraction = 0.25f;
-constexpr float minimum_leg_length = 0.0001f;
 
 float support(Vec2 extent, Vec2 direction) {
     return std::abs(direction.x) * extent.x + std::abs(direction.y) * extent.y;
@@ -101,11 +100,11 @@ PassingLaneGuard::PassingLaneGuard(const Body &participant, PassingLane lane, Pa
                   braking_distance(prediction.speed, prediction.acceleration);
     for (std::size_t i = 0; i < leg_count_; ++i) {
         const auto leg = legs_[i];
-        const float length = distance(leg.start, leg.end);
+        const auto travel = leg.end - leg.start;
+        const float length = kinetra::length(travel);
         if (length >= reach) {
-            near_[near_count_++] = {leg.start,
-                                    leg.start + (leg.end - leg.start) *
-                                                    (reach / std::max(length, minimum_leg_length))};
+            const auto target = length > 0 ? leg.start + travel * (reach / length) : leg.start;
+            near_[near_count_++] = {leg.start, target};
             break;
         }
         near_[near_count_++] = leg;

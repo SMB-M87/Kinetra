@@ -48,20 +48,30 @@ The [passing API](../../include/kinetra/simulation/passing.h) and rectangular sw
 
 ## Test plan
 
-- Engine tests verify closest approach, candidate geometry and order, insufficient room and goal distance, and guard behavior for stationary, crossing, oncoming and trailing neighbors.
+- Engine tests verify closest approach, candidate geometry and order, insufficient room and goal distance, and guard behavior for stationary, crossing, oncoming and trailing neighbors. Repeat the strict sweep with a translated origin and the short-lane guard at two world scales.
 - The external consumer links and calls the engine passing API and supplies steering settings explicitly.
 - i4sim's existing pressure, simulation and golden suites exercise the migrated geometry and preserve the recorded results for their steering profiles.
 
 ## Verification
 
-- Kinetra Debug build for weighted navigation, navigation, behavior, avoidance and translation sweeps. All 163 selected CTest cases passed.
-- The external consumer built and ran with `CONSUMER_GRAPHICS=ON`.
-- Lab pressure and golden baselines passed before the change. The same fixtures also passed through the shared API.
-- Pull request CI covers the Full level.
+All 165 selected Kinetra Debug tests passed. The external consumer built and ran with the runtime targets enabled.
+
+```sh
+cmake --preset dev
+cmake --build --preset dev --target kinetra_weighted_navigation_tests kinetra_navigation_tests kinetra_tests kinetra_avoidance_tests kinetra_translation_sweep_tests -j 5
+ctest --preset dev -R '^kinetra_(weighted_navigation|navigation|behavior|avoidance|translation_sweeps):' -j 5 --output-on-failure
+cmake -S tests/consumer -B /tmp/kinetra-passing-consumer -G Ninja -DKINETRA_SOURCE="$PWD" -DCONSUMER_GRAPHICS=ON
+cmake --build /tmp/kinetra-passing-consumer -j 3
+/tmp/kinetra-passing-consumer/consumer
+```
+
+Lab pressure and golden baselines passed before the change. The same fixtures passed through the shared API. Pull request CI covers the Full level.
 
 ## Review
 
 The extraction preserves closest-approach ordering, strict overlap in the guard, the formation sweep's contact semantics and the final sample when the horizon is off cadence. Candidate acceptance and event ordering stay with i4sim. The existing solver composition and factory tuning were checked at their call sites.
+
+[Round 1](https://github.com/SMB-M87/Kinetra/pull/64#pullrequestreview-6074427573) found two scale-dependent misses. The strict sweep now builds its slabs in obstacle-relative double precision. The guard clips to the actual leg length with a separate zero-length case. Both regressions failed before the fix. The contracts now state the forward-center filter and the unchecked sweep preconditions. Test assertions show coordinates on failure.
 
 ## Pull request
 
@@ -73,7 +83,7 @@ Title: `refactor(navigation): share predictive passing geometry`
 
 **Design.** [Shared predictive passing](2026-11-26-shared-passing.md) and [ADR 0016](../decisions/0016-predictive-passing.md).
 
-**Verification.** Debug CTest passed for the 163 affected engine cases. The external consumer built and ran. The companion Lab branch exercises the pressure and golden fixtures.
+**Verification.** 165 selected engine cases passed after the scale fixes. The external consumer built and ran. The companion Lab branch exercises the pressure and golden fixtures. The commands are in the [Verification section](#verification).
 
 **Review notes.** Check the candidate order, the distinction between touching and overlap in the two sweeps, and the steering call sites that previously relied on defaults.
 

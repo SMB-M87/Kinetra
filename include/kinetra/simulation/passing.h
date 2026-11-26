@@ -79,8 +79,9 @@ class PassingLaneGuard {
     /// Bounds of the remaining legs, with the inflated footprint and extra search margin.
     Aabb query_bounds(float margin) const;
 
-    /// Classify a neighbor with an axis-aligned footprint. Stationary neighbors are checked
-    /// against all remaining legs. Moving neighbors are sampled up to the prediction horizon.
+    /// Classify a neighbor with an axis-aligned footprint whose center is ahead along the
+    /// entry-to-exit axis. Stationary neighbors ahead are checked against all remaining legs.
+    /// Moving neighbors ahead are sampled up to the prediction horizon.
     PassingObstruction inspect(const Body &neighbor, bool stationary) const;
 
     /// Stop target along current velocity, using a conservative speed²/acceleration distance.

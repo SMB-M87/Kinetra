@@ -197,3 +197,16 @@ TEST_CASE("a rotating body without obstacles keeps free integration") {
     CHECK(length(free.body(0).position - (body.position + body.velocity / 60)) < 0.0001f);
     CHECK(std::abs(free.body(0).angle - 4.f / 60) < 0.0001f);
 }
+
+TEST_CASE("strict box sweeps keep small footprints at large coordinates") {
+    for (float origin : {0.f, 100000000.f}) {
+        CAPTURE(origin);
+        Body other;
+        other.shape = Shape::box;
+        other.position = {origin, 0};
+        other.half_extents = {1, 1};
+        CHECK(swept_box_overlaps(other.position, other.position, {1, 1}, other));
+        CHECK(swept_box_overlaps({origin - 16, 0}, {origin + 16, 0}, {1, 1}, other));
+        CHECK_FALSE(swept_box_overlaps({origin - 16, 2}, {origin + 16, 2}, {1, 1}, other));
+    }
+}

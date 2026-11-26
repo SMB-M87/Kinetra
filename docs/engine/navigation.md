@@ -85,9 +85,9 @@ fixed order, with three lateral placements per side. Each participant goes to it
 entry before traversing to its exit. The application checks the swept legs against the
 world and reserves the first acceptable candidate.
 
-During the maneuver, a guard for each participant checks the remaining legs. A
-stationary footprint that overlaps a remaining leg blocks it. Moving neighbors ahead
-are sampled over the horizon on the reachable part of the path, including braking
+During the maneuver, a guard considers neighbors whose centers are ahead along the
+entry-to-exit axis. A stationary footprint ahead that overlaps a remaining leg blocks
+it. Moving neighbors ahead are sampled over the horizon on the reachable path, including braking
 distance. Crossing traffic can require a wait at the braking target. Oncoming traffic
 in that reach blocks the lane. The caller supplies the active neighbors, priority,
 sampling cadence and response. [ADR 0016](../decisions/0016-predictive-passing.md)

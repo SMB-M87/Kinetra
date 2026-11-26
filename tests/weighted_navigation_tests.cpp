@@ -109,6 +109,10 @@ Vec2 brute_force_predictive(const Body &a, std::span<const Body> neighbors, cons
     }
     return predicted ? sum / float(predicted) : sum;
 }
+void check_passing_point(Vec2 actual, Vec2 expected) {
+    CHECK(actual.x == expected.x);
+    CHECK(actual.y == expected.y);
+}
 } // namespace
 
 TEST_CASE("a free weighted path ends exactly at the goal") {
@@ -612,12 +616,12 @@ TEST_CASE("passing orders candidate lanes and leaves room to resume the trip") {
     const auto lanes = passing_lane_candidates(east, west, margins);
     for (const auto &candidate : lanes)
         REQUIRE(candidate);
-    CHECK((*lanes[0])[0].entry == Vec2{2.5f, -4});
-    CHECK((*lanes[0])[0].exit == Vec2{27, -4});
-    CHECK((*lanes[0])[1].exit == Vec2{13, 3});
-    CHECK((*lanes[1])[0].exit == Vec2{27, -8});
-    CHECK((*lanes[2])[0].exit == Vec2{27, 0});
-    CHECK((*lanes[3])[0].exit == Vec2{27, 4});
+    check_passing_point((*lanes[0])[0].entry, Vec2{2.5f, -4});
+    check_passing_point((*lanes[0])[0].exit, Vec2{27, -4});
+    check_passing_point((*lanes[0])[1].exit, Vec2{13, 3});
+    check_passing_point((*lanes[1])[0].exit, Vec2{27, -8});
+    check_passing_point((*lanes[2])[0].exit, Vec2{27, 0});
+    check_passing_point((*lanes[3])[0].exit, Vec2{27, 4});
     west.destination.x = 12.5f;
     for (const auto &candidate : passing_lane_candidates(east, west, margins))
         CHECK_FALSE(candidate);
@@ -638,10 +642,10 @@ TEST_CASE("passing guard distinguishes crossing traffic from a blocked lane") {
     };
     const PassingLaneGuard guard(box({0, 0}, {2, 0}), {{0, 0}, {30, 0}}, PassingPhase::traverse, {},
                                  {2, 1, 3, 2});
-    CHECK(guard.braking_target() == Vec2{4, 0});
+    check_passing_point(guard.braking_target(), Vec2{4, 0});
     const auto bounds = guard.query_bounds(2);
-    CHECK(bounds.min == Vec2{-3, -3});
-    CHECK(bounds.max == Vec2{33, 3});
+    check_passing_point(bounds.min, Vec2{-3, -3});
+    check_passing_point(bounds.max, Vec2{33, 3});
     CHECK(guard.inspect(box({22, 0}), true) == PassingObstruction::blocking);
     CHECK(guard.inspect(box({22, 2}), true) == PassingObstruction::clear);
     CHECK(guard.inspect(box({-1, 0}, {1, 0}), false) == PassingObstruction::clear);
@@ -660,9 +664,28 @@ TEST_CASE("passing guard covers the approach before the traversal starts") {
     const PassingPrediction prediction{2, 1, 3, 2};
     const PassingLaneGuard approach(mover, lane, PassingPhase::approach, {}, prediction);
     CHECK(approach.inspect(parked, true) == PassingObstruction::blocking);
+    parked.position.x = 0;
+    CHECK(approach.inspect(parked, true) == PassingObstruction::clear);
+    parked.position.x = 0.5f;
     mover.position = lane.entry;
     const PassingLaneGuard traverse(mover, lane, PassingPhase::traverse, {}, prediction);
     CHECK(traverse.inspect(parked, true) == PassingObstruction::clear);
     CHECK_THROWS_AS(PassingLaneGuard(mover, lane, PassingPhase::approach, {}, {2, 1, 3, 0}),
                     std::invalid_argument);
+}
+
+TEST_CASE("passing guard reaches moving traffic along a short lane") {
+    for (float scale : {1.f, 10000.f}) {
+        CAPTURE(scale);
+        Body participant;
+        participant.shape = Shape::box;
+        participant.half_extents = Vec2{0.0001f, 0.0001f} * scale;
+        const PassingLane lane{{0, 0}, {0.00005f * scale, 0}};
+        const PassingLaneGuard guard(participant, lane, PassingPhase::traverse, {},
+                                     {0.00004f * scale, scale, 1, 1});
+        auto neighbor = participant;
+        neighbor.position = {0.00023f * scale, 0};
+        neighbor.velocity = {0, 0.000001f * scale};
+        CHECK(guard.inspect(neighbor, false) == PassingObstruction::crossing);
+    }
 }
