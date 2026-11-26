@@ -20,9 +20,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-- **Headless timing outside `runtime/`** · include layout, with Lab · added 2026-11-21
-  `<kinetra/runtime/timing.h>` is header-only and headless, yet the logic of Kinetra-Lab's applications includes it from `runtime/`. `FixedClock` moves to `simulation/clock.h`, the frame helpers to `view/timing.h`.
-  Where: branch `refactor/headless-timing`, [design](design/2026-11-26-headless-timing.md).
+Nothing in progress in Kinetra itself.
 
 ## Next
 
