@@ -20,7 +20,9 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-Nothing in progress in Kinetra itself.
+- **Frame read-back on `Runtime`** · runtime, with Lab · added 2026-11-21
+  A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
+  Where: branch `feat/frame-read-back`, [design](design/2026-11-26-frame-read-back.md).
 
 ## Next
 
@@ -34,9 +36,6 @@ Nothing agreed next in Kinetra itself.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
   The Ubuntu test jobs install packages and the pinned formatter on each run. A prebuilt Ubuntu image could shorten setup and reduce dependence on the package mirrors.
   Next step: measure setup time and decide how the image would pick up Ubuntu security updates and formatter version changes.
-- **Frame read-back on `Runtime`** · runtime · added 2026-11-21
-  A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
-  Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).
 - **Headless timing outside `runtime/`** · include layout, with Lab · added 2026-11-21
   `<kinetra/runtime/timing.h>` (`FixedClock`, `RateCounter`) is header-only and headless, yet sits under `runtime/`, and the Demo, Dotio and i4sim logic include it. Move it to `simulation/` or `view/`.
   Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
