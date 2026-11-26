@@ -102,6 +102,7 @@ struct ScriptedApplication {
 
 TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     Runtime runtime("Kinetra graphics test", 320, 240);
+    runtime.read_back(true);
     runtime.poll();
     SDL_Event event{};
     event.type = SDL_KEYDOWN;
@@ -189,42 +190,22 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     runtime.circle({4, 0}, 1, {1, 0, 0, 1});
     runtime.line({-4, -1}, {-4, 1}, 0.1f, {0, 0, 1, 1});
     runtime.end();
-    glFinish();
-    // Software GLX can retain the rendered image in either swap buffer;
-    // both are valid for verifying that the primitive batch reached GL.
-    unsigned char pixels[4]{};
-    glReadBuffer(GL_FRONT);
-    glReadPixels(160, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    if (pixels[1] < 200) {
-        glReadBuffer(GL_BACK);
-        glReadPixels(160, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    }
+    // The pixel just above the window's center, as OpenGL's bottom-up row 120 was.
+    auto pixels = runtime.frame().pixel(160, 119);
     REQUIRE_MESSAGE((pixels[1] > 200 && pixels[0] < 20 && pixels[2] < 20), "Rendered center pixel missing");
     REQUIRE_MESSAGE(glGetError() == GL_NO_ERROR, "OpenGL reported an error");
     runtime.begin({0, 0, 0, 1});
     const Vec2 polygon[]{{-2, -2}, {2, -2}, {0, 2}};
     runtime.polygon(polygon, {0, 1, 0});
     runtime.end();
-    glFinish();
-    glReadBuffer(GL_FRONT);
-    glReadPixels(160, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    if (pixels[1] < 200) {
-        glReadBuffer(GL_BACK);
-        glReadPixels(160, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    }
+    pixels = runtime.frame().pixel(160, 119);
     REQUIRE_MESSAGE((pixels[1] > 200 && pixels[0] < 20), "Filled polygon missing from rendered batch");
     for (const float zoom : {2.5f, 50.f}) {
         runtime.camera.pixels_per_unit = zoom;
         runtime.begin({0, 0, 0, 1});
         draw_debug_vector(runtime, {}, {0.0001f, 0}, {0, 1, 0});
         runtime.end();
-        glFinish();
-        glReadBuffer(GL_FRONT);
-        glReadPixels(168, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        if (pixels[1] < 200) {
-            glReadBuffer(GL_BACK);
-            glReadPixels(168, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        }
+        pixels = runtime.frame().pixel(168, 119);
         REQUIRE_MESSAGE(pixels[1] > 200, "Small debug vector vanished at camera zoom");
     }
     // Read a full circle back to verify both coverage and a fractional-alpha edge.
@@ -232,15 +213,10 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     runtime.begin({0, 0, 0, 1});
     runtime.circle({}, 1.73f, {0, 1, 0, 1});
     runtime.end();
-    glFinish();
-    std::vector<unsigned char> image(320 * 240 * 4);
-    auto read_circle = [&] { glReadPixels(0, 0, 320, 240, GL_RGBA, GL_UNSIGNED_BYTE, image.data()); };
-    glReadBuffer(GL_FRONT);
-    read_circle();
-    if (image[(120 * 320 + 160) * 4 + 1] < 200) {
-        glReadBuffer(GL_BACK);
-        read_circle();
-    }
+    // Rows from the top; the circle is symmetric about the window's center, so the distances
+    // below are the same as with OpenGL's bottom-up rows.
+    const auto &image = runtime.frame().rgba;
+    REQUIRE(image.size() == std::size_t(320 * 240 * 4));
     int softened = 0;
     for (int y = 30; y < 210; ++y)
         for (int x = 70; x < 250; ++x) {
@@ -277,13 +253,13 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
         glGetIntegerv(GL_VIEWPORT, viewport);
         REQUIRE_MESSAGE((viewport[2] == width && viewport[3] == height),
                         "OpenGL viewport did not follow drawable resize");
-        glFinish();
-        glReadBuffer(GL_FRONT);
-        glReadPixels(width / 2, height / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        if (pixels[1] < 200) {
-            glReadBuffer(GL_BACK);
-            glReadPixels(width / 2, height / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        }
+        const auto &frame = runtime.frame();
+        REQUIRE_MESSAGE((frame.width == width && frame.height == height),
+                        "Read-back frame did not follow drawable resize");
+        // The pixel just above and left of the center. SDL's offscreen driver keeps the
+        // surface of the window's first size, so the frame beyond 320 x 240 is undefined there,
+        // and the center of the 640 x 360 window lies just outside it.
+        pixels = frame.pixel(width / 2 - 1, height / 2 - 1);
         REQUIRE_MESSAGE((pixels[1] > 200 && pixels[0] < 20 && pixels[2] < 20),
                         "Rendered center pixel missing after resize");
         REQUIRE_MESSAGE(glGetError() == GL_NO_ERROR, "OpenGL error after resize");
@@ -344,6 +320,7 @@ TEST_CASE("read-back frames hold the drawn pixels from the top left until switch
 
 TEST_CASE("presented frames are timed and the frame-time graph draws them") {
     Runtime runtime("Kinetra frame times", 320, 200);
+    runtime.read_back(true);
     REQUIRE(runtime.poll());
     for (int frame = 0; frame < 3; ++frame) {
         runtime.begin({0, 0, 0, 1});
@@ -358,22 +335,14 @@ TEST_CASE("presented frames are timed and the frame-time graph draws them") {
     runtime.begin({0, 0, 0, 1});
     draw_frame_times(runtime, times);
     runtime.end();
-    glFinish();
     // Read the bar area's bottom row, just above the bars' base, from the presented frame.
     const Vec2 origin = FrameTimeGraph::origin(runtime.camera.viewport);
-    const int row = int(runtime.camera.viewport.y - (origin.y + FrameTimeGraph::height - 2));
-    // The front buffer is undefined after a swap on some drivers; count the better buffer.
+    const int row = int(origin.y + FrameTimeGraph::height) - 3;
     int green = 0;
-    for (const auto buffer : {GL_FRONT, GL_BACK}) {
-        std::vector<unsigned char> pixels(240 * 3);
-        glReadBuffer(buffer);
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadPixels(int(origin.x), row, 240, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-        int count = 0;
-        for (std::size_t i = 0; i < pixels.size(); i += 3)
-            if (pixels[i] < 120 && pixels[i + 1] > 180 && pixels[i + 2] < 140)
-                ++count;
-        green = std::max(green, count);
+    for (int x = int(origin.x); x < int(origin.x) + 240; ++x) {
+        const auto pixel = runtime.frame().pixel(x, row);
+        if (pixel[0] < 120 && pixel[1] > 180 && pixel[2] < 140)
+            ++green;
     }
     CHECK_MESSAGE(green > 200, "Short frames were not drawn as green bars");
     CHECK(glGetError() == GL_NO_ERROR);
@@ -404,26 +373,16 @@ TEST_CASE("a fixed frame time replaces the measured one until it is cleared") {
 }
 
 namespace {
-/// Whether the presented frame shows `expected` at logical screen pixel `point` (Y down),
-/// within rounding. The front buffer is undefined after a swap on some drivers, so either
-/// buffer may hold the frame.
+/// Whether the frame the last end() read back shows `expected` at logical screen pixel
+/// `point` (Y down), within rounding. The case must have called read_back(true).
 bool presented(const Runtime &runtime, Vec2 point, Color expected) {
-    GLint viewport[4]{};
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    const int x = viewport[0] + int(point.x * float(viewport[2]) / runtime.camera.viewport.x);
-    const int y =
-        viewport[1] + viewport[3] - 1 - int(point.y * float(viewport[3]) / runtime.camera.viewport.y);
-    for (const auto buffer : {GL_FRONT, GL_BACK}) {
-        unsigned char pixel[4]{};
-        glReadBuffer(buffer);
-        glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-        const auto near = [](unsigned char channel, float value) {
-            return std::abs(float(channel) - value * 255) <= 3;
-        };
-        if (near(pixel[0], expected.r) && near(pixel[1], expected.g) && near(pixel[2], expected.b))
-            return true;
-    }
-    return false;
+    const auto &frame = runtime.frame();
+    const auto pixel = frame.pixel(int(point.x * float(frame.width) / runtime.camera.viewport.x),
+                                   int(point.y * float(frame.height) / runtime.camera.viewport.y));
+    const auto near = [](std::uint8_t channel, float value) {
+        return std::abs(float(channel) - value * 255) <= 3;
+    };
+    return near(pixel[0], expected.r) && near(pixel[1], expected.g) && near(pixel[2], expected.b);
 }
 } // namespace
 
@@ -433,6 +392,7 @@ TEST_CASE("RGBA images keep their row order and blend between ordinary shapes") 
     CHECK_THROWS_AS(RgbaImage(2, 3, pixels), std::invalid_argument);
     const auto image = std::make_shared<const RgbaImage>(2, 2, pixels);
     Runtime runtime("RGBA images", 320, 240);
+    runtime.read_back(true);
     runtime.camera.position = {4, -9};
     const auto world = [&](Vec2 point) { return runtime.camera.screen_to_world(point); };
     const auto units = runtime.camera.pixels_per_unit;
@@ -453,6 +413,7 @@ TEST_CASE("a pending OpenGL error leaves the previous image usable") {
     const auto first = std::make_shared<const RgbaImage>(1, 1, red);
     const auto second = std::make_shared<const RgbaImage>(1, 1, green);
     Runtime runtime("Texture upload recovery", 320, 240);
+    runtime.read_back(true);
     const auto corner = runtime.camera.screen_to_world({0, 0});
     const auto size = runtime.camera.viewport / runtime.camera.pixels_per_unit;
     runtime.begin();
@@ -475,6 +436,7 @@ TEST_CASE("the drawn preview and its description follow the highlighted applicat
     LaunchMenu menu({{"FIRST", "FIRST", {}, 0, std::make_shared<const RgbaImage>(1, 1, red)},
                      {"SECOND", "I AM NEXT", {}, 0, std::make_shared<const RgbaImage>(1, 1, green)}});
     Runtime runtime("Launcher previews", 1280, 800);
+    runtime.read_back(true);
     const auto layout = menu.layout(runtime.camera.viewport);
     REQUIRE(layout.preview_origin);
     const auto image_center = *layout.preview_origin + Vec2{135, 80} * layout.scale;
@@ -501,6 +463,7 @@ TEST_CASE("the drawn preview and its description follow the highlighted applicat
 
 TEST_CASE("the inspector scrolls wrapped values while its close button stays in place") {
     Runtime runtime("Kinetra inspector", 640, 480);
+    runtime.read_back(true);
     InspectorView view;
     const Aabb area{{340, 8}, {632, 65}};
     const InspectorSnapshot snapshot{
@@ -560,6 +523,7 @@ TEST_CASE("the inspector scrolls wrapped values while its close button stays in 
 
 TEST_CASE("the debug menu and inspector stay interactive with the graph below the inspector") {
     Runtime runtime("Kinetra inspector and frame times", 640, 480);
+    runtime.read_back(true);
     DebugMenu menu;
     menu.visible = true;
     menu.screen_origin = {8, 32};
@@ -597,6 +561,7 @@ TEST_CASE("the debug menu and inspector stay interactive with the graph below th
 
 TEST_CASE("the debug menu draws its panel, section band, marks and swatch") {
     Runtime runtime("Kinetra debug menu", 640, 480);
+    runtime.read_back(true);
     REQUIRE(runtime.poll());
     bool flag = true;
     float speed = 2;
@@ -610,7 +575,6 @@ TEST_CASE("the debug menu draws its panel, section band, marks and swatch") {
     runtime.begin({0, 0, 0, 1});
     menu.draw(runtime, entries);
     runtime.end();
-    glFinish();
     const float scale = DebugMenu::scale(runtime.camera.viewport);
     // A point of the panel, given in panel pixels.
     const auto at = [&](float x, float y) { return menu.screen_origin + Vec2{x, y} * scale; };
@@ -638,13 +602,13 @@ TEST_CASE("the debug menu draws its panel, section band, marks and swatch") {
     runtime.begin({0, 0, 0, 1});
     menu.draw(runtime, entries);
     runtime.end();
-    glFinish();
     CHECK_MESSAGE(presented(runtime, at(120, DebugMenu::row_top(3) + 8), overlay::band_color), "hovered row");
     CHECK(glGetError() == GL_NO_ERROR);
 }
 
 TEST_CASE("the settings panel and its toolbar draw in the shared style") {
     Runtime runtime("Kinetra settings", 640, 480);
+    runtime.read_back(true);
     REQUIRE(runtime.poll());
     bool statistics = true, debug = true;
     SettingsOverlay overlay({ToggleRow{"STATISTICS", &statistics}, ToggleRow{"DEBUG MODE", &debug},
@@ -653,7 +617,6 @@ TEST_CASE("the settings panel and its toolbar draw in the shared style") {
     runtime.begin({0, 0, 0, 1});
     overlay.draw(runtime);
     runtime.end();
-    glFinish();
     CHECK_MESSAGE(presented(runtime, {6, 6}, overlay::button_color), "SETTINGS toolbar button");
     CHECK_MESSAGE(presented(runtime, {70, 6}, overlay::button_color), "DEBUG toolbar button in debug mode");
     Input open;
@@ -663,7 +626,6 @@ TEST_CASE("the settings panel and its toolbar draw in the shared style") {
     runtime.begin({0, 0, 0, 1});
     overlay.draw(runtime);
     runtime.end();
-    glFinish();
     const float scale = SettingsOverlay::scale(runtime.camera.viewport);
     const Vec2 origin = runtime.camera.viewport / 2 - overlay.half_extent() * scale;
     const auto at = [&](float x, float y) { return origin + Vec2{x, y} * scale; };
