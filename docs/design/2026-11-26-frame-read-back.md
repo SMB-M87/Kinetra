@@ -91,7 +91,7 @@ sequenceDiagram
 
 - `begin()` stores the drawable size it set as the viewport; `end()` reads that rectangle, so a resize between `begin()` and `end()` cannot mismatch the frame.
 - The read buffer is the current draw buffer (`GL_DRAW_BUFFER`), which is `GL_BACK` for the double-buffered window the runtime asks for, and the right buffer if a platform gives a single-buffered surface.
-- The read goes through OpenGL's default read state and restores the caller's afterwards: the window's framebuffer for reading, its draw buffer as the read buffer, no pixel pack buffer, and `GL_PACK_ALIGNMENT` 1 with no row length and no skips. Each of these left by a caller would make the read overrun its buffer, write into the pack buffer instead, or read another buffer (an alignment of 8 at an odd width pads every row).
+- The read goes through OpenGL's default read state and restores the caller's afterwards: the window's framebuffer for reading, its draw buffer as the read buffer, no pixel pack buffer, and `GL_PACK_ALIGNMENT` 1 with no row length and no skips. Each of these left by a caller would make the read overrun its buffer, write into the pack buffer instead, or read another buffer (an alignment of 8 at an odd width pads every row). The window's read buffer is saved only after a caller's read framebuffer is unbound, because the read buffer belongs to the bound read framebuffer; the destructor restores it before it binds the caller's framebuffer back. The read assumes the window is the draw framebuffer, as it is for every `Runtime` drawing call, since `GL_DRAW_BUFFER` names the window's buffer only then.
 - `FramePixels::pixel` also throws `std::out_of_range` when `rgba` holds fewer bytes than its size needs, since callers can build or change the plain struct.
 - The frame's vector keeps its capacity between frames, so a loop that reads every frame allocates once.
 - `read_back(false)` releases the stored frame.
@@ -119,7 +119,7 @@ Kinetra-Lab (`ccr-3cd68603-h1b79l`):
 | `frame()` throws before a read-back frame, after `read_back(true)` without `end()`, and after `read_back(false)` | New case in Kinetra's `runtime_tests.cpp` | Full (graphics, CI) |
 | The frame has the drawable size, rows from the top (a box drawn in the top-left quarter shows at small `y`, not at large `y`), and alpha 255 | Same case | Full |
 | `pixel` throws `std::out_of_range` outside the frame | Same case | Full |
-| Rows stay unpadded and in place under a caller's pack state (alignment 8 at an odd width, row length, skips, a bound pack buffer) and read buffer, and that state is restored | `read-back ignores the caller's pack state and restores it`; fails without the fix | Full |
+| Rows stay unpadded and in place under a caller's pack state (alignment 8 at an odd width, row length, skips, a bound pack buffer), read buffer and bound read framebuffer object, that state is restored, and no OpenGL error is left | `read-back ignores the caller's read state and restores it`; fails without each fix | Full |
 | `read_back(true)` while on keeps the stored frame | The contract case | Full |
 | The read-back is right in a real window, not only offscreen | Kinetra's graphics cases and Lab's four suites run under SDL's `x11` driver in Xvfb, recorded in *Verification*; a composited desktop and native Windows are the user's check after the merge | Full, local |
 | A frame drawn without read-back leaves the stored frame alone | Not tested: switching it off releases the frame, which the throw above proves | |
@@ -160,9 +160,20 @@ While moving the resize case, the read-back showed that its old center pixel lay
 | Kinetra-Lab#134, blocking: the capture README's "in the same way offscreen and in a window" had no run behind it | Settled with the Kinetra thread: the README now says where it was checked (offscreen and an X11 window) and that a composited desktop and Windows are not yet, in Kinetra-Lab e158a21 |
 | Kinetra-Lab#134, nit: the README did not say that the tour needs a drawable of its canvas size | Added in the same commit |
 
+### Agent review, round 2
+
+[Review of Kinetra#67](https://github.com/SMB-M87/Kinetra/pull/67#pullrequestreview-6081675325) at b23d2b5: *Fix first*. [Kinetra-Lab#134](https://github.com/SMB-M87/Kinetra-Lab/pull/134#pullrequestreview-6081724849) at c1c830b: *Ready to merge*, with the pointer's follow of the fix below reviewed in a round of its own.
+
+| Finding | Resolution |
+| --- | --- |
+| Should fix: `DefaultReadState` saved the read buffer before unbinding a caller's read framebuffer, so it restored an object's read buffer onto the window's framebuffer, leaving `GL_INVALID_OPERATION` pending | Fixed in c51aff4: it saves the window's read buffer after the unbind; the class comment says the read assumes the window is the draw framebuffer. The read-state case binds a framebuffer object and checks the binding, both read buffers and `glGetError()`, and failed on those two before the fix |
+| Nit: the new lesson on recorded runs and #66's lesson on goal checks describe one pattern | Merged into one lesson with #66, Kinetra-Lab#133 and #67 as sources |
+| Lesson proposed: save and restore OpenGL state with the object it belongs to bound | Added to [review lessons](../review-lessons.md) |
+| For the user: the composited desktop and Windows check; whether the goal-proof lesson becomes a rule | Left to the user after the merge, as the review says |
+
 ## Verification
 
-Kinetra, `cmake --preset ci` (warnings as errors, offscreen SDL, software Mesa), `cmake --build build-ci` and `ctest --preset ci`: 317 of 317 passed, on 5d009b3 and again on 5520f38, the 22 graphics cases included. `python3 tools/check_docs.py`: all links resolve.
+Kinetra, `cmake --preset ci` (warnings as errors, offscreen SDL, software Mesa), `cmake --build build-ci` and `ctest --preset ci`: 317 of 317 passed, on 5d009b3 and again on 5520f38 and c51aff4, the 22 graphics cases included. `python3 tools/check_docs.py`: all links resolve.
 
 Kinetra-Lab, with the pointer on this branch:
 
@@ -173,7 +184,7 @@ Kinetra-Lab, with the pointer on this branch:
 
 In a real window, SDL's `x11` driver under Xvfb with software Mesa and no compositor (`SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s '-screen 0 1920x1080x24' <binary>`; the test presets force the offscreen driver, so the binaries run directly):
 
-- Kinetra's `kinetra_engine_runtime_tests`: 22 of 22 cases passed.
+- Kinetra's `kinetra_engine_runtime_tests`: 22 of 22 cases passed, on 5520f38 and again on c51aff4.
 - Kinetra-Lab's `kinetra_runtime_tests`, `kinetra_demo_presentation_tests`, `kinetra_dotio_presentation_tests` and `kinetra_i4sim_presentation_tests`: 11, 2, 5 and 4 cases, all passed.
 - `kinetra_capture <dir> launcher` writes a `launcher.png` byte-identical to the committed one.
 
@@ -189,8 +200,8 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 > ## Changes
 > - `engine.h`: `FramePixels` with `pixel(x, y)`, `Runtime::read_back(bool)` and `Runtime::frame()`; `end()`'s summary names the read-back.
 > - `runtime.cpp`: the read in `end()`. It reads through OpenGL's default read state: the window's framebuffer and draw buffer, no pack buffer, alignment 1, no row length and no skips. It restores the caller's state afterwards, flips the rows to top-down and sets alpha to 255.
-> - `runtime_tests.cpp`: two contract cases. One covers orientation, size, alpha, errors, replacement in place and `read_back(true)` while on. The other covers a caller's pack state and read buffer, and fails without the fix. The nine existing reads move onto `frame()`.
-> - The runtime guide and module README document the read-back; the roadmap item is closed; two review lessons are added.
+> - `runtime_tests.cpp`: two contract cases. One covers orientation, size, alpha, errors, replacement in place and `read_back(true)` while on. The other covers a caller's pack state, read buffer and bound read framebuffer object, and fails without the fixes. The nine existing reads move onto `frame()`.
+> - The runtime guide and module README document the read-back; the roadmap item is closed; review lessons are added and merged.
 >
 > ## Design
 > [docs/design/2026-11-26-frame-read-back.md](https://github.com/SMB-M87/Kinetra/blob/feat/frame-read-back/docs/design/2026-11-26-frame-read-back.md). The user settled three decisions: a stack with Kinetra-Lab, an opt-in read before the swap, and RGBA rows from the top.
@@ -205,6 +216,7 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 > ## Review notes
 > - Agent review round 1 asked for two fixes, both done. Its goal of a read-back that is reliable in a window now has the X11 run above. The read resets the whole read state, not only the alignment.
 > - The resize case used to read a pixel outside SDL's offscreen surface after the window grew; the surface keeps its first size. The old front-or-back fallback passed on leftover pixels. The case now reads a pixel inside the surface.
+> - Agent review round 2 found that the read restored a caller's framebuffer-object read buffer onto the window's framebuffer. That is fixed: the window's read buffer is saved after the unbind, and the case now binds a framebuffer object.
 > - *Review* in the design document lists every finding.
 >
 > ## Dependencies and merge order
