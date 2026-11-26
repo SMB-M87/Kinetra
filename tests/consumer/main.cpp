@@ -1,10 +1,12 @@
-#include <kinetra/runtime/timing.h>
 #include <kinetra/simulation/avoidance.h>
+#include <kinetra/simulation/clock.h>
 #include <kinetra/simulation/navigation.h>
+#include <kinetra/simulation/passing.h>
 #include <kinetra/simulation/steering.h>
 #include <kinetra/simulation/traffic.h>
 #include <kinetra/simulation/weighted_grid.h>
 #include <kinetra/view/camera.h>
+#include <kinetra/view/timing.h>
 
 #ifdef CONSUMER_GRAPHICS
 #include <kinetra/runtime/inspector_view.h>
@@ -67,10 +69,28 @@ int main() {
         return 6;
     kinetra::Body rectangle;
     rectangle.shape = kinetra::Shape::box;
-    if (!kinetra::finite(kinetra::priority_steer(rectangle, {10, 0}, {}, {}).acceleration))
+    const kinetra::PrioritySteering steering{.max_speed = 1,
+                                             .max_acceleration = 1,
+                                             .arrival_radius = 1,
+                                             .border_distance = 0.25f,
+                                             .border_strength = 1,
+                                             .border_lookahead = 1,
+                                             .prediction_steps = 4,
+                                             .prediction_step = 1,
+                                             .safety_multiplier = 1.05f};
+    if (!kinetra::finite(kinetra::priority_steer(rectangle, {10, 0}, {}, {}, steering).acceleration))
         return 5;
-    if (!kinetra::finite(kinetra::constrain_borders(rectangle, {}, {})))
+    if (!kinetra::finite(kinetra::constrain_borders(rectangle, {}, {}, steering)))
         return 7;
+    const kinetra::PassingApproach east{{0, 0}, {1, 1}, {1, 0}, {20, 0}};
+    const kinetra::PassingApproach west{{10, 0}, {1, 1}, {-1, 0}, {-10, 0}};
+    const auto lanes = kinetra::passing_lane_candidates(east, west, {1, 1, 1});
+    if (!kinetra::passing_conflict_time(east, west, 1, 5, 1) || !lanes.front())
+        return 20;
+    const kinetra::PassingLaneGuard guard(rectangle, (*lanes.front())[0], kinetra::PassingPhase::approach, {},
+                                          {1, 1, 5, 1});
+    if (!kinetra::finite(guard.braking_target()))
+        return 21;
     kinetra::Body circle;
     circle.position = {-3, 0};
     if (!kinetra::sweep_circle(circle, {3, 0}, rectangle))

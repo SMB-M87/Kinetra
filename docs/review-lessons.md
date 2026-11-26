@@ -87,6 +87,9 @@ No lessons yet.
 
 ## Code
 
+- **Prove a goal with a check as wide as its wording, not with a search for the file the change moves** · added 2026-11-26 · source: #66, Kinetra-Lab#133
+  The goal said that no Lab logic header includes `runtime/`, but the check searched only for `runtime/timing.h`. It missed `i4sim/controller.h` and `kinetra_lab/input.h`, which still included `runtime/engine.h` for the view types that ADR 0015 had moved out of it.
+
 - **Count the total cells visited when a route follower repeats a raster clearance query** · added 2026-11-24 · source: [#61](https://github.com/SMB-M87/Kinetra/pull/61)
   One sweep scans a bounding rectangle. Repeating it for every point along an open diagonal made the first target selection cubic in the number of waypoints.
 
@@ -113,3 +116,6 @@ No lessons yet.
 
 - **Pass every input of a C-library test through a run-time value** · added 2026-11-22 · source: #32
   A compiler folds a call with constant arguments, and its folding is correctly rounded, so such a test checks the compiler, not the library. The first version of #32's rounding case passed with `std::` for exactly this reason.
+
+- **Test extracted geometry under translation and changes of world units** · added 2026-11-26 · source: [#64](https://github.com/SMB-M87/Kinetra/pull/64)
+  An application's coordinate range can hide rounded-away extents and absolute tolerances that change the outcome for another consumer.

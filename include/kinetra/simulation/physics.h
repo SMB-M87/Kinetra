@@ -19,8 +19,8 @@ enum class Motion { fixed, controlled, dynamic };
 ///
 /// A value type: World stores copies, and the free functions below take bodies by reference
 /// without keeping them. validate() states the accepted ranges; the functions below validate
-/// their bodies and throw std::invalid_argument, except local_extents(), bounding_radius()
-/// and bounds().
+/// their bodies and throw std::invalid_argument, except local_extents(), bounding_radius(),
+/// bounds() and swept_box_overlaps().
 struct Body {
     /// Which geometry field applies.
     Shape shape{Shape::circle};
@@ -96,6 +96,15 @@ struct SweepContact {
 /// acceleration. Throws std::invalid_argument for a noncircle mover, invalid bodies or a
 /// nonfinite endpoint.
 std::optional<SweepContact> sweep_circle(const Body &circle, Vec2 end, const Body &obstacle);
+/// Bounds of an axis-aligned box with half extents `extent` swept from `from` to `to`.
+Aabb swept_box_bounds(Vec2 from, Vec2 to, Vec2 extent);
+
+/// Whether an axis-aligned box swept from `from` to `to` overlaps the interior of
+/// another axis-aligned box. Only the other's position and half extents are used.
+/// Supply finite positions and positive finite half extents. This function does not
+/// validate its inputs. Touching is clear. Equal endpoints test static overlap.
+bool swept_box_overlaps(Vec2 from, Vec2 to, Vec2 extent, const Body &other);
+
 /// Sweeps any supported convex body to `end`, holding both orientations fixed.
 /// Obstacle motion and both angular velocities are ignored; initial contact is included.
 /// Polygon contact reconstruction uses a scale-dependent floating-point tolerance;

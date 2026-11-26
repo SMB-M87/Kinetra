@@ -24,6 +24,7 @@ add_library(kinetra_simulation
     src/simulation/avoidance.cpp
     src/simulation/collision_grid.cpp
     src/simulation/navigation.cpp
+    src/simulation/passing.cpp
     src/simulation/physics.cpp
     src/simulation/spatial_grid.cpp
     src/simulation/priority_steering.cpp

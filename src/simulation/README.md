@@ -17,7 +17,7 @@ The headless half of Kinetra (`Kinetra::Simulation`): geometry, rigid-body physi
 
 ## Purpose and scope
 
-The module supplies reusable motion mechanisms: what happens when bodies touch, how an agent finds a route around obstacles, how it steers along that route, and who may enter a shared zone first. It depends only on the C++ standard library.
+The module supplies reusable motion mechanisms: what happens when bodies touch, how an agent finds a route around obstacles, how it steers along that route, how two agents pass each other, who may enter a shared zone first, and how elapsed time becomes fixed simulation ticks. It depends only on the C++ standard library.
 
 Not here: drawing, input and windows ([runtime](../runtime/README.md); Simulation does not link it), and every application policy: world generation, goal selection, retry and replanning schedules, update rates, AI decisions and units conversion. Those belong to the consumer, as the [responsibility map](../../docs/architecture.md#responsibility-map) lists.
 
@@ -49,6 +49,8 @@ flowchart TD
     Steer["steering.h<br/>steer, priority_steer, tangent_steer"]
     Avoid["avoidance.h<br/>avoid_collisions"]
     Traffic["traffic.h<br/>TrafficGate"]
+    Passing["passing.h<br/>passing lanes and guard"]
+    Clock["clock.h<br/>FixedClock (header-only)"]
     Grid --> Math
     Physics --> Grid
     CGrid --> Physics
@@ -56,9 +58,10 @@ flowchart TD
     Steer --> Physics
     WGrid --> Math
     Avoid --> Math
+    Passing --> Physics
 ```
 
-*Takeaway:* physics, planning and steering build on one geometry header; the weighted grid, avoidance and traffic admission stand alone, so a consumer can use one without the others.
+*Takeaway:* physics, planning and steering build on one geometry header; the weighted grid, avoidance, traffic admission and the fixed clock stand alone, so a consumer can use one without the others.
 
 | Public header | Source | Responsibility | Contract |
 | --- | --- | --- | --- |
@@ -70,7 +73,9 @@ flowchart TD
 | [weighted_grid.h](../../include/kinetra/simulation/weighted_grid.h) | [weighted_grid.cpp](weighted_grid.cpp) | Congestion-weighted A* with a rectangular footprint; merged free-space borders | [Navigation](../../docs/engine/navigation.md#weighted-grids-and-priority-steering) |
 | [steering.h](../../include/kinetra/simulation/steering.h) | [steering.cpp](steering.cpp), [priority_steering.cpp](priority_steering.cpp) | `steer` (arrival and predictive avoidance), `priority_steer` and `constrain_borders` (axis-aligned boxes and walls), `tangent_steer` (experimental) | [Navigation](../../docs/engine/navigation.md#contracts) |
 | [avoidance.h](../../include/kinetra/simulation/avoidance.h) | [avoidance.cpp](avoidance.cpp) | ORCA-style velocity selection under speed and acceleration limits | [Navigation](../../docs/engine/navigation.md#reciprocal-local-avoidance) |
+| [passing.h](../../include/kinetra/simulation/passing.h) | [passing.cpp](passing.cpp) | Head-on conflict timing, lane candidates and obstruction checks | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [traffic.h](../../include/kinetra/simulation/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
+| [clock.h](../../include/kinetra/simulation/clock.h) | header-only | `FixedClock`: elapsed seconds to whole simulation ticks, with a bounded backlog | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 
 The header summaries (`///`) state each function's units, preconditions and errors; the contract pages explain the behavior in depth.
 
@@ -164,4 +169,4 @@ Not covered here: behavior over long application runs and real crowds. Lab's i4s
 ## Open points
 
 - Rotating boxes and polygons are swept without rotation, so they can still tunnel ([limits](../../docs/engine/math-physics.md#limits-and-verification)).
-- `tangent_steer` is experimental, and its defaults, like those of `PrioritySteering`, are i4sim's millimeter-per-tick values. The Lab roadmap's phase 8 decides whether the four steering models share one interface and moves these defaults out of the engine.
+- `tangent_steer` is experimental. The caller supplies priority and tangent steering tuning for its distance and time scales.

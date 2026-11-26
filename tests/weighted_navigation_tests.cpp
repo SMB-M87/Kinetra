@@ -1,6 +1,5 @@
-// Contract tests for weighted grid planning and priority steering
-// (include/kinetra/simulation/weighted_grid.h, include/kinetra/simulation/steering.h): weighted detours,
-// blocked corners, footprint clearance, merged borders, safety priority and wall braking.
+// Contract tests for rectangular navigation, priority steering and predictive passing.
+#include <kinetra/simulation/passing.h>
 #include <kinetra/simulation/steering.h>
 #include <kinetra/simulation/weighted_grid.h>
 
@@ -59,11 +58,17 @@ Body cruiser() {
     return body;
 }
 
-/// Default priority steering with a 10-unit arrival radius.
-PrioritySteering steering_settings() {
-    PrioritySteering settings;
-    settings.arrival_radius = 10;
-    return settings;
+/// Priority steering tuning for these test footprints and steps.
+PrioritySteering steering_settings(float arrival_radius = 10) {
+    return {.max_speed = 2,
+            .max_acceleration = 0.6f,
+            .arrival_radius = arrival_radius,
+            .border_distance = 2,
+            .border_strength = 10,
+            .border_lookahead = 2,
+            .prediction_steps = 8,
+            .prediction_step = 1,
+            .safety_multiplier = 1.025f};
 }
 
 /// cruiser() placed at `position` with `velocity`.
@@ -103,6 +108,10 @@ Vec2 brute_force_predictive(const Body &a, std::span<const Body> neighbors, cons
             }
     }
     return predicted ? sum / float(predicted) : sum;
+}
+void check_passing_point(Vec2 actual, Vec2 expected) {
+    CHECK(actual.x == expected.x);
+    CHECK(actual.y == expected.y);
 }
 } // namespace
 
@@ -486,10 +495,10 @@ TEST_CASE("coincident bodies get a finite collision response") {
 TEST_CASE("tangent steering stays finite and within its acceleration limit") {
     const auto agent = cruiser();
     const auto neighbor = cruiser_at(agent.position, {-2, 0});
-    const auto tangent = tangent_steer(agent, {100, 20}, std::span(&neighbor, 1));
+    const auto tangent = tangent_steer(agent, {100, 20}, std::span(&neighbor, 1), 2, .6f, 8);
     CHECK_MESSAGE(finite(tangent), "Invalid tangent acceleration");
     CHECK_MESSAGE(length(tangent) <= .600001f, "Invalid tangent acceleration");
-    CHECK_MESSAGE(length(tangent_steer(agent, agent.position, {})) <= .600001f,
+    CHECK_MESSAGE(length(tangent_steer(agent, agent.position, {}, 2, .6f, 8)) <= .600001f,
                   "Tangent arrival acceleration exceeded limit");
 }
 
@@ -501,7 +510,7 @@ TEST_CASE("priority steering keeps a step that only rounding puts inside the ext
     // A neighbor creeps along y below the float spacing at y = 10,002, so every float gap rounds
     // to -2, inside the extent of 2.00001, while the exact gap leaves it after ten steps. The
     // loop over every pair finds (0, 19); without the slack the search would skip i = 0.
-    PrioritySteering settings;
+    auto settings = steering_settings(70);
     settings.prediction_steps = 32;
     settings.safety_multiplier = 1;
     Body mover = cruiser_at({0, 10000}, {0, 1});
@@ -536,7 +545,7 @@ TEST_CASE("priority steering predicts the same first overlap as testing every pa
           Scale{1000000, 9000, 400, 12, 1.f / 3, 1.1f, 32, false}}) {
         CAPTURE(scale.base);
         CAPTURE(scale.step);
-        PrioritySteering settings;
+        auto settings = steering_settings(70);
         settings.max_speed = scale.speed;
         settings.prediction_steps = scale.steps;
         settings.prediction_step = scale.step;
@@ -582,5 +591,101 @@ TEST_CASE("priority steering predicts the same first overlap as testing every pa
         }
         // Enough scenes predict an overlap for the comparison to mean something.
         CHECK(overlaps >= 5);
+    }
+}
+
+TEST_CASE("passing predicts an opposing conflict within the horizon") {
+    const PassingApproach east{{0, 0}, {2, 3}, {1, 0}, {60, 0}};
+    PassingApproach west{{40, 0}, {3, 2}, {-1, 0}, {-20, 0}};
+    CHECK(passing_conflict_time(east, west, 2, 10, 1) == 10);
+    CHECK_FALSE(passing_conflict_time(east, west, 2, 9, 1));
+    west.position.y = 6; // Touching the extended footprint alone leaves room.
+    CHECK_FALSE(passing_conflict_time(east, west, 2, 10, 1));
+    west.position.y = 0;
+    west.heading = east.heading;
+    CHECK_FALSE(passing_conflict_time(east, west, 2, 10, 1));
+    west.heading = {-1, 0};
+    west.position.x = -40;
+    CHECK_FALSE(passing_conflict_time(east, west, 2, 10, 1));
+}
+
+TEST_CASE("passing orders candidate lanes and leaves room to resume the trip") {
+    const PassingApproach east{{0, 0}, {2, 3}, {1, 0}, {60, 0}};
+    PassingApproach west{{40, 0}, {3, 2}, {-1, 0}, {-20, 0}};
+    constexpr PassingMargins margins{1, 2, 3};
+    const auto lanes = passing_lane_candidates(east, west, margins);
+    for (const auto &candidate : lanes)
+        REQUIRE(candidate);
+    check_passing_point((*lanes[0])[0].entry, Vec2{2.5f, -4});
+    check_passing_point((*lanes[0])[0].exit, Vec2{27, -4});
+    check_passing_point((*lanes[0])[1].exit, Vec2{13, 3});
+    check_passing_point((*lanes[1])[0].exit, Vec2{27, -8});
+    check_passing_point((*lanes[2])[0].exit, Vec2{27, 0});
+    check_passing_point((*lanes[3])[0].exit, Vec2{27, 4});
+    west.destination.x = 12.5f;
+    for (const auto &candidate : passing_lane_candidates(east, west, margins))
+        CHECK_FALSE(candidate);
+    west.destination.x = -20;
+    west.position.x = 12;
+    for (const auto &candidate : passing_lane_candidates(east, west, margins))
+        CHECK_FALSE(candidate);
+}
+
+TEST_CASE("passing guard distinguishes crossing traffic from a blocked lane") {
+    auto box = [](Vec2 position, Vec2 velocity = {}) {
+        Body body;
+        body.shape = Shape::box;
+        body.position = position;
+        body.velocity = velocity;
+        body.half_extents = {1, 1};
+        return body;
+    };
+    const PassingLaneGuard guard(box({0, 0}, {2, 0}), {{0, 0}, {30, 0}}, PassingPhase::traverse, {},
+                                 {2, 1, 3, 2});
+    check_passing_point(guard.braking_target(), Vec2{4, 0});
+    const auto bounds = guard.query_bounds(2);
+    check_passing_point(bounds.min, Vec2{-3, -3});
+    check_passing_point(bounds.max, Vec2{33, 3});
+    CHECK(guard.inspect(box({22, 0}), true) == PassingObstruction::blocking);
+    CHECK(guard.inspect(box({22, 2}), true) == PassingObstruction::clear);
+    CHECK(guard.inspect(box({-1, 0}, {1, 0}), false) == PassingObstruction::clear);
+    CHECK(guard.inspect(box({6, 7}, {0, -2}), false) == PassingObstruction::crossing);
+    CHECK(guard.inspect(box({11, 0}, {-1, 0}), false) == PassingObstruction::blocking);
+    CHECK(guard.inspect(box({20, 0}, {-1, 0}), false) == PassingObstruction::clear);
+}
+
+TEST_CASE("passing guard covers the approach before the traversal starts") {
+    Body mover;
+    mover.shape = Shape::box;
+    mover.half_extents = {1, 1};
+    auto parked = mover;
+    parked.position = {0.5f, 2};
+    const PassingLane lane{{0, 4}, {30, 4}};
+    const PassingPrediction prediction{2, 1, 3, 2};
+    const PassingLaneGuard approach(mover, lane, PassingPhase::approach, {}, prediction);
+    CHECK(approach.inspect(parked, true) == PassingObstruction::blocking);
+    parked.position.x = 0;
+    CHECK(approach.inspect(parked, true) == PassingObstruction::clear);
+    parked.position.x = 0.5f;
+    mover.position = lane.entry;
+    const PassingLaneGuard traverse(mover, lane, PassingPhase::traverse, {}, prediction);
+    CHECK(traverse.inspect(parked, true) == PassingObstruction::clear);
+    CHECK_THROWS_AS(PassingLaneGuard(mover, lane, PassingPhase::approach, {}, {2, 1, 3, 0}),
+                    std::invalid_argument);
+}
+
+TEST_CASE("passing guard reaches moving traffic along a short lane") {
+    for (float scale : {1.f, 10000.f}) {
+        CAPTURE(scale);
+        Body participant;
+        participant.shape = Shape::box;
+        participant.half_extents = Vec2{0.0001f, 0.0001f} * scale;
+        const PassingLane lane{{0, 0}, {0.00005f * scale, 0}};
+        const PassingLaneGuard guard(participant, lane, PassingPhase::traverse, {},
+                                     {0.00004f * scale, scale, 1, 1});
+        auto neighbor = participant;
+        neighbor.position = {0.00023f * scale, 0};
+        neighbor.velocity = {0, 0.000001f * scale};
+        CHECK(guard.inspect(neighbor, false) == PassingObstruction::crossing);
     }
 }
