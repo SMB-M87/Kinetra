@@ -536,16 +536,19 @@ namespace {
 /// The state glReadPixels reads through: which framebuffer and buffer it reads, where it
 /// writes, and how it packs rows. Sets OpenGL's defaults, with the window's draw buffer as
 /// the read buffer, and restores what the caller had on destruction, so a read neither
-/// depends on nor changes the caller's state.
+/// depends on nor changes the caller's state. Assumes the window is the draw framebuffer,
+/// as it is for every Runtime drawing call: `GL_DRAW_BUFFER` names the window's buffer only then.
 class DefaultReadState {
   public:
     DefaultReadState() {
         glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &framebuffer_);
-        glGetIntegerv(GL_READ_BUFFER, &read_buffer_);
         glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pack_buffer_);
         for (std::size_t i = 0; i < pack_names.size(); ++i)
             glGetIntegerv(pack_names[i], &pack_values_[i]);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        // The read buffer belongs to the bound read framebuffer: save the window's own, after
+        // the unbind, so the destructor restores it onto the window and not a caller's object.
+        glGetIntegerv(GL_READ_BUFFER, &read_buffer_);
         // Read the buffer that was drawn: after a swap OpenGL leaves the back buffer
         // undefined, and the front buffer of a composited window need not hold the frame.
         GLint draw_buffer{};

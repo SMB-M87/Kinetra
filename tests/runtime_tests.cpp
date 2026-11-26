@@ -322,7 +322,7 @@ TEST_CASE("read-back frames hold the drawn pixels from the top left until switch
     CHECK(glGetError() == GL_NO_ERROR);
 }
 
-TEST_CASE("read-back ignores the caller's pack state and restores it") {
+TEST_CASE("read-back ignores the caller's read state and restores it") {
     // An odd width: at an alignment of 8, OpenGL would pad each 4 * 161-byte row to 648.
     Runtime runtime("Kinetra read-back pack state", 161, 121);
     REQUIRE(runtime.poll());
@@ -339,7 +339,18 @@ TEST_CASE("read-back ignores the caller's pack state and restores it") {
                                                         {GL_PACK_SKIP_PIXELS, 5}}};
     for (const auto &[name, value] : pack)
         glPixelStorei(name, value);
-    glReadBuffer(GL_FRONT);
+    glReadBuffer(GL_FRONT); // The window's read buffer.
+    // A framebuffer object bound for reading, with its own read buffer: the read must take the
+    // window's frame, and give the object and both read buffers back unchanged.
+    GLuint framebuffer{}, color{};
+    glGenRenderbuffers(1, &color);
+    glBindRenderbuffer(GL_RENDERBUFFER, color);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 4, 4);
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+    glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, color);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    REQUIRE(glGetError() == GL_NO_ERROR);
     // A red box at the top-left corner, on blue: a shifted read would move it.
     const auto units = runtime.camera.pixels_per_unit;
     runtime.begin({0, 0, 1, 1});
@@ -363,11 +374,20 @@ TEST_CASE("read-back ignores the caller's pack state and restores it") {
         CHECK_MESSAGE(now == value, "read-back must leave the caller's pack state");
         glPixelStorei(name, name == GL_PACK_ALIGNMENT ? 4 : 0);
     }
-    GLint bound{}, read_buffer{};
+    CHECK_MESSAGE(glGetError() == GL_NO_ERROR, "read-back must leave no OpenGL error pending");
+    GLint bound{}, read_framebuffer{}, read_buffer{};
     glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &bound);
-    glGetIntegerv(GL_READ_BUFFER, &read_buffer);
     CHECK_MESSAGE(GLuint(bound) == pack_buffer, "read-back must leave the caller's pack buffer bound");
-    CHECK_MESSAGE(read_buffer == GL_FRONT, "read-back must leave the caller's read buffer");
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read_framebuffer);
+    CHECK_MESSAGE(GLuint(read_framebuffer) == framebuffer,
+                  "read-back must leave the caller's read framebuffer");
+    glGetIntegerv(GL_READ_BUFFER, &read_buffer);
+    CHECK_MESSAGE(read_buffer == GL_COLOR_ATTACHMENT0, "read-back must leave the object's read buffer");
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glGetIntegerv(GL_READ_BUFFER, &read_buffer);
+    CHECK_MESSAGE(read_buffer == GL_FRONT, "read-back must leave the window's read buffer");
+    glDeleteFramebuffers(1, &framebuffer);
+    glDeleteRenderbuffers(1, &color);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     glDeleteBuffers(1, &pack_buffer);
     CHECK(glGetError() == GL_NO_ERROR);
