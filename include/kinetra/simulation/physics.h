@@ -96,6 +96,14 @@ struct SweepContact {
 /// acceleration. Throws std::invalid_argument for a noncircle mover, invalid bodies or a
 /// nonfinite endpoint.
 std::optional<SweepContact> sweep_circle(const Body &circle, Vec2 end, const Body &obstacle);
+/// Bounds of an axis-aligned box with half extents `extent` swept from `from` to `to`.
+Aabb swept_box_bounds(Vec2 from, Vec2 to, Vec2 extent);
+
+/// Whether an axis-aligned box swept from `from` to `to` overlaps the interior of
+/// another axis-aligned box. Only the other's position and half extents are used.
+/// Touching alone is clear. Equal start and end positions test static overlap.
+bool swept_box_overlaps(Vec2 from, Vec2 to, Vec2 extent, const Body &other);
+
 /// Sweeps any supported convex body to `end`, holding both orientations fixed.
 /// Obstacle motion and both angular velocities are ignored; initial contact is included.
 /// Polygon contact reconstruction uses a scale-dependent floating-point tolerance;

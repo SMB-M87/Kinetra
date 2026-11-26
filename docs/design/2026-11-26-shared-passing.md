@@ -1,14 +1,16 @@
 # Shared predictive passing
 
-Status: accepted · Branch: `refactor/shared-passing` · Related: [Kinetra roadmap](../roadmap.md), [Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#later)
+Status: implemented · Branch: `refactor/shared-passing` · Related: [Kinetra roadmap](../roadmap.md), [Lab roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#later)
 
-Extract the geometry used by i4sim's guarded predictive passing into the headless simulation library. i4sim is the first consumer and keeps its existing plan transitions, route restoration and traffic rules.
+Extract the geometry used by i4sim's guarded predictive passing into the headless simulation library. i4sim is the first consumer and keeps its existing plan transitions, route restoration and traffic rules. [ADR 0016](../decisions/0016-predictive-passing.md)
 
 ## Table of contents
 
 - [Problem](#problem)
+- [Goals](#goals)
 - [Decisions](#decisions)
 - [Design](#design)
+- [Affected areas](#affected-areas)
 - [Test plan](#test-plan)
 - [Verification](#verification)
 - [Review](#review)
@@ -20,6 +22,10 @@ Extract the geometry used by i4sim's guarded predictive passing into the headles
 ## Problem
 
 i4sim's predictive passing predicts a head-on conflict, searches for room for two lanes and rechecks those lanes while the pair passes. Those calculations currently live beside factory-specific rules, so other simulations cannot use the tested mechanism without adopting factory policy. The priority and tangent steering APIs also supply i4sim-sized defaults to external consumers.
+
+## Goals
+
+Make the existing passing geometry available to headless consumers, retain the factory's pressure results and require application steering parameters at the call site. Application integrations beyond i4sim and the ownership of stall remedies are follow-up work.
 
 ## Decisions
 
@@ -36,6 +42,10 @@ i4sim's predictive passing predicts a head-on conflict, searches for room for tw
 
 The common input to steering stays a target and its arrival intent. Legacy steering computes acceleration from obstacles and a target. Priority steering also reports diagnostic forces and constrains borders. Tangent steering uses a spring response. Reciprocal avoidance takes a preferred velocity and reports feasibility as well as velocity and acceleration. A single solver selector would hide the composition that i4sim needs.
 
+## Affected areas
+
+The [passing API](../../include/kinetra/simulation/passing.h) and rectangular sweep helpers are part of `Kinetra::Simulation`. The priority and tangent steering declarations, the engine test suite and the external consumer use explicit settings. Lab adapts i4sim's formation and guard and supplies its existing motion tuning.
+
 ## Test plan
 
 - Engine tests verify closest approach, candidate geometry and order, insufficient room and goal distance, and guard behavior for stationary, crossing, oncoming and trailing neighbors.
@@ -44,15 +54,32 @@ The common input to steering stays a target and its arrival intent. Legacy steer
 
 ## Verification
 
-Pending.
+- Kinetra Debug build for weighted navigation, navigation, behavior, avoidance and translation sweeps. All 163 selected CTest cases passed.
+- The external consumer built and ran with `CONSUMER_GRAPHICS=ON`.
+- Lab pressure and golden baselines passed before the change. The same fixtures also passed through the shared API.
+- Pull request CI covers the Full level.
 
 ## Review
 
-Pending.
+The extraction preserves closest-approach ordering, strict overlap in the guard, the formation sweep's contact semantics and the final sample when the horizon is off cadence. Candidate acceptance and event ordering stay with i4sim. The existing solver composition and factory tuning were checked at their call sites.
 
 ## Pull request
 
-Pending.
+Title: `refactor(navigation): share predictive passing geometry`
+
+**Summary.** Move i4sim's tested conflict timing, lane candidate generation and per-neighbor guard into Kinetra's headless simulation library.
+
+**Changes.** Expose passing geometry and axis-aligned sweep helpers to consumers. Require explicit priority and tangent steering tuning. The companion Lab change carries forward the existing i4sim values and preserves traffic policy and event handling.
+
+**Design.** [Shared predictive passing](2026-11-26-shared-passing.md) and [ADR 0016](../decisions/0016-predictive-passing.md).
+
+**Verification.** Debug CTest passed for the 163 affected engine cases. The external consumer built and ran. The companion Lab branch exercises the pressure and golden fixtures.
+
+**Review notes.** Check the candidate order, the distinction between touching and overlap in the two sweeps, and the steering call sites that previously relied on defaults.
+
+**Dependencies and merge order.** Kinetra first, with a merge commit. The companion Lab change links this pull request and records its Kinetra commit.
+
+**Follow-up.** i4sim stall measurements inform the remaining shared policy decisions and adoption in the other labs.
 
 ## Open points
 

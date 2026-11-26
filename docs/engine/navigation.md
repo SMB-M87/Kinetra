@@ -7,6 +7,7 @@
 - [Planning and following](#planning-and-following)
 - [Contracts](#contracts)
 - [Reciprocal local avoidance](#reciprocal-local-avoidance)
+- [Predictive passing](#predictive-passing)
 - [Traffic admission](#traffic-admission)
 - [Weighted grids and priority steering](#weighted-grids-and-priority-steering)
 - [Application policies](#application-policies)
@@ -74,6 +75,23 @@ pairs retain the conservative envelope; the option is off by default.
 
 This is holonomic local avoidance. Applications still own route planning, static geometry selection, traffic scheduling, starvation prevention, deadlock recovery and vehicle steering limits. Circular envelopes can reject passages that actual polygons could traverse. No general collision-free or globally live behavior is promised for arbitrary crowds.
 
+## Predictive passing
+
+[Passing geometry](../../include/kinetra/simulation/passing.h) helps an application
+coordinate a head-on encounter between two axis-aligned footprints. A pair moving at
+a common speed qualifies when the closest approach of its route headings lies within
+the horizon and the expanded footprints overlap. Candidate lanes are considered in a
+fixed order, with three lateral placements per side. Each participant goes to its
+entry before traversing to its exit. The application checks the swept legs against the
+world and reserves the first acceptable candidate.
+
+During the maneuver, a guard for each participant checks the remaining legs. A
+stationary footprint that overlaps a remaining leg blocks it. Moving neighbors ahead
+are sampled over the horizon on the reachable part of the path, including braking
+distance. Crossing traffic can require a wait at the braking target. Oncoming traffic
+in that reach blocks the lane. The caller supplies the active neighbors, priority,
+sampling cadence and response. [ADR 0016](../decisions/0016-predictive-passing.md)
+
 ## Traffic admission
 
 [traffic.h](../../include/kinetra/simulation/traffic.h) provides `TrafficGate` in
@@ -139,11 +157,11 @@ one wall passes the convex corner where another wall begins. `border_distance` a
 `border_lookahead` tunes inward approach speed. Conflicting constraints in overlaps
 receive bounded recovery, not a collision-free guarantee. `SteeringForces::border`
 reports the applied acceleration correction (at most twice the acceleration cap),
-not an unbounded inverse-square diagnostic force. Arrival can be disabled at intermediate waypoints. Settings are explicit in caller-selected time units: defaults use 2 units/time and 0.6 units/time squared, eight prediction steps and a 1.025 safety multiplier. Caller-owned integration and clock must use consistent units. Neighbor spans exclude the agent. Coincident bodies receive a finite separating force. Unsupported rotated/circular bodies and invalid settings throw.
+not an unbounded inverse-square diagnostic force. Arrival can be disabled at intermediate waypoints. The caller supplies settings for its distance and time scales, including border recovery, arrival and prediction. Caller-owned integration and clock must use consistent units. Neighbor spans exclude the agent. Coincident bodies receive a finite separating force. Unsupported rotated/circular bodies and invalid settings throw.
 
 `tangent_steer` is experimental tangent/spring local steering translated from i4sim. It returns bounded acceleration with explicit speed, force and horizon; callers keep integration and boundary/contact handling. It is not a collision-free velocity solver.
 
-These functions are separate from `steer` and `Navigation`, which keep their own geometry and units. See [ADR 0011](../decisions/0011-weighted-navigation-and-priority-steering.md) and [weighted navigation tests](../../tests/weighted_navigation_tests.cpp).
+A passing target can feed any solver through a caller adapter. The solvers keep their own footprint models and diagnostics, so an application can combine overlap correction or border constraints with another controller. See [ADR 0011](../decisions/0011-weighted-navigation-and-priority-steering.md) and [weighted navigation tests](../../tests/weighted_navigation_tests.cpp).
 
 ## Application policies
 
@@ -152,3 +170,5 @@ Applications own goal selection, replanning schedules, streamed obstacle residen
 ## Verification
 
 [Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
+
+The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification.
