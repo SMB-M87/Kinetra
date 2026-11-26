@@ -36,7 +36,7 @@ flowchart TD
     Launcher --> Runtime
     App --> UI[Header-only bitmap text / debug menu / help panel]
     UI -->|draw calls| Runtime
-    Sim --> Headless[Math / physics / spatial grids / navigation / steering / avoidance / traffic]
+    Sim --> Headless[Math / physics / spatial grids / navigation / steering / avoidance / passing / traffic / fixed clock]
     Runtime --> Parts[Window, input, batched drawing, run_session, SettingsOverlay]
     Parts --> Platform[SDL2 / OpenGL 3.3 / GLAD, private]
 ```

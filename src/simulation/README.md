@@ -17,7 +17,7 @@ The headless half of Kinetra (`Kinetra::Simulation`): geometry, rigid-body physi
 
 ## Purpose and scope
 
-The module supplies reusable motion mechanisms: what happens when bodies touch, how an agent finds a route around obstacles, how it steers along that route, and who may enter a shared zone first. It depends only on the C++ standard library.
+The module supplies reusable motion mechanisms: what happens when bodies touch, how an agent finds a route around obstacles, how it steers along that route, how two agents pass each other, who may enter a shared zone first, and how elapsed time becomes fixed simulation ticks. It depends only on the C++ standard library.
 
 Not here: drawing, input and windows ([runtime](../runtime/README.md); Simulation does not link it), and every application policy: world generation, goal selection, retry and replanning schedules, update rates, AI decisions and units conversion. Those belong to the consumer, as the [responsibility map](../../docs/architecture.md#responsibility-map) lists.
 

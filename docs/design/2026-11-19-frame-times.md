@@ -22,7 +22,7 @@ The user sees short freezes and uneven motion in WSL and on a Linux desktop that
 ## Problem
 
 - Nothing measures how long frames take to reach the screen. `RateCounter` gives an average frame rate, which hides a single 80 ms stall among 59 good frames.
-- `FixedClock::interpolation()` exists ([timing.h](../../include/kinetra/simulation/clock.h)), but no application uses it. The [runtime guide](../engine/runtime.md#verification-and-limits) lists pose interpolation as not implemented.
+- `FixedClock::interpolation()` exists ([clock.h](../../include/kinetra/simulation/clock.h)), but no application uses it. The [runtime guide](../engine/runtime.md#verification-and-limits) lists pose interpolation as not implemented.
 - In WSLg, `Runtime` logs `VSync unavailable: That operation is not supported`: frame pacing there is up to the WSLg compositor.
 
 ## Goals and non-goals
