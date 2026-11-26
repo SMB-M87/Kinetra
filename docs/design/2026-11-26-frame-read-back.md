@@ -240,6 +240,7 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 > - CI is the Full level. A composited desktop and native Windows are the user's check after the merge.
 >
 > ## Review notes
+> - Agent review round 1 asked for one fix, done with SMB-M87/Kinetra#67's. The capture README now says where the read-back was checked: offscreen and in an X11 window. It also says a composited desktop and Windows are not checked yet, and that the tour needs a drawable of its canvas size. The pointer follows the reviewed Kinetra branch.
 > - The branch name is the session's assigned development branch, not `<type>/<topic>`.
 > - Some tests index frames with logical sizes. That holds only without display scaling, as the old reads did too. The open points of the design document record it.
 >
