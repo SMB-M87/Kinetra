@@ -520,6 +520,34 @@ std::optional<SweepContact> sweep_circle(const Body &circle, Vec2 end, const Bod
     return earliest;
 }
 
+Aabb swept_box_bounds(Vec2 from, Vec2 to, Vec2 extent) {
+    return {{std::min(from.x, to.x) - extent.x, std::min(from.y, to.y) - extent.y},
+            {std::max(from.x, to.x) + extent.x, std::max(from.y, to.y) + extent.y}};
+}
+
+bool swept_box_overlaps(Vec2 start, Vec2 end, Vec2 extent, const Body &other) {
+    const double from_x = double(start.x) - other.position.x;
+    const double from_y = double(start.y) - other.position.y;
+    const double to_x = double(end.x) - other.position.x;
+    const double to_y = double(end.y) - other.position.y;
+    const double half_x = double(other.half_extents.x) + extent.x;
+    const double half_y = double(other.half_extents.y) + extent.y;
+    // Test the box axes in its own frame, where small footprints stay representable.
+    if (std::max(from_x, to_x) <= -half_x || std::min(from_x, to_x) >= half_x ||
+        std::max(from_y, to_y) <= -half_y || std::min(from_y, to_y) >= half_y)
+        return false;
+    const double travel_x = double(end.x) - start.x;
+    const double travel_y = double(end.y) - start.y;
+    if (travel_x == 0 && travel_y == 0)
+        return true;
+
+    // The remaining separating axis is perpendicular to the segment. Projecting onto it
+    // keeps the footprint in the comparison even when entry and exit times would round alike.
+    const double projection = std::abs(from_x * to_y - from_y * to_x);
+    const double reach = half_x * std::abs(travel_y) + half_y * std::abs(travel_x);
+    return projection < reach;
+}
+
 std::optional<SweepContact> sweep_translation(const Body &body, Vec2 end, const Body &obstacle) {
     validate(body);
     validate(obstacle);

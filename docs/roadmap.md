@@ -29,7 +29,7 @@ Nothing agreed next in Kinetra itself.
 ## Later
 
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
-  Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR; factory policy (traffic zones, parking, junction rules) stays in i4sim. Decide whether the four overlapping steering models (`steer`, `priority_steer`, `tangent_steer`, `avoid_collisions`, which take different inputs and return acceleration or velocity) can share one agent-motion interface, and move i4sim-shaped defaults, such as the `PrioritySteering` values in millimeters per tick, out of the engine.
+  Evaluate whether the i4sim stall remedies call for shared maneuver state or additional motion primitives. The geometry and explicit steering tuning are described in [Shared predictive passing](design/2026-11-26-shared-passing.md).
   Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
   The Ubuntu test jobs install packages and the pinned formatter on each run. A prebuilt Ubuntu image could shorten setup and reduce dependence on the package mirrors.

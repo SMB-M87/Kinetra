@@ -113,3 +113,6 @@ No lessons yet.
 
 - **Pass every input of a C-library test through a run-time value** · added 2026-11-22 · source: #32
   A compiler folds a call with constant arguments, and its folding is correctly rounded, so such a test checks the compiler, not the library. The first version of #32's rounding case passed with `std::` for exactly this reason.
+
+- **Test extracted geometry under translation and changes of world units** · added 2026-11-26 · source: [#64](https://github.com/SMB-M87/Kinetra/pull/64)
+  An application's coordinate range can hide rounded-away extents and absolute tolerances that change the outcome for another consumer.

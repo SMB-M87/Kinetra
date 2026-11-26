@@ -40,19 +40,19 @@ namespace kinetra {
 /// Returns bounded acceleration; integration remains the caller's responsibility.
 ///
 /// Every float must be finite and positive, and `prediction_steps` lie in [0, 64].
-/// The defaults are tuned for millimeters and simulation ticks.
+/// Supply tuning for the caller's distance and time scales.
 struct PrioritySteering {
-    /// Top speed and acceleration cap per time unit; seek slows down inside
-    /// `arrival_radius` when arrival is enabled.
-    float max_speed{2}, max_acceleration{0.6f}, arrival_radius{70};
+    /// Speed per time unit and acceleration per squared time unit. Seek slows down
+    /// inside `arrival_radius` when arrival is enabled.
+    float max_speed{}, max_acceleration{}, arrival_radius{};
     /// Wall tuning: `border_distance` and `border_strength` shape the recovery from
     /// penetration, `border_lookahead` damps the approach speed toward a wall.
-    float border_distance{2}, border_strength{10}, border_lookahead{2};
+    float border_distance{}, border_strength{}, border_lookahead{};
     /// Number of future steps compared when predicting a collision with a neighbor.
-    int prediction_steps{8};
+    int prediction_steps{};
     /// `prediction_step`: time units per predicted step. `safety_multiplier`: scale on the
     /// summed half extents that counts as a predicted collision.
-    float prediction_step{1}, safety_multiplier{1.025f};
+    float prediction_step{}, safety_multiplier{};
 };
 /// The forces priority_steer() considered, for diagnostics and debug drawing.
 struct SteeringForces {
@@ -72,7 +72,7 @@ struct SteeringForces {
 /// nonfinite acceleration, a border that is not horizontal or vertical, or settings
 /// outside the ranges documented on PrioritySteering.
 Vec2 constrain_borders(const Body &agent, Vec2 acceleration, std::span<const Segment> borders,
-                       const PrioritySteering &settings = {});
+                       const PrioritySteering &settings);
 /// Priority: existing overlaps, then predicted collisions, then arrival; borders
 /// constrain the result. border reports the applied acceleration correction.
 /// Neighbors exclude the agent. Borders must be horizontal or vertical segments.
@@ -81,7 +81,7 @@ Vec2 constrain_borders(const Body &agent, Vec2 acceleration, std::span<const Seg
 /// keeps full speed at the target, for intermediate waypoints. Throws
 /// std::invalid_argument for unsupported bodies, a nonfinite target or invalid settings.
 SteeringForces priority_steer(const Body &agent, Vec2 target, std::span<const Body> neighbors,
-                              std::span<const Segment> borders, const PrioritySteering &settings = {},
+                              std::span<const Segment> borders, const PrioritySteering &settings,
                               bool arrival = true);
 } // namespace kinetra
 
@@ -93,6 +93,6 @@ namespace kinetra {
 /// enclosing circle. `max_speed` and `max_force` are per caller time unit; with `arrival`
 /// the agent slows down near the target. Throws std::invalid_argument for a nonfinite
 /// target, nonpositive limits or a horizon above 64.
-Vec2 tangent_steer(const Body &agent, Vec2 target, std::span<const Body> neighbors, float max_speed = 2,
-                   float max_force = 0.6f, float horizon = 8, bool arrival = true);
+Vec2 tangent_steer(const Body &agent, Vec2 target, std::span<const Body> neighbors, float max_speed,
+                   float max_force, float horizon, bool arrival = true);
 } // namespace kinetra

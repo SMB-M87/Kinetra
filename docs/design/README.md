@@ -76,6 +76,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 
 | Date | Document | Status |
 | --- | --- | --- |
+| 2026-11-26 | [Shared predictive passing](2026-11-26-shared-passing.md) | implemented |
 | 2026-11-24 | [Raster route target](2026-11-24-raster-route-target.md) | implemented |
 | 2026-11-24 | [Vec2 equality in place of component comparisons](2026-11-24-vec2-component-comparisons.md) | implemented |
 | 2026-11-24 | [Codex session settings](2026-11-24-codex-session-settings.md) | implemented |
