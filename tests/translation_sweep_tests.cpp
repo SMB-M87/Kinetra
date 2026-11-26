@@ -210,3 +210,19 @@ TEST_CASE("strict box sweeps keep small footprints at large coordinates") {
         CHECK_FALSE(swept_box_overlaps({origin - 16, 2}, {origin + 16, 2}, {1, 1}, other));
     }
 }
+
+TEST_CASE("strict box sweeps keep the same overlap when long segments reverse") {
+    Body other;
+    other.shape = Shape::box;
+    other.half_extents = {1, 1};
+    constexpr float far = 0x1p56f;
+    const Vec2 left{-far, 0}, right{far, 0};
+    const Vec2 extent{1, 1};
+    CHECK(swept_box_overlaps(left, {}, extent, other));
+    CHECK(swept_box_overlaps({}, left, extent, other));
+    CHECK(swept_box_overlaps(left, right, extent, other));
+    CHECK(swept_box_overlaps(right, left, extent, other));
+    CHECK_FALSE(swept_box_overlaps({-far, 2}, {far, 2}, extent, other));
+    CHECK_FALSE(swept_box_overlaps({-4, 0}, {0, 4}, extent, other));
+    CHECK(swept_box_overlaps({-4, -1}, {0, 3}, extent, other));
+}

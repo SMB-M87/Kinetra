@@ -48,13 +48,13 @@ The [passing API](../../include/kinetra/simulation/passing.h) and rectangular sw
 
 ## Test plan
 
-- Engine tests verify closest approach, candidate geometry and order, insufficient room and goal distance, and guard behavior for stationary, crossing, oncoming and trailing neighbors. Repeat the strict sweep with a translated origin and the short-lane guard at two world scales.
+- Engine tests verify closest approach, candidate geometry and order, insufficient room and goal distance, and guard behavior for stationary, crossing, oncoming and trailing neighbors. Repeat the strict sweep with a translated origin and the short-lane guard at two world scales. Check both directions of a long segment and a diagonal touching a corner.
 - The external consumer links and calls the engine passing API and supplies steering settings explicitly.
 - i4sim's existing pressure, simulation and golden suites exercise the migrated geometry and preserve the recorded results for their steering profiles.
 
 ## Verification
 
-All 165 selected Kinetra Debug tests passed. The external consumer built and ran with the runtime targets enabled.
+All 166 selected Kinetra Debug tests passed. The external consumer built and ran with the runtime targets enabled.
 
 ```sh
 cmake --preset dev
@@ -71,7 +71,9 @@ Lab pressure and golden baselines passed before the change. The same fixtures pa
 
 The extraction preserves closest-approach ordering, strict overlap in the guard, the formation sweep's contact semantics and the final sample when the horizon is off cadence. Candidate acceptance and event ordering stay with i4sim. The existing solver composition and factory tuning were checked at their call sites.
 
-[Round 1](https://github.com/SMB-M87/Kinetra/pull/64#pullrequestreview-6074427573) found two scale-dependent misses. The strict sweep now builds its slabs in obstacle-relative double precision. The guard clips to the actual leg length with a separate zero-length case. Both regressions failed before the fix. The contracts now state the forward-center filter and the unchecked sweep preconditions. Test assertions show coordinates on failure.
+[Round 1](https://github.com/SMB-M87/Kinetra/pull/64#pullrequestreview-6074427573) found two scale-dependent misses. The first fix moved the strict sweep calculation into obstacle-relative double precision. The guard clips to the actual leg length with a separate zero-length case. Both regressions failed before the fix. The contracts now state the forward-center filter and the unchecked sweep preconditions. Test assertions show coordinates on failure.
+
+Round 2 found that the entry and exit fractions could still round alike for a very long segment. The sweep tests the box axes and the perpendicular to the segment directly. The regression checks both directions, an endpoint inside the box and a diagonal grazing a corner.
 
 ## Pull request
 
@@ -83,7 +85,7 @@ Title: `refactor(navigation): share predictive passing geometry`
 
 **Design.** [Shared predictive passing](2026-11-26-shared-passing.md) and [ADR 0016](../decisions/0016-predictive-passing.md).
 
-**Verification.** 165 selected engine cases passed after the scale fixes. The external consumer built and ran. The companion Lab branch exercises the pressure and golden fixtures. The commands are in the [Verification section](#verification).
+**Verification.** 166 selected engine cases passed, including regression coverage for long sweeps in both directions. The external consumer built and ran. The companion Lab branch exercises the pressure and golden fixtures. The commands are in the [Verification section](#verification).
 
 **Review notes.** Check the candidate order, the distinction between touching and overlap in the two sweeps, and the steering call sites that previously relied on defaults.
 

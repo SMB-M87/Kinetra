@@ -526,31 +526,26 @@ Aabb swept_box_bounds(Vec2 from, Vec2 to, Vec2 extent) {
 }
 
 bool swept_box_overlaps(Vec2 start, Vec2 end, Vec2 extent, const Body &other) {
-    double enter = 0, exit = 1;
-    for (bool x_axis : {true, false}) {
-        const double from = x_axis ? start.x : start.y;
-        const double to = x_axis ? end.x : end.y;
-        const double center = x_axis ? other.position.x : other.position.y;
-        const double half = x_axis ? other.half_extents.x : other.half_extents.y;
-        // Build the open slabs around the obstacle's origin so small footprints survive
-        // even when their world coordinates are larger than the extent can resolve.
-        const double reach = half + (x_axis ? extent.x : extent.y);
-        const double position = from - center;
-        const double travel = to - from;
-        if (travel == 0) {
-            if (std::abs(position) >= reach)
-                return false;
-        } else {
-            double near = (-reach - position) / travel, far = (reach - position) / travel;
-            if (near > far)
-                std::swap(near, far);
-            enter = std::max(enter, near);
-            exit = std::min(exit, far);
-            if (enter >= exit)
-                return false;
-        }
-    }
-    return true;
+    const double from_x = double(start.x) - other.position.x;
+    const double from_y = double(start.y) - other.position.y;
+    const double to_x = double(end.x) - other.position.x;
+    const double to_y = double(end.y) - other.position.y;
+    const double half_x = double(other.half_extents.x) + extent.x;
+    const double half_y = double(other.half_extents.y) + extent.y;
+    // Test the box axes in its own frame, where small footprints stay representable.
+    if (std::max(from_x, to_x) <= -half_x || std::min(from_x, to_x) >= half_x ||
+        std::max(from_y, to_y) <= -half_y || std::min(from_y, to_y) >= half_y)
+        return false;
+    const double travel_x = double(end.x) - start.x;
+    const double travel_y = double(end.y) - start.y;
+    if (travel_x == 0 && travel_y == 0)
+        return true;
+
+    // The remaining separating axis is perpendicular to the segment. Projecting onto it
+    // keeps the footprint in the comparison even when entry and exit times would round alike.
+    const double projection = std::abs(from_x * to_y - from_y * to_x);
+    const double reach = half_x * std::abs(travel_y) + half_y * std::abs(travel_x);
+    return projection < reach;
 }
 
 std::optional<SweepContact> sweep_translation(const Body &body, Vec2 end, const Body &obstacle) {
