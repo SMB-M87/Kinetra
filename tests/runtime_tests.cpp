@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -291,6 +292,54 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     event.type = SDL_QUIT;
     send(event);
     REQUIRE_MESSAGE(!runtime.poll(), "Window quit ignored");
+}
+
+TEST_CASE("read-back frames hold the drawn pixels from the top left until switched off") {
+    Runtime runtime("Kinetra read-back", 320, 240);
+    REQUIRE(runtime.poll());
+    CHECK_THROWS_AS(runtime.frame(), std::logic_error);
+    runtime.begin({0, 0, 0, 1});
+    runtime.end();
+    CHECK_THROWS_AS(runtime.frame(), std::logic_error); // Frames before read_back(true) are not kept.
+    runtime.read_back(true);
+    CHECK_THROWS_AS(runtime.frame(), std::logic_error); // Switched on, but no end() since.
+    // A red box in the top-left quarter and a translucent one in the bottom-right, on blue.
+    const auto world = [&](Vec2 point) { return runtime.camera.screen_to_world(point); };
+    const auto units = runtime.camera.pixels_per_unit;
+    runtime.begin({0, 0, 1, 1});
+    runtime.box(world({40, 30}), Vec2{20, 20} / units, 0, {1, 0, 0, 1});
+    runtime.box(world({280, 210}), Vec2{20, 20} / units, 0, {0, 1, 0, 0.5f});
+    runtime.end();
+    const auto &frame = runtime.frame();
+    int width, height;
+    SDL_GL_GetDrawableSize(SDL_GL_GetCurrentWindow(), &width, &height);
+    CHECK(frame.width == width);
+    CHECK(frame.height == height);
+    REQUIRE(frame.rgba.size() == std::size_t(width) * std::size_t(height) * 4);
+    using Rgba = std::array<std::uint8_t, 4>;
+    const auto at = [&](Vec2 point) {
+        return frame.pixel(int(point.x * float(width) / runtime.camera.viewport.x),
+                           int(point.y * float(height) / runtime.camera.viewport.y));
+    };
+    CHECK_MESSAGE((at({40, 30}) == Rgba{255, 0, 0, 255}), "rows start at the top");
+    CHECK_MESSAGE((at({40, 210}) == Rgba{0, 0, 255, 255}), "bottom-left is background");
+    const auto blended = at({280, 210});
+    CHECK(blended[1] >= 125);
+    CHECK(blended[1] <= 130);
+    CHECK(blended[2] >= 125);
+    CHECK(blended[2] <= 130);
+    CHECK_MESSAGE(blended[3] == 255, "the window is opaque, whatever blending did to alpha");
+    CHECK_THROWS_AS(frame.pixel(-1, 0), std::out_of_range);
+    CHECK_THROWS_AS(frame.pixel(0, height), std::out_of_range);
+    CHECK_THROWS_AS(frame.pixel(width, 0), std::out_of_range);
+    // The next read-back frame replaces the stored one in place.
+    runtime.begin({0, 1, 0, 1});
+    runtime.end();
+    CHECK(&runtime.frame() == &frame);
+    CHECK((at({40, 30}) == Rgba{0, 255, 0, 255}));
+    runtime.read_back(false);
+    CHECK_THROWS_AS(runtime.frame(), std::logic_error);
+    CHECK(glGetError() == GL_NO_ERROR);
 }
 
 TEST_CASE("presented frames are timed and the frame-time graph draws them") {

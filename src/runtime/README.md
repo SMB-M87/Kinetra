@@ -113,7 +113,7 @@ After a transition the clock restarts, so building a world does not count as sim
 
 **Settings overlay.** `layout()` computes every row's position from the rows and their expanded state. `update()` takes that layout *before* applying the click, so the click hits what was drawn in the previous frame. `draw()` uses the same layout and the same click bands for its highlights. That shared layout is what keeps drawing and picking in step.
 
-**Rendering.** `runtime.cpp` triangulates circles, boxes, polygons and lines into a dynamic vertex batch. It flushes the batch before each textured image and in `end()` to keep draw order. Circles adapt their segment count to their size on screen and fade over a one-pixel edge for antialiasing. The [runtime contract](../../docs/engine/runtime.md) lists the limits.
+**Rendering.** `runtime.cpp` triangulates circles, boxes, polygons and lines into a dynamic vertex batch. It flushes the batch before each textured image and in `end()` to keep draw order. Circles adapt their segment count to their size on screen and fade over a one-pixel edge for antialiasing. With `read_back(true)`, `end()` copies the drawn buffer into `frame()` before the swap, top-down and opaque, so tests and capture tools read pixels without OpenGL. The [runtime contract](../../docs/engine/runtime.md) lists the limits.
 
 ## Invariants and contracts
 
@@ -140,7 +140,7 @@ After a transition the clock restarts, so building a world does not count as sim
 | `kinetra_launcher` | Menu paging and configuration, `SessionHost` transitions, debug-menu clicks and buttons | No |
 | `kinetra_settings_view` | Overlay layout, rows, capture and actions, Ctrl and Shift+Ctrl, the debug menu's visibility | No |
 | `kinetra_presentation` | Glyph table, zoom stepping, rate counter, frame limiter, debug folds and rows | No |
-| `kinetra_engine_graphics` | Input, rendering, resize, the drawn panels, frame pacing, `run_session` and `run_launcher` requests and bindings | Yes (`KINETRA_TEST_GRAPHICS`) |
+| `kinetra_engine_graphics` | Input, rendering, resize, frame read-back, the drawn panels, frame pacing, `run_session` and `run_launcher` requests and bindings | Yes (`KINETRA_TEST_GRAPHICS`) |
 
 ```sh
 cmake --workflow --preset dev        # window-free suites
