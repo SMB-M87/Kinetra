@@ -57,6 +57,9 @@ One list item per lesson, under the topic it belongs to:
 
 ## CI and tooling
 
+- **Record a run on every platform a goal names, or narrow the goal to those that ran** · added 2026-11-26 · source: #67
+  CI runs the graphics cases only on SDL's offscreen driver, so #67's promise of a read-back that is reliable in a window rested on reasoning alone until a run under SDL's `x11` driver in Xvfb was recorded.
+
 - **When a permission list is meant to unblock a procedure, list every tool call of that procedure, in each session that runs it** · added 2026-11-24 · source: #56, Kinetra-Lab#117
   The review-access list covered the reviewer's attach and its posts, but not its subscription to the pull request or the author's `list_events` check, so both still prompted outside auto mode.
 
@@ -86,6 +89,9 @@ One list item per lesson, under the topic it belongs to:
 No lessons yet.
 
 ## Code
+
+- **When a fix resets one piece of state that a call depends on, reset its whole group** · added 2026-11-26 · source: #67
+  #67 reset the caller's `GL_PACK_ALIGNMENT`, which overran the read buffer, and kept the pack row length, the skips and the pack buffer, which overrun or bypass the same buffer.
 
 - **Count the total cells visited when a route follower repeats a raster clearance query** · added 2026-11-24 · source: [#61](https://github.com/SMB-M87/Kinetra/pull/61)
   One sweep scans a bounding rectangle. Repeating it for every point along an open diagonal made the first target selection cubic in the number of waypoints.
