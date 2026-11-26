@@ -31,9 +31,6 @@ Nothing agreed next in Kinetra itself.
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
   Move the proven, application-free part of i4sim's predictive passing (conflict prediction, lane agreement, maneuver guard) into Kinetra, with a design document and an ADR; factory policy (traffic zones, parking, junction rules) stays in i4sim. Decide whether the four overlapping steering models (`steer`, `priority_steer`, `tangent_steer`, `avoid_collisions`, which take different inputs and return acceleration or velocity) can share one agent-motion interface, and move i4sim-shaped defaults, such as the `PrioritySteering` values in millimeters per tick, out of the engine.
   Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.
-- **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
-  The Ubuntu test jobs install packages and the pinned formatter on each run. A prebuilt Ubuntu image could shorten setup and reduce dependence on the package mirrors.
-  Next step: measure setup time and decide how the image would pick up Ubuntu security updates and formatter version changes.
 - **Frame read-back on `Runtime`** · runtime · added 2026-11-21
   A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
   Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).

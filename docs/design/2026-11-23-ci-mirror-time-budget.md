@@ -2,6 +2,8 @@
 
 Status: implemented · Branch: `fix/ci-mirror-time-budget`, and in Kinetra-Lab `ccr-37e580f0-jg7n7e` (Kinetra-Lab #98) · Related: [CI fails fast on a stalled install](2026-11-23-ci-stalled-install.md), [testing, continuous integration](../testing.md#continuous-integration)
 
+Since 2026-11-26 the budget is 90 seconds, after a [measurement](2026-11-26-ci-image-measurement.md) of the CI's setup.
+
 A follow-up to [CI fails fast on a stalled install](2026-11-23-ci-stalled-install.md) (#42 and Kinetra-Lab #98), from the agent review of Kinetra-Lab #98 and the user's decisions of 2026-11-23. The Ubuntu install step falls back to the image's sources when the Azure mirror fails, but a mirror that connects and then never answers can use up the step's 15 minutes before the fallback starts. The mirror's index update and package downloads now get a time budget of their own. Kinetra-Lab's `windows` install step and its release workflow get the time limits that #42 left out, and the step warns when its pattern misses a URI.
 
 ## Table of contents
