@@ -20,7 +20,9 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-Nothing in progress in Kinetra itself.
+- **Headless timing outside `runtime/`** · include layout, with Lab · added 2026-11-21
+  `<kinetra/runtime/timing.h>` is header-only and headless, yet the logic of Kinetra-Lab's applications includes it from `runtime/`. `FixedClock` moves to `simulation/clock.h`, the frame helpers to `view/timing.h`.
+  Where: branch `refactor/headless-timing`, [design](design/2026-11-26-headless-timing.md).
 
 ## Next
 
@@ -37,9 +39,6 @@ Nothing agreed next in Kinetra itself.
 - **Frame read-back on `Runtime`** · runtime · added 2026-11-21
   A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
   Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).
-- **Headless timing outside `runtime/`** · include layout, with Lab · added 2026-11-21
-  `<kinetra/runtime/timing.h>` (`FixedClock`, `RateCounter`) is header-only and headless, yet sits under `runtime/`, and the Demo, Dotio and i4sim logic include it. Move it to `simulation/` or `view/`.
-  Where: [Dotio restructuring, open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-21-dotio-restructuring.md#open-points).
 ## Ideas
 
 Wishes of the user, not yet agreed or shaped. Each needs a design session (`grilling`) before it moves up.
