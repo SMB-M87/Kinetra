@@ -106,7 +106,8 @@ class Runtime {
     /// or dimensions exceeding the context's texture limit, and std::runtime_error
     /// if the image shader or texture cannot be prepared.
     void image(const std::shared_ptr<const RgbaImage> &image, Vec2 top_left, Vec2 size);
-    /// Uploads and draws the batch, then presents the frame. Without VSync it then waits for
+    /// Uploads and draws the batch, then presents the frame; with read_back(true) it first waits
+    /// for the GPU and copies the frame into frame(). Without VSync it then waits for
     /// the frame limiter, unless that was switched off (see pacing()). From the second frame
     /// on, also records the time since the previous end() in frame_times(), or the fixed time
     /// set by fix_frame_times().

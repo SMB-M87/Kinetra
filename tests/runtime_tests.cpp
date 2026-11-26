@@ -21,6 +21,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace kinetra;
@@ -313,18 +314,33 @@ TEST_CASE("read-back frames hold the drawn pixels from the top left until switch
     runtime.end();
     CHECK(&runtime.frame() == &frame);
     CHECK((at({40, 30}) == Rgba{0, 255, 0, 255}));
+    runtime.read_back(true); // Already on: the frame stays.
+    CHECK_NOTHROW(runtime.frame());
+    CHECK((at({40, 30}) == Rgba{0, 255, 0, 255}));
     runtime.read_back(false);
     CHECK_THROWS_AS(runtime.frame(), std::logic_error);
     CHECK(glGetError() == GL_NO_ERROR);
 }
 
-TEST_CASE("read-back packs rows unpadded under any pack alignment and restores it") {
+TEST_CASE("read-back ignores the caller's pack state and restores it") {
     // An odd width: at an alignment of 8, OpenGL would pad each 4 * 161-byte row to 648.
-    Runtime runtime("Kinetra read-back alignment", 161, 121);
+    Runtime runtime("Kinetra read-back pack state", 161, 121);
     REQUIRE(runtime.poll());
     runtime.read_back(true);
-    glPixelStorei(GL_PACK_ALIGNMENT, 8);
-    // A red box at the top-left corner, on blue: a padded read would shift every row after the first.
+    // State a caller may leave behind. Each piece alone would make glReadPixels overrun its
+    // destination, shift the rows, or write into the pack buffer instead of the frame.
+    GLuint pack_buffer{};
+    glGenBuffers(1, &pack_buffer);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pack_buffer);
+    glBufferData(GL_PIXEL_PACK_BUFFER, 1 << 20, nullptr, GL_STREAM_READ);
+    const std::array<std::pair<GLenum, GLint>, 4> pack{{{GL_PACK_ALIGNMENT, 8},
+                                                        {GL_PACK_ROW_LENGTH, 300},
+                                                        {GL_PACK_SKIP_ROWS, 3},
+                                                        {GL_PACK_SKIP_PIXELS, 5}}};
+    for (const auto &[name, value] : pack)
+        glPixelStorei(name, value);
+    glReadBuffer(GL_FRONT);
+    // A red box at the top-left corner, on blue: a shifted read would move it.
     const auto units = runtime.camera.pixels_per_unit;
     runtime.begin({0, 0, 1, 1});
     runtime.box(runtime.camera.screen_to_world({10, 10}), Vec2{10, 10} / units, 0, {1, 0, 0, 1});
@@ -335,13 +351,25 @@ TEST_CASE("read-back packs rows unpadded under any pack alignment and restores i
         return frame.pixel(int(point.x * float(frame.width) / runtime.camera.viewport.x),
                            int(point.y * float(frame.height) / runtime.camera.viewport.y));
     };
+    CHECK(at({0, 0})[0] == 255);
     CHECK(at({10, 19.5f})[0] == 255);
     CHECK(at({10, 25})[2] == 255);
+    CHECK(at({25, 10})[2] == 255);
     CHECK(at({160, 120})[2] == 255);
-    GLint alignment{};
-    glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
-    CHECK_MESSAGE(alignment == 8, "read-back must leave the caller's pack alignment");
-    glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    for (const auto &[name, value] : pack) {
+        GLint now{};
+        glGetIntegerv(name, &now);
+        CAPTURE(name);
+        CHECK_MESSAGE(now == value, "read-back must leave the caller's pack state");
+        glPixelStorei(name, name == GL_PACK_ALIGNMENT ? 4 : 0);
+    }
+    GLint bound{}, read_buffer{};
+    glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &bound);
+    glGetIntegerv(GL_READ_BUFFER, &read_buffer);
+    CHECK_MESSAGE(GLuint(bound) == pack_buffer, "read-back must leave the caller's pack buffer bound");
+    CHECK_MESSAGE(read_buffer == GL_FRONT, "read-back must leave the caller's read buffer");
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    glDeleteBuffers(1, &pack_buffer);
     CHECK(glGetError() == GL_NO_ERROR);
 }
 

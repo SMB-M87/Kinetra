@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <glad/glad.h>
@@ -531,23 +532,61 @@ void main() { pixel = texture(picture, uv); }
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
+namespace {
+/// The state glReadPixels reads through: which framebuffer and buffer it reads, where it
+/// writes, and how it packs rows. Sets OpenGL's defaults, with the window's draw buffer as
+/// the read buffer, and restores what the caller had on destruction, so a read neither
+/// depends on nor changes the caller's state.
+class DefaultReadState {
+  public:
+    DefaultReadState() {
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &framebuffer_);
+        glGetIntegerv(GL_READ_BUFFER, &read_buffer_);
+        glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pack_buffer_);
+        for (std::size_t i = 0; i < pack_names.size(); ++i)
+            glGetIntegerv(pack_names[i], &pack_values_[i]);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        // Read the buffer that was drawn: after a swap OpenGL leaves the back buffer
+        // undefined, and the front buffer of a composited window need not hold the frame.
+        GLint draw_buffer{};
+        glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+        glReadBuffer(static_cast<GLenum>(draw_buffer));
+        // With a pack buffer bound, glReadPixels would write into it instead of into memory.
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        // Rows without padding or offsets: an alignment of 8 at an odd width, a row length
+        // above the width, or a skip would overrun the destination.
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+        glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+    }
+    ~DefaultReadState() {
+        for (std::size_t i = 0; i < pack_names.size(); ++i)
+            glPixelStorei(pack_names[i], pack_values_[i]);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, static_cast<GLuint>(pack_buffer_));
+        glReadBuffer(static_cast<GLenum>(read_buffer_));
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(framebuffer_));
+    }
+    DefaultReadState(const DefaultReadState &) = delete;
+    DefaultReadState &operator=(const DefaultReadState &) = delete;
+
+  private:
+    static constexpr std::array<GLenum, 4> pack_names{GL_PACK_ALIGNMENT, GL_PACK_ROW_LENGTH,
+                                                      GL_PACK_SKIP_ROWS, GL_PACK_SKIP_PIXELS};
+    GLint framebuffer_{}, read_buffer_{}, pack_buffer_{};
+    std::array<GLint, 4> pack_values_{};
+};
+} // namespace
+
 void Runtime::Impl::read_frame() {
-    // Read before the swap from the buffer that was drawn: after a swap OpenGL leaves the back
-    // buffer undefined, and the front buffer of a composited window need not hold the frame.
-    GLint draw_buffer{};
-    glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
-    glReadBuffer(static_cast<GLenum>(draw_buffer));
     const auto width = static_cast<std::size_t>(std::max(frame_width, 0)),
                height = static_cast<std::size_t>(std::max(frame_height, 0));
     const std::size_t stride = width * 4;
     read_rows.resize(stride * height);
-    // Rows without padding, whatever alignment the caller left: at 8 an odd width would pad
-    // each row and overrun `read_rows`.
-    GLint alignment{};
-    glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(0, 0, frame_width, frame_height, GL_RGBA, GL_UNSIGNED_BYTE, read_rows.data());
-    glPixelStorei(GL_PACK_ALIGNMENT, alignment);
+    {
+        const DefaultReadState state;
+        glReadPixels(0, 0, frame_width, frame_height, GL_RGBA, GL_UNSIGNED_BYTE, read_rows.data());
+    }
     frame.width = frame_width;
     frame.height = frame_height;
     frame.rgba.resize(read_rows.size());
