@@ -28,7 +28,8 @@ ADRs preserve the context and trade-offs behind Kinetra's boundaries: what was d
 | [0013](0013-settings-overlay-in-kinetra.md) | Settings overlay in Kinetra, built from application rows | Accepted |
 | [0014](0014-session-navigation-requests.md) | Session navigation requests and configurable launcher bindings | Accepted; amends [0010](0010-generic-launcher-in-core.md) |
 | [0015](0015-include-layout.md) | Include layout by layer and one directory rule | Accepted |
-| [0016](0016-predictive-passing.md) | Predictive passing shares geometry | Accepted |
+| [0016](0016-predictive-passing.md) | Predictive passing shares geometry | Accepted; plan lifecycle amended by [0017](0017-passing-coordinator.md) |
+| [0017](0017-passing-coordinator.md) | A passing coordinator for applications without factory rules | Accepted |
 
 *Reading the table:* 0001 to 0007 were written while the applications lived in this repository; their application rules now belong to Kinetra-Lab. [0009](0009-core-and-lab.md) defines the current boundary between Kinetra and Lab.
 

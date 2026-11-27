@@ -2,11 +2,14 @@
 #include <kinetra/simulation/clock.h>
 #include <kinetra/simulation/navigation.h>
 #include <kinetra/simulation/passing.h>
+#include <kinetra/simulation/passing_coordinator.h>
 #include <kinetra/simulation/steering.h>
 #include <kinetra/simulation/traffic.h>
 #include <kinetra/simulation/weighted_grid.h>
 #include <kinetra/view/camera.h>
 #include <kinetra/view/timing.h>
+
+#include <vector>
 
 #ifdef CONSUMER_GRAPHICS
 #include <kinetra/runtime/inspector_view.h>
@@ -91,6 +94,19 @@ int main() {
                                           {1, 1, 5, 1});
     if (!kinetra::finite(guard.braking_target()))
         return 21;
+    kinetra::PassingCoordinator coordinator;
+    std::vector<kinetra::PassingMover> movers(2);
+    movers[0].body = rectangle;
+    movers[1].body = rectangle;
+    movers[1].body.position = {10, 0};
+    movers[0].heading = {1, 0};
+    movers[1].heading = {-1, 0};
+    movers[0].destination = {30, 0};
+    movers[1].destination = {-18, 0};
+    const kinetra::PassingCoordination coordination{{1, 1, 1}, {1, 1, 5, 1}, {}, 1, 1, 5, 50, 5};
+    const auto events = coordinator.step(movers, coordination, {});
+    if (events.size() != 1 || !coordinator.target(0))
+        return 22;
     kinetra::Body circle;
     circle.position = {-3, 0};
     if (!kinetra::sweep_circle(circle, {3, 0}, rectangle))
