@@ -1,7 +1,9 @@
 // Window-free tests for the launcher library (include/kinetra/runtime/launcher.h): menu paging
-// and configuration, SessionHost transitions, and debug-menu actions and stepper buttons. The loops that
-// need a window are covered by runtime_tests.cpp.
+// and configuration, the error panel over the menu (error_view.h), SessionHost transitions, and debug-menu
+// actions and stepper buttons. The loops that need a window are covered by runtime_tests.cpp.
 #include <kinetra/runtime/debug_view.h>
+#include <kinetra/runtime/error_view.h>
+#include <kinetra/runtime/hud_text.h>
 #include <kinetra/runtime/launcher.h>
 
 #include <doctest/doctest.h>
@@ -108,6 +110,192 @@ TEST_CASE("preview layout follows selection and only applies to the application 
     CHECK(picked->application == 1);
     CHECK(menu.layout(wide).preview_origin);
     CHECK_FALSE(LaunchMenu({{"PLAIN", "NO IMAGE", {}, 0}}).layout(wide).preview_origin);
+}
+
+TEST_CASE("the error panel grows with its message up to the whole window") {
+    const Vec2 viewport{1280, 720};
+    CHECK(error_panel::lines("", viewport).empty());
+    const auto none = error_panel::bounds("", viewport);
+    CHECK(none.min.x == none.max.x);
+    CHECK_FALSE(error_panel::update(Input{}, "", viewport).captured);
+
+    const auto short_panel = error_panel::bounds("BROKEN.JSON: UNEXPECTED END", viewport);
+    CHECK(error_panel::lines("BROKEN.JSON: UNEXPECTED END", viewport).size() == 1);
+    CHECK(short_panel.min.x == hud::margin);
+    CHECK(short_panel.max.x == viewport.x - hud::margin);
+    CHECK_MESSAGE(short_panel.max.y == viewport.y - hud::margin, "the panel sits at the bottom");
+    CHECK(short_panel.max.y - short_panel.min.y < 100);
+
+    std::string longer;
+    for (int i = 0; i < 40; ++i)
+        longer += "/A-RATHER-LONG-DIRECTORY ";
+    const auto lines = error_panel::lines(longer, viewport);
+    CHECK(lines.size() > 1);
+    CHECK(lines.back().find(hud::cut_mark) == std::string::npos);
+    CHECK(error_panel::bounds(longer, viewport).min.y < short_panel.min.y);
+
+    std::string huge;
+    for (int i = 0; i < 400; ++i)
+        huge += "/A-RATHER-LONG-DIRECTORY ";
+    const auto all = error_panel::lines(huge, viewport);
+    REQUIRE_FALSE(all.empty());
+    CHECK_MESSAGE(error_panel::visible_lines(huge, viewport) < all.size(),
+                  "a message longer than the window shows part of its lines");
+    CHECK(error_panel::visible_lines(longer, viewport) == lines.size());
+    const auto whole = error_panel::bounds(huge, viewport);
+    CHECK_MESSAGE((whole.min.y >= hud::margin && whole.min.y < hud::margin + hud::line_height),
+                  "the panel may use the whole window, less its margins");
+
+    CHECK_MESSAGE(error_panel::lines("TEXT", {20, 720}).empty(),
+                  "a window narrower than a character has no panel");
+    CHECK_MESSAGE(error_panel::lines("TEXT", {1280, 50}).empty(), "a window lower than a line has no panel");
+}
+
+TEST_CASE("the wheel scrolls an error longer than a small window to its end") {
+    const Vec2 viewport{320, 240};
+    // A long path before the reason, as the blueprint loader writes it.
+    std::string message;
+    for (int i = 0; i < 12; ++i)
+        message += "/A-RATHER-LONG-DIRECTORY";
+    message += "/BROKEN.JSON: PARSE ERROR AT LINE 1, COLUMN 11";
+    const auto all = error_panel::lines(message, viewport);
+    const auto visible = error_panel::visible_lines(message, viewport);
+    REQUIRE(visible < all.size());
+    REQUIRE(all.back().find("COLUMN 11") != std::string::npos);
+    const auto panel = error_panel::bounds(message, viewport);
+    Input wheel;
+    wheel.mouse = (panel.min + panel.max) / 2;
+    wheel.wheel = -100;
+    const auto end = error_panel::update(wheel, message, viewport, {}, 0);
+    CHECK_MESSAGE(end.first_line == static_cast<double>(all.size() - visible),
+                  "scrolling stops at the last line");
+    wheel.wheel = 1;
+    CHECK(error_panel::update(wheel, message, viewport, {}, end.first_line).first_line == end.first_line - 1);
+    wheel.wheel = 100;
+    CHECK_MESSAGE(error_panel::update(wheel, message, viewport, {}, 3).first_line == 0, "nor past the first");
+    wheel.mouse = {-5, -5};
+    wheel.wheel = -1;
+    CHECK_MESSAGE(error_panel::update(wheel, message, viewport, {}, 0).first_line == 0,
+                  "the wheel off the panel scrolls nothing");
+
+    LaunchMenu menu({{"ONE", "", {}, 0}});
+    Input on_panel;
+    on_panel.mouse = (panel.min + panel.max) / 2;
+    on_panel.wheel = -2;
+    menu.update(on_panel, viewport, message);
+    CHECK(menu.error_first_line() == 2);
+    on_panel.wheel = 0;
+    menu.update(on_panel, viewport, "ANOTHER ERROR");
+    CHECK_MESSAGE(menu.error_first_line() == 0, "a new message starts at its first line");
+
+    // A touchpad sends fractions of a notch every frame; they add up to whole lines.
+    double first = 0;
+    Input touch;
+    touch.mouse = (panel.min + panel.max) / 2;
+    touch.wheel = -0.25f;
+    for (int frame = 0; frame < 4; ++frame)
+        first = error_panel::update(touch, message, viewport, {}, first).first_line;
+    CHECK_MESSAGE(first == doctest::Approx(1), "four quarter notches scroll one line");
+}
+
+TEST_CASE("the error panel moves above a region it would cover when its message fits there") {
+    const Vec2 viewport{1280, 720};
+    const Aabb buttons{{400, 650}, {800, 690}};
+    const std::string message = "BROKEN.JSON: UNEXPECTED END";
+    const auto above = error_panel::bounds(message, viewport, buttons);
+    CHECK_MESSAGE(above.max.y <= buttons.min.y - hud::margin, "a short message ends above the region");
+    CHECK(error_panel::lines(message, viewport, buttons).size() == 1);
+
+    const Aabb high{{400, 100}, {800, 140}};
+    CHECK_MESSAGE(error_panel::bounds(message, viewport, high).max.y == viewport.y - hud::margin,
+                  "a region the panel misses at the bottom leaves it there");
+
+    std::string huge;
+    for (int i = 0; i < 400; ++i)
+        huge += "/A-RATHER-LONG-DIRECTORY ";
+    const auto whole = error_panel::bounds(huge, viewport, buttons);
+    CHECK_MESSAGE(whole.max.y == viewport.y - hud::margin,
+                  "a message too long for the space above covers it");
+    CHECK(error_panel::lines(huge, viewport, buttons) == error_panel::lines(huge, viewport));
+}
+
+TEST_CASE("an error panel over the menu takes the pointer and its close button reports the click") {
+    LaunchMenu menu({{"ONE", "", {}, 0}, {"TWO", "", {}, 0}});
+    const Vec2 viewport{1280, 720};
+    const auto layout = menu.layout(viewport);
+    const auto exit = layout.footer_center(*menu.footer_x(FooterButton::exit));
+
+    // At 640 x 480 a short error's panel at the bottom would cover EXIT; it ends above the
+    // footer instead, so EXIT stays clickable.
+    const Vec2 small{640, 480};
+    const std::string_view short_error = "BROKEN.JSON: UNEXPECTED END";
+    // The lowest row of EXIT's clickable area, which a panel at the bottom would cover.
+    const auto small_layout = menu.layout(small);
+    const Vec2 small_exit{small_layout.footer_center(*menu.footer_x(FooterButton::exit)).x,
+                          small_layout.footer_bounds().max.y - 1};
+    REQUIRE(small_layout.footer_contains(small_exit, *menu.footer_x(FooterButton::exit)));
+    REQUIRE(error_panel::bounds(short_error, small).min.y <= small_exit.y);
+    Input click;
+    click.clicked = true;
+    click.mouse = small_exit;
+    menu.update(click, small, short_error);
+    CHECK_MESSAGE(menu.exit_requested(), "a short error leaves EXIT free");
+
+    LaunchMenu covered({{"ONE", "", {}, 0}, {"TWO", "", {}, 0}});
+    // Too long for the space above the footer, so its panel covers EXIT.
+    std::string error;
+    for (int i = 0; i < 600; ++i)
+        error += "BROKEN ";
+    const auto panel = error_panel::bounds(error, viewport, layout.footer_bounds());
+    REQUIRE(panel.min.y < exit.y);
+    CHECK_FALSE(covered.update(click, viewport, error));
+    CHECK_MESSAGE(!covered.exit_requested(), "a click on the panel does not reach EXIT below it");
+    CHECK_FALSE(covered.error_closed());
+
+    const auto close = error_panel::close_bounds(error, viewport, layout.footer_bounds());
+    click.mouse = (close.min + close.max) / 2;
+    CHECK_FALSE(covered.update(click, viewport, error));
+    CHECK(covered.error_closed());
+    CHECK_FALSE(covered.exit_requested());
+
+    Input keys;
+    keys.mouse = click.mouse;
+    keys.pressed[std::size_t(Key::down)] = true;
+    covered.update(keys, viewport, error);
+    CHECK_MESSAGE(covered.selected() == 1, "keys still reach the menu");
+    CHECK_FALSE(covered.error_closed());
+
+    click.mouse = exit;
+    covered.update(click, viewport);
+    CHECK_MESSAGE(covered.exit_requested(), "without an error EXIT takes the click");
+}
+
+TEST_CASE("the error panel coming or going is no pointer move, so keyboard navigation holds") {
+    std::vector<LaunchChoice> rows;
+    for (int i = 0; i < 6; ++i)
+        rows.push_back({"ROW " + std::to_string(i), "", {}, 0});
+    LaunchMenu menu(rows);
+    const Vec2 viewport{1280, 720};
+    // A message too long for the space above the footer: its panel covers every row.
+    std::string error;
+    for (int i = 0; i < 600; ++i)
+        error += "BROKEN ";
+    const auto resting = menu.layout(viewport).row_center(3);
+    Input still;
+    still.mouse = resting;
+    REQUIRE(error_panel::update(still, error, viewport, menu.layout(viewport).footer_bounds()).captured);
+    menu.update(still, viewport, error);
+    CHECK_MESSAGE(menu.selected() == 0, "the row below the panel is not hovered");
+    Input down = still;
+    down.pressed[std::size_t(Key::down)] = true;
+    menu.update(down, viewport, error);
+    REQUIRE(menu.selected() == 1);
+    menu.update(still, viewport);
+    CHECK_MESSAGE(menu.selected() == 1, "the panel going away leaves the keyboard's row");
+    Input moved = still;
+    moved.mouse.y += 1;
+    menu.update(moved, viewport);
+    CHECK_MESSAGE(menu.selected() == 3, "a real move hovers again");
 }
 
 TEST_CASE("menu pages wrap and stay pickable at every viewport") {

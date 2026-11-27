@@ -93,6 +93,8 @@ No lessons yet.
 
 ## Code
 
+- **When an overlay takes the pointer from a widget below, hide it only from that widget's hit tests and highlights, and keep its movement and hover state on the real pointer** · added 2026-11-27 · source: [#73](https://github.com/SMB-M87/Kinetra/pull/73)
+  `LaunchMenu`'s resting-pointer guard read the error panel's `{-1, -1}` stand-in as a move when the panel appeared or went away, so a resting pointer could undo keyboard navigation.
 - **Derive a remedy from the detector's output, or carry every condition that ends that output into the remedy's own contract** · added 2026-11-27 · source: [#74](https://github.com/SMB-M87/Kinetra/pull/74)
   `RightOfWay` derived "stalled" from the raw progress count instead of the detector's episodes, and lost the end on a goal change, which an episode has and the user's return rule names.
 

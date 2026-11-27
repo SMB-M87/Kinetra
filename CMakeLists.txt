@@ -45,6 +45,7 @@ if(KINETRA_BUILD_RUNTIME)
     find_package(SDL2 2.0.18 REQUIRED)
     find_package(OpenGL REQUIRED)
     add_library(kinetra_runtime
+        src/runtime/error_view.cpp
         src/runtime/inspector_view.cpp
         src/runtime/runtime.cpp
         src/runtime/session.cpp

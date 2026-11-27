@@ -1,5 +1,6 @@
 #include <chrono>
 #include <kinetra/runtime/bitmap_text.h>
+#include <kinetra/runtime/error_view.h>
 #include <kinetra/runtime/launcher.h>
 #include <stdexcept>
 #include <utility>
@@ -80,6 +81,10 @@ MenuLayout::MenuLayout(Vec2 viewport, std::size_t rows, bool with_preview)
 Vec2 MenuLayout::footer_center(float x) const {
     return origin + Vec2{x, 110.f + static_cast<float>(visible_rows * 40)} * scale;
 }
+Aabb MenuLayout::footer_bounds() const {
+    const float y = footer_center().y;
+    return {{origin.x, y - 14 * scale}, {origin.x + 300 * scale, y + 14 * scale}};
+}
 bool MenuLayout::footer_contains(Vec2 point, float x) const {
     const auto offset = point - footer_center(x);
     return std::abs(offset.x) <= footer_half_width * scale && std::abs(offset.y) <= 14 * scale;
@@ -144,11 +149,29 @@ std::optional<float> LaunchMenu::footer_x(FooterButton button) const {
 MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
 }
-std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewport) {
+std::optional<LaunchSelection> LaunchMenu::update(const Input &frame, Vec2 viewport, std::string_view error) {
+    // A new message starts at its first line; the wheel scrolls one that does not fit.
+    if (error != error_text_) {
+        error_text_ = error;
+        error_first_line_ = 0;
+    }
+    const auto panel =
+        error_panel::update(frame, error, viewport, layout(viewport).footer_bounds(), error_first_line_);
+    error_closed_ = panel.close;
+    error_first_line_ = panel.first_line;
     // After show_configurations the pointer is wherever the session left it; it counts as
-    // resting there, so it does not hover away the configuration that ran.
-    const bool pointer_moved = !settle_pointer_ && input.mouse != pointer_;
+    // resting there, so it does not hover away the configuration that ran. Movement is the
+    // real pointer's: the panel coming or going moves nothing.
+    const bool pointer_moved = !settle_pointer_ && frame.mouse != real_pointer_;
     settle_pointer_ = false;
+    real_pointer_ = frame.mouse;
+    // Over the error panel the pointer is the panel's: for the menu it is off the window and
+    // did not click, so no row or button below the panel reacts to it.
+    Input input = frame;
+    if (panel.captured) {
+        input.mouse = {-1, -1};
+        input.clicked = false;
+    }
     pointer_ = input.mouse;
     if (configuring_ && input.hit(Key::m)) {
         configuring_ = false;
@@ -212,7 +235,7 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewp
     configuring_ = false;
     return LaunchSelection{application_, configuration()};
 }
-void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
+void LaunchMenu::draw(Runtime &runtime, std::string_view error) const {
     const auto layout = this->layout(runtime.camera.viewport);
     runtime.begin();
     draw_text(runtime, heading_, layout.origin + Vec2{10, 10} * layout.scale, layout.scale * 3,
@@ -242,9 +265,9 @@ void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
             button(label, *x);
     if (layout.preview_origin)
         draw_preview(runtime, choices_[application_], *layout.preview_origin, layout.scale);
-    if (!status.empty())
-        draw_text(runtime, status.substr(0, 80), {8, runtime.camera.viewport.y - 16},
-                  std::min(1.f, runtime.camera.viewport.x / 490), {1, 0.5f, 0.35f});
+    // Last, so the panel covers what it overlaps, as update() gives it the pointer there.
+    error_panel::draw(runtime, error, real_pointer_, layout.footer_bounds(),
+                      error == error_text_ ? error_first_line_ : 0);
     runtime.end();
 }
 SessionHost::SessionHost(std::vector<ApplicationRegistration> applications)

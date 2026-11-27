@@ -12,7 +12,7 @@ using Glyph = std::array<unsigned char, 7>;
 
 /// Returns the bitmap for `c`.
 ///
-/// Covers `A`–`Z`, `0`–`9` and `/ + [ ] : - _ . , *`. Lowercase letters use the uppercase
+/// Covers `A`–`Z`, `0`–`9` and `/ + [ ] : - _ . , * { } ( ) ' " ;`. Lowercase letters use the uppercase
 /// glyph, so lowercase text stays readable without a second alphabet. Every other
 /// character, including space, is blank. Pure and usable without a Runtime.
 constexpr Glyph glyph(char c) {
@@ -64,6 +64,21 @@ constexpr Glyph glyph(char c) {
         return {0, 0, 0, 0, 0, 4, 8};
     case '*':
         return {0, 4, 21, 14, 21, 4, 0};
+    // The punctuation of parser diagnostics, such as "expected '[', '{', or a literal;".
+    case '{':
+        return {6, 8, 8, 16, 8, 8, 6};
+    case '}':
+        return {12, 2, 2, 1, 2, 2, 12};
+    case '(':
+        return {2, 4, 8, 8, 8, 4, 2};
+    case ')':
+        return {8, 4, 2, 2, 2, 4, 8};
+    case '\'':
+        return {4, 4, 8, 0, 0, 0, 0};
+    case '"':
+        return {10, 10, 0, 0, 0, 0, 0};
+    case ';':
+        return {0, 4, 4, 0, 4, 4, 8};
     default:
         return {};
     }
