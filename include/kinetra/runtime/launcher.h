@@ -115,9 +115,9 @@ class LaunchMenu {
     /// True when the last update() clicked the close button of the error panel; the caller
     /// then removes its message.
     bool error_closed() const { return error_closed_; }
-    /// The first line of the error that the panel shows, which the wheel moves; zero for a new
-    /// message.
-    std::size_t error_first_line() const { return error_first_line_; }
+    /// Where the error panel's scroll stands, in lines from the message's start: the wheel moves
+    /// it in fractions, and the panel shows from its whole part. Zero for a new message.
+    double error_first_line() const { return error_first_line_; }
     /// True once LAUNCHER was clicked in a LauncherButton::every_page menu; never reset. The
     /// owner leaves the menu for the launcher, as it does for exit_requested().
     bool launcher_requested() const { return launcher_requested_; }
@@ -167,7 +167,7 @@ class LaunchMenu {
     Vec2 real_pointer_{-1, -1};
     /// The error update() last saw, and the first of its lines the panel shows.
     std::string error_text_;
-    std::size_t error_first_line_{};
+    double error_first_line_{};
     /// Set by show_configurations: the next update() records the pointer without hovering.
     bool settle_pointer_{};
 };

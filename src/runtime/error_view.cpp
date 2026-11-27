@@ -100,19 +100,21 @@ std::size_t visible_lines(std::string_view message, Vec2 viewport, std::optional
 }
 
 ErrorPanelInput update(const Input &input, std::string_view message, Vec2 viewport,
-                       std::optional<Aabb> keep_clear, std::size_t first_line) {
+                       std::optional<Aabb> keep_clear, double first_line) {
     const auto panel = layout(message, viewport, keep_clear);
     const bool captured = !panel.lines.empty() && contains(panel.bounds, input.mouse);
     const double wheel = captured && std::isfinite(input.wheel) ? input.wheel : 0;
     // A positive wheel scrolls away from the user, toward the message's start.
-    const double first = std::clamp(static_cast<double>(first_line) - std::round(wheel * lines_per_notch),
-                                    0.0, static_cast<double>(panel.last_first()));
+    // Fractions add up, as in the inspector: a touchpad sends small steps every frame.
+    const double start = std::isfinite(first_line) ? first_line : 0.0;
+    const double first =
+        std::clamp(start - wheel * lines_per_notch, 0.0, static_cast<double>(panel.last_first()));
     return {captured, captured && input.clicked && contains(panel.close_bounds(), input.mouse),
-            panel.lines.empty() ? 0 : static_cast<std::size_t>(first)};
+            panel.lines.empty() ? 0.0 : first};
 }
 
 void draw(Runtime &runtime, std::string_view message, Vec2 pointer, std::optional<Aabb> keep_clear,
-          std::size_t first_line) {
+          double first_line) {
     const auto panel = layout(message, runtime.camera.viewport, keep_clear);
     if (panel.lines.empty())
         return;
@@ -121,7 +123,8 @@ void draw(Runtime &runtime, std::string_view message, Vec2 pointer, std::optiona
     overlay::draw_panel(runtime, corner, size, title_height, title, {}, 1);
     overlay::draw_sign_button(runtime, panel.close_origin(), {close_size, close_size}, 'X', 1,
                               contains(panel.close_bounds(), pointer));
-    const auto first = std::min(first_line, panel.last_first());
+    const auto first = static_cast<std::size_t>(
+        std::clamp(std::floor(first_line), 0.0, static_cast<double>(panel.last_first())));
     // Each line is centered in its HUD line height, as on the HUD.
     const float inset = (hud::line_height - 7 * hud::text_scale) / 2;
     for (std::size_t i = 0; i < panel.visible; ++i) {

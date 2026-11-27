@@ -167,7 +167,8 @@ TEST_CASE("the wheel scrolls an error longer than a small window to its end") {
     wheel.mouse = (panel.min + panel.max) / 2;
     wheel.wheel = -100;
     const auto end = error_panel::update(wheel, message, viewport, {}, 0);
-    CHECK_MESSAGE(end.first_line == all.size() - visible, "scrolling stops at the last line");
+    CHECK_MESSAGE(end.first_line == static_cast<double>(all.size() - visible),
+                  "scrolling stops at the last line");
     wheel.wheel = 1;
     CHECK(error_panel::update(wheel, message, viewport, {}, end.first_line).first_line == end.first_line - 1);
     wheel.wheel = 100;
@@ -186,6 +187,15 @@ TEST_CASE("the wheel scrolls an error longer than a small window to its end") {
     on_panel.wheel = 0;
     menu.update(on_panel, viewport, "ANOTHER ERROR");
     CHECK_MESSAGE(menu.error_first_line() == 0, "a new message starts at its first line");
+
+    // A touchpad sends fractions of a notch every frame; they add up to whole lines.
+    double first = 0;
+    Input touch;
+    touch.mouse = (panel.min + panel.max) / 2;
+    touch.wheel = -0.25f;
+    for (int frame = 0; frame < 4; ++frame)
+        first = error_panel::update(touch, message, viewport, {}, first).first_line;
+    CHECK_MESSAGE(first == doctest::Approx(1), "four quarter notches scroll one line");
 }
 
 TEST_CASE("the error panel moves above a region it would cover when its message fits there") {

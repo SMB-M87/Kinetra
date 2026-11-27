@@ -22,8 +22,9 @@ struct ErrorPanelInput {
     /// The close button was clicked. The caller removes the message.
     bool close{};
     /// The first line to show next: the caller's, moved by the wheel while the pointer is on
-    /// the panel and kept within the message. The caller keeps it until the message changes.
-    std::size_t first_line{};
+    /// the panel and kept within the message. Fractional, so a touchpad's small steps add up;
+    /// the panel shows from its whole part. The caller keeps it until the message changes.
+    double first_line{};
 };
 
 namespace error_panel {
@@ -46,11 +47,11 @@ std::vector<std::string> lines(std::string_view message, Vec2 viewport, std::opt
 std::size_t visible_lines(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_clear = {});
 /// Reads this frame's pointer against the panel for `message`, showing from `first_line`.
 ErrorPanelInput update(const Input &input, std::string_view message, Vec2 viewport,
-                       std::optional<Aabb> keep_clear = {}, std::size_t first_line = 0);
-/// Draws the panel for `message` inside an active runtime frame, from line `first_line` (kept
-/// within the message), with a scroll bar when not every line fits and the close button lit
-/// while `pointer` (logical window pixels) is on it. Draws nothing for an empty message.
+                       std::optional<Aabb> keep_clear = {}, double first_line = 0);
+/// Draws the panel for `message` inside an active runtime frame, from the whole part of
+/// `first_line` (kept within the message), with a scroll bar when not every line fits and the close button
+/// lit while `pointer` (logical window pixels) is on it. Draws nothing for an empty message.
 void draw(Runtime &runtime, std::string_view message, Vec2 pointer, std::optional<Aabb> keep_clear = {},
-          std::size_t first_line = 0);
+          double first_line = 0);
 } // namespace error_panel
 } // namespace kinetra
