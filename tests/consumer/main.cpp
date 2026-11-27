@@ -3,6 +3,7 @@
 #include <kinetra/simulation/navigation.h>
 #include <kinetra/simulation/passing.h>
 #include <kinetra/simulation/passing_coordinator.h>
+#include <kinetra/simulation/right_of_way.h>
 #include <kinetra/simulation/stall_detector.h>
 #include <kinetra/simulation/steering.h>
 #include <kinetra/simulation/traffic.h>
@@ -119,6 +120,10 @@ int main() {
     if (stalls.observe(stalled, {1, 1, 2, 5, {}, 0.1f, -0.8f, 1.6f, 0.2f}, 0).size() != 1 ||
         !stalls.episode(0))
         return 23;
+    kinetra::RightOfWay right_of_way;
+    if (!right_of_way.step(stalled, {1, 1, 2, 5, {}, 0.1f, -0.8f, 1.6f, 0.2f}, {10}, 0).empty() ||
+        right_of_way.granted(0))
+        return 24;
     kinetra::Body circle;
     circle.position = {-3, 0};
     if (!kinetra::sweep_circle(circle, {3, 0}, rectangle))
