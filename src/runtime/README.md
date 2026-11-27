@@ -155,4 +155,4 @@ The [external consumer](../../tests/README.md#external-consumer) links the publi
 ## Open points
 
 - `kinetra_engine_graphics` under WSL2 needs one run after the wheel fix, to confirm that its old mouse-input failure had the same cause as in CI ([testing, open points](../../docs/testing.md#open-points)).
-- The LAUNCHER button stays visible when an application runs without a launcher, where it ends the program.
+- The settings panel's leave button (LAUNCHER, or an application's `configurations` button) stays visible when an application runs without a launcher, where it ends the program, unless the session serves the request itself.

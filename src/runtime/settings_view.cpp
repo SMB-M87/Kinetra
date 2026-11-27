@@ -38,7 +38,12 @@ struct Button {
     constexpr float left() const { return center - width / 2; }
     constexpr float right() const { return center + width / 2; }
 };
-constexpr Button launcher_button{"LAUNCHER", SettingsOverlay::launcher_x, 72};
+// The leave button's text is the application's; its width fits the longest LeaveAction label.
+constexpr float leave_width = 72;
+constexpr std::size_t leave_label_limit = 11;
+// Six font pixels per character, less the gap after the last, inside the button's border.
+static_assert(static_cast<float>(leave_label_limit) * 6 - 1 < leave_width - 4,
+              "the longest leave label must fit its button");
 constexpr Button resume_button{"RESUME", SettingsOverlay::resume_x, 56};
 constexpr Button exit_button{"EXIT", SettingsOverlay::exit_x, 40};
 
@@ -49,6 +54,11 @@ constexpr float settings_button_right = 64;
 constexpr float debug_button_right = 112;
 constexpr float toolbar_inset = 3;
 constexpr Vec2 debug_menu_origin{8, 32};
+
+/// The leave button for a label; the label is borrowed for the button's use.
+Button leave_button_for(std::string_view label) {
+    return {label, SettingsOverlay::leave_x, leave_width};
+}
 
 bool in_band(Vec2 point, float y) {
     return point.y >= y - band_above && point.y < y + band_below;
@@ -70,8 +80,13 @@ int zoom_button_at(float x) {
 }
 } // namespace
 
-SettingsOverlay::SettingsOverlay(std::vector<SettingsRow> rows, bool *debug_mode)
-    : rows_(std::move(rows)), expanded_(rows_.size(), false), debug_mode_(debug_mode) {
+SettingsOverlay::SettingsOverlay(std::vector<SettingsRow> rows, bool *debug_mode, LeaveAction leave)
+    : rows_(std::move(rows)), leave_(std::move(leave)), expanded_(rows_.size(), false),
+      debug_mode_(debug_mode) {
+    if (leave_.label.empty() || leave_.label.size() > leave_label_limit)
+        throw std::invalid_argument("Leave button label must have 1 to 11 characters");
+    if (leave_.request != SessionRequest::menu && leave_.request != SessionRequest::configurations)
+        throw std::invalid_argument("Leave button must request the menu or the configurations");
     bool sections = false;
     for (const auto &row : rows_) {
         if (is_section(row))
@@ -163,9 +178,12 @@ bool SettingsOverlay::update(const Input &input, Camera2D &camera) {
         return true;
     auto on = [&](const Button &button) { return point.x >= button.left() && point.x < button.right(); };
     if (in_band(point, actions)) {
-        if (on(launcher_button))
-            request_ = SessionRequest::menu;
-        else if (on(resume_button))
+        if (on(leave_button_for(leave_.label))) {
+            request_ = leave_.request;
+            // The panel closes as the session leaves: a session that serves the request
+            // itself, such as one with its own configuration page, shows that page next.
+            visible_ = false;
+        } else if (on(resume_button))
             visible_ = false;
         else if (on(exit_button))
             request_ = SessionRequest::exit;
@@ -278,7 +296,7 @@ void SettingsOverlay::draw(Runtime &runtime) const {
     overlay::draw_rectangle(runtime, at(mark_x, actions - rule_above_actions),
                             {(panel_width - 2 * mark_x) * size, std::max(1.f, size)}, overlay::rule_color);
     const float button_top = actions - (button_height - 7) / 2;
-    for (const auto &button : {launcher_button, resume_button, exit_button})
+    for (const auto &button : {leave_button_for(leave_.label), resume_button, exit_button})
         overlay::draw_text_button(
             runtime, at(button.left(), button_top), Vec2{button.width, button_height} * size, button.text,
             size, inside && in_band(point, actions) && point.x >= button.left() && point.x < button.right());
