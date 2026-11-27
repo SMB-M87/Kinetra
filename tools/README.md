@@ -127,5 +127,5 @@ Run `bash tools/tests/check_cloud_setup.sh` to check the entry points and failur
 
 ## Open points
 
-- `check_copies.py` finds names and given wordings, not a rule restated in other words; the review still reads for those.
+- `check_copies.py` finds names and given wordings in Markdown and YAML, not a rule restated in other words, nor a name in a code comment; `git grep --recurse-submodules -n -i` on each stale key word ([rule](../AGENTS.md#repository-documentation)) covers the second, and the review still reads for the first.
 - A check that every module directory has a README with content would enforce the [documentation rule](../docs/documentation.md#what-goes-where); it is not automated yet.

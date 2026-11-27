@@ -1,3 +1,4 @@
+#include <kinetra/simulation/detail/footprint.h>
 #include <kinetra/simulation/passing_coordinator.h>
 
 #include <algorithm>
@@ -44,20 +45,6 @@ void validate(const PassingCoordination &settings) {
                                     "limits, arrival values and timeout, and a valid prediction interval");
 }
 
-/// An axis-aligned box centered on the body's position that covers its bounds, so the
-/// targets the caller steers the body's position to are the footprint's targets.
-Body footprint(const Body &body) {
-    const auto area = bounds(body);
-    Body box;
-    box.shape = Shape::box;
-    box.motion = Motion::controlled;
-    box.position = body.position;
-    box.velocity = body.velocity;
-    box.half_extents = {std::max(body.position.x - area.min.x, area.max.x - body.position.x),
-                        std::max(body.position.y - area.min.y, area.max.y - body.position.y)};
-    return box;
-}
-
 /// How far ahead plans are formed: the horizon in steps, at least long enough for two lane
 /// changes before the movers meet, and the distance around a mover within which an oncoming
 /// one can conflict within it. `largest` is the length of the largest half extents.
@@ -100,7 +87,7 @@ std::vector<PassingEvent> PassingCoordinator::step(std::span<const PassingMover>
         if (mover.state != PassingMoverState::free && mover.state != PassingMoverState::busy &&
             mover.state != PassingMoverState::standing && mover.state != PassingMoverState::absent)
             throw std::invalid_argument("Passing movers require a valid state");
-        footprints.push_back(footprint(mover.body));
+        footprints.push_back(detail::footprint(mover.body));
         if (mover.state == PassingMoverState::absent)
             continue;
         const auto &box = footprints.back();

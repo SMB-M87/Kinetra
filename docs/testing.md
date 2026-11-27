@@ -39,6 +39,8 @@ The bottom of the pyramid runs on every build and catches most regressions. Each
 ## Rules for tests
 
 - Every behavior change comes with a test. A bug fix starts with a failing test that reproduces it.
+- Every branch a contract names, such as a priority, an order, a restart condition or a rounding margin, gets a constructed case that fails when that branch alone is flipped or removed. Build the case so that no other branch or rule gives the same answer, and check it by mutation: change the branch, see the case fail, restore it. A random scene rarely reaches the branch.
+  *Why:* #51's steering slack decided only within the float error of an extent, which random scenes never reach, and #68's priority case passed with the comparison flipped. The same gap came back in Kinetra-Lab#149 (the order of the end reasons, the retry wait after a new goal) and in #72, whose restart case passed with the goal rule removed because another rule ended the episode too. It was a review lesson from #51 and #68; the user made it a rule on 2026-11-27.
 - Test observable behavior and contracts, not internal counters. A test asserting `replan == 80` breaks on harmless refactors.
 - Tests are deterministic: fixed seeds, fixed time steps, no wall-clock, no sleeps.
 - One behavior per test case, named after the expected outcome. A failure must point to the broken behavior without a debugger.
@@ -137,6 +139,7 @@ When a change alters what a scene shows, the author also takes a screenshot of i
 | Navigation and weighted grids (`navigation.cpp`, `weighted_grid.cpp`) | `kinetra_navigation_tests kinetra_weighted_navigation_tests` | `^kinetra_(navigation\|weighted_navigation)` |
 | Steering (`steering.cpp`, `priority_steering.cpp`) | `kinetra_tests kinetra_weighted_navigation_tests` | `^kinetra_(behavior\|weighted_navigation)` |
 | Passing (`passing.cpp`, `passing_coordinator.cpp`) | `kinetra_weighted_navigation_tests kinetra_passing_coordinator_tests` | `^kinetra_(weighted_navigation\|passing_coordinator)` |
+| Stall detection (`stall_detector.cpp`) | `kinetra_stall_detector_tests` | `^kinetra_stall_detector` |
 | Avoidance (`avoidance.cpp`) | `kinetra_avoidance_tests` | `^kinetra_avoidance` |
 | Traffic admission (`traffic.cpp`) | `kinetra_traffic_tests` | `^kinetra_traffic` |
 | Runtime and launcher (`src/runtime/`) | Full level; locally, as quick feedback, `kinetra_engine_runtime_tests` in the `graphics` preset | `^kinetra_engine_graphics` (`ctest --preset graphics`) |
