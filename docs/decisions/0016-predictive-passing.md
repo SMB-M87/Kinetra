@@ -1,6 +1,6 @@
 # 0016: Predictive passing shares geometry
 
-Status: accepted. Passing geometry belongs in the headless simulation library, and applications own maneuver state and recovery.
+Status: accepted; amended by [0017](0017-passing-coordinator.md), which adds a plan lifecycle to the engine for applications without factory rules. Passing geometry belongs in the headless simulation library, and applications own maneuver state and recovery.
 
 ## Table of contents
 

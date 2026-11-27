@@ -28,9 +28,10 @@ Nothing agreed next in Kinetra itself.
 
 ## Later
 
-- **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
-  Evaluate whether the i4sim stall remedies call for shared maneuver state or additional motion primitives. The geometry and explicit steering tuning are described in [Shared predictive passing](design/2026-11-26-shared-passing.md).
-  Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.
+- **i4sim on the passing coordinator** · navigation, with Lab · added 2026-11-27
+  The engine's `PassingCoordinator` ([ADR 0017](decisions/0017-passing-coordinator.md)) serves Demo and Dotio; i4sim still runs its own factory coordinator with traffic controls, corridor recovery and an event log. Decide whether i4sim moves onto it, with which extension points, and whether making way and a temporary motion fallback belong in it.
+  Depends on: Lab's *Stall detection and remedies in i4sim*.
+
 ## Ideas
 
 Wishes of the user, not yet agreed or shaped. Each needs a design session (`grilling`) before it moves up.

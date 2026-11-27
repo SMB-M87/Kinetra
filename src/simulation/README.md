@@ -50,6 +50,7 @@ flowchart TD
     Avoid["avoidance.h<br/>avoid_collisions"]
     Traffic["traffic.h<br/>TrafficGate"]
     Passing["passing.h<br/>passing lanes and guard"]
+    Coordinator["passing_coordinator.h<br/>PassingCoordinator"]
     Clock["clock.h<br/>FixedClock (header-only)"]
     Grid --> Math
     Physics --> Grid
@@ -59,6 +60,8 @@ flowchart TD
     WGrid --> Math
     Avoid --> Math
     Passing --> Physics
+    Coordinator --> Passing
+    Coordinator --> Grid
 ```
 
 *Takeaway:* physics, planning and steering build on one geometry header; the weighted grid, avoidance, traffic admission and the fixed clock stand alone, so a consumer can use one without the others.
@@ -74,6 +77,7 @@ flowchart TD
 | [steering.h](../../include/kinetra/simulation/steering.h) | [steering.cpp](steering.cpp), [priority_steering.cpp](priority_steering.cpp) | `steer` (arrival and predictive avoidance), `priority_steer` and `constrain_borders` (axis-aligned boxes and walls), `tangent_steer` (experimental) | [Navigation](../../docs/engine/navigation.md#contracts) |
 | [avoidance.h](../../include/kinetra/simulation/avoidance.h) | [avoidance.cpp](avoidance.cpp) | ORCA-style velocity selection under speed and acceleration limits | [Navigation](../../docs/engine/navigation.md#reciprocal-local-avoidance) |
 | [passing.h](../../include/kinetra/simulation/passing.h) | [passing.cpp](passing.cpp) | Head-on conflict timing, lane candidates and obstruction checks | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
+| [passing_coordinator.h](../../include/kinetra/simulation/passing_coordinator.h) | [passing_coordinator.cpp](passing_coordinator.cpp) | Plan lifecycle of head-on passing: formation, waits, outcomes | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [traffic.h](../../include/kinetra/simulation/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
 | [clock.h](../../include/kinetra/simulation/clock.h) | header-only | `FixedClock`: elapsed seconds to whole simulation ticks, with a bounded backlog | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 
@@ -156,6 +160,7 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 | `kinetra_moving_contacts` | `kinetra_moving_contact_tests` | Moving/moving contacts, chains, resting gaps, the event-budget fallback |
 | `kinetra_navigation` | `kinetra_navigation_tests` | Settings validation, swept clearance, exact and projected goals, corner lookahead |
 | `kinetra_weighted_navigation` | `kinetra_weighted_navigation_tests` | Weighted grid planning, raster route targets, footprints, borders and priority steering |
+| `kinetra_passing_coordinator` | `kinetra_passing_coordinator_tests` | Passing plans at two world scales: completion, side choice, obstruction, waits, timeouts, cancellation |
 | `kinetra_avoidance` | `kinetra_avoidance_tests` | Limits, infeasibility, rectangles and crowds of 2 to 16 agents |
 | `kinetra_traffic` | `kinetra_traffic_tests` | FIFO order, eligibility, occupancy and invalid snapshots |
 
