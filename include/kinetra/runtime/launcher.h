@@ -82,9 +82,10 @@ enum class FooterButton { previous, launcher, exit, next };
 /// Value-owned registration metadata; configuration names have no engine semantics.
 ///
 /// Two pages: the application list and, for an application with configurations, its
-/// configuration list. Up/Down, the pointer and Enter/Space or a click select; M or the
-/// LAUNCHER button returns from the configuration page. Each application remembers its
-/// last configuration.
+/// configuration list. Up/Down, the pointer and Enter/Space or a click select; M returns
+/// from the configuration page, and so does the LAUNCHER button in the default
+/// LauncherButton::configuration_page menu, while a LauncherButton::every_page menu only
+/// reports it. Each application remembers its last configuration.
 ///
 /// The footer holds EXIT, LAUNCHER where the LauncherButton puts it, and PREVIOUS and NEXT
 /// when the list has more than one page. Without LAUNCHER they sit at panel x 50 (PREVIOUS),
