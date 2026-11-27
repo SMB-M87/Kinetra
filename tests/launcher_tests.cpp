@@ -1,6 +1,7 @@
 // Window-free tests for the launcher library (include/kinetra/runtime/launcher.h): menu paging
-// and configuration, the error panel over the menu (error_view.h), SessionHost transitions, and debug-menu
-// actions and stepper buttons. The loops that need a window are covered by runtime_tests.cpp.
+// and configuration, the error panel over the menu (error_view.h), SessionHost transitions, and
+// debug-menu actions, stepper buttons and typed numbers. The loops that need a window are
+// covered by runtime_tests.cpp.
 #include <kinetra/runtime/debug_view.h>
 #include <kinetra/runtime/error_view.h>
 #include <kinetra/runtime/hud_text.h>
@@ -8,6 +9,8 @@
 
 #include <doctest/doctest.h>
 
+#include <cstdint>
+#include <initializer_list>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -561,6 +564,122 @@ TEST_CASE("a row without an action captures the click and does nothing") {
     Menu menu({debug_number("SPEED", speed, {1, 4, 1})});
     CHECK(menu.click(DebugMenu::label_left(1)));
     CHECK(speed == 2);
+}
+
+namespace {
+/// A menu with a row that takes a typed number, `typed`, below a row without one, and the
+/// numbers it received.
+struct TypingMenu {
+    DebugMenu debug;
+    std::vector<std::uint64_t> set;
+    std::vector<DebugEntry> entries;
+    TypingMenu() {
+        debug.visible = true;
+        entries = {{.label = "PLAIN", .value = [] { return std::string("1"); }},
+                   {.label = "TYPED",
+                    .value = [] { return std::string("200"); },
+                    .set = [this](std::uint64_t value) { set.push_back(value); }}};
+    }
+    /// One frame with the pointer on `row`, typing `text` and pressing `keys`; returns
+    /// whether the menu took the keyboard.
+    bool frame(std::size_t row, std::string text, std::initializer_list<Key> keys = {}) {
+        Input input;
+        input.mouse = debug.origin(menu_viewport) +
+                      Vec2{DebugMenu::panel_width / 2, row_middle(row)} * DebugMenu::scale(menu_viewport);
+        input.text = std::move(text);
+        for (const Key key : keys)
+            input.pressed[static_cast<std::size_t>(key)] = true;
+        debug.update(input, menu_viewport, entries);
+        return debug.keys_captured();
+    }
+    /// One frame with the pointer outside the menu and no keys.
+    bool away() {
+        Input input;
+        input.mouse = {1, 1};
+        debug.update(input, menu_viewport, entries);
+        return debug.keys_captured();
+    }
+};
+} // namespace
+
+TEST_CASE("digits typed over a row with set apply on Enter") {
+    TypingMenu menu;
+    CHECK(menu.frame(1, "7"));
+    CHECK(menu.debug.typing());
+    CHECK(menu.frame(1, "50"));
+    CHECK(menu.set.empty());
+    CHECK_MESSAGE(menu.frame(1, "", {Key::enter}), "the Enter that applies belongs to the menu");
+    CHECK(menu.set == std::vector<std::uint64_t>{750});
+    CHECK_FALSE(menu.debug.typing());
+    CHECK_FALSE(menu.frame(1, ""));
+}
+
+TEST_CASE("digits and Enter in one frame apply at once and take the keyboard") {
+    TypingMenu menu;
+    CHECK(menu.frame(1, "1000000", {Key::enter}));
+    CHECK(menu.set == std::vector<std::uint64_t>{1000000});
+}
+
+TEST_CASE("Backspace removes the last typed digit, and the last one ends typing") {
+    TypingMenu menu;
+    menu.frame(1, "123");
+    CHECK(menu.frame(1, "", {Key::backspace}));
+    menu.frame(1, "", {Key::enter});
+    CHECK(menu.set == std::vector<std::uint64_t>{12});
+    menu.frame(1, "9");
+    CHECK(menu.frame(1, "", {Key::backspace}));
+    CHECK_FALSE(menu.debug.typing());
+    CHECK_FALSE(menu.frame(1, "", {Key::enter}));
+    CHECK(menu.set.size() == 1);
+}
+
+TEST_CASE("a typed number is discarded by Escape, by leaving the row and by hiding the menu") {
+    TypingMenu menu;
+    menu.frame(1, "42");
+    CHECK_MESSAGE(menu.frame(1, "", {Key::escape}), "the Escape that discards belongs to the menu");
+    CHECK_FALSE(menu.debug.typing());
+
+    menu.frame(1, "42");
+    CHECK(menu.away());
+    CHECK_FALSE(menu.debug.typing());
+    CHECK_FALSE(menu.frame(1, "", {Key::enter}));
+
+    menu.frame(1, "42");
+    CHECK(menu.frame(0, ""));
+    CHECK_FALSE(menu.debug.typing());
+
+    menu.frame(1, "42");
+    menu.debug.discard_typing();
+    CHECK_FALSE(menu.debug.typing());
+    CHECK_FALSE(menu.debug.keys_captured());
+    CHECK(menu.set.empty());
+}
+
+TEST_CASE("a typed number belongs to its row, not to the index the row had") {
+    TypingMenu menu;
+    menu.frame(1, "5");
+    // An opened section moved another row under the pointer.
+    menu.entries.insert(menu.entries.begin() + 1,
+                        {.label = "OTHER", .set = [&](std::uint64_t) { FAIL("the wrong row was set"); }});
+    menu.frame(1, "", {Key::enter});
+    CHECK_FALSE(menu.debug.typing());
+    CHECK(menu.set.empty());
+}
+
+TEST_CASE("digits over a row without set, or outside the menu, are left to the application") {
+    TypingMenu menu;
+    CHECK_FALSE(menu.frame(0, "12", {Key::enter}));
+    CHECK_FALSE(menu.debug.typing());
+    menu.debug.visible = false;
+    CHECK_FALSE(menu.frame(1, "12"));
+    CHECK_FALSE(menu.debug.typing());
+}
+
+TEST_CASE("a typed number keeps at most seven digits and ignores other characters") {
+    TypingMenu menu;
+    menu.frame(1, "12a3456789");
+    menu.frame(1, "", {Key::enter});
+    CHECK(menu.set == std::vector<std::uint64_t>{1234567});
 }
 
 TEST_CASE("the debug menu scale shrinks with a low or narrow window and is at most one and a half") {

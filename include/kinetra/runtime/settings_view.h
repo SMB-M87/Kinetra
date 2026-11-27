@@ -88,8 +88,9 @@ class SettingsOverlay {
     /// (debug_chord) switches the debug mode on and shows the menu, or hides a showing menu;
     /// the DEBUG toolbar button shows and hides it. While the panel captures input or the
     /// debug mode is off, the menu is hidden and nothing is captured; so too for an overlay
-    /// without a debug flag. Returns true when the pointer is on the button or on the menu,
-    /// so the caller must ignore that pointer input.
+    /// without a debug flag; a hidden menu discards a number being typed. Returns true when
+    /// the pointer is on the button or on the menu, so the caller must ignore that pointer
+    /// input; `menu.keys_captured()` says the same for the keys.
     bool update_debug(const Input &input, Vec2 viewport, DebugMenu &menu,
                       std::span<const DebugEntry> entries);
 

@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cstddef>
+#include <string>
 
 // Plain input and color types shared by the runtime and headless application logic. They
 // need no window: a test or a logic layer fills an Input by hand.
@@ -44,6 +45,7 @@ enum class Key {
     five,
     six,
     control,
+    backspace,
     count
 };
 /// Input state of one frame, filled by Runtime::poll().
@@ -63,6 +65,10 @@ struct Input {
     bool right_clicked{}, right_mouse_down{};
     /// Wheel notches this frame; positive scrolls away from the user. Can be fractional.
     float wheel{};
+    /// Text typed since the previous poll, in order, as UTF-8: what the keys produce with the
+    /// keyboard layout and Shift applied, keypad digits included. Keys that produce no text,
+    /// such as Enter and Backspace, are reported only through `pressed`.
+    std::string text;
     /// The window lost focus since the previous poll. The keys and buttons that are no longer
     /// held were released by that, not by the user.
     bool focus_lost{};

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <functional>
 #include <optional>
@@ -48,6 +49,11 @@ struct DebugEntry {
     /// Run by the row's `[-]` and `[+]` buttons, which exist only when these are set. Either
     /// may be set alone.
     std::function<void()> decrease{}, increase{};
+    /// Applies a whole number typed over the row: digits typed while the pointer is on the
+    /// row replace its value on screen, and Enter passes them here (see DebugMenu). The
+    /// function clamps or rejects a number outside its own limits. Empty on a row that takes
+    /// no typed number.
+    std::function<void(std::uint64_t)> set{};
     /// Nesting level: 0 for a section heading and for rows outside sections, 1 for the rows
     /// of a section, 2 for the values of an open list and the parts of a row.
     int depth{};

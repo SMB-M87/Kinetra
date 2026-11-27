@@ -8,6 +8,7 @@
 #include <doctest/doctest.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <initializer_list>
 #include <stdexcept>
@@ -453,6 +454,28 @@ TEST_CASE("the debug menu is hidden while the debug mode is off") {
     on_button.mouse = {80, 12};
     CHECK_FALSE(h.frame(on_button));
     CHECK_FALSE(h.menu.visible);
+}
+
+TEST_CASE("a debug menu that the debug mode hides discards a number being typed") {
+    DebugHarness h;
+    h.debug = true;
+    h.menu.visible = true;
+    h.entries = {{.label = "RATE", .set = [](std::uint64_t) { FAIL("a discarded number was applied"); }}};
+    kinetra::Input typing;
+    typing.mouse = Vec2{8, 32} + Vec2{20, DebugMenu::row_top(0) + 4} * DebugMenu::scale(h.viewport);
+    typing.text = "5";
+    h.frame(typing);
+    REQUIRE(h.menu.typing());
+    h.debug = false;
+    h.frame({});
+    CHECK_FALSE(h.menu.typing());
+    CHECK_FALSE(h.menu.keys_captured());
+    h.debug = true;
+    h.menu.visible = true;
+    kinetra::Input enter;
+    enter.mouse = typing.mouse;
+    enter.pressed[static_cast<std::size_t>(Key::enter)] = true;
+    h.frame(enter);
 }
 
 TEST_CASE("the settings panel hides the debug menu and takes its shortcut") {
