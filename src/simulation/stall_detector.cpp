@@ -155,18 +155,27 @@ std::vector<StallEvent> StallDetector::observe(std::span<const StallMover> mover
         const auto body = footprint(mover.body);
         legs.push_back({body, mover.target, normalized(mover.target - body.position)});
     }
-    tracks_.resize(std::max(tracks_.size(), movers.size()));
     std::vector<StallEvent> events;
+    // Movers beyond the span are gone: their episodes end, and an index that comes back
+    // starts afresh.
+    for (std::size_t i = movers.size(); i < tracks_.size(); ++i)
+        if (tracks_[i].episode)
+            events.push_back({StallEvent::Kind::ended, i, *tracks_[i].episode});
+    tracks_.resize(movers.size());
     for (std::size_t i = 0; i < movers.size(); ++i) {
         const auto &mover = movers[i];
         auto &track = tracks_[i];
         const bool watching = mover.state == StallMoverState::observed && mover.no_progress > 0;
         // A caller can restart its progress count and count the next step at once, with the
         // goal unchanged; a count that does not grow is a new observation.
-        if (!watching || track.goal != mover.destination || mover.no_progress <= track.last_no_progress) {
+        if (!watching || !track.started || track.goal != mover.destination ||
+            mover.no_progress <= track.last_no_progress) {
             if (track.episode)
                 events.push_back({StallEvent::Kind::ended, i, *track.episode});
             track = Track{};
+            // A step without observation leaves the track unstarted, so the next observed
+            // step anchors it at the mover, whatever its goal.
+            track.started = watching;
             track.goal = mover.destination;
             track.anchor = mover.body.position;
         }

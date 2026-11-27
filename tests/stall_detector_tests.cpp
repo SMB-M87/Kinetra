@@ -313,6 +313,50 @@ TEST_CASE("an absent mover is no blocker and clear() forgets every observation")
     }
 }
 
+TEST_CASE("a shorter span ends the episodes it leaves out, and a returning index starts afresh") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        const auto tuning = settings(frame);
+        StallDetector detector;
+        std::vector<StallMover> movers{mover(frame, {0, 0}, {5, 0}), mover(frame, {0, 3}, {5, 3})};
+        REQUIRE(observe(detector, movers, tuning, tuning.threshold_steps).size() == 2);
+        auto shorter = movers;
+        shorter.pop_back();
+        ++shorter[0].no_progress;
+        const auto events = detector.observe(shorter, tuning, 50);
+        REQUIRE(events.size() == 1);
+        CHECK(events[0].kind == StallEvent::Kind::ended);
+        CHECK(events[0].mover == 1);
+        CHECK_FALSE(detector.episode(1));
+        CHECK(detector.episode(0));
+        // Back with the same goal and a larger count: a new observation, not the old episode.
+        movers[0] = shorter[0];
+        movers[1].no_progress += 5;
+        ++movers[0].no_progress;
+        CHECK(detector.observe(movers, tuning, 51).empty());
+        CHECK_FALSE(detector.episode(1));
+    }
+}
+
+TEST_CASE("the first observation anchors at the mover even when its goal is the origin") {
+    // A fresh track's goal and anchor are zero: with a goal at the world origin, it must not
+    // anchor there, or a mover creeping toward the goal reads as a reversal.
+    const Frame frame{{0, 0}, 1};
+    const auto tuning = settings(frame);
+    StallDetector detector;
+    std::vector<StallMover> movers{mover(frame, {10, 0}, {0, 0})};
+    const float xs[] = {10, 9.97f, 9.94f, 9.91f, 9.94f, 9.97f, 9.97f, 9.97f, 9.97f, 9.97f};
+    std::vector<StallEvent> events;
+    for (const float x : xs) {
+        movers[0].body.position = {x, 0};
+        ++movers[0].no_progress;
+        for (const auto &event : detector.observe(movers, tuning, movers[0].no_progress))
+            events.push_back(event);
+    }
+    REQUIRE(events.size() == 1);
+    CHECK(events[0].diagnosis.reason == StallReason::unknown);
+}
+
 TEST_CASE("invalid settings or movers throw before anything changes") {
     const Frame frame{{0, 0}, 1};
     const auto tuning = settings(frame);

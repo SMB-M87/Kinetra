@@ -20,15 +20,17 @@ enum class StallMoverState {
     /// stationary blocker when it stands on their leg.
     standing,
     /// Does not exist in this step, such as an empty slot of a pool: not observed and no
-    /// neighbor. Its observation starts afresh when the index is next observed.
+    /// neighbor. Its observation starts afresh when the index is next observed. A movers span
+    /// shorter than the last step's ends the episodes of the indices it leaves out.
     absent,
 };
 
 /// One mover as the detector sees it after a step. Lengths are in world units and
 /// velocities in world units per step, as the caller chooses them.
 struct StallMover {
-    /// The mover's body; it must pass validate(). Its footprint is the axis-aligned box
-    /// around its bounds, centered on its position.
+    /// The mover's body; it must pass validate(), also for an absent mover, as the target
+    /// and destination must be finite. Its footprint is the axis-aligned box around its
+    /// bounds, centered on its position.
     Body body;
     /// The point the mover heads for now, such as the next waypoint of its route. Its leg
     /// runs from the body's position to this point.
@@ -126,7 +128,8 @@ struct StallEvent {
 class StallDetector {
   public:
     /// Observes the movers after a step at the caller's clock value `now`, and returns the
-    /// episodes that ended or started, in mover order. Throws
+    /// episodes that ended or started: first those of movers beyond a shorter span than the
+    /// last step's, which end, then the others in mover order. Throws
     /// std::invalid_argument before changing anything for invalid settings, or for a mover
     /// with an invalid body, a nonfinite target or destination, or a state outside
     /// StallMoverState.
@@ -141,6 +144,9 @@ class StallDetector {
   private:
     /// The observation of one mover.
     struct Track {
+        /// Whether an observed step anchored the track; until then the goal and anchor
+        /// mean nothing.
+        bool started{};
         Vec2 goal{};
         /// Reference point and axis of the current excursion; the axis is zero until the
         /// mover has moved `excursion` from the anchor.
