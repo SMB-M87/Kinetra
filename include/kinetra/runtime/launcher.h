@@ -59,6 +59,9 @@ struct MenuLayout {
     /// Whether `point` (window pixels) hits the footer button at panel x-coordinate `x`:
     /// within footer_half_width of its center across, 14 panel pixels up or down.
     bool footer_contains(Vec2 point, float x) const;
+    /// The footer's band in window pixels: the panel's width, and every button's clickable
+    /// height. LaunchMenu keeps its error panel off it when the message fits above it.
+    Aabb footer_bounds() const;
     /// Half the clickable width of a footer button in panel pixels. Four buttons, 75 apart,
     /// leave a gap between their zones.
     static constexpr float footer_half_width = 36;
@@ -99,9 +102,10 @@ class LaunchMenu {
                         LauncherButton launcher = LauncherButton::configuration_page);
     /// Applies one frame of input; `viewport` in logical window pixels. Returns the
     /// selection when the user confirms a final row, std::nullopt otherwise. A non-empty
-    /// `error` is the one draw() shows: its panel takes the pointer first, so the menu below
-    /// it neither highlights nor clicks, and a click on its close button sets error_closed().
-    /// Keys still reach the menu.
+    /// `error` is the one draw() shows, so pass the same one to both: its panel takes the
+    /// pointer first, so the menu below it neither highlights nor clicks, and a click on its
+    /// close button sets error_closed(). Keys still reach the menu, and the panel appearing or
+    /// going away does not count as a pointer move.
     std::optional<LaunchSelection> update(const Input &input, Vec2 viewport, std::string_view error = {});
     /// Highlighted row index within the current page's list.
     std::size_t selected() const;
@@ -138,8 +142,10 @@ class LaunchMenu {
     /// Layout of the current page in logical window pixels, shared by drawing and picking.
     MenuLayout layout(Vec2 viewport) const;
     /// Draws a whole frame (begin() to end()) showing the menu, and over it a non-empty
-    /// `error` in an error panel (error_panel::draw()) at the bottom: the HUD error style, as
-    /// high as the message needs up to the whole window, with a close button.
+    /// `error` in an error panel (error_panel::draw()) at the bottom, above the footer when the
+    /// message fits there: the HUD error style, as high as the message needs up to the whole
+    /// window, with a close button. Pass the same `error` to update(), which gives the panel
+    /// the pointer and its close button; without it the panel lets clicks through.
     void draw(Runtime &runtime, std::string_view error = {}) const;
 
   private:
@@ -151,8 +157,9 @@ class LaunchMenu {
     bool configuring_{}, exit_requested_{}, launcher_requested_{}, error_closed_{};
     bool has_previews_{};
     Vec2 pointer_{-1, -1};
-    /// The pointer as the error panel saw it, which pointer_ is not while the panel holds it.
-    Vec2 error_pointer_{-1, -1};
+    /// The pointer as the window reports it. pointer_ is the menu's view of it, off the window
+    /// while the error panel holds it, so only this one tells whether the pointer moved.
+    Vec2 real_pointer_{-1, -1};
     /// Set by show_configurations: the next update() records the pointer without hovering.
     bool settle_pointer_{};
 };

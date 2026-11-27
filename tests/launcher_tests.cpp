@@ -149,39 +149,95 @@ TEST_CASE("the error panel grows with its message up to the whole window") {
     CHECK_MESSAGE(error_panel::lines("TEXT", {1280, 50}).empty(), "a window lower than a line has no panel");
 }
 
+TEST_CASE("the error panel moves above a region it would cover when its message fits there") {
+    const Vec2 viewport{1280, 720};
+    const Aabb buttons{{400, 650}, {800, 690}};
+    const std::string message = "BROKEN.JSON: UNEXPECTED END";
+    const auto above = error_panel::bounds(message, viewport, buttons);
+    CHECK_MESSAGE(above.max.y <= buttons.min.y - hud::margin, "a short message ends above the region");
+    CHECK(error_panel::lines(message, viewport, buttons).size() == 1);
+
+    const Aabb high{{400, 100}, {800, 140}};
+    CHECK_MESSAGE(error_panel::bounds(message, viewport, high).max.y == viewport.y - hud::margin,
+                  "a region the panel misses at the bottom leaves it there");
+
+    std::string huge;
+    for (int i = 0; i < 400; ++i)
+        huge += "/A-RATHER-LONG-DIRECTORY ";
+    const auto whole = error_panel::bounds(huge, viewport, buttons);
+    CHECK_MESSAGE(whole.max.y == viewport.y - hud::margin,
+                  "a message too long for the space above covers it");
+    CHECK(error_panel::lines(huge, viewport, buttons) == error_panel::lines(huge, viewport));
+}
+
 TEST_CASE("an error panel over the menu takes the pointer and its close button reports the click") {
     LaunchMenu menu({{"ONE", "", {}, 0}, {"TWO", "", {}, 0}});
     const Vec2 viewport{1280, 720};
-    // Long enough for a panel that reaches over the EXIT button.
-    std::string error;
-    for (int i = 0; i < 200; ++i)
-        error += "BROKEN ";
-    const auto panel = error_panel::bounds(error, viewport);
-    const auto exit = menu.layout(viewport).footer_center(*menu.footer_x(FooterButton::exit));
-    REQUIRE(panel.min.y < exit.y);
+    const auto layout = menu.layout(viewport);
+    const auto exit = layout.footer_center(*menu.footer_x(FooterButton::exit));
 
+    // A short error ends above the footer, so EXIT stays clickable.
     Input click;
     click.clicked = true;
     click.mouse = exit;
-    CHECK_FALSE(menu.update(click, viewport, error));
-    CHECK_MESSAGE(!menu.exit_requested(), "a click on the panel does not reach EXIT below it");
-    CHECK_FALSE(menu.error_closed());
+    menu.update(click, viewport, "BROKEN.JSON: UNEXPECTED END");
+    CHECK_MESSAGE(menu.exit_requested(), "a short error leaves EXIT free");
 
-    const auto close = error_panel::close_bounds(error, viewport);
+    LaunchMenu covered({{"ONE", "", {}, 0}, {"TWO", "", {}, 0}});
+    // Too long for the space above the footer, so its panel covers EXIT.
+    std::string error;
+    for (int i = 0; i < 600; ++i)
+        error += "BROKEN ";
+    const auto panel = error_panel::bounds(error, viewport, layout.footer_bounds());
+    REQUIRE(panel.min.y < exit.y);
+    CHECK_FALSE(covered.update(click, viewport, error));
+    CHECK_MESSAGE(!covered.exit_requested(), "a click on the panel does not reach EXIT below it");
+    CHECK_FALSE(covered.error_closed());
+
+    const auto close = error_panel::close_bounds(error, viewport, layout.footer_bounds());
     click.mouse = (close.min + close.max) / 2;
-    CHECK_FALSE(menu.update(click, viewport, error));
-    CHECK(menu.error_closed());
-    CHECK_FALSE(menu.exit_requested());
+    CHECK_FALSE(covered.update(click, viewport, error));
+    CHECK(covered.error_closed());
+    CHECK_FALSE(covered.exit_requested());
 
     Input keys;
+    keys.mouse = click.mouse;
     keys.pressed[std::size_t(Key::down)] = true;
-    menu.update(keys, viewport, error);
-    CHECK_MESSAGE(menu.selected() == 1, "keys still reach the menu");
-    CHECK_FALSE(menu.error_closed());
+    covered.update(keys, viewport, error);
+    CHECK_MESSAGE(covered.selected() == 1, "keys still reach the menu");
+    CHECK_FALSE(covered.error_closed());
 
     click.mouse = exit;
-    menu.update(click, viewport);
-    CHECK_MESSAGE(menu.exit_requested(), "without an error EXIT takes the click");
+    covered.update(click, viewport);
+    CHECK_MESSAGE(covered.exit_requested(), "without an error EXIT takes the click");
+}
+
+TEST_CASE("the error panel coming or going is no pointer move, so keyboard navigation holds") {
+    std::vector<LaunchChoice> rows;
+    for (int i = 0; i < 6; ++i)
+        rows.push_back({"ROW " + std::to_string(i), "", {}, 0});
+    LaunchMenu menu(rows);
+    const Vec2 viewport{1280, 720};
+    // A message too long for the space above the footer: its panel covers every row.
+    std::string error;
+    for (int i = 0; i < 600; ++i)
+        error += "BROKEN ";
+    const auto resting = menu.layout(viewport).row_center(3);
+    Input still;
+    still.mouse = resting;
+    REQUIRE(error_panel::update(still, error, viewport, menu.layout(viewport).footer_bounds()).captured);
+    menu.update(still, viewport, error);
+    CHECK_MESSAGE(menu.selected() == 0, "the row below the panel is not hovered");
+    Input down = still;
+    down.pressed[std::size_t(Key::down)] = true;
+    menu.update(down, viewport, error);
+    REQUIRE(menu.selected() == 1);
+    menu.update(still, viewport);
+    CHECK_MESSAGE(menu.selected() == 1, "the panel going away leaves the keyboard's row");
+    Input moved = still;
+    moved.mouse.y += 1;
+    menu.update(moved, viewport);
+    CHECK_MESSAGE(menu.selected() == 3, "a real move hovers again");
 }
 
 TEST_CASE("menu pages wrap and stay pickable at every viewport") {

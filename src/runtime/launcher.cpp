@@ -81,6 +81,10 @@ MenuLayout::MenuLayout(Vec2 viewport, std::size_t rows, bool with_preview)
 Vec2 MenuLayout::footer_center(float x) const {
     return origin + Vec2{x, 110.f + static_cast<float>(visible_rows * 40)} * scale;
 }
+Aabb MenuLayout::footer_bounds() const {
+    const float y = footer_center().y;
+    return {{origin.x, y - 14 * scale}, {origin.x + 300 * scale, y + 14 * scale}};
+}
 bool MenuLayout::footer_contains(Vec2 point, float x) const {
     const auto offset = point - footer_center(x);
     return std::abs(offset.x) <= footer_half_width * scale && std::abs(offset.y) <= 14 * scale;
@@ -146,9 +150,14 @@ MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
 }
 std::optional<LaunchSelection> LaunchMenu::update(const Input &frame, Vec2 viewport, std::string_view error) {
-    const auto panel = error_panel::update(frame, error, viewport);
+    const auto panel = error_panel::update(frame, error, viewport, layout(viewport).footer_bounds());
     error_closed_ = panel.close;
-    error_pointer_ = frame.mouse;
+    // After show_configurations the pointer is wherever the session left it; it counts as
+    // resting there, so it does not hover away the configuration that ran. Movement is the
+    // real pointer's: the panel coming or going moves nothing.
+    const bool pointer_moved = !settle_pointer_ && frame.mouse != real_pointer_;
+    settle_pointer_ = false;
+    real_pointer_ = frame.mouse;
     // Over the error panel the pointer is the panel's: for the menu it is off the window and
     // did not click, so no row or button below the panel reacts to it.
     Input input = frame;
@@ -156,10 +165,6 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &frame, Vec2 viewp
         input.mouse = {-1, -1};
         input.clicked = false;
     }
-    // After show_configurations the pointer is wherever the session left it; it counts as
-    // resting there, so it does not hover away the configuration that ran.
-    const bool pointer_moved = !settle_pointer_ && input.mouse != pointer_;
-    settle_pointer_ = false;
     pointer_ = input.mouse;
     if (configuring_ && input.hit(Key::m)) {
         configuring_ = false;
@@ -254,7 +259,7 @@ void LaunchMenu::draw(Runtime &runtime, std::string_view error) const {
     if (layout.preview_origin)
         draw_preview(runtime, choices_[application_], *layout.preview_origin, layout.scale);
     // Last, so the panel covers what it overlaps, as update() gives it the pointer there.
-    error_panel::draw(runtime, error, error_pointer_);
+    error_panel::draw(runtime, error, real_pointer_, layout.footer_bounds());
     runtime.end();
 }
 SessionHost::SessionHost(std::vector<ApplicationRegistration> applications)

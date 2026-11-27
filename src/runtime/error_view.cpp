@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <optional>
 
 namespace kinetra::error_panel {
 namespace {
@@ -29,20 +30,42 @@ struct Layout {
     }
 };
 
-Layout layout(std::string_view message, Vec2 viewport) {
+bool overlaps(Aabb a, Aabb b) {
+    return a.min.x < b.max.x && b.min.x < a.max.x && a.min.y < b.max.y && b.min.y < a.max.y;
+}
+
+Layout layout(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_clear) {
     Layout result;
     const Vec2 bottom_center{std::round(viewport.x / 2), std::round(viewport.y - hud::margin)};
     result.bounds = {bottom_center, bottom_center};
     // Whole pixels, so input and painting agree on every edge.
     const float width = std::floor(viewport.x - 2 * hud::margin);
-    const float most_lines = (viewport.y - 2 * hud::margin - title_height - padding) / hud::line_height;
+    const float window_bottom = std::round(viewport.y - hud::margin);
+    const auto lines_between = [](float top, float bottom) {
+        return (bottom - top - title_height - padding) / hud::line_height;
+    };
+    const float most_lines = lines_between(hud::margin, window_bottom);
     if (message.empty() || width < 2 * padding + character_width || most_lines < 1)
         return result;
     const auto columns = static_cast<std::size_t>((width - 2 * padding) / character_width);
-    result.lines = hud::error_lines(message, columns, static_cast<int>(most_lines));
-    const float height = title_height + padding + static_cast<float>(result.lines.size()) * hud::line_height;
-    const float bottom = std::round(viewport.y - hud::margin);
-    result.bounds = {{hud::margin, bottom - height}, {hud::margin + width, bottom}};
+    const auto needed = hud::wrap(message, columns).size();
+    const auto height_of = [](std::size_t lines) {
+        return title_height + padding + static_cast<float>(lines) * hud::line_height;
+    };
+    const auto box = [&](float bottom, std::size_t lines) {
+        return Aabb{{hud::margin, bottom - height_of(lines)}, {hud::margin + width, bottom}};
+    };
+    float bottom = window_bottom;
+    // The panel leaves `keep_clear` free when it can: at the window's bottom if it misses the
+    // region there, else directly above it if the whole message fits; only a longer message
+    // covers it, since the panel then needs the window's height.
+    if (keep_clear && overlaps(box(window_bottom, needed), *keep_clear)) {
+        const float above = std::floor(keep_clear->min.y - hud::margin);
+        if (lines_between(hud::margin, above) >= static_cast<float>(needed))
+            bottom = above;
+    }
+    result.lines = hud::error_lines(message, columns, static_cast<int>(lines_between(hud::margin, bottom)));
+    result.bounds = box(bottom, result.lines.size());
     return result;
 }
 
@@ -51,26 +74,27 @@ bool contains(Aabb box, Vec2 point) {
 }
 } // namespace
 
-Aabb bounds(std::string_view message, Vec2 viewport) {
-    return layout(message, viewport).bounds;
+Aabb bounds(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_clear) {
+    return layout(message, viewport, keep_clear).bounds;
 }
 
-Aabb close_bounds(std::string_view message, Vec2 viewport) {
-    return layout(message, viewport).close_bounds();
+Aabb close_bounds(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_clear) {
+    return layout(message, viewport, keep_clear).close_bounds();
 }
 
-std::vector<std::string> lines(std::string_view message, Vec2 viewport) {
-    return layout(message, viewport).lines;
+std::vector<std::string> lines(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_clear) {
+    return layout(message, viewport, keep_clear).lines;
 }
 
-ErrorPanelInput update(const Input &input, std::string_view message, Vec2 viewport) {
-    const auto panel = layout(message, viewport);
+ErrorPanelInput update(const Input &input, std::string_view message, Vec2 viewport,
+                       std::optional<Aabb> keep_clear) {
+    const auto panel = layout(message, viewport, keep_clear);
     const bool captured = !panel.lines.empty() && contains(panel.bounds, input.mouse);
     return {captured, captured && input.clicked && contains(panel.close_bounds(), input.mouse)};
 }
 
-void draw(Runtime &runtime, std::string_view message, Vec2 pointer) {
-    const auto panel = layout(message, runtime.camera.viewport);
+void draw(Runtime &runtime, std::string_view message, Vec2 pointer, std::optional<Aabb> keep_clear) {
+    const auto panel = layout(message, runtime.camera.viewport, keep_clear);
     if (panel.lines.empty())
         return;
     const Vec2 corner = panel.bounds.min;
