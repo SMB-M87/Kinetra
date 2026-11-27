@@ -24,13 +24,16 @@ Nothing in progress in Kinetra itself.
 
 ## Next
 
-Nothing agreed next in Kinetra itself.
+- **Stall detection and remedies in the engine** · simulation, with Lab · added 2026-11-27
+  `StallDetector`, a `RightOfWay` fallback and a `MakeWay` lifecycle beside `PassingCoordinator` in `Kinetra::Simulation`, each used by i4sim in the same step ([ADR 0018](decisions/0018-stall-remedies-in-the-engine.md)).
+  Next step: step 3 of Lab's stack, `feat/stall-detector`. Where: [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md).
 
 ## Later
 
-- **i4sim on the passing coordinator** · navigation, with Lab · added 2026-11-27
-  The engine's `PassingCoordinator` ([ADR 0017](decisions/0017-passing-coordinator.md)) serves Demo and Dotio; i4sim still runs its own factory coordinator with traffic controls, corridor recovery and an event log. Decide whether i4sim moves onto it, with which extension points, and whether making way and a temporary motion fallback belong in it.
-  Depends on: Lab's *Stall detection and remedies in i4sim*.
+Nothing waiting in Kinetra itself.
+
+- **No default footer position in `MenuLayout`** · launcher · added 2026-11-27
+  `MenuLayout::footer_center(float x = 150)` defaults to EXIT on a page without LAUNCHER; on a page with LAUNCHER, 150 is the gap between LAUNCHER and EXIT, so a caller that clicks EXIT through the default misses without an error. Drop the default and let callers take the place from `LaunchMenu::footer_x()`, which Kinetra-Lab's tour and tests already do. Found in the review of #70.
 
 ## Ideas
 

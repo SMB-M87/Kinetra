@@ -36,7 +36,7 @@ Every Kinetra-Lab application runs in the same shell: the launcher menu and sess
 
 | Part | In use |
 | --- | --- |
-| **Launcher menu** (`LaunchMenu`, `SessionHost`) | ![The launcher menu with Demo, Dotio and i4sim, then Demo's configuration page with Terrain, Gravity, Maze and Doorway, Doorway starting, and the debug menu's Scenarios back on the page with Doorway selected](docs/media/ui-launcher.gif) |
+| **Launcher menu** (`LaunchMenu`, `SessionHost`) | ![The launcher menu with Demo, Dotio and i4sim, then Demo's configuration page with Terrain, Gravity, Maze and Doorway, Doorway starting, the settings panel's Scenarios back on the page with Doorway selected, and Launcher back to the list](docs/media/ui-launcher.gif) |
 | **Settings panel** (`SettingsOverlay`) | ![The settings panel over Demo: Statistics off and on, the help of Sim Controls and Debug Controls, and Resume](docs/media/ui-settings.gif) |
 | **Debug menu** (`DebugMenu`) | ![The debug menu over Demo: Speed and Max Speed stepped up, Avoidance switched to Legacy and back, and the Layers section](docs/media/ui-debug-menu.gif) |
 | **Agent inspector and frame times** (`InspectorView`, `draw_frame_times`) | ![A click on a Demo agent opens the inspector; Frame Times puts the graph below it; another agent is selected, and X closes the inspector](docs/media/ui-inspector.gif) |

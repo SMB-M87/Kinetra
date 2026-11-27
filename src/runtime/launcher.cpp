@@ -3,6 +3,7 @@
 #include <kinetra/runtime/error_view.h>
 #include <kinetra/runtime/launcher.h>
 #include <stdexcept>
+#include <utility>
 
 namespace kinetra {
 namespace {
@@ -82,7 +83,7 @@ Vec2 MenuLayout::footer_center(float x) const {
 }
 bool MenuLayout::footer_contains(Vec2 point, float x) const {
     const auto offset = point - footer_center(x);
-    return std::abs(offset.x) <= 40 * scale && std::abs(offset.y) <= 14 * scale;
+    return std::abs(offset.x) <= footer_half_width * scale && std::abs(offset.y) <= 14 * scale;
 }
 Vec2 MenuLayout::row_center(std::size_t index) const {
     return origin + Vec2{150, 80.f + static_cast<float>(index * 40)} * scale;
@@ -91,8 +92,8 @@ bool MenuLayout::contains(std::size_t index, Vec2 point) const {
     const auto offset = point - row_center(index);
     return std::abs(offset.x) <= 140 * scale && std::abs(offset.y) <= 16 * scale;
 }
-LaunchMenu::LaunchMenu(std::vector<LaunchChoice> choices, std::string heading)
-    : choices_(std::move(choices)), heading_(std::move(heading)) {
+LaunchMenu::LaunchMenu(std::vector<LaunchChoice> choices, std::string heading, LauncherButton launcher)
+    : choices_(std::move(choices)), heading_(std::move(heading)), launcher_(launcher) {
     if (choices_.empty())
         throw std::invalid_argument("Launcher requires at least one application");
     for (const auto &choice : choices_) {
@@ -124,6 +125,22 @@ void LaunchMenu::show_configurations(LaunchSelection selection) {
     configurations_[application_] = selection.configuration;
     configuring_ = !choice.configurations.empty();
     settle_pointer_ = true;
+}
+std::optional<float> LaunchMenu::footer_x(FooterButton button) const {
+    const bool launcher = configuring_ || launcher_ == LauncherButton::every_page;
+    const bool paged = row_count() > MenuLayout::page_size;
+    if (!paged && (button == FooterButton::previous || button == FooterButton::next))
+        return std::nullopt;
+    if (!launcher) {
+        if (button == FooterButton::launcher)
+            return std::nullopt;
+        // The three slots of a 300-pixel footer.
+        return button == FooterButton::previous ? 50.f : button == FooterButton::exit ? 150.f : 250.f;
+    }
+    if (!paged)
+        return button == FooterButton::launcher ? 100.f : 200.f;
+    // Four slots, a quarter of the footer each, in the order of FooterButton.
+    return 37.5f + 75.f * static_cast<float>(button);
 }
 MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
@@ -165,20 +182,30 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &frame, Vec2 viewp
     }
     bool confirm = input.hit(Key::enter) || input.hit(Key::space);
     if (input.clicked) {
-        if (menu_layout.footer_contains(input.mouse, 150)) {
+        const auto on = [&](FooterButton button) {
+            const auto x = footer_x(button);
+            return x && menu_layout.footer_contains(input.mouse, *x);
+        };
+        if (on(FooterButton::exit)) {
             exit_requested_ = true;
             return std::nullopt;
         }
-        if (row_count() > MenuLayout::page_size) {
-            if (menu_layout.footer_contains(input.mouse, 50)) {
-                selection = first == 0 ? (row_count() - 1) / MenuLayout::page_size * MenuLayout::page_size
-                                       : first - MenuLayout::page_size;
-                return std::nullopt;
-            }
-            if (menu_layout.footer_contains(input.mouse, 250)) {
-                selection = first + MenuLayout::page_size < row_count() ? first + MenuLayout::page_size : 0;
-                return std::nullopt;
-            }
+        if (on(FooterButton::launcher)) {
+            // The launcher's own menu goes back a page; a nested menu leaves through its owner.
+            if (launcher_ == LauncherButton::every_page)
+                launcher_requested_ = true;
+            else
+                configuring_ = false;
+            return std::nullopt;
+        }
+        if (on(FooterButton::previous)) {
+            selection = first == 0 ? (row_count() - 1) / MenuLayout::page_size * MenuLayout::page_size
+                                   : first - MenuLayout::page_size;
+            return std::nullopt;
+        }
+        if (on(FooterButton::next)) {
+            selection = first + MenuLayout::page_size < row_count() ? first + MenuLayout::page_size : 0;
+            return std::nullopt;
         }
         for (std::size_t i = 0; i < menu_layout.visible_rows && first + i < row_count(); ++i)
             if (menu_layout.contains(i, input.mouse)) {
@@ -219,11 +246,11 @@ void LaunchMenu::draw(Runtime &runtime, std::string_view error) const {
                   layout.scale,
                   layout.footer_contains(pointer_, x) ? Color{0.25f, 0.65f, 1.f} : Color{0.8f, 0.85f, 1});
     };
-    button("EXIT", 150);
-    if (row_count() > MenuLayout::page_size) {
-        button("PREVIOUS", 50);
-        button("NEXT", 250);
-    }
+    for (const auto &[label, which] :
+         {std::pair{"PREVIOUS", FooterButton::previous}, std::pair{"LAUNCHER", FooterButton::launcher},
+          std::pair{"EXIT", FooterButton::exit}, std::pair{"NEXT", FooterButton::next}})
+        if (const auto x = footer_x(which))
+            button(label, *x);
     if (layout.preview_origin)
         draw_preview(runtime, choices_[application_], *layout.preview_origin, layout.scale);
     // Last, so the panel covers what it overlaps, as update() gives it the pointer there.
