@@ -476,6 +476,35 @@ TEST_CASE("a body sliding along a wall passes the convex corner where the wall e
     CHECK_MESSAGE(distance(sliding.position, goal) < 1, "The box stuck at the corner of the step");
 }
 
+TEST_CASE("a body at rest beside the end of a wall moves along the other wall's face") {
+    // A blocked cell's corner: its floor (y = corner.y) ends at x = corner.x, where its side
+    // rises. The box rests 0.3 units right of the side with its top flush with the floor, the
+    // place i4sim's mover 18 stopped in, drifting 3e-5 per step toward the side. Near x = 800
+    // a float cannot move by 3e-5, so the drift never closes the gap and nothing else frees
+    // the body: moving up along the side is clear and must not be braked.
+    const auto settings = steering_settings();
+    for (const Vec2 corner : {Vec2{0, 0}, Vec2{720, 1680}}) {
+        CAPTURE(corner.x);
+        const Segment cell[] = {{corner - Vec2{100, 0}, corner}, {corner - Vec2{0, 100}, corner}};
+        const auto resting =
+            constrain_borders(cruiser_at(corner + Vec2{5.3f, 5}, {-3e-5f, 0}), {0, -.6f}, cell, settings);
+        CHECK_MESSAGE(resting.y == doctest::Approx(-.6f), "The floor's end braked the move along the side");
+    }
+}
+
+TEST_CASE("only a face reached within the stopping horizon decides beside the end of a wall") {
+    // The horizon is max_speed / max_acceleration + border_lookahead: 2 / 0.6 + 2 = 5.33
+    // steps. Drifting 0.06 per step toward the side reaches it in 5 steps, so the floor's
+    // face, which the body would slide along, still constrains it; at 0.05 per step the side
+    // is 6 steps away, the nearer floor decides nothing, and the larger gap picks the side.
+    const Segment floor[] = {{{-100, 0}, {0, 0}}};
+    const auto settings = steering_settings();
+    const auto within = constrain_borders(cruiser_at({5.3f, 5}, {-.06f, 0}), {0, -.6f}, floor, settings);
+    CHECK_MESSAGE(within.y >= 0, "A face reached within the horizon no longer constrained the body");
+    const auto beyond = constrain_borders(cruiser_at({5.3f, 5}, {-.05f, 0}), {0, -.6f}, floor, settings);
+    CHECK_MESSAGE(beyond.y == doctest::Approx(-.6f), "A face beyond the horizon still constrained the body");
+}
+
 TEST_CASE("an approaching collision is predicted") {
     const auto neighbor = cruiser_at({40, 20}, {-2, 0});
     const auto forces =
