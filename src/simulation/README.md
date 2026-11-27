@@ -160,7 +160,7 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 | `kinetra_moving_contacts` | `kinetra_moving_contact_tests` | Moving/moving contacts, chains, resting gaps, the event-budget fallback |
 | `kinetra_navigation` | `kinetra_navigation_tests` | Settings validation, swept clearance, exact and projected goals, corner lookahead |
 | `kinetra_weighted_navigation` | `kinetra_weighted_navigation_tests` | Weighted grid planning, raster route targets, footprints, borders and priority steering |
-| `kinetra_passing_coordinator` | `kinetra_passing_coordinator_tests` | Passing plans at two world scales: completion, side choice, obstruction, waits, timeouts, cancellation |
+| `kinetra_passing_coordinator` | `kinetra_passing_coordinator_tests` | Passing plans at two world scales: completion, side choice, obstruction, waits, both timeouts, cancellation, absent movers, footprints of every shape, slow braking |
 | `kinetra_avoidance` | `kinetra_avoidance_tests` | Limits, infeasibility, rectangles and crowds of 2 to 16 agents |
 | `kinetra_traffic` | `kinetra_traffic_tests` | FIFO order, eligibility, occupancy and invalid snapshots |
 

@@ -46,6 +46,21 @@ Body footprint(const Body &body) {
     return box;
 }
 
+/// How far ahead plans are formed: the horizon in steps, at least long enough for two lane
+/// changes before the movers meet, and the distance around a mover within which an oncoming
+/// one can conflict within it. `largest` is the length of the largest half extents.
+struct FormationReach {
+    float horizon, range;
+};
+
+FormationReach formation_reach(const PassingCoordination &settings, float largest) {
+    const auto &prediction = settings.prediction;
+    const float horizon = std::max(float(prediction.horizon),
+                                   (4 * largest + settings.margins.formation_room) / prediction.speed +
+                                       2 * prediction.speed / prediction.acceleration);
+    return {horizon, 2 * prediction.speed * horizon + 2 * largest};
+}
+
 /// Target of one participant in its current phase, ignoring a wait.
 Vec2 lane_target(const PassingLane &lane, bool crossing) {
     return crossing ? lane.exit : lane.entry;
@@ -76,12 +91,13 @@ std::vector<PassingEvent> PassingCoordinator::step(std::span<const PassingMover>
         largest_half = {std::max(largest_half.x, box.half_extents.x),
                         std::max(largest_half.y, box.half_extents.y)};
     }
-    // A cell near the largest footprint, or a quarter of the distance a mover can travel
-    // within the horizon when that is longer, keeps every query to a bounded number of cells
-    // at any world scale: a query reaches about twice that distance plus the footprints.
-    const float cell =
-        std::max(2 * std::max(largest_half.x, largest_half.y),
-                 settings.prediction.speed * float(std::max(settings.prediction.horizon, 1)) / 4);
+    // The widest query is the formation range around a mover; the guard's queries cover a
+    // plan's legs, which lie within it. A cell near the largest footprint, or an eighth of
+    // that range when it is longer, keeps every query to a bounded number of cells for any
+    // scale and tuning: a range set by slow braking (speed²/acceleration) would otherwise
+    // span more cells than the grid allows.
+    const float cell = std::max(2 * std::max(largest_half.x, largest_half.y),
+                                formation_reach(settings, length(largest_half)).range / 8);
     Neighbors index{SpatialGrid(cell), std::move(ids)};
     index.grid.rebuild(boxes);
     retry_.resize(std::max(retry_.size(), movers.size()));
@@ -266,10 +282,7 @@ void PassingCoordinator::form(std::span<const Body> footprints, std::span<const 
     const auto &prediction = settings.prediction;
     const float largest = length(largest_half);
     // Look far enough ahead to fit two lane changes before the movers meet.
-    const float horizon = std::max(float(prediction.horizon),
-                                   (4 * largest + settings.margins.formation_room) / prediction.speed +
-                                       2 * prediction.speed / prediction.acceleration);
-    const float range = 2 * prediction.speed * horizon + 2 * largest;
+    const auto [horizon, range] = formation_reach(settings, largest);
     std::vector<PassingApproach> approaches;
     approaches.reserve(movers.size());
     for (std::size_t i = 0; i < movers.size(); ++i)

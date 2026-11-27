@@ -1,5 +1,5 @@
 // Contract tests for the passing coordinator: plan formation, the plan lifecycle, waits and
-// the outcomes, at two world scales and away from the origin.
+// the outcomes. Every lifecycle case runs at two world scales, the second away from the origin.
 #include <kinetra/simulation/passing_coordinator.h>
 
 #include <doctest/doctest.h>
@@ -94,10 +94,10 @@ struct Host {
         }
         for (std::size_t a = 0; a < movers.size(); ++a)
             for (std::size_t b = a + 1; b < movers.size(); ++b) {
-                const auto &p = movers[a].body, &q = movers[b].body;
-                const Vec2 gap = {std::abs(p.position.x - q.position.x) - p.half_extents.x - q.half_extents.x,
-                                  std::abs(p.position.y - q.position.y) - p.half_extents.y -
-                                      q.half_extents.y};
+                // The gap between the bounds, which is what the coordinator keeps apart.
+                const auto p = bounds(movers[a].body), q = bounds(movers[b].body);
+                const Vec2 gap = {std::max(p.min.x - q.max.x, q.min.x - p.max.x),
+                                  std::max(p.min.y - q.max.y, q.min.y - p.max.y)};
                 closest = std::min(closest, std::max(gap.x, gap.y) / frame.scale);
             }
     }
@@ -150,13 +150,16 @@ TEST_CASE("a head-on pair agrees on lanes, crosses and completes without contact
 }
 
 TEST_CASE("without a plan the same pair drives into each other") {
-    Host host(frames[0]);
-    host.add({0, 0}, {30, 0});
-    host.add({30, 0}, {0, 0});
-    host.lanes = [](std::size_t, Vec2, Vec2, Vec2) { return false; };
-    host.run(400);
-    CHECK(host.count(PassingEventKind::formed) == 0);
-    CHECK(host.closest < 0);
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.lanes = [](std::size_t, Vec2, Vec2, Vec2) { return false; };
+        host.run(400);
+        CHECK(host.count(PassingEventKind::formed) == 0);
+        CHECK(host.closest < 0);
+    }
 }
 
 TEST_CASE("the world check decides between candidate sides") {
@@ -226,102 +229,172 @@ TEST_CASE("a participant waits for crossing traffic with priority and resumes on
 }
 
 TEST_CASE("a participant that becomes unavailable ends the plan") {
-    Host host(frames[0]);
-    host.add({0, 0}, {30, 0});
-    host.add({30, 0}, {0, 0});
-    host.form();
-    host.movers[1].available = false;
-    host.step();
-    CHECK(host.ended(PassingOutcome::unavailable) == 1);
-    CHECK_FALSE(host.coordinator.target(0));
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.form();
+        host.movers[1].available = false;
+        host.step();
+        CHECK(host.ended(PassingOutcome::unavailable) == 1);
+        CHECK_FALSE(host.coordinator.target(0));
+    }
 }
 
 TEST_CASE("a plan whose participants make no headway ends after the timeout") {
-    Host host(frames[0]);
-    host.add({0, 0}, {30, 0});
-    host.add({30, 0}, {0, 0});
-    host.form();
-    const auto movers = host.movers;
-    for (std::uint64_t i = 0; i <= host.tuning.timeout_steps && host.coordinator.size() == 1; ++i) {
-        auto still = movers;
-        for (std::size_t m = 0; m < still.size(); ++m)
-            still[m].heading = normalized(still[m].destination - still[m].body.position);
-        const auto events = host.coordinator.step(still, host.tuning, {});
-        host.events.insert(host.events.end(), events.begin(), events.end());
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.form();
+        // The participants stand where the plan formed, as if something held them.
+        const auto movers = host.movers;
+        for (std::uint64_t i = 0; i <= host.tuning.timeout_steps && host.coordinator.size() == 1; ++i) {
+            const auto events = host.coordinator.step(movers, host.tuning, {});
+            host.events.insert(host.events.end(), events.begin(), events.end());
+        }
+        CHECK(host.ended(PassingOutcome::no_progress) == 1);
     }
-    CHECK(host.ended(PassingOutcome::no_progress) == 1);
+}
+
+TEST_CASE("a wait that outlasts the timeout ends the plan as obstructed") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.form();
+        // A mover in no plan creeps sideways through the first participant's lane ahead and
+        // stays there: crossing traffic with priority that never leaves.
+        const auto lane = host.events.front().lanes[0];
+        const Vec2 spot = lerp(lane.entry, lane.exit, 0.3f);
+        const auto creeper = host.add({0, 0}, {0, 0}, {0.3f, 0.3f});
+        bool waited = false;
+        for (int i = 0; i < 1200 && host.coordinator.size() == 1; ++i) {
+            auto &body = host.movers[creeper].body;
+            body.position = host.movers[creeper].destination = spot;
+            body.velocity = Vec2{0, 0.002f} * frame.scale;
+            host.step();
+            if (const auto target = host.coordinator.target(0); target && target->waiting)
+                waited = true;
+        }
+        CHECK(waited);
+        CHECK(host.ended(PassingOutcome::obstructed) == 1);
+        CHECK(host.ended(PassingOutcome::no_progress) == 0);
+    }
 }
 
 TEST_CASE("two pairs on parallel lines form separate plans that do not share space") {
-    Host host(frames[0]);
-    host.add({0, 0}, {30, 0});
-    host.add({30, 0}, {0, 0});
-    host.add({0, 6}, {30, 6});
-    host.add({30, 6}, {0, 6});
-    host.form(2);
-    const auto plans = host.coordinator.plans();
-    CHECK(plans[0].id == 1);
-    CHECK(plans[1].id == 2);
-    host.run(900);
-    CHECK(host.ended(PassingOutcome::completed) == 2);
-    CHECK(host.closest > 0);
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.add({0, 6}, {30, 6});
+        host.add({30, 6}, {0, 6});
+        host.form(2);
+        const auto plans = host.coordinator.plans();
+        CHECK(plans[0].id == 1);
+        CHECK(plans[1].id == 2);
+        host.run(900);
+        CHECK(host.ended(PassingOutcome::completed) == 2);
+        CHECK(host.closest > 0);
+    }
 }
 
 TEST_CASE("cancel and clear end plans for the caller") {
-    Host host(frames[0]);
-    host.add({0, 0}, {30, 0});
-    host.add({30, 0}, {0, 0});
-    host.add({0, 6}, {30, 6});
-    host.add({30, 6}, {0, 6});
-    host.form(2);
-    const auto cancelled = host.coordinator.cancel(3);
-    REQUIRE(cancelled.size() == 1);
-    CHECK(cancelled.front().plan == 2);
-    CHECK(cancelled.front().outcome == PassingOutcome::cancelled);
-    // A cancelled pair may form again in the next step.
-    host.step();
-    CHECK(host.coordinator.size() == 2);
-    const auto cleared = host.coordinator.clear();
-    CHECK(cleared.size() == 2);
-    CHECK(host.coordinator.size() == 0);
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.add({0, 6}, {30, 6});
+        host.add({30, 6}, {0, 6});
+        host.form(2);
+        const auto cancelled = host.coordinator.cancel(3);
+        REQUIRE(cancelled.size() == 1);
+        CHECK(cancelled.front().plan == 2);
+        CHECK(cancelled.front().outcome == PassingOutcome::cancelled);
+        // A cancelled pair may form again in the next step.
+        host.step();
+        CHECK(host.coordinator.size() == 2);
+        const auto cleared = host.coordinator.clear();
+        CHECK(cleared.size() == 2);
+        CHECK(host.coordinator.size() == 0);
+    }
 }
 
 TEST_CASE("a mover that is not present is no obstacle and ends its plan") {
-    Host host(frames[0]);
-    host.add({0, 0}, {30, 0});
-    host.add({30, 0}, {0, 0});
-    host.form();
-    // An empty slot of a pool whose old body stands on the first participant's exit, where a
-    // present mover would end the plan as obstructed.
-    const auto slot = host.add({0, 0}, {0, 0}, {0.3f, 0.3f});
-    host.movers[slot].body.position = host.movers[slot].destination = host.events.front().lanes[0].exit;
-    host.movers[slot].stationary = true;
-    host.movers[slot].present = false;
-    host.step();
-    CHECK(host.ended(PassingOutcome::obstructed) == 0);
-    CHECK(host.coordinator.size() == 1);
-    host.movers[0].present = false;
-    host.step();
-    CHECK(host.ended(PassingOutcome::unavailable) == 1);
-    for (auto &mover : host.movers)
-        mover.present = false;
-    CHECK_NOTHROW(host.step());
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.form();
+        // An empty slot of a pool whose old body stands on the first participant's exit,
+        // where a present mover would end the plan as obstructed.
+        const auto slot = host.add({0, 0}, {0, 0}, {0.3f, 0.3f});
+        host.movers[slot].body.position = host.movers[slot].destination = host.events.front().lanes[0].exit;
+        host.movers[slot].stationary = true;
+        host.movers[slot].present = false;
+        host.step();
+        CHECK(host.ended(PassingOutcome::obstructed) == 0);
+        CHECK(host.coordinator.size() == 1);
+        host.movers[0].present = false;
+        host.step();
+        CHECK(host.ended(PassingOutcome::unavailable) == 1);
+        for (auto &mover : host.movers)
+            mover.present = false;
+        CHECK_NOTHROW(host.step());
+    }
 }
 
-TEST_CASE("a pair across a non-box shape takes part through its bounds") {
-    Host host(frames[0]);
-    host.add({0, 0}, {30, 0});
-    host.add({30, 0}, {0, 0});
-    auto &circle = host.movers[1].body;
-    circle.shape = Shape::circle;
-    circle.radius = 0.5f;
-    host.run(900);
-    CHECK(host.ended(PassingOutcome::completed) == 1);
-    CHECK(host.closest > 0);
+TEST_CASE("circles, polygons and rotated boxes take part through their bounds") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        for (int shape = 0; shape < 3; ++shape) {
+            CAPTURE(shape);
+            Host host(frame);
+            host.add({0, 0}, {30, 0});
+            host.add({30, 0}, {0, 0});
+            auto &body = host.movers[1].body;
+            const auto position = body.position;
+            if (shape == 0) {
+                body.shape = Shape::circle;
+                body.radius = 0.5f * frame.scale;
+            } else if (shape == 1) {
+                body = regular_polygon(5, 0.6f * frame.scale);
+            } else {
+                body.half_extents = Vec2{0.6f, 0.3f} * frame.scale;
+                body.angle = 0.6f;
+            }
+            body.position = position;
+            body.motion = Motion::controlled;
+            host.run(900);
+            CHECK(host.ended(PassingOutcome::completed) == 1);
+            CHECK(host.closest > 0);
+        }
+    }
+}
+
+TEST_CASE("slow braking next to a high speed keeps every query within the grid") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        // Braking from full speed takes 10,000 steps, so the formation range spans about
+        // 2,000 scene units: far more than a grid of cells near the footprint size allows.
+        host.tuning.prediction.acceleration = 0.00002f * frame.scale;
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        CHECK_NOTHROW(host.step());
+        CHECK(host.coordinator.size() == 1);
+    }
 }
 
 TEST_CASE("invalid settings and movers throw before any plan changes") {
-    Host host(frames[0]);
+    Host host(frames[1]);
     host.add({0, 0}, {30, 0});
     host.add({30, 0}, {0, 0});
     host.form();

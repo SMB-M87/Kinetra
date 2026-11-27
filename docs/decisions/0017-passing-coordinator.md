@@ -16,7 +16,7 @@ Status: accepted. Amends [0016](0016-predictive-passing.md): the engine also off
 
 ## Decision
 
-`Kinetra::Simulation` provides `PassingCoordinator`. Each step the caller supplies its movers (body, route heading, destination, available, stationary), the tuning in world units and steps, and a check of a leg against its world. The coordinator owns plans, waits, retries and outcomes; it checks legs against the other movers and the space of older plans, and gives each participant a target. Priority is fixed: a plan yields to movers in no plan and to the participants of older plans.
+`Kinetra::Simulation` provides `PassingCoordinator`. Each step the caller supplies its movers (body, route heading, destination, available, stationary, present; an empty slot of a pool is not present, so indices stay stable), the tuning in world units and steps, and a check of a leg against its world. The coordinator owns plans, waits, retries and outcomes; it checks legs against the other movers and the space of older plans, and gives each participant a target. Priority is fixed: a plan yields to movers in no plan and to the participants of older plans.
 
 What stays with the application: which movers are available or stationary, the world check, the steering solver that drives a participant to its target, replanning after a plan ends, the tuning, and any further remedy. Every value is explicit; the coordinator has no defaults.
 

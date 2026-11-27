@@ -90,6 +90,9 @@ No lessons yet.
 
 ## Code
 
+- **Size a spatial grid's cells from the widest query that runs on it, and test the tuning that widens that query most** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68), Kinetra-Lab#138
+  The passing coordinator's cell followed the prediction horizon while its formation query grew with `speed / acceleration`, so Demo's lowest acceleration made one query span more cells than `SpatialGrid` allows, and `step` threw.
+
 - **When a fix resets one piece of state that a call depends on, reset its whole group** · added 2026-11-26 · source: #67
   #67 reset the caller's `GL_PACK_ALIGNMENT`, which overran the read buffer, and kept the pack row length, the skips and the pack buffer, which overrun or bypass the same buffer.
 
