@@ -46,7 +46,7 @@ Every Kinetra-Lab application runs in the same shell: the launcher menu and sess
 
 | Module | CMake target | Public headers in `include/kinetra/<layer>/` | Guide |
 | --- | --- | --- | --- |
-| Simulation: geometry, physics, spatial queries, navigation, steering, avoidance, passing, stall detection, traffic admission, the fixed clock | `Kinetra::Simulation` | `simulation/`: `math.h`, `physics.h`, `spatial_grid.h`, `collision_grid.h`, `navigation.h`, `weighted_grid.h`, `steering.h`, `avoidance.h`, `passing.h`, `passing_coordinator.h`, `stall_detector.h`, `traffic.h`, `clock.h` | [Simulation](src/simulation/README.md) |
+| Simulation: geometry, physics, spatial queries, navigation, steering, avoidance, passing, stall detection and right of way, traffic admission, the fixed clock | `Kinetra::Simulation` | `simulation/`: `math.h`, `physics.h`, `spatial_grid.h`, `collision_grid.h`, `navigation.h`, `weighted_grid.h`, `steering.h`, `avoidance.h`, `passing.h`, `passing_coordinator.h`, `stall_detector.h`, `right_of_way.h`, `traffic.h`, `clock.h` | [Simulation](src/simulation/README.md) |
 | View: camera, input, debug-menu rows and frame statistics, usable headless | header-only, with `Kinetra::Simulation` | `view/`: `camera.h`, `input.h`, `debug_menu.h`, `inspector.h`, `timing.h` | [Runtime and launcher](src/runtime/README.md) |
 | Runtime: window, drawing, sessions, overlays | `Kinetra::Runtime` (optional) | `runtime/`: `engine.h`, `session.h`, `settings_view.h`, `inspector_view.h`, and header-only `bitmap_text.h`, `overlay_style.h`, `debug_view.h`, `help_view.h` | [Runtime and launcher](src/runtime/README.md) |
 | Launcher: menu, session host and loop | `Kinetra::Launcher` (optional) | `runtime/launcher.h` | [Runtime and launcher](src/runtime/README.md) |

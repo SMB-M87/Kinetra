@@ -111,6 +111,21 @@ struct StallEvent {
     StallDiagnosis diagnosis;
 };
 
+/// Throws std::invalid_argument for settings outside their documented ranges, or for a mover
+/// with an invalid body, a nonfinite target or destination, or a state outside
+/// StallMoverState: what StallDetector::observe() and RightOfWay::step() reject.
+void validate(const StallObservation &settings, std::span<const StallMover> movers);
+
+/// The first neighbor, in mover order, that pushes `movers[index]` back: the mover moves back
+/// along its leg faster than `stop_speed`, and the neighbor, neither standing nor absent, lies
+/// ahead within `ahead_cosine` of the leg, within `pushing_reach` times the length of the two
+/// half extents combined, and drives toward the mover faster than `stop_speed`. Nothing when
+/// the mover does not back away or no neighbor pushes. The detector's `pushed_back` reason
+/// uses this test. Throws as validate() does, and std::out_of_range for an `index` outside
+/// `movers`.
+std::optional<std::size_t> pushing_neighbor(std::span<const StallMover> movers, std::size_t index,
+                                            const StallObservation &settings);
+
 /// Watches movers that follow routes and reports sustained lack of progress as episodes,
 /// each with the evidence at its onset: a stationary blocker or an opposing mover on its
 /// leg, a neighbor pushing it back, oscillation, or nothing found.

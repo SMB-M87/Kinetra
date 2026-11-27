@@ -14,7 +14,7 @@ bool positive(float value) {
     return std::isfinite(value) && value > 0;
 }
 
-void validate(const StallObservation &settings) {
+void validate_settings(const StallObservation &settings) {
     if (settings.threshold_steps == 0 || !positive(settings.excursion) ||
         settings.oscillation_reversals == 0 || !nonnegative(settings.lookahead) ||
         !nonnegative(settings.clearance.x) || !nonnegative(settings.clearance.y) ||
@@ -60,6 +60,43 @@ bool blocks_leg(const Leg &mover, const Body &other, const StallObservation &set
                               mover.body.half_extents + settings.clearance, other);
 }
 
+/// The first neighbor, in mover order, pushing `movers[index]` back. A mover near its goal
+/// can be pushed away from it by a neighbor whose route runs through its place: both creep
+/// along, so neither stands nor opposes the other.
+std::optional<std::size_t> pushing(std::span<const Leg> legs, std::span<const StallMover> movers,
+                                   std::size_t index, const StallObservation &settings) {
+    const auto &mover = legs[index];
+    if (dot(mover.body.velocity, mover.heading) >= -settings.stop_speed)
+        return std::nullopt;
+    for (std::size_t i = 0; i < legs.size(); ++i) {
+        const auto state = movers[i].state;
+        if (i == index || state == StallMoverState::absent || state == StallMoverState::standing)
+            continue;
+        const auto &other = legs[i].body;
+        const auto offset = other.position - mover.body.position;
+        const float apart = length(offset);
+        if (apart <= 0 ||
+            apart > settings.pushing_reach * length(mover.body.half_extents + other.half_extents))
+            continue;
+        const auto direction = offset / apart;
+        if (dot(direction, mover.heading) > settings.ahead_cosine &&
+            dot(other.velocity, -direction) > settings.stop_speed)
+            return i;
+    }
+    return std::nullopt;
+}
+
+/// Footprints, legs and headings of `movers`, which validate() accepted.
+std::vector<Leg> legs_of(std::span<const StallMover> movers) {
+    std::vector<Leg> legs;
+    legs.reserve(movers.size());
+    for (const auto &mover : movers) {
+        const auto body = footprint(mover.body);
+        legs.push_back({body, mover.target, normalized(mover.target - body.position)});
+    }
+    return legs;
+}
+
 StallDiagnosis diagnose(std::span<const Leg> legs, std::span<const StallMover> movers, std::size_t index,
                         unsigned reversals, const StallObservation &settings, std::uint64_t now) {
     const auto &mover = legs[index];
@@ -83,29 +120,34 @@ StallDiagnosis diagnose(std::span<const Leg> legs, std::span<const StallMover> m
     }
     if (opposing)
         return {now, StallReason::opposing_mover, opposing};
-    // A mover near its goal can be pushed away from it by a neighbor whose route runs
-    // through its place: both creep along, so neither stands nor opposes the other.
-    if (dot(mover.body.velocity, mover.heading) < -settings.stop_speed)
-        for (std::size_t i = 0; i < legs.size(); ++i) {
-            const auto state = movers[i].state;
-            if (i == index || state == StallMoverState::absent || state == StallMoverState::standing)
-                continue;
-            const auto &other = legs[i].body;
-            const auto offset = other.position - mover.body.position;
-            const float apart = length(offset);
-            if (apart <= 0 ||
-                apart > settings.pushing_reach * length(mover.body.half_extents + other.half_extents))
-                continue;
-            const auto direction = offset / apart;
-            if (dot(direction, mover.heading) > settings.ahead_cosine &&
-                dot(other.velocity, -direction) > settings.stop_speed)
-                return {now, StallReason::pushed_back, i};
-        }
+    if (const auto pusher = pushing(legs, movers, index, settings))
+        return {now, StallReason::pushed_back, pusher};
     return {now,
             reversals >= settings.oscillation_reversals ? StallReason::oscillating : StallReason::unknown,
             std::nullopt};
 }
 } // namespace
+
+void validate(const StallObservation &settings, std::span<const StallMover> movers) {
+    validate_settings(settings);
+    for (const auto &mover : movers) {
+        kinetra::validate(mover.body);
+        if (!std::isfinite(mover.target.x) || !std::isfinite(mover.target.y) ||
+            !std::isfinite(mover.destination.x) || !std::isfinite(mover.destination.y))
+            throw std::invalid_argument("Stall movers require a finite target and destination");
+        if (mover.state != StallMoverState::observed && mover.state != StallMoverState::busy &&
+            mover.state != StallMoverState::standing && mover.state != StallMoverState::absent)
+            throw std::invalid_argument("Stall movers require a valid state");
+    }
+}
+
+std::optional<std::size_t> pushing_neighbor(std::span<const StallMover> movers, std::size_t index,
+                                            const StallObservation &settings) {
+    validate(settings, movers);
+    if (index >= movers.size())
+        throw std::out_of_range("Stall mover index out of range");
+    return pushing(legs_of(movers), movers, index, settings);
+}
 
 void StallDetector::Track::observe_position(Vec2 position, float excursion) {
     const auto delta = position - anchor;
@@ -141,20 +183,8 @@ void StallDetector::Track::observe_position(Vec2 position, float excursion) {
 
 std::vector<StallEvent> StallDetector::observe(std::span<const StallMover> movers,
                                                const StallObservation &settings, std::uint64_t now) {
-    validate(settings);
-    std::vector<Leg> legs;
-    legs.reserve(movers.size());
-    for (const auto &mover : movers) {
-        kinetra::validate(mover.body);
-        if (!std::isfinite(mover.target.x) || !std::isfinite(mover.target.y) ||
-            !std::isfinite(mover.destination.x) || !std::isfinite(mover.destination.y))
-            throw std::invalid_argument("Stall movers require a finite target and destination");
-        if (mover.state != StallMoverState::observed && mover.state != StallMoverState::busy &&
-            mover.state != StallMoverState::standing && mover.state != StallMoverState::absent)
-            throw std::invalid_argument("Stall movers require a valid state");
-        const auto body = footprint(mover.body);
-        legs.push_back({body, mover.target, normalized(mover.target - body.position)});
-    }
+    validate(settings, movers);
+    const auto legs = legs_of(movers);
     std::vector<StallEvent> events;
     // Movers beyond the span are gone: their episodes end, and an index that comes back
     // starts afresh.

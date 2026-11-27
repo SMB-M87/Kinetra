@@ -52,6 +52,7 @@ flowchart TD
     Passing["passing.h<br/>passing lanes and guard"]
     Coordinator["passing_coordinator.h<br/>PassingCoordinator"]
     Stall["stall_detector.h<br/>StallDetector"]
+    Right["right_of_way.h<br/>RightOfWay"]
     Clock["clock.h<br/>FixedClock (header-only)"]
     Grid --> Math
     Physics --> Grid
@@ -64,6 +65,7 @@ flowchart TD
     Coordinator --> Passing
     Coordinator --> Grid
     Stall --> Physics
+    Right --> Stall
 ```
 
 *Takeaway:* physics, planning and steering build on one geometry header; the weighted grid, avoidance, traffic admission and the fixed clock stand alone, so a consumer can use one without the others.
@@ -81,6 +83,7 @@ flowchart TD
 | [passing.h](../../include/kinetra/simulation/passing.h) | [passing.cpp](passing.cpp) | Head-on conflict timing, lane candidates and obstruction checks | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [passing_coordinator.h](../../include/kinetra/simulation/passing_coordinator.h) | [passing_coordinator.cpp](passing_coordinator.cpp) | Plan lifecycle of head-on passing: formation, waits, outcomes | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [stall_detector.h](../../include/kinetra/simulation/stall_detector.h) | [stall_detector.cpp](stall_detector.cpp) | Episodes of sustained lack of progress and the evidence at their onset | [Navigation](../../docs/engine/navigation.md#stall-detection) |
+| [right_of_way.h](../../include/kinetra/simulation/right_of_way.h) | [right_of_way.cpp](right_of_way.cpp) | A temporary right of way for a stalled mover that a neighbor pushes back | [Navigation](../../docs/engine/navigation.md#right-of-way) |
 | [traffic.h](../../include/kinetra/simulation/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
 | [clock.h](../../include/kinetra/simulation/clock.h) | header-only | `FixedClock`: elapsed seconds to whole simulation ticks, with a bounded backlog | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 
@@ -164,6 +167,7 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 | `kinetra_navigation` | `kinetra_navigation_tests` | Settings validation, swept clearance, exact and projected goals, corner lookahead |
 | `kinetra_weighted_navigation` | `kinetra_weighted_navigation_tests` | Weighted grid planning, raster route targets, footprints, borders and priority steering |
 | `kinetra_passing_coordinator` | `kinetra_passing_coordinator_tests` | Passing plans at two world scales: completion, side choice, obstruction, waits, priority between plans, mover states, both timeouts, cancellation and retry delays, footprints of every shape, slow braking, queries beyond the grid |
+| `kinetra_right_of_way` | `kinetra_right_of_way_tests` | The right of way at two world scales: grant and window, a new window at once, no grant, early end, a shorter span, the shared push test, invalid input |
 | `kinetra_stall_detector` | `kinetra_stall_detector_tests` | Stall episodes at two world scales: threshold and end, every reason and its order, restarts, absent movers, invalid input |
 | `kinetra_avoidance` | `kinetra_avoidance_tests` | Limits, infeasibility, rectangles and crowds of 2 to 16 agents |
 | `kinetra_traffic` | `kinetra_traffic_tests` | FIFO order, eligibility, occupancy and invalid snapshots |
