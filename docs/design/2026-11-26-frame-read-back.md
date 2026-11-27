@@ -55,6 +55,7 @@ Settled with the user on 2026-11-26; every choice matched the recommendation.
 | Size | Drawable pixels, the size the frame's `begin()` set as the viewport | That is what the framebuffer holds; with display scaling it differs from the logical size, and callers convert as they do now |
 | No frame | `frame()` throws `std::logic_error` before the first read-back frame and after `read_back(false)` | A test that forgot to switch it on fails with a message instead of reading an empty image |
 | Names | `FramePixels`, `Runtime::read_back(bool)`, `Runtime::frame()`, `FramePixels::pixel(x, y)` | Cosmetic; proposed with the decisions |
+| Goal-proof rule | On 2026-11-27 the user made the review lesson a rule: "Prove each goal with a check or run as wide as its wording, or narrow the wording." It goes into `AGENTS.md` (*Verification by impact*), the workflow's *Verify* step, the `feature` and `pr-review` skills with their READMEs, and leaves the review lessons | Proposed by agent review round 2 after the lesson came back in #66, Kinetra-Lab#133 and #67 |
 
 ## Design
 
@@ -169,7 +170,7 @@ While moving the resize case, the read-back showed that its old center pixel lay
 | Should fix: `DefaultReadState` saved the read buffer before unbinding a caller's read framebuffer, so it restored an object's read buffer onto the window's framebuffer, leaving `GL_INVALID_OPERATION` pending | Fixed in c51aff4: it saves the window's read buffer after the unbind; the class comment says the read assumes the window is the draw framebuffer. The read-state case binds a framebuffer object and checks the binding, both read buffers and `glGetError()`, and failed on those two before the fix |
 | Nit: the new lesson on recorded runs and #66's lesson on goal checks describe one pattern | Merged into one lesson with #66, Kinetra-Lab#133 and #67 as sources |
 | Lesson proposed: save and restore OpenGL state with the object it belongs to bound | Added to [review lessons](../review-lessons.md) |
-| For the user: the composited desktop and Windows check; whether the goal-proof lesson becomes a rule | Left to the user after the merge, as the review says |
+| For the user: the composited desktop and Windows check; whether the goal-proof lesson becomes a rule | The check is left to the user after the merge. The user made the lesson a rule on 2026-11-27 (*Decisions*): it moved from the review lessons into the agent rules |
 
 ## Verification
 
@@ -202,6 +203,7 @@ The Full level is the pull requests' CI, which runs the graphics cases offscreen
 > - `runtime.cpp`: the read in `end()`. It reads through OpenGL's default read state: the window's framebuffer and draw buffer, no pack buffer, alignment 1, no row length and no skips. It restores the caller's state afterwards, flips the rows to top-down and sets alpha to 255.
 > - `runtime_tests.cpp`: two contract cases. One covers orientation, size, alpha, errors, replacement in place and `read_back(true)` while on. The other covers a caller's pack state, read buffer and bound read framebuffer object, and fails without the fixes. The nine existing reads move onto `frame()`.
 > - The runtime guide and module README document the read-back; the roadmap item is closed; review lessons are added and merged.
+> - Agent rules: the user made the goal-proof lesson a rule, *Prove each goal with a check or run as wide as its wording, or narrow the wording*. It is in `AGENTS.md`, the workflow, and the `feature` and `pr-review` skills, and it has left the review lessons.
 >
 > ## Design
 > [docs/design/2026-11-26-frame-read-back.md](https://github.com/SMB-M87/Kinetra/blob/feat/frame-read-back/docs/design/2026-11-26-frame-read-back.md). The user settled three decisions: a stack with Kinetra-Lab, an opt-in read before the swap, and RGBA rows from the top.

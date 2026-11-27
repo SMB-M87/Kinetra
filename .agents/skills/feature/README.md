@@ -26,7 +26,7 @@ Use `roadmap` to save an idea for later. For an existing branch that only needs 
 ## How it works
 
 1. The agent reads the roadmap, review lessons, affected code and tests, then records the scope and test plan. It asks you about choices that affect the design or its contracts.
-2. It implements the design on a topic branch or stack, checks the diff and opens the pull requests. An independent reviewer checks the result and the author answers the findings.
+2. It implements the design on a topic branch or stack, checks the diff, proves each goal with a check as wide as its wording, and opens the pull requests. An independent reviewer checks the result and the author answers the findings.
 3. The author merges the pull request once review and checks are complete, changes to skills, agent rules, CI and releases included; you check merged work afterwards, and a playtest named for you follows the merge. In a Claude Code cloud session the reviewer attaches every repository it reviews itself. [Merge rule](../../../AGENTS.md#git)
 4. In Kinetra-Lab, the move of the submodule pointer to the Kinetra merge commit follows in a separate pointer-only pull request, without review, which Kinetra's `lab-pointer` workflow opens and GitHub merges once CI passes.
 

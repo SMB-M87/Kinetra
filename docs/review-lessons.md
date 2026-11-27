@@ -90,9 +90,6 @@ No lessons yet.
 - **When a fix resets one piece of state that a call depends on, reset its whole group** · added 2026-11-26 · source: #67
   #67 reset the caller's `GL_PACK_ALIGNMENT`, which overran the read buffer, and kept the pack row length, the skips and the pack buffer, which overrun or bypass the same buffer.
 
-- **Prove a goal with a check or run as wide as its wording, or narrow the wording to what was checked** · added 2026-11-26 · source: #66, Kinetra-Lab#133, #67
-  #66's goal said that no Lab logic header includes `runtime/`, but the check searched only for `runtime/timing.h`. It missed `i4sim/controller.h` and `kinetra_lab/input.h`, which still included `runtime/engine.h` for the view types that ADR 0015 had moved out of it. #67 promised a read-back that is reliable in a window while CI runs the graphics cases only on SDL's offscreen driver; only a run under SDL's `x11` driver in Xvfb proved it.
-
 - **Save and restore OpenGL state with the object it belongs to bound** · added 2026-11-26 · source: #67
   `GL_READ_BUFFER` belongs to the bound read framebuffer. #67 saved it from a caller's framebuffer object and restored it onto the window's, which leaves an error pending; a case with only the default framebuffer cannot show it.
 
