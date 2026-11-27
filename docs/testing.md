@@ -139,6 +139,7 @@ When a change alters what a scene shows, the author also takes a screenshot of i
 | Navigation and weighted grids (`navigation.cpp`, `weighted_grid.cpp`) | `kinetra_navigation_tests kinetra_weighted_navigation_tests` | `^kinetra_(navigation\|weighted_navigation)` |
 | Steering (`steering.cpp`, `priority_steering.cpp`) | `kinetra_tests kinetra_weighted_navigation_tests` | `^kinetra_(behavior\|weighted_navigation)` |
 | Passing (`passing.cpp`, `passing_coordinator.cpp`) | `kinetra_weighted_navigation_tests kinetra_passing_coordinator_tests` | `^kinetra_(weighted_navigation\|passing_coordinator)` |
+| Stall detection (`stall_detector.cpp`) | `kinetra_stall_detector_tests` | `^kinetra_stall_detector` |
 | Avoidance (`avoidance.cpp`) | `kinetra_avoidance_tests` | `^kinetra_avoidance` |
 | Traffic admission (`traffic.cpp`) | `kinetra_traffic_tests` | `^kinetra_traffic` |
 | Runtime and launcher (`src/runtime/`) | Full level; locally, as quick feedback, `kinetra_engine_runtime_tests` in the `graphics` preset | `^kinetra_engine_graphics` (`ctest --preset graphics`) |
