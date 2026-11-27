@@ -63,7 +63,7 @@ Which behavior is proven by which test; the verification level.
 Findings and how they were resolved.
 
 ## Verification
-Commands and results.
+Commands and results by affected scenario, including the failure and passing result for new critical cases and any contract-branch mutations.
 
 ## Pull request
 Title and description used for `gh pr create`: Summary, Changes, Design,

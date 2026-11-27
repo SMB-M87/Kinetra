@@ -24,7 +24,7 @@ Use `verify` to find out which checks a change needs and what actually passed. T
 
 ## When not to use it
 
-For a judgement about whether an implementation meets its goals, use `pr-review` on the open pull request. For a bug that needs a fix, start with `feature`.
+On a stack, verification uses the pull request’s actual base and includes any affected scenarios from changed dependencies. Use `feature` for a bug fix or for the author’s review of an implementation. For a requested independent review of an open pull request, use `pr-review`.
 
 ## How it works
 

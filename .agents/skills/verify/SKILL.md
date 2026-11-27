@@ -10,10 +10,10 @@ Implements the [verification levels](../../../docs/testing.md#verification-level
 
 ## 1. Collect the change set
 
-Run this in every repository with changes (Lab and/or `external/Kinetra`):
+Run this in every repository with changes (Lab and/or `external/Kinetra`). Set the base to the target branch of the pull request, which is the previous branch for a stacked step.
 
 ```sh
-git diff --name-only main...HEAD      # committed on this branch
+git diff --name-only <base>...HEAD    # committed changes for this pull request
 git status --short                    # uncommitted and untracked
 ```
 
@@ -46,14 +46,14 @@ cmake --build --preset dev --target <targets>
 ctest --preset dev -R '<regex>'
 ```
 
-Pick targets and tests from the mapping tables: Kinetra in [testing](../../../docs/testing.md#choosing-targeted-tests), Lab in Lab's `AGENTS.md`.
+Pick targets and tests for the affected scenarios, including any whose relevant dependencies changed. Use the mapping tables: Kinetra in [testing](../../../docs/testing.md#choosing-targeted-tests), Lab in Lab's `AGENTS.md`.
 
 **Full.**
 
 - Locally, the Targeted checks of every changed area, so the push compiles and its tests pass. For runtime, launcher or presentation changes, the graphics cases of that area are optional quick feedback: `ctest --preset graphics -L graphics -R '<regex>'` after building its targets in the `graphics` preset (offscreen SDL, software Mesa).
 - Use pull request CI for the full presets. Ubuntu 24.04 LTS runs format, docs, `headless` and `ci`, including the graphics tests. Kinetra also runs the external consumer check. Lab runs application smoke tests and a native Windows job. Run a full preset locally to reproduce a CI failure.
 - After pushing, read the pull request's checks (`gh pr checks <number>`). The change is verified when the checks are green; until then report "pushed, CI pending".
-- When the change alters what a scene shows, take a screenshot of it with Lab's capture tool, look at it and add it to the pull request; the reviewer runs nothing. Refresh the captures that the media guides' tables name for the change with `tools/capture/capture_media.sh`, look at every refreshed file and commit them with the change, and no others ([rule](../../../AGENTS.md#repository-documentation)).
+- When the change alters what a scene shows, take a screenshot with Lab’s capture tool, inspect it and add it to the pull request. Refresh and inspect the captures the media guides name for the change ([media rule](../../../AGENTS.md#repository-documentation)).
 - A change that depends on desktop feel, a real GPU driver or performance also needs the user's playtest, which software rendering cannot replace. Report it as open for the user, who plays it after the merge.
 
 ## 4. Report

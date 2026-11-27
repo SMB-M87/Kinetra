@@ -38,7 +38,8 @@ The bottom of the pyramid runs on every build and catches most regressions. Each
 
 ## Rules for tests
 
-- Every behavior change comes with a test. A bug fix starts with a failing test that reproduces it.
+- Cover every affected scenario described in the [test plan](workflow.md#3-test-plan). Reuse existing tests that assert the relevant outcome and add focused cases for new behavior and for existing behavior at risk. Exercise the normal entry point where a new interaction could be wired incorrectly. A bug fix starts with a failing test that reproduces it.
+- Show that the new critical cases detect a failure. Run them on the old behavior when possible, or temporarily remove or reverse the relevant condition and verify that each case fails on its intended assertion. Restore the intended implementation and rerun the affected tests. Record the case, the failure and the passing result in **Verification**.
 - Every branch a contract names, such as a priority, an order, a restart condition or a rounding margin, gets a constructed case that fails when that branch alone is flipped or removed. Build the case so that no other branch or rule gives the same answer, and check it by mutation: change the branch, see the case fail, restore it. A random scene rarely reaches the branch.
   *Why:* #51's steering slack decided only within the float error of an extent, which random scenes never reach, and #68's priority case passed with the comparison flipped. The same gap came back in Kinetra-Lab#149 (the order of the end reasons, the retry wait after a new goal) and in #72, whose restart case passed with the goal rule removed because another rule ended the episode too. It was a review lesson from #51 and #68; the user made it a rule on 2026-11-27.
 - Test observable behavior and contracts, not internal counters. A test asserting `replan == 80` breaks on harmless refactors.
@@ -86,7 +87,7 @@ ctest --preset dev -R 'kinetra_traffic:clear'   # or:
 
 ## Verification levels
 
-Choose the lowest level that covers every file in the diff (`git diff --name-only main...HEAD` plus uncommitted files). One file at a higher level lifts the whole change.
+Choose the lowest level that covers every file in the diff against the actual pull request base (`git diff --name-only <base>...HEAD` plus uncommitted files). For a stacked step, include scenarios affected by changes in its relevant dependencies. One file at a higher level lifts the whole change.
 
 | Level | Trigger |
 | --- | --- |
@@ -123,7 +124,7 @@ cmake --preset graphics && cmake --build --preset graphics --target <targets>
 ctest --preset graphics -L graphics -R '<regex>'
 ```
 
-When a change alters what a scene shows, the author also takes a screenshot of it with Lab's [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md), looks at it and adds it to the pull request: no test judges appearance, and the reviewer runs nothing. The captures it makes stale are refreshed in the same pull request ([rule](../AGENTS.md#repository-documentation)).
+When a change alters what a scene shows, the author also takes a screenshot of it with Lab's [capture tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md), inspects the result and adds it to the pull request. The captures it makes stale are refreshed in the same pull request ([rule](../AGENTS.md#repository-documentation)).
 
 **In CI**, on each pull request update, Ubuntu 24.04 LTS runs formatting, documentation links, the icon check, `headless` (builds without SDL2 and OpenGL), `ci` (warnings as errors, then every test, the graphics cases included, with SDL's offscreen driver and software Mesa), the [external consumer](development.md#external-consumers) and, in Lab, the smoke runs of every executable (`kinetra_smoke:*`, label `graphics`) and the native Windows build. A change is verified when the pull request's checks are green; until then, report it as pushed, not verified.
 
