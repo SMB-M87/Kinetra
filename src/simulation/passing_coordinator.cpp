@@ -60,21 +60,30 @@ std::vector<PassingEvent> PassingCoordinator::step(std::span<const PassingMover>
     footprints.reserve(movers.size());
     std::vector<Aabb> boxes;
     boxes.reserve(movers.size());
+    std::vector<std::size_t> ids;
     Vec2 largest_half{};
-    for (const auto &mover : movers) {
+    for (std::size_t id = 0; id < movers.size(); ++id) {
+        const auto &mover = movers[id];
         kinetra::validate(mover.body);
         if (!finite(mover.heading) || !finite(mover.destination))
             throw std::invalid_argument("Passing movers require a finite heading and destination");
         footprints.push_back(footprint(mover.body));
+        if (!mover.present)
+            continue;
         const auto &box = footprints.back();
         boxes.push_back({box.position - box.half_extents, box.position + box.half_extents});
+        ids.push_back(id);
         largest_half = {std::max(largest_half.x, box.half_extents.x),
                         std::max(largest_half.y, box.half_extents.y)};
     }
-    // A cell near the largest footprint keeps queries to a few cells at any world scale.
-    SpatialGrid index(
-        std::max(2 * std::max(largest_half.x, largest_half.y), std::numeric_limits<float>::min()));
-    index.rebuild(boxes);
+    // A cell near the largest footprint, or a quarter of the distance a mover can travel
+    // within the horizon when that is longer, keeps every query to a bounded number of cells
+    // at any world scale: a query reaches about twice that distance plus the footprints.
+    const float cell =
+        std::max(2 * std::max(largest_half.x, largest_half.y),
+                 settings.prediction.speed * float(std::max(settings.prediction.horizon, 1)) / 4);
+    Neighbors index{SpatialGrid(cell), std::move(ids)};
+    index.grid.rebuild(boxes);
     retry_.resize(std::max(retry_.size(), movers.size()));
 
     std::vector<PassingEvent> events;
@@ -82,6 +91,14 @@ std::vector<PassingEvent> PassingCoordinator::step(std::span<const PassingMover>
     form(footprints, movers, settings, lanes_clear, index, largest_half, events);
     ++step_;
     return events;
+}
+
+std::vector<std::size_t> PassingCoordinator::Neighbors::query(Aabb area) const {
+    auto found = grid.query(area);
+    // The grid returns sorted positions, and ids is ascending, so the result stays sorted.
+    for (auto &position : found)
+        position = ids[position];
+    return found;
 }
 
 std::vector<PassingEvent> PassingCoordinator::cancel(std::size_t mover) {
@@ -135,7 +152,7 @@ void PassingCoordinator::end(std::size_t index, PassingOutcome outcome, std::uin
 }
 
 void PassingCoordinator::advance(std::span<const Body> footprints, std::span<const PassingMover> movers,
-                                 const PassingCoordination &settings, const SpatialGrid &index,
+                                 const PassingCoordination &settings, const Neighbors &index,
                                  Vec2 largest_half, std::vector<PassingEvent> &events) {
     // A neighbor ahead matters while its footprint can reach a remaining leg within the horizon.
     const float margin =
@@ -147,7 +164,7 @@ void PassingCoordinator::advance(std::span<const Body> footprints, std::span<con
         bool arrived = true;
         for (std::size_t side = 0; side < 2 && !outcome; ++side) {
             const auto id = plan.movers[side];
-            if (id >= movers.size() || !movers[id].available) {
+            if (id >= movers.size() || !movers[id].available || !movers[id].present) {
                 outcome = PassingOutcome::unavailable;
                 break;
             }
@@ -200,7 +217,7 @@ bool PassingCoordinator::yields_to(const Plan &plan, std::size_t other) const {
 std::optional<PassingOutcome> PassingCoordinator::guard(Plan &plan, std::span<const Body> footprints,
                                                         std::span<const PassingMover> movers,
                                                         const PassingCoordination &settings,
-                                                        const SpatialGrid &index, float margin) const {
+                                                        const Neighbors &index, float margin) const {
     const auto phase = plan.crossing ? PassingPhase::traverse : PassingPhase::approach;
     std::optional<PassingOutcome> result;
     for (std::size_t side = 0; side < 2; ++side) {
@@ -241,8 +258,7 @@ std::optional<PassingOutcome> PassingCoordinator::guard(Plan &plan, std::span<co
 
 void PassingCoordinator::form(std::span<const Body> footprints, std::span<const PassingMover> movers,
                               const PassingCoordination &settings, const PassingLaneCheck &lanes_clear,
-                              const SpatialGrid &index, Vec2 largest_half,
-                              std::vector<PassingEvent> &events) {
+                              const Neighbors &index, Vec2 largest_half, std::vector<PassingEvent> &events) {
     std::vector<bool> claimed(movers.size());
     for (const auto &plan : plans_)
         for (auto id : plan.movers)
@@ -261,8 +277,8 @@ void PassingCoordinator::form(std::span<const Body> footprints, std::span<const 
             {footprints[i].position, footprints[i].half_extents, movers[i].heading, movers[i].destination});
     const auto eligible = [&](std::size_t id) {
         const auto &mover = movers[id];
-        return !claimed[id] && mover.available && !mover.stationary && mover.heading != Vec2{} &&
-               retry_[id] <= step_;
+        return !claimed[id] && mover.present && mover.available && !mover.stationary &&
+               mover.heading != Vec2{} && retry_[id] <= step_;
     };
     for (std::size_t a = 0; a < movers.size(); ++a) {
         if (!eligible(a))
@@ -307,7 +323,7 @@ void PassingCoordinator::form(std::span<const Body> footprints, std::span<const 
 
 bool PassingCoordinator::reserve(Plan &plan, std::span<const Body> footprints,
                                  const PassingCoordination &settings, const PassingLaneCheck &lanes_clear,
-                                 const SpatialGrid &index) const {
+                                 const Neighbors &index) const {
     // Each participant's two legs must stay clear of the caller's world, of third movers and
     // of the space other plans reserved; the swept areas are recorded in `plan.space`.
     for (std::size_t side = 0; side < 2; ++side) {

@@ -286,6 +286,28 @@ TEST_CASE("cancel and clear end plans for the caller") {
     CHECK(host.coordinator.size() == 0);
 }
 
+TEST_CASE("a mover that is not present is no obstacle and ends its plan") {
+    Host host(frames[0]);
+    host.add({0, 0}, {30, 0});
+    host.add({30, 0}, {0, 0});
+    host.form();
+    // An empty slot of a pool whose old body stands on the first participant's exit, where a
+    // present mover would end the plan as obstructed.
+    const auto slot = host.add({0, 0}, {0, 0}, {0.3f, 0.3f});
+    host.movers[slot].body.position = host.movers[slot].destination = host.events.front().lanes[0].exit;
+    host.movers[slot].stationary = true;
+    host.movers[slot].present = false;
+    host.step();
+    CHECK(host.ended(PassingOutcome::obstructed) == 0);
+    CHECK(host.coordinator.size() == 1);
+    host.movers[0].present = false;
+    host.step();
+    CHECK(host.ended(PassingOutcome::unavailable) == 1);
+    for (auto &mover : host.movers)
+        mover.present = false;
+    CHECK_NOTHROW(host.step());
+}
+
 TEST_CASE("a pair across a non-box shape takes part through its bounds") {
     Host host(frames[0]);
     host.add({0, 0}, {30, 0});

@@ -94,8 +94,9 @@ sampling cadence and response. [ADR 0016](../decisions/0016-predictive-passing.m
 
 The [passing coordinator](../../include/kinetra/simulation/passing_coordinator.h) runs
 that geometry as a plan lifecycle for applications that need no factory rules. Each step
-the caller hands it every mover as a body, a route heading, a destination and two flags:
-available (may take part) and stationary (stands still for now). Any shape takes part
+the caller hands it every mover as a body, a route heading, a destination and three flags:
+available (may take part), stationary (stands still for now) and present (exists in this
+step; an empty slot of a pool is left out, so its index stays stable). Any shape takes part
 through a footprint, the axis-aligned box around its bounds centered on its position. The
 coordinator forms plans between movers whose headings will bring them into contact, asks
 the caller to approve each leg against the world, and checks the legs against the other
@@ -189,4 +190,4 @@ Applications own goal selection, replanning schedules, streamed obstacle residen
 
 [Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
 
-The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification. The [passing coordinator tests](../../tests/passing_coordinator_tests.cpp) run plans through a minimal host at two world scales: completion without contact, the world check between sides, obstruction and the retry delay, waits for crossing traffic, unavailability, the progress timeout, parallel plans and cancellation.
+The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification. The [passing coordinator tests](../../tests/passing_coordinator_tests.cpp) run plans through a minimal host at two world scales: completion without contact, the world check between sides, obstruction and the retry delay, waits for crossing traffic, unavailability, movers that are not present, the progress timeout, parallel plans and cancellation.

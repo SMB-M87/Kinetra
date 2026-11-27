@@ -31,6 +31,10 @@ struct PassingMover {
     /// Whether the mover stands still for now, such as a parked or sleeping one. It blocks
     /// a lane it stands on whatever the priority, and never joins a plan.
     bool stationary{};
+    /// Whether the mover exists in this step. False leaves it out entirely: it is no
+    /// obstacle, joins no plan, and its plan ends as PassingOutcome::unavailable. A caller
+    /// with a pool of slots keeps its indices stable this way; the body must still be valid.
+    bool present{true};
 };
 
 /// Tuning of a PassingCoordinator, in world units and steps. The caller chooses the scale;
@@ -136,7 +140,8 @@ using PassingLaneCheck = std::function<bool(std::size_t mover, Vec2 from, Vec2 t
 /// Plans never share swept space.
 ///
 /// Mover indices are positions in the span of a step. A caller that renumbers its movers
-/// calls clear() first. Results are deterministic for the same inputs. Not thread-safe.
+/// calls clear() first; one with a pool of slots marks empty slots as not present. Results are deterministic
+/// for the same inputs. Not thread-safe.
 class PassingCoordinator {
   public:
     /// Advances the plans by one step, then forms new ones among `movers`. Returns the
@@ -160,6 +165,13 @@ class PassingCoordinator {
     std::size_t size() const { return plans_.size(); }
 
   private:
+    /// The footprints of the present movers in a spatial index; queries return mover indices.
+    struct Neighbors {
+        SpatialGrid grid;
+        /// Mover index of each indexed footprint.
+        std::vector<std::size_t> ids;
+        std::vector<std::size_t> query(Aabb area) const;
+    };
     struct Plan {
         std::uint64_t id{};
         std::array<std::size_t, 2> movers{};
@@ -184,19 +196,19 @@ class PassingCoordinator {
     std::uint64_t step_{};
 
     void advance(std::span<const Body> footprints, std::span<const PassingMover> movers,
-                 const PassingCoordination &settings, const SpatialGrid &index, Vec2 largest_half,
+                 const PassingCoordination &settings, const Neighbors &index, Vec2 largest_half,
                  std::vector<PassingEvent> &events);
     std::optional<PassingOutcome> guard(Plan &plan, std::span<const Body> footprints,
                                         std::span<const PassingMover> movers,
-                                        const PassingCoordination &settings, const SpatialGrid &index,
+                                        const PassingCoordination &settings, const Neighbors &index,
                                         float margin) const;
     bool stalled(Plan &plan, std::span<const Body> footprints, const PassingCoordination &settings);
     bool yields_to(const Plan &plan, std::size_t other) const;
     void form(std::span<const Body> footprints, std::span<const PassingMover> movers,
               const PassingCoordination &settings, const PassingLaneCheck &lanes_clear,
-              const SpatialGrid &index, Vec2 largest_half, std::vector<PassingEvent> &events);
+              const Neighbors &index, Vec2 largest_half, std::vector<PassingEvent> &events);
     bool reserve(Plan &plan, std::span<const Body> footprints, const PassingCoordination &settings,
-                 const PassingLaneCheck &lanes_clear, const SpatialGrid &index) const;
+                 const PassingLaneCheck &lanes_clear, const Neighbors &index) const;
     /// Removes plan `index` with `outcome`; a failed plan keeps its participants out of new
     /// plans for `retry_steps`.
     void end(std::size_t index, PassingOutcome outcome, std::uint64_t retry_steps,
