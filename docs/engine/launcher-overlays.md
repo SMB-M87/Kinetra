@@ -25,7 +25,7 @@ A [Session](../../include/kinetra/runtime/session.h) is the application behind a
 | `configurations` | End the run without rendering, as `menu` | As `menu`, on the configuration page of the application that ran, with its configuration selected; the application list for an application without configurations |
 | `exit` | End the run without rendering | End the loop without rendering |
 
-A request is state, not an event: the host acts on it once, and a `menu` or `configurations` request destroys the session, so sessions never reset it. `configurations` lets a session offer a way back to its own choice of variant, as Kinetra-Lab's Demo does from its settings panel, without knowing the menu. A session whose choice of variant is a screen of its own, such as Kinetra-Lab's i4sim, serves the settings panel's `configurations` itself and clears it with `SettingsOverlay::clear_request()` instead of returning it. `close_on_escape()` decides whether Escape closes the window while the session runs; sessions with their own exit action return false.
+A request is state, not an event: it stays set until the host acts on it, once, and a `menu` or `configurations` request destroys the session, so a session does not reset a request it passes on. `configurations` lets a session offer a way back to its own choice of variant, as Kinetra-Lab's Demo does from its settings panel, without knowing the menu. A session whose choice of variant is a screen of its own, such as Kinetra-Lab's i4sim, serves the settings panel's `configurations` itself and clears it with `SettingsOverlay::clear_request()` instead of returning it. `close_on_escape()` decides whether Escape closes the window while the session runs; sessions with their own exit action return false.
 
 ## Launcher
 

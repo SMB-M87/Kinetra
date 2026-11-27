@@ -32,6 +32,9 @@ Nothing agreed next in Kinetra itself.
   The engine's `PassingCoordinator` ([ADR 0017](decisions/0017-passing-coordinator.md)) serves Demo and Dotio; i4sim still runs its own factory coordinator with traffic controls, corridor recovery and an event log. Decide whether i4sim moves onto it, with which extension points, and whether making way and a temporary motion fallback belong in it.
   Depends on: Lab's *Stall detection and remedies in i4sim*.
 
+- **No default footer position in `MenuLayout`** · launcher · added 2026-11-27
+  `MenuLayout::footer_center(float x = 150)` defaults to EXIT on a page without LAUNCHER; on a page with LAUNCHER, 150 is the gap between LAUNCHER and EXIT, so a caller that clicks EXIT through the default misses without an error. Drop the default and let callers take the place from `LaunchMenu::footer_x()`, which Kinetra-Lab's tour and tests already do. Found in the review of #70.
+
 ## Ideas
 
 Wishes of the user, not yet agreed or shaped. Each needs a design session (`grilling`) before it moves up.

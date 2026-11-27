@@ -100,8 +100,8 @@ class SettingsOverlay {
     bool visible() const { return visible_; }
 
     /// The LeaveAction's request after its button, `exit` after EXIT, `none` otherwise. The
-    /// leave button also closes the panel. Requests are not reset: the host acts on them
-    /// once (see SessionRequest).
+    /// leave button also closes the panel. A request stays set until the host acts on it,
+    /// once (see SessionRequest), or the session calls clear_request().
     SessionRequest request() const { return request_; }
     /// Sets request() back to `none`. Only for a session that serves a request itself
     /// instead of passing it to its host, as an application whose configuration page is a
