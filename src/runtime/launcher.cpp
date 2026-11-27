@@ -1,5 +1,6 @@
 #include <chrono>
 #include <kinetra/runtime/bitmap_text.h>
+#include <kinetra/runtime/error_view.h>
 #include <kinetra/runtime/launcher.h>
 #include <stdexcept>
 
@@ -127,7 +128,17 @@ void LaunchMenu::show_configurations(LaunchSelection selection) {
 MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
 }
-std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewport) {
+std::optional<LaunchSelection> LaunchMenu::update(const Input &frame, Vec2 viewport, std::string_view error) {
+    const auto panel = error_panel::update(frame, error, viewport);
+    error_closed_ = panel.close;
+    error_pointer_ = frame.mouse;
+    // Over the error panel the pointer is the panel's: for the menu it is off the window and
+    // did not click, so no row or button below the panel reacts to it.
+    Input input = frame;
+    if (panel.captured) {
+        input.mouse = {-1, -1};
+        input.clicked = false;
+    }
     // After show_configurations the pointer is wherever the session left it; it counts as
     // resting there, so it does not hover away the configuration that ran.
     const bool pointer_moved = !settle_pointer_ && input.mouse != pointer_;
@@ -185,7 +196,7 @@ std::optional<LaunchSelection> LaunchMenu::update(const Input &input, Vec2 viewp
     configuring_ = false;
     return LaunchSelection{application_, configuration()};
 }
-void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
+void LaunchMenu::draw(Runtime &runtime, std::string_view error) const {
     const auto layout = this->layout(runtime.camera.viewport);
     runtime.begin();
     draw_text(runtime, heading_, layout.origin + Vec2{10, 10} * layout.scale, layout.scale * 3,
@@ -215,9 +226,8 @@ void LaunchMenu::draw(Runtime &runtime, std::string_view status) const {
     }
     if (layout.preview_origin)
         draw_preview(runtime, choices_[application_], *layout.preview_origin, layout.scale);
-    if (!status.empty())
-        draw_text(runtime, status.substr(0, 80), {8, runtime.camera.viewport.y - 16},
-                  std::min(1.f, runtime.camera.viewport.x / 490), {1, 0.5f, 0.35f});
+    // Last, so the panel covers what it overlaps, as update() gives it the pointer there.
+    error_panel::draw(runtime, error, error_pointer_);
     runtime.end();
 }
 SessionHost::SessionHost(std::vector<ApplicationRegistration> applications)

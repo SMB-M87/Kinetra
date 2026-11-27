@@ -1,7 +1,9 @@
 // Window-free tests for the launcher library (include/kinetra/runtime/launcher.h): menu paging
-// and configuration, SessionHost transitions, and debug-menu actions and stepper buttons. The loops that
-// need a window are covered by runtime_tests.cpp.
+// and configuration, the error panel over the menu (error_view.h), SessionHost transitions, and debug-menu
+// actions and stepper buttons. The loops that need a window are covered by runtime_tests.cpp.
 #include <kinetra/runtime/debug_view.h>
+#include <kinetra/runtime/error_view.h>
+#include <kinetra/runtime/hud_text.h>
 #include <kinetra/runtime/launcher.h>
 
 #include <doctest/doctest.h>
@@ -107,6 +109,78 @@ TEST_CASE("preview layout follows selection and only applies to the application 
     CHECK(picked->application == 1);
     CHECK(menu.layout(wide).preview_origin);
     CHECK_FALSE(LaunchMenu({{"PLAIN", "NO IMAGE", {}, 0}}).layout(wide).preview_origin);
+}
+
+TEST_CASE("the error panel grows with its message up to the whole window") {
+    const Vec2 viewport{1280, 720};
+    CHECK(error_panel::lines("", viewport).empty());
+    const auto none = error_panel::bounds("", viewport);
+    CHECK(none.min.x == none.max.x);
+    CHECK_FALSE(error_panel::update(Input{}, "", viewport).captured);
+
+    const auto short_panel = error_panel::bounds("BROKEN.JSON: UNEXPECTED END", viewport);
+    CHECK(error_panel::lines("BROKEN.JSON: UNEXPECTED END", viewport).size() == 1);
+    CHECK(short_panel.min.x == hud::margin);
+    CHECK(short_panel.max.x == viewport.x - hud::margin);
+    CHECK_MESSAGE(short_panel.max.y == viewport.y - hud::margin, "the panel sits at the bottom");
+    CHECK(short_panel.max.y - short_panel.min.y < 100);
+
+    std::string longer;
+    for (int i = 0; i < 40; ++i)
+        longer += "/A-RATHER-LONG-DIRECTORY ";
+    const auto lines = error_panel::lines(longer, viewport);
+    CHECK(lines.size() > 1);
+    CHECK(lines.back().find(hud::cut_mark) == std::string::npos);
+    CHECK(error_panel::bounds(longer, viewport).min.y < short_panel.min.y);
+
+    std::string huge;
+    for (int i = 0; i < 400; ++i)
+        huge += "/A-RATHER-LONG-DIRECTORY ";
+    const auto cut = error_panel::lines(huge, viewport);
+    REQUIRE_FALSE(cut.empty());
+    CHECK_MESSAGE(cut.back().ends_with(hud::cut_mark), "a message longer than the window is cut");
+    const auto whole = error_panel::bounds(huge, viewport);
+    CHECK_MESSAGE((whole.min.y >= hud::margin && whole.min.y < hud::margin + hud::line_height),
+                  "the panel may use the whole window, less its margins");
+
+    CHECK_MESSAGE(error_panel::lines("TEXT", {20, 720}).empty(),
+                  "a window narrower than a character has no panel");
+    CHECK_MESSAGE(error_panel::lines("TEXT", {1280, 50}).empty(), "a window lower than a line has no panel");
+}
+
+TEST_CASE("an error panel over the menu takes the pointer and its close button reports the click") {
+    LaunchMenu menu({{"ONE", "", {}, 0}, {"TWO", "", {}, 0}});
+    const Vec2 viewport{1280, 720};
+    // Long enough for a panel that reaches over the EXIT button.
+    std::string error;
+    for (int i = 0; i < 200; ++i)
+        error += "BROKEN ";
+    const auto panel = error_panel::bounds(error, viewport);
+    const auto exit = menu.layout(viewport).footer_center();
+    REQUIRE(panel.min.y < exit.y);
+
+    Input click;
+    click.clicked = true;
+    click.mouse = exit;
+    CHECK_FALSE(menu.update(click, viewport, error));
+    CHECK_MESSAGE(!menu.exit_requested(), "a click on the panel does not reach EXIT below it");
+    CHECK_FALSE(menu.error_closed());
+
+    const auto close = error_panel::close_bounds(error, viewport);
+    click.mouse = (close.min + close.max) / 2;
+    CHECK_FALSE(menu.update(click, viewport, error));
+    CHECK(menu.error_closed());
+    CHECK_FALSE(menu.exit_requested());
+
+    Input keys;
+    keys.pressed[std::size_t(Key::down)] = true;
+    menu.update(keys, viewport, error);
+    CHECK_MESSAGE(menu.selected() == 1, "keys still reach the menu");
+    CHECK_FALSE(menu.error_closed());
+
+    click.mouse = exit;
+    menu.update(click, viewport);
+    CHECK_MESSAGE(menu.exit_requested(), "without an error EXIT takes the click");
 }
 
 TEST_CASE("menu pages wrap and stay pickable at every viewport") {

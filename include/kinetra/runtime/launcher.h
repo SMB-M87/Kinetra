@@ -73,12 +73,18 @@ class LaunchMenu {
     /// configuration out of range.
     explicit LaunchMenu(std::vector<LaunchChoice> choices, std::string heading = "KINETRA LAUNCHER");
     /// Applies one frame of input; `viewport` in logical window pixels. Returns the
-    /// selection when the user confirms a final row, std::nullopt otherwise.
-    std::optional<LaunchSelection> update(const Input &input, Vec2 viewport);
+    /// selection when the user confirms a final row, std::nullopt otherwise. A non-empty
+    /// `error` is the one draw() shows: its panel takes the pointer first, so the menu below
+    /// it neither highlights nor clicks, and a click on its close button sets error_closed().
+    /// Keys still reach the menu.
+    std::optional<LaunchSelection> update(const Input &input, Vec2 viewport, std::string_view error = {});
     /// Highlighted row index within the current page's list.
     std::size_t selected() const;
     /// True once EXIT was clicked; never reset.
     bool exit_requested() const { return exit_requested_; }
+    /// True when the last update() clicked the close button of the error panel; the caller
+    /// then removes its message.
+    bool error_closed() const { return error_closed_; }
     /// Whether the configuration page is showing.
     bool configuring() const { return configuring_; }
     /// Shows the configuration page of `selection.application` with
@@ -100,18 +106,21 @@ class LaunchMenu {
     std::string_view description() const;
     /// Layout of the current page in logical window pixels, shared by drawing and picking.
     MenuLayout layout(Vec2 viewport) const;
-    /// Draws a whole frame (begin() to end()) showing the menu, with an optional status
-    /// line of at most 80 characters at the bottom.
-    void draw(Runtime &runtime, std::string_view status = {}) const;
+    /// Draws a whole frame (begin() to end()) showing the menu, and over it a non-empty
+    /// `error` in an error panel (error_panel::draw()) at the bottom: the HUD error style, as
+    /// high as the message needs up to the whole window, with a close button.
+    void draw(Runtime &runtime, std::string_view error = {}) const;
 
   private:
     std::vector<LaunchChoice> choices_;
     std::string heading_;
     std::vector<std::size_t> configurations_;
     std::size_t application_{};
-    bool configuring_{}, exit_requested_{};
+    bool configuring_{}, exit_requested_{}, error_closed_{};
     bool has_previews_{};
     Vec2 pointer_{-1, -1};
+    /// The pointer as the error panel saw it, which pointer_ is not while the panel holds it.
+    Vec2 error_pointer_{-1, -1};
     /// Set by show_configurations: the next update() records the pointer without hovering.
     bool settle_pointer_{};
 };

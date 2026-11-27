@@ -1,7 +1,9 @@
 // Window-free tests for the header-only presentation helpers: the bitmap glyph table
-// (bitmap_text.h), camera zoom stepping (camera.h), the rate counter, frame times and frame
-// limiter (timing.h), angle interpolation (math.h) and debug-menu rows (debug_menu.h).
+// (bitmap_text.h), the HUD lines and error wrapping (hud_text.h), camera zoom stepping (camera.h), the rate
+// counter, frame times and frame limiter (timing.h), angle interpolation (math.h) and debug-menu rows
+// (debug_menu.h).
 #include <kinetra/runtime/bitmap_text.h>
+#include <kinetra/runtime/hud_text.h>
 #include <kinetra/simulation/math.h>
 #include <kinetra/view/camera.h>
 #include <kinetra/view/debug_menu.h>
@@ -14,6 +16,8 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <vector>
 
 using kinetra::Glyph;
 using kinetra::glyph;
@@ -174,6 +178,52 @@ TEST_CASE("text width counts six pixels per character less the last gap") {
     CHECK(kinetra::text_width("") == 0);
     CHECK(kinetra::text_width("A") == 5);
     CHECK(kinetra::text_width("DEBUG") == 29);
+}
+
+TEST_CASE("HUD lines count up from the bottom of the viewport") {
+    namespace hud = kinetra::hud;
+    const kinetra::Vec2 viewport{1280, 720};
+    CHECK(hud::line_top(viewport, 1) == 700);
+    CHECK(hud::line_top(viewport, 3) == 660);
+    CHECK_MESSAGE(hud::line_top(viewport, 1) + 7 * hud::text_scale <= viewport.y,
+                  "line 1 is inside the window");
+    CHECK(hud::lines_below(viewport, 660) == 3);
+    CHECK(hud::lines_below(viewport, 661) == 2);
+    CHECK(hud::lines_below(viewport, 720) == 0);
+    CHECK(hud::lines_below(viewport, 800) == 0);
+}
+
+TEST_CASE("HUD columns fit the width between the margins and are at least one") {
+    namespace hud = kinetra::hud;
+    // Nine screen pixels per character at scale 1.5, ten pixels of margin on each side.
+    CHECK(hud::columns(1280) == 140);
+    CHECK(hud::columns(29) == 1);
+    CHECK(hud::columns(0) == 1);
+    CHECK(hud::columns(-5) == 1);
+}
+
+TEST_CASE("error text wraps at spaces and cuts words longer than a line") {
+    using kinetra::hud::wrap;
+    using Lines = std::vector<std::string_view>;
+    CHECK(wrap("", 10).empty());
+    CHECK((wrap("SHORT", 10) == Lines{"SHORT"}));
+    CHECK((wrap("GOAL REJECTED: MOVER BUSY", 14) == Lines{"GOAL REJECTED:", "MOVER BUSY"}));
+    CHECK((wrap("ONE TWO THREE", 7) == Lines{"ONE TWO", "THREE"}));
+    CHECK((wrap("/A/VERY/LONG/PATH.JSON", 8) == Lines{"/A/VERY/", "LONG/PAT", "H.JSON"}));
+    CHECK_MESSAGE((wrap(" LEADING", 4) == Lines{" LEA", "DING"}), "a space at the start gives no empty line");
+    CHECK_THROWS_AS(wrap("TEXT", 0), std::invalid_argument);
+}
+
+TEST_CASE("an error longer than its lines ends with the cut mark") {
+    using kinetra::hud::error_lines;
+    using Lines = std::vector<std::string>;
+    CHECK((error_lines("ONE TWO THREE FOUR", 9, 4) == Lines{"ONE TWO", "THREE", "FOUR"}));
+    CHECK((error_lines("ONE TWO THREE FOUR", 9, 2) == Lines{"ONE TWO", "THREE..."}));
+    CHECK((error_lines("ABCDEFGHIJKL", 6, 1) == Lines{"ABC..."}));
+    CHECK(error_lines("ONE TWO", 9, 0).empty());
+    CHECK(error_lines("", 9, 3).empty());
+    CHECK_MESSAGE(error_lines("ABCDEFGH", 2, 1) == Lines{"..."},
+                  "a line narrower than the mark keeps the mark");
 }
 
 TEST_CASE("the frame limiter spaces frames one interval apart") {

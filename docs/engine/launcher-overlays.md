@@ -9,6 +9,7 @@ Contracts of the optional application shell: sessions and their requests, the la
 - [Settings overlay](#settings-overlay)
 - [Debug menu, help and text](#debug-menu-help-and-text)
 - [Agent inspector](#agent-inspector)
+- [HUD text and errors](#hud-text-and-errors)
 - [Presentation helpers](#presentation-helpers)
 - [Tests](#tests)
 
@@ -31,7 +32,7 @@ A request is state, not an event: the host acts on it once, and a `menu` or `con
 
 [`kinetra/runtime/launcher.h`](../../include/kinetra/runtime/launcher.h) is the `Kinetra::Launcher` target, built with `KINETRA_BUILD_RUNTIME`. It publicly links Runtime. Consumers may use it or call `run_session` directly.
 
-- **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. `show_configurations(selection)` opens that page with a given configuration selected, which `run_launcher` uses for a `configurations` request; a pointer that the session left over another row keeps that selection until it moves. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and status line let applications reuse the menu for their own resource selection.
+- **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. `show_configurations(selection)` opens that page with a given configuration selected, which `run_launcher` uses for a `configurations` request; a pointer that the session left over another row keeps that selection until it moves. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and error message let applications reuse the menu for their own resource selection: `draw(runtime, error)` shows a non-empty error in the [error panel](#hud-text-and-errors) over the menu, `update(input, viewport, error)` gives that panel the pointer first, and `error_closed()` reports a click on its close button, after which the application removes its message.
 - **Previews.** Supply an immutable `RgbaImage` in at least one `LaunchChoice::preview` to enable the preview panel on the application list. It shows the highlighted application's image and up to four lines of its description. The panel sits beside the list in landscape windows and below it in portrait windows. Configuration pages use the centered list. Use `LaunchMenu::layout(viewport)` to position scripted clicks on the current page.
 - **`SessionHost`** owns one session and remembers its `selection()`. A factory that throws leaves the current session and camera untouched. The first advance after a transition gets zero elapsed time and empty input, so the selecting click and the construction time never reach the new session.
 - **`run_launcher`** is the standard loop over a `SessionHost` and a `LaunchMenu`:
@@ -121,6 +122,14 @@ An application supplies one `InspectorSnapshot` with a title and ordered groups 
 
 `InspectorView` anchors the snapshot to the top right of the available area. The view wraps rows to fit, scrolls them with the wheel and keeps the close button fixed. Use the same area when drawing and handling input. An input result with `captured` tells the caller to suppress pointer actions in the world. A result with `close` also asks the caller to clear its selection. Reset the view's scroll position on a selection change. [Runtime view](../../include/kinetra/runtime/inspector_view.h)
 
+## HUD text and errors
+
+An application's HUD is the text it lays over its view, outside any panel. [hud_text.h](../../include/kinetra/runtime/hud_text.h) gives every application the same HUD style, so an error reads the same everywhere:
+
+- **Lines.** HUD text uses `hud::text_scale` (1.5) and `hud::line_height` (20 screen pixels), at `hud::margin` from the left. `line_top(viewport, line)` counts lines from the bottom, 1 being the lowest; `draw_line` draws one. Statistics are yellow (`statistics_color`) on the lowest lines.
+- **Errors.** An error is red (`error_color`), in the same font and size as the statistics, on the lines directly above them. `draw_error(runtime, message, line, max_lines)` wraps the message to the window (`wrap`, at spaces where it can), puts its last line on `line` and the others above, cuts a message that needs more than `max_lines` with `cut_mark`, and returns the lines drawn, so the caller places its next text above them. `error_lines` gives those lines without drawing, for tests.
+- **Error panel.** A screen without HUD lines to spare, such as a launch menu, shows its error in a panel instead ([error_view.h](../../include/kinetra/runtime/error_view.h)): at the bottom of the window and as wide as it, as high as the message needs up to the whole window, with the inspector's title bar and close button. `error_panel::update` returns `captured` while the pointer is on the panel and `close` for a click on the button; the caller then removes the message. `LaunchMenu` uses it for its error.
+
 ## Presentation helpers
 
 Header-only helpers for the glue every interactive session needs:
@@ -131,7 +140,7 @@ Header-only helpers for the glue every interactive session needs:
 
 | Behavior | Suite | Needs a window |
 | --- | --- | --- |
-| Menu paging and configuration, `SessionHost` transitions, debug-menu clicks, buttons and scale | `kinetra_launcher` ([launcher_tests.cpp](../../tests/launcher_tests.cpp)) | No |
+| Menu paging and configuration, the error panel and its capture over the menu, `SessionHost` transitions, debug-menu clicks, buttons and scale | `kinetra_launcher` ([launcher_tests.cpp](../../tests/launcher_tests.cpp)) | No |
 | Overlay layout, rows, capture and actions, Ctrl and Shift+Ctrl, showing and hiding the debug menu | `kinetra_settings_view` ([settings_view_tests.cpp](../../tests/settings_view_tests.cpp)) | No |
 | Glyph table, zoom stepping, rate counter, frame limiter, debug folds and rows | `kinetra_presentation` ([presentation_tests.cpp](../../tests/presentation_tests.cpp)) | No |
 | `run_session` and `run_launcher` requests, menu key and Escape policy; the drawn panels; frame pacing | `kinetra_engine_graphics` ([runtime_tests.cpp](../../tests/runtime_tests.cpp)) | Yes |
