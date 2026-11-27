@@ -90,6 +90,9 @@ No lessons yet.
 
 ## Code
 
+- **When an overlay takes the pointer from a widget below, hide it only from that widget's hit tests and highlights, and keep its movement and hover state on the real pointer** · added 2026-11-27 · source: [#73](https://github.com/SMB-M87/Kinetra/pull/73)
+  `LaunchMenu`'s resting-pointer guard read the error panel's `{-1, -1}` stand-in as a move when the panel appeared or went away, so a resting pointer could undo keyboard navigation.
+
 - **Run every check that can throw before the first change of a function that promises to throw before changing anything** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68)
   `PassingCoordinator::step` validated its settings and bodies first, but a grid query could still throw after `advance()` had ended plans, which dropped their events.
 
