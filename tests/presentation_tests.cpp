@@ -71,6 +71,23 @@ TEST_CASE("lowercase letters draw with the uppercase glyph") {
     }
 }
 
+TEST_CASE("a parser diagnostic's punctuation has glyphs") {
+    // nlohmann's message for a blueprint cut off after "{ \"name\": ".
+    const std::string_view diagnostic = "[json.exception.parse_error.101] parse error at line 1, column 11: "
+                                        "syntax error while parsing value - "
+                                        "unexpected end of input; expected '[', '{', or a literal";
+    for (char c : diagnostic) {
+        CAPTURE(c);
+        CHECK_MESSAGE((c == ' ' || glyph(c) != Glyph{}), "every printed character of the diagnostic shows");
+    }
+    for (char c : {'{', '}', '(', ')', '\'', '"', ';'}) {
+        CAPTURE(c);
+        CHECK(glyph(c) != Glyph{});
+    }
+    CHECK_MESSAGE(glyph('{') != glyph('['), "braces differ from brackets");
+    CHECK_MESSAGE(glyph(';') != glyph(':'), "a semicolon differs from a colon");
+}
+
 TEST_CASE("unsupported characters are blank") {
     for (char c : {' ', '!', '?', '#', '\n', '\0', '~'}) {
         CAPTURE(static_cast<int>(c));
@@ -213,6 +230,10 @@ TEST_CASE("error text wraps at spaces and cuts words longer than a line") {
     CHECK_MESSAGE((wrap(" LEADING", 4) == Lines{" LEA", "DING"}), "a space at the start gives no empty line");
     CHECK_MESSAGE((wrap("ONE  TWO", 3) == Lines{"ONE", "TWO"}), "a run of spaces at a break goes");
     CHECK_MESSAGE((wrap("ONE   ", 3) == Lines{"ONE"}), "trailing spaces give no empty line");
+    CHECK_MESSAGE((wrap("ONE  TWO", 4) == Lines{"ONE", "TWO"}), "a line keeps no space before its break");
+    CHECK_MESSAGE((wrap("  LEADING", 4) == Lines{"  LE", "ADIN", "G"}),
+                  "a break before the first word counts as no break");
+    CHECK_MESSAGE(wrap("   ", 4).empty(), "only spaces give no line");
     CHECK_THROWS_AS(wrap("TEXT", 0), std::invalid_argument);
 }
 

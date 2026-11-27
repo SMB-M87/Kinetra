@@ -47,24 +47,38 @@ constexpr int lines_below(Vec2 viewport, float top) {
 }
 
 /// `text` split into lines of at most `columns` characters. A line breaks at the last space
-/// that fits and drops the spaces there; a word longer than a line is cut at the line's end. Empty
+/// that fits and drops the spaces on both sides of the break; a word longer than a line, or
+/// a break before the first word, cuts at the line's end. Empty
 /// text gives no lines. The views point into `text`. Throws std::invalid_argument for zero
 /// columns.
 inline std::vector<std::string_view> wrap(std::string_view text, std::size_t columns) {
     if (columns == 0)
         throw std::invalid_argument("HUD text needs at least one column");
+    const auto trimmed = [](std::string_view part) {
+        while (!part.empty() && part.back() == ' ')
+            part.remove_suffix(1);
+        return part;
+    };
     std::vector<std::string_view> lines;
     while (!text.empty()) {
+        std::string_view line;
+        std::size_t used = columns;
         if (text.size() <= columns) {
-            lines.push_back(text);
-            break;
+            line = trimmed(text);
+            used = text.size();
+        } else if (const auto space = text.rfind(' ', columns); space != std::string_view::npos) {
+            // Prefer the last space within reach, so words stay whole.
+            line = trimmed(text.substr(0, space));
+            used = space;
         }
-        // Prefer the last space within reach, so words stay whole; a space at the very first
-        // position would give an empty line, so it counts as no space.
-        const auto space = text.rfind(' ', columns);
-        const auto length = space == std::string_view::npos || space == 0 ? columns : space;
-        lines.push_back(text.substr(0, length));
-        text.remove_prefix(length);
+        // No space, or only spaces before it: cut the line at its end.
+        if (line.empty() && used != text.size()) {
+            line = text.substr(0, columns);
+            used = columns;
+        }
+        if (!line.empty())
+            lines.push_back(line);
+        text.remove_prefix(used);
         // Every space at a break goes, so the next line starts with its word.
         while (!text.empty() && text.front() == ' ')
             text.remove_prefix(1);
