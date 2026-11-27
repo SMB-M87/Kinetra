@@ -211,6 +211,8 @@ TEST_CASE("error text wraps at spaces and cuts words longer than a line") {
     CHECK((wrap("ONE TWO THREE", 7) == Lines{"ONE TWO", "THREE"}));
     CHECK((wrap("/A/VERY/LONG/PATH.JSON", 8) == Lines{"/A/VERY/", "LONG/PAT", "H.JSON"}));
     CHECK_MESSAGE((wrap(" LEADING", 4) == Lines{" LEA", "DING"}), "a space at the start gives no empty line");
+    CHECK_MESSAGE((wrap("ONE  TWO", 3) == Lines{"ONE", "TWO"}), "a run of spaces at a break goes");
+    CHECK_MESSAGE((wrap("ONE   ", 3) == Lines{"ONE"}), "trailing spaces give no empty line");
     CHECK_THROWS_AS(wrap("TEXT", 0), std::invalid_argument);
 }
 

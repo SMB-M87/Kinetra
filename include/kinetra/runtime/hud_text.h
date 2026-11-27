@@ -46,8 +46,8 @@ constexpr int lines_below(Vec2 viewport, float top) {
     return space < 1 ? 0 : static_cast<int>(space);
 }
 
-/// `text` split into lines of at most `columns` characters. A line breaks after the last space
-/// that fits and drops that space; a word longer than a line is cut at the line's end. Empty
+/// `text` split into lines of at most `columns` characters. A line breaks at the last space
+/// that fits and drops the spaces there; a word longer than a line is cut at the line's end. Empty
 /// text gives no lines. The views point into `text`. Throws std::invalid_argument for zero
 /// columns.
 inline std::vector<std::string_view> wrap(std::string_view text, std::size_t columns) {
@@ -65,7 +65,8 @@ inline std::vector<std::string_view> wrap(std::string_view text, std::size_t col
         const auto length = space == std::string_view::npos || space == 0 ? columns : space;
         lines.push_back(text.substr(0, length));
         text.remove_prefix(length);
-        if (!text.empty() && text.front() == ' ')
+        // Every space at a break goes, so the next line starts with its word.
+        while (!text.empty() && text.front() == ' ')
             text.remove_prefix(1);
     }
     return lines;
