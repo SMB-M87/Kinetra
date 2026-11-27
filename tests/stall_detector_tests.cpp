@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -230,7 +231,7 @@ TEST_CASE("no push without backing, without an approaching neighbor ahead, or be
     }
 }
 
-TEST_CASE("a standing blocker and an opposing mover come before a push") {
+TEST_CASE("a standing blocker comes before a push") {
     for (const auto &frame : frames) {
         CAPTURE(frame.scale);
         const auto tuning = settings(frame);
@@ -275,6 +276,10 @@ TEST_CASE("a new goal, a count that does not grow or another state starts a new 
             StallDetector detector;
             std::vector<StallMover> movers{mover(frame, {0, 0}, {5, 0})};
             REQUIRE(observe(detector, movers, tuning, tuning.threshold_steps).size() == 1);
+            // Only the change under test may end the episode: every other variant keeps the
+            // count growing.
+            if (change != 1)
+                ++movers[0].no_progress;
             if (change == 0)
                 movers[0].destination = frame.at({0, 5});
             else if (change == 1)
@@ -373,13 +378,20 @@ TEST_CASE("invalid settings or movers throw before anything changes") {
     invalid([](StallObservation &s) { s.oscillation_reversals = 0; });
     invalid([](StallObservation &s) { s.lookahead = -1; });
     invalid([](StallObservation &s) { s.clearance = {-1, 0}; });
+    invalid([](StallObservation &s) { s.clearance = {0, -1}; });
+    invalid([](StallObservation &s) { s.lookahead = std::numeric_limits<float>::infinity(); });
     invalid([](StallObservation &s) { s.stop_speed = 0; });
     invalid([](StallObservation &s) { s.opposing_cosine = 0; });
     invalid([](StallObservation &s) { s.opposing_cosine = -1; });
+    invalid([](StallObservation &s) { s.opposing_cosine = std::nanf(""); });
     invalid([](StallObservation &s) { s.pushing_reach = std::nanf(""); });
     invalid([](StallObservation &s) { s.ahead_cosine = 1; });
+    invalid([](StallObservation &s) { s.ahead_cosine = -0.1f; });
     auto bad_movers = movers;
     bad_movers[0].target = {std::nanf(""), 0};
+    CHECK_THROWS_AS(detector.observe(bad_movers, tuning, 0), std::invalid_argument);
+    bad_movers = movers;
+    bad_movers[0].destination = {0, std::numeric_limits<float>::infinity()};
     CHECK_THROWS_AS(detector.observe(bad_movers, tuning, 0), std::invalid_argument);
     bad_movers = movers;
     bad_movers[0].state = StallMoverState(7);
