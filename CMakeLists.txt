@@ -25,6 +25,7 @@ add_library(kinetra_simulation
     src/simulation/collision_grid.cpp
     src/simulation/navigation.cpp
     src/simulation/passing.cpp
+    src/simulation/passing_coordinator.cpp
     src/simulation/physics.cpp
     src/simulation/spatial_grid.cpp
     src/simulation/priority_steering.cpp
@@ -86,6 +87,8 @@ if(BUILD_TESTING)
         SOURCES tests/polygon_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_weighted_navigation_tests PREFIX kinetra_weighted_navigation
         SOURCES tests/weighted_navigation_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_passing_coordinator_tests PREFIX kinetra_passing_coordinator
+        SOURCES tests/passing_coordinator_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_navigation_tests PREFIX kinetra_navigation
         SOURCES tests/navigation_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_tests PREFIX kinetra_behavior
