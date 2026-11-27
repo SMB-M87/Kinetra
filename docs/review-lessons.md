@@ -90,6 +90,12 @@ No lessons yet.
 
 ## Code
 
+- **Run every check that can throw before the first change of a function that promises to throw before changing anything** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68)
+  `PassingCoordinator::step` validated its settings and bodies first, but a grid query could still throw after `advance()` had ended plans, which dropped their events.
+
+- **Give every branch a contract names (a priority, an order) a constructed case that fails when the branch is flipped** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68)
+  The parallel-plans case queried the other plan but never reached the priority branch, so every case passed with `yields_to`'s comparison flipped. It generalizes #51's lesson on rounding margins.
+
 - **Size a spatial grid's cells from the widest query that runs on it, and test the tuning that widens that query most** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68), Kinetra-Lab#138
   The passing coordinator's cell followed the prediction horizon while its formation query grew with `speed / acceleration`, so Demo's lowest acceleration made one query span more cells than `SpatialGrid` allows, and `step` threw.
 
