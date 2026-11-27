@@ -94,9 +94,11 @@ sampling cadence and response. [ADR 0016](../decisions/0016-predictive-passing.m
 
 The [passing coordinator](../../include/kinetra/simulation/passing_coordinator.h) runs
 that geometry as a plan lifecycle for applications that need no factory rules. Each step
-the caller hands it every mover as a body, a route heading, a destination and three flags:
-available (may take part), stationary (stands still for now) and present (exists in this
-step; an empty slot of a pool is left out, so its index stays stable). Any shape takes part
+the caller hands it every mover as a body, a route heading, a destination and a state:
+free (follows its own route, may join and keep a plan), busy (moves under another control),
+standing (stands still for now; blocks a lane whatever the priority) or absent (does not
+exist in this step, such as an empty slot of a pool, so its index stays stable). A plan
+whose participant is no longer free ends at once. Any shape takes part
 through a footprint, the axis-aligned box around its bounds centered on its position. The
 coordinator forms plans between movers whose headings will bring them into contact, asks
 the caller to approve each leg against the world, and checks the legs against the other
@@ -105,7 +107,10 @@ movers and the space of older plans itself. It guards every plan with a
 is predicted in its lane ahead, and resumes after the lane stayed clear for the resume
 time. A plan yields to movers in no plan and to the participants of older plans. It ends
 as completed, unavailable, obstructed, without progress, or cancelled by the caller, and
-a plan that failed keeps its pair out of new plans for the retry time. Times are in
+a plan that failed keeps its pair out of new plans for the retry time; `clear()`, an absent
+mover and `cancel()` drop such a delay, so a new occupant of an index starts afresh. Every
+input is validated before anything changes, and nothing after that check throws: a guard
+or lane query wider than the spatial grid answers cheaply scans the footprints instead. Times are in
 steps and velocities in world units per step; every value is the caller's tuning, with no
 defaults. The caller steers each participant to its target and plans its route again
 after the plan ends. i4sim keeps its own factory coordinator, with traffic controls and
@@ -190,4 +195,4 @@ Applications own goal selection, replanning schedules, streamed obstacle residen
 
 [Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
 
-The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification. The [passing coordinator tests](../../tests/passing_coordinator_tests.cpp) run plans through a minimal host at two world scales: completion without contact, the world check between sides, obstruction and the retry delay, waits for crossing traffic and a wait that outlasts the timeout, unavailability, movers that are not present, the progress timeout, parallel plans, cancellation, circle, polygon and rotated-box footprints, and tuning whose slow braking widens the formation range.
+The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification. The [passing coordinator tests](../../tests/passing_coordinator_tests.cpp) run plans through a minimal host at two world scales: completion without contact, the world check between sides, obstruction and the retry delay, waits for crossing traffic and a wait that outlasts the timeout, the priority between plans, participants that turn busy or standing, absent movers, the progress timeout, parallel plans, cancellation and the retry delays it drops, circle, polygon and rotated-box footprints, tuning whose slow braking widens the formation range, and queries far beyond the grid.
