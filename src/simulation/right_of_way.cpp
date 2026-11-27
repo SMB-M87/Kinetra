@@ -32,17 +32,21 @@ std::vector<RightOfWayEvent> RightOfWay::step(std::span<const StallMover> movers
     const auto end = now > std::numeric_limits<std::uint64_t>::max() - settings.window_steps
                          ? std::numeric_limits<std::uint64_t>::max()
                          : now + settings.window_steps;
+    // A holder's pusher never holds a right of way itself, or each would be a fixed body to the
+    // other and neither would make room. So a mover gets none while its pusher holds one, or
+    // while a right of way names it as the pusher.
+    std::vector<bool> named(movers.size());
+    for (const auto &grant : grants_)
+        if (grant && grant->pusher < named.size())
+            named[grant->pusher] = true;
     for (std::size_t i = 0; i < movers.size(); ++i) {
         const auto &mover = movers[i];
         if (grants_[i] || mover.state != StallMoverState::observed ||
-            mover.no_progress < observation.threshold_steps || !pushers[i])
-            continue;
-        // The pusher may itself hold the right of way against this mover: then neither would
-        // make room for the other.
-        const auto &pusher = grants_[*pushers[i]];
-        if (pusher && pusher->pusher == i)
+            mover.no_progress < observation.threshold_steps || !pushers[i] || named[i] ||
+            grants_[*pushers[i]])
             continue;
         grants_[i] = Grant{end, mover.destination, *pushers[i]};
+        named[*pushers[i]] = true;
         events.push_back({RightOfWayEvent::Kind::granted, i, pushers[i]});
     }
     return events;

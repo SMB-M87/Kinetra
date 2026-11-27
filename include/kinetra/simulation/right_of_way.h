@@ -38,8 +38,9 @@ struct RightOfWayEvent {
 /// finds pushed back gets the right of way until `window_steps` steps later. It loses it
 /// earlier when its goal changes, or when it is no longer observed: it arrived, stopped, changed
 /// to another control or is absent. After the window it can get it again at once if it is still
-/// stalled and pushed back. A pushing neighbor that holds the right of way against the mover
-/// gets none against it in return, so two movers never each wait for the other to make room.
+/// stalled and pushed back. A holder's pusher never holds a right of way itself: a mover gets
+/// none while its pusher holds one, or while a right of way names it as the pusher, so a holder
+/// and its pusher never each wait for the other to make room.
 /// The fallback measures no progress itself and changes no motion; the caller applies it.
 ///
 /// Mover indices are positions in the span of a step; a span shorter than the last step's ends

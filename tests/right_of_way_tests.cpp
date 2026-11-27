@@ -230,6 +230,56 @@ TEST_CASE("a pusher that holds the right of way against the mover gets none in r
     }
 }
 
+TEST_CASE("a mover that a right of way names as its pusher gets none, whoever pushes it first") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        const auto tuning = observation(frame);
+        RightOfWay fallback;
+        // Mover 1 backs away from its goal before mover 2, which drives west through its place;
+        // mover 0 waits to the north-west.
+        std::vector<StallMover> movers{mover(frame, {0, 1.3f}, {0, 5}, {0, 0}, 0),
+                                       mover(frame, {0, 0}, {0.3f, 0}, {-0.03f, 0}, tuning.threshold_steps),
+                                       mover(frame, {1.2f, 0.2f}, {-5, 0}, {-0.03f, 0}, 0)};
+        auto events = fallback.step(movers, tuning, window, 0);
+        REQUIRE(events.size() == 1);
+        REQUIRE(events[0].pusher == 2u);
+        // Mover 1 now drives east at its goal, and mover 2 backs off east before it, stalled too.
+        // Mover 0 closes in on mover 2 as well and, lower in mover order, is its first pusher.
+        movers[0].body.velocity = Vec2{0.03f, -0.03f} * frame.scale;
+        movers[1].body.velocity = Vec2{0.03f, 0} * frame.scale;
+        movers[2].body.velocity = Vec2{0.03f, 0} * frame.scale;
+        movers[2].no_progress = tuning.threshold_steps;
+        REQUIRE(pushing_neighbor(movers, 2, tuning) == 0u);
+        CHECK(fallback.step(movers, tuning, window, 1).empty());
+        CHECK_FALSE(fallback.granted(2));
+    }
+}
+
+TEST_CASE("a mover whose pusher holds a right of way gets none") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        const auto tuning = observation(frame);
+        RightOfWay fallback;
+        // Mover 0 backs away from its goal before mover 2, which drives west through its place;
+        // mover 1, behind mover 0, has a goal to the east.
+        std::vector<StallMover> movers{mover(frame, {0, 0}, {0.3f, 0}, {-0.03f, 0}, tuning.threshold_steps),
+                                       mover(frame, {-1.2f, -0.2f}, {5, -0.2f}, {0, 0}, 0),
+                                       mover(frame, {1.2f, 0.2f}, {-5, 0}, {-0.03f, 0}, 0)};
+        auto events = fallback.step(movers, tuning, window, 0);
+        REQUIRE(events.size() == 1);
+        REQUIRE(events[0].mover == 0);
+        REQUIRE(events[0].pusher == 2u);
+        // Mover 0, still backing west, now pushes mover 1 back from its goal, stalled too. A right
+        // of way for mover 1 would make each a fixed body to the other.
+        movers[1].body.velocity = Vec2{-0.03f, 0} * frame.scale;
+        movers[1].no_progress = tuning.threshold_steps;
+        REQUIRE(pushing_neighbor(movers, 1, tuning) == 0u);
+        CHECK(fallback.step(movers, tuning, window, 1).empty());
+        CHECK_FALSE(fallback.granted(1));
+        CHECK(fallback.granted(0));
+    }
+}
+
 TEST_CASE("a new goal ends the right of way at once") {
     for (const auto &frame : frames) {
         CAPTURE(frame.scale);
@@ -281,20 +331,27 @@ TEST_CASE("invalid input throws before anything changes") {
     const auto tuning = observation(frame);
     RightOfWay fallback;
     const auto movers = pushed_pair(frame, tuning.threshold_steps);
-    // A right of way exists before the invalid calls, so that one changing anything shows.
+    // A right of way exists before the invalid calls, and each comes at a step that would end
+    // it, its window passed or its mover busy, so that one ending it before it throws shows.
     REQUIRE(fallback.step(movers, tuning, window, 0).size() == 1);
-    CHECK_THROWS_AS(fallback.step(movers, tuning, {0}, 0), std::invalid_argument);
-    auto bad = tuning;
-    bad.stop_speed = 0;
-    CHECK_THROWS_AS(fallback.step(movers, bad, window, 0), std::invalid_argument);
-    auto bad_movers = movers;
-    bad_movers[1].destination = {std::nanf(""), 0};
-    CHECK_THROWS_AS(fallback.step(bad_movers, tuning, window, 0), std::invalid_argument);
+    const auto end = window.window_steps;
+    auto busy = movers;
+    busy[0].state = StallMoverState::busy;
+    for (const auto &at : {movers, busy}) {
+        CHECK_THROWS_AS(fallback.step(at, tuning, {0}, end), std::invalid_argument);
+        auto bad = tuning;
+        bad.stop_speed = 0;
+        CHECK_THROWS_AS(fallback.step(at, bad, window, end), std::invalid_argument);
+        auto bad_movers = at;
+        bad_movers[1].destination = {std::nanf(""), 0};
+        CHECK_THROWS_AS(fallback.step(bad_movers, tuning, window, end), std::invalid_argument);
+        CHECK(fallback.granted(0));
+    }
     CHECK_THROWS_AS(pushing_neighbor(movers, 2, tuning), std::out_of_range);
-    // Nothing changed: the right of way holds, and ends at the end of its window.
+    // Nothing changed: the right of way holds until a valid step ends it.
     CHECK(fallback.granted(0));
-    CHECK(fallback.step(movers, tuning, window, 1).empty());
-    const auto events = fallback.step(movers, tuning, window, window.window_steps);
-    REQUIRE_FALSE(events.empty());
+    const auto events = fallback.step(busy, tuning, window, 1);
+    REQUIRE(events.size() == 1);
     CHECK(events[0].kind == RightOfWayEvent::Kind::ended);
+    CHECK(events[0].mover == 0);
 }
