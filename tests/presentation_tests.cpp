@@ -222,8 +222,9 @@ TEST_CASE("an error longer than its lines ends with the cut mark") {
     CHECK((error_lines("ABCDEFGHIJKL", 6, 1) == Lines{"ABC..."}));
     CHECK(error_lines("ONE TWO", 9, 0).empty());
     CHECK(error_lines("", 9, 3).empty());
-    CHECK_MESSAGE(error_lines("ABCDEFGH", 2, 1) == Lines{"..."},
-                  "a line narrower than the mark keeps the mark");
+    CHECK_MESSAGE((error_lines("ABCDEFGH", 2, 1) == Lines{".."}),
+                  "a line narrower than the mark keeps what fits");
+    CHECK((error_lines("ABCDEFGH", 3, 1) == Lines{"..."}));
 }
 
 TEST_CASE("the frame limiter spaces frames one interval apart") {

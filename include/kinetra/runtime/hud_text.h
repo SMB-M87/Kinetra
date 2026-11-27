@@ -72,16 +72,18 @@ inline std::vector<std::string_view> wrap(std::string_view text, std::size_t col
 }
 
 /// The lines of an error `message` as draw_error() shows them: wrapped to `columns`, and at most
-/// `max_lines`, where a cut message ends its last line with cut_mark. Zero `max_lines` gives no
-/// lines. Throws std::invalid_argument for zero columns.
+/// `max_lines`, where a cut message ends its last line with cut_mark, or as much of it as fits.
+/// No line is longer than `columns`. Zero `max_lines` gives no lines. Throws std::invalid_argument for zero
+/// columns.
 inline std::vector<std::string> error_lines(std::string_view message, std::size_t columns, int max_lines) {
     const auto wrapped = wrap(message, columns);
     const auto shown = std::min(wrapped.size(), static_cast<std::size_t>(std::max(0, max_lines)));
     std::vector<std::string> lines(wrapped.begin(), wrapped.begin() + static_cast<std::ptrdiff_t>(shown));
     if (shown < wrapped.size() && shown > 0) {
         auto &last = lines.back();
-        const auto keep = columns > cut_mark.size() ? columns - cut_mark.size() : 0;
-        last = last.substr(0, std::min(last.size(), keep)) + std::string(cut_mark);
+        // A line narrower than the mark keeps as much of the mark as fits, never more.
+        const auto mark = cut_mark.substr(0, std::min(cut_mark.size(), columns));
+        last = last.substr(0, std::min(last.size(), columns - mark.size())) + std::string(mark);
     }
     return lines;
 }
