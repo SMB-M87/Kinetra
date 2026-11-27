@@ -13,28 +13,41 @@
 #include <vector>
 
 namespace kinetra {
+/// What a mover is to the coordinator in one step: whether it may join or keep a plan, and
+/// what kind of obstacle it is to the plans of others.
+enum class PassingMoverState {
+    /// Follows a route of its own: joins a plan when its heading is not zero, and keeps one.
+    /// To other plans a moving obstacle that the priority rule may let them ignore.
+    free,
+    /// Moves under another control (its goal changed, another solver or the player drives
+    /// it): joins no plan and ends its own as PassingOutcome::unavailable. A moving obstacle,
+    /// as `free`.
+    busy,
+    /// Stands still for now, such as a parked, held or sleeping mover: joins no plan and ends
+    /// its own as PassingOutcome::unavailable. Blocks a remaining leg it stands on whatever
+    /// the priority.
+    standing,
+    /// Does not exist in this step, such as an empty slot of a pool: no obstacle, joins no
+    /// plan and ends its own as PassingOutcome::unavailable. It loses any retry delay, so the
+    /// next occupant of its index starts afresh. A caller with a pool keeps its indices
+    /// stable this way.
+    absent,
+};
+
 /// One mover as a PassingCoordinator sees it at the start of a step. The caller's time unit
 /// is one step: velocities are in world units per step.
 struct PassingMover {
-    /// The mover's body. Only its bounds() and velocity are read: any supported shape takes
-    /// part through its axis-aligned bounds, its footprint.
+    /// The mover's body; it must pass validate(), also for an absent mover. Of it the
+    /// coordinator uses its bounds() and velocity: any supported shape takes part through its
+    /// footprint, the axis-aligned box around its bounds centered on its position.
     Body body;
-    /// Normalized direction of the mover's route at its position, or zero when it follows
-    /// none. Only a mover with a heading joins a new plan.
+    /// Direction of the mover's route at its position, of length one or zero; zero when it
+    /// follows none. Only a free mover with a heading joins a new plan.
     Vec2 heading;
     /// Final goal of the trip in world coordinates; a lane exit keeps room before it.
     Vec2 destination;
-    /// Whether the mover may take part in a plan. False ends its plan as
-    /// PassingOutcome::unavailable and keeps it out of new ones: it stopped, its goal
-    /// changed, or another control took over.
-    bool available{true};
-    /// Whether the mover stands still for now, such as a parked or sleeping one. It blocks
-    /// a lane it stands on whatever the priority, and never joins a plan.
-    bool stationary{};
-    /// Whether the mover exists in this step. False leaves it out entirely: it is no
-    /// obstacle, joins no plan, and its plan ends as PassingOutcome::unavailable. A caller
-    /// with a pool of slots keeps its indices stable this way; the body must still be valid.
-    bool present{true};
+    /// Its part in this step.
+    PassingMoverState state{PassingMoverState::free};
 };
 
 /// Tuning of a PassingCoordinator, in world units and steps. The caller chooses the scale;
@@ -66,7 +79,7 @@ struct PassingCoordination {
 enum class PassingOutcome {
     /// Both participants reached their exits.
     completed,
-    /// A participant was unavailable or left the movers of a step.
+    /// A participant was no longer free (busy, standing or absent) or left the movers of a step.
     unavailable,
     /// A stationary mover stands on a remaining leg, an oncoming one drives into the lane,
     /// or a wait lasted `timeout_steps`.
@@ -110,8 +123,11 @@ struct PassingTarget {
 
 /// The state of one active plan, for drawing and inspection.
 struct PassingPlanState {
+    /// The plan's id, as PassingEvent::plan names it.
     std::uint64_t id;
+    /// Mover indices of the participants, in the order of `lanes`.
     std::array<std::size_t, 2> movers;
+    /// The agreed lanes, one per participant.
     PassingLanes lanes;
     /// Both participants reached their entries.
     bool crossing;
@@ -122,7 +138,7 @@ struct PassingPlanState {
 /// Checks that a participant may sweep its footprint, half extents `half_extents` with the
 /// clearance included, along one leg from `from` to `to` through the caller's world:
 /// terrain, walls, zones. Other movers and the space of other plans are checked by the
-/// coordinator. `mover` is the participant's index.
+/// coordinator. `mover` is the participant's index. An empty function approves every leg.
 using PassingLaneCheck = std::function<bool(std::size_t mover, Vec2 from, Vec2 to, Vec2 half_extents)>;
 
 /// Coordinates head-on passing between movers that follow routes. Two movers whose route
@@ -135,26 +151,29 @@ using PassingLaneCheck = std::function<bool(std::size_t mover, Vec2 from, Vec2 t
 /// remaining legs (PassingLaneGuard). A participant waits at its braking point while a
 /// mover with priority is predicted to enter its lane ahead, and resumes after the lane
 /// stayed clear for `resume_steps`. A plan yields to movers in no plan and to the
-/// participants of older plans. It ends when a participant is unavailable, when it is
+/// participants of older plans. It ends when a participant is no longer free, when it is
 /// obstructed, when it makes no progress, or when both participants reached their exits.
 /// Plans never share swept space.
 ///
 /// Mover indices are positions in the span of a step. A caller that renumbers its movers
-/// calls clear() first; one with a pool of slots marks empty slots as not present. Results are deterministic
-/// for the same inputs. Not thread-safe.
+/// calls clear() first; one with a pool of slots marks empty slots absent, and cancels a
+/// slot's plan when a new occupant takes it between two steps. Results are deterministic for
+/// the same inputs. Not thread-safe.
 class PassingCoordinator {
   public:
     /// Advances the plans by one step, then forms new ones among `movers`. Returns the
     /// events of the step in order: ended and crossing plans first, then formed ones.
     /// `lanes_clear` decides each leg of a candidate against the world. Throws
-    /// std::invalid_argument for invalid settings or a mover with an invalid body, before
-    /// changing anything.
+    /// std::invalid_argument before changing anything for invalid settings, or for a mover
+    /// with an invalid body, a nonfinite destination, a heading of a length other than zero or
+    /// one, or a state outside PassingMoverState; nothing after that check throws.
     std::vector<PassingEvent> step(std::span<const PassingMover> movers, const PassingCoordination &settings,
                                    const PassingLaneCheck &lanes_clear);
     /// Ends the plan of `mover`, if any, as PassingOutcome::cancelled and returns its event.
-    /// Its participants may join a new plan at once.
+    /// Its participants, and `mover` in any case, may join a new plan at once.
     std::vector<PassingEvent> cancel(std::size_t mover);
     /// Ends every plan as PassingOutcome::cancelled, in plan order, and returns the events.
+    /// Every retry delay ends too, so a caller that renumbers its movers starts afresh.
     std::vector<PassingEvent> clear();
 
     /// The point `mover` heads for in its plan, if it takes part in one.
@@ -165,11 +184,18 @@ class PassingCoordinator {
     std::size_t size() const { return plans_.size(); }
 
   private:
-    /// The footprints of the present movers in a spatial index; queries return mover indices.
+    /// The footprints of the movers that are not absent in a spatial index.
     struct Neighbors {
         SpatialGrid grid;
-        /// Mover index of each indexed footprint.
+        float cell;
+        /// Bounds and mover index of each indexed footprint.
+        std::vector<Aabb> boxes;
         std::vector<std::size_t> ids;
+        /// False when a footprint lies too far from the origin for the grid's coordinates.
+        bool use_grid;
+        bool within_grid(Aabb area) const;
+        /// Mover indices whose footprints overlap `area`, ascending. An area wider than the
+        /// grid answers cheaply is scanned box by box, so no query throws.
         std::vector<std::size_t> query(Aabb area) const;
     };
     struct Plan {

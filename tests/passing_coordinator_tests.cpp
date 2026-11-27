@@ -69,7 +69,7 @@ struct Host {
 
     void step() {
         for (auto &mover : movers)
-            mover.heading = mover.stationary || !travelling(mover)
+            mover.heading = mover.state == PassingMoverState::standing || !travelling(mover)
                                 ? Vec2{}
                                 : normalized(mover.destination - mover.body.position);
         const auto step_events = coordinator.step(movers, tuning, lanes);
@@ -77,7 +77,7 @@ struct Host {
         const float speed = tuning.prediction.speed, acceleration = tuning.prediction.acceleration;
         for (std::size_t i = 0; i < movers.size(); ++i) {
             auto &body = movers[i].body;
-            if (movers[i].stationary) {
+            if (movers[i].state == PassingMoverState::standing) {
                 body.velocity = {};
                 continue;
             }
@@ -192,7 +192,7 @@ TEST_CASE("a mover standing on a lane ends the plan as obstructed and delays the
         const auto parked = host.add({0, 0}, {0, 0}, {0.3f, 0.3f});
         host.movers[parked].body.position = lane.exit;
         host.movers[parked].destination = lane.exit;
-        host.movers[parked].stationary = true;
+        host.movers[parked].state = PassingMoverState::standing;
         host.step();
         CHECK(host.ended(PassingOutcome::obstructed) == 1);
         CHECK(host.coordinator.size() == 0);
@@ -228,17 +228,20 @@ TEST_CASE("a participant waits for crossing traffic with priority and resumes on
     }
 }
 
-TEST_CASE("a participant that becomes unavailable ends the plan") {
+TEST_CASE("a participant that turns busy or standing ends the plan at once") {
     for (const auto &frame : frames) {
         CAPTURE(frame.scale);
-        Host host(frame);
-        host.add({0, 0}, {30, 0});
-        host.add({30, 0}, {0, 0});
-        host.form();
-        host.movers[1].available = false;
-        host.step();
-        CHECK(host.ended(PassingOutcome::unavailable) == 1);
-        CHECK_FALSE(host.coordinator.target(0));
+        for (const auto state : {PassingMoverState::busy, PassingMoverState::standing}) {
+            CAPTURE(int(state));
+            Host host(frame);
+            host.add({0, 0}, {30, 0});
+            host.add({30, 0}, {0, 0});
+            host.form();
+            host.movers[1].state = state;
+            host.step();
+            CHECK(host.ended(PassingOutcome::unavailable) == 1);
+            CHECK_FALSE(host.coordinator.target(0));
+        }
     }
 }
 
@@ -326,7 +329,7 @@ TEST_CASE("cancel and clear end plans for the caller") {
     }
 }
 
-TEST_CASE("a mover that is not present is no obstacle and ends its plan") {
+TEST_CASE("an absent mover is no obstacle and ends its plan") {
     for (const auto &frame : frames) {
         CAPTURE(frame.scale);
         Host host(frame);
@@ -334,19 +337,18 @@ TEST_CASE("a mover that is not present is no obstacle and ends its plan") {
         host.add({30, 0}, {0, 0});
         host.form();
         // An empty slot of a pool whose old body stands on the first participant's exit,
-        // where a present mover would end the plan as obstructed.
+        // where a standing mover would end the plan as obstructed.
         const auto slot = host.add({0, 0}, {0, 0}, {0.3f, 0.3f});
         host.movers[slot].body.position = host.movers[slot].destination = host.events.front().lanes[0].exit;
-        host.movers[slot].stationary = true;
-        host.movers[slot].present = false;
+        host.movers[slot].state = PassingMoverState::absent;
         host.step();
         CHECK(host.ended(PassingOutcome::obstructed) == 0);
         CHECK(host.coordinator.size() == 1);
-        host.movers[0].present = false;
+        host.movers[0].state = PassingMoverState::absent;
         host.step();
         CHECK(host.ended(PassingOutcome::unavailable) == 1);
         for (auto &mover : host.movers)
-            mover.present = false;
+            mover.state = PassingMoverState::absent;
         CHECK_NOTHROW(host.step());
     }
 }
@@ -393,6 +395,100 @@ TEST_CASE("slow braking next to a high speed keeps every query within the grid")
     }
 }
 
+TEST_CASE("a plan waits for a participant of an older plan, and an older plan ignores a younger one") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        for (const bool older_crosses : {true, false}) {
+            CAPTURE(older_crosses);
+            Host host(frame);
+            host.add({0, 0}, {30, 0});
+            host.add({30, 0}, {0, 0});
+            host.add({0, 40}, {30, 40});
+            host.add({30, 40}, {0, 40});
+            host.form(2);
+            const auto plans = host.coordinator.plans();
+            REQUIRE(plans[0].id < plans[1].id);
+            // A participant of one plan strays into the lane ahead of the first participant of
+            // the other plan, creeping sideways. Plans are guarded oldest first, so in this one
+            // step the older plan's guard sees the younger participant still in its plan.
+            const auto crossing = older_crosses ? plans[0] : plans[1];
+            const auto watched = older_crosses ? plans[1] : plans[0];
+            auto &body = host.movers[crossing.movers[0]].body;
+            body.position = lerp(watched.lanes[0].entry, watched.lanes[0].exit, 0.3f);
+            body.velocity = Vec2{0, 0.002f} * frame.scale;
+            const auto events = host.coordinator.step(host.movers, host.tuning, {});
+            const auto target = host.coordinator.target(watched.movers[0]);
+            REQUIRE(target);
+            CHECK(target->waiting == older_crosses);
+            // The younger plan yields to the older one, whichever of them strayed: when its own
+            // participant strayed into older traffic, it ends as obstructed.
+            CHECK(std::ranges::none_of(events, [&](const PassingEvent &event) {
+                return event.kind == PassingEventKind::ended && event.plan == plans[0].id;
+            }));
+        }
+    }
+}
+
+TEST_CASE("a participant far from its lanes and a long exit offset keep every query within the grid") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.form();
+        // The caller moved a participant far away without cancelling its plan.
+        host.movers[0].body.position = frame.at({-600, 600});
+        CHECK_NOTHROW(host.step());
+        Host offset(frame);
+        offset.tuning.margins.exit_offset = 550 * frame.scale;
+        offset.add({0, 0}, {2000, 2000});
+        offset.add({30, 30}, {-2000, -2000});
+        for (int i = 0; i < 100; ++i)
+            CHECK_NOTHROW(offset.step());
+    }
+}
+
+TEST_CASE("clear and an absent mover drop retry delays, so a new mover on the index plans at once") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        Host host(frame);
+        host.add({0, 0}, {30, 0});
+        host.add({30, 0}, {0, 0});
+        host.form();
+        // A participant turns busy: the plan fails and both indices get a retry delay.
+        host.movers[1].state = PassingMoverState::busy;
+        host.step();
+        REQUIRE(host.ended(PassingOutcome::unavailable) == 1);
+        // The caller renumbers: clear(), then a new head-on pair on the same indices, close
+        // enough to conflict within the formation horizon at once.
+        host.coordinator.clear();
+        host.movers[0].body = box(frame.at({0, 20}), Vec2{0.5f, 0.5f} * frame.scale);
+        host.movers[0].destination = frame.at({30, 20});
+        host.movers[1].body = box(frame.at({8, 20}), Vec2{0.5f, 0.5f} * frame.scale);
+        host.movers[1].destination = frame.at({-22, 20});
+        host.movers[1].state = PassingMoverState::free;
+        host.step();
+        CHECK(host.coordinator.size() == 1);
+
+        // A pool slot: the second participant's slot empties for one step, then refills.
+        host.movers[1].state = PassingMoverState::busy;
+        host.step();
+        host.movers[1].state = PassingMoverState::absent;
+        host.step();
+        host.movers[1].state = PassingMoverState::free;
+        host.movers[0].body = box(frame.at({0, 40}), Vec2{0.5f, 0.5f} * frame.scale);
+        host.movers[0].destination = frame.at({30, 40});
+        host.movers[0].body.velocity = {};
+        host.movers[1].body = box(frame.at({8, 40}), Vec2{0.5f, 0.5f} * frame.scale);
+        host.movers[1].destination = frame.at({-22, 40});
+        // Index 0 keeps its delay from the failed plan; index 1 starts afresh, so only
+        // cancelling index 0 too lets the pair plan at once.
+        host.coordinator.cancel(0);
+        host.step();
+        CHECK(host.coordinator.size() == 1);
+    }
+}
+
 TEST_CASE("invalid settings and movers throw before any plan changes") {
     Host host(frames[1]);
     host.add({0, 0}, {30, 0});
@@ -406,6 +502,12 @@ TEST_CASE("invalid settings and movers throw before any plan changes") {
     CHECK_THROWS_AS(host.coordinator.step(host.movers, bad, {}), std::invalid_argument);
     auto movers = host.movers;
     movers[0].heading = {std::nanf(""), 0};
+    CHECK_THROWS_AS(host.coordinator.step(movers, host.tuning, {}), std::invalid_argument);
+    movers = host.movers;
+    movers[0].heading = {3, 4};
+    CHECK_THROWS_AS(host.coordinator.step(movers, host.tuning, {}), std::invalid_argument);
+    movers = host.movers;
+    movers[0].state = PassingMoverState(7);
     CHECK_THROWS_AS(host.coordinator.step(movers, host.tuning, {}), std::invalid_argument);
     CHECK(host.coordinator.size() == 1);
 }

@@ -8,9 +8,21 @@
 
 namespace kinetra {
 namespace {
-/// Share of the speed limit per step by which the summed distance to the targets must
-/// shrink to count as progress.
+/// Share of the speed limit by which the summed distance to the targets must fall below its
+/// best value so far to count as progress; less does not reset the progress timeout.
 constexpr float progress_speed_fraction = 0.05f;
+/// Cells of the spatial grid across the formation range around a mover: few enough that a
+/// formation query visits a bounded number of cells, many enough that it does not return
+/// every mover of a dense crowd.
+constexpr float cells_per_formation_range = 8;
+/// Most cells a query may cover before the index scans its boxes one by one instead. Far
+/// below SpatialGrid's own limit, so a query never throws, and still cheap per query.
+constexpr float largest_grid_query = 4096;
+/// Largest cell coordinate the grid is used for: SpatialGrid rejects more than ±10^9, and a
+/// stored box or query beyond this scans instead.
+constexpr float largest_grid_coordinate = 1e8f;
+/// Tolerance on the length of a heading, which must be one or zero.
+constexpr float heading_tolerance = 1e-3f;
 
 bool nonnegative(float value) {
     return std::isfinite(value) && value >= 0;
@@ -80,10 +92,16 @@ std::vector<PassingEvent> PassingCoordinator::step(std::span<const PassingMover>
     for (std::size_t id = 0; id < movers.size(); ++id) {
         const auto &mover = movers[id];
         kinetra::validate(mover.body);
-        if (!finite(mover.heading) || !finite(mover.destination))
-            throw std::invalid_argument("Passing movers require a finite heading and destination");
+        const float heading = length(mover.heading);
+        if (!finite(mover.heading) || !finite(mover.destination) ||
+            (heading > heading_tolerance && std::abs(heading - 1) > heading_tolerance))
+            throw std::invalid_argument(
+                "Passing movers require a finite destination and a heading of length one or zero");
+        if (mover.state != PassingMoverState::free && mover.state != PassingMoverState::busy &&
+            mover.state != PassingMoverState::standing && mover.state != PassingMoverState::absent)
+            throw std::invalid_argument("Passing movers require a valid state");
         footprints.push_back(footprint(mover.body));
-        if (!mover.present)
+        if (mover.state == PassingMoverState::absent)
             continue;
         const auto &box = footprints.back();
         boxes.push_back({box.position - box.half_extents, box.position + box.half_extents});
@@ -91,29 +109,51 @@ std::vector<PassingEvent> PassingCoordinator::step(std::span<const PassingMover>
         largest_half = {std::max(largest_half.x, box.half_extents.x),
                         std::max(largest_half.y, box.half_extents.y)};
     }
-    // The widest query is the formation range around a mover; the guard's queries cover a
-    // plan's legs, which lie within it. A cell near the largest footprint, or an eighth of
-    // that range when it is longer, keeps every query to a bounded number of cells for any
-    // scale and tuning: a range set by slow braking (speed²/acceleration) would otherwise
-    // span more cells than the grid allows.
-    const float cell = std::max(2 * std::max(largest_half.x, largest_half.y),
-                                formation_reach(settings, length(largest_half)).range / 8);
-    Neighbors index{SpatialGrid(cell), std::move(ids)};
-    index.grid.rebuild(boxes);
+    // A cell near the largest footprint, or a fraction of the formation range when that is
+    // longer, keeps the formation queries to a few cells for any scale and tuning: a range
+    // set by slow braking (speed²/acceleration) would otherwise span more cells than the grid
+    // allows. Guard and lane queries follow a plan's legs, which a participant far from its
+    // lanes makes arbitrarily long; Neighbors::query scans those.
+    const float cell =
+        std::max(2 * std::max(largest_half.x, largest_half.y),
+                 formation_reach(settings, length(largest_half)).range / cells_per_formation_range);
+    Neighbors index{SpatialGrid(cell), cell, std::move(boxes), std::move(ids), true};
+    for (const auto &box : index.boxes)
+        index.use_grid = index.use_grid && index.within_grid(box);
+    if (index.use_grid)
+        index.grid.rebuild(index.boxes);
     retry_.resize(std::max(retry_.size(), movers.size()));
 
     std::vector<PassingEvent> events;
     advance(footprints, movers, settings, index, largest_half, events);
+    // An absent mover's index may get a new occupant, which must not inherit a retry delay.
+    for (std::size_t id = 0; id < movers.size(); ++id)
+        if (movers[id].state == PassingMoverState::absent)
+            retry_[id] = 0;
     form(footprints, movers, settings, lanes_clear, index, largest_half, events);
     ++step_;
     return events;
 }
 
+bool PassingCoordinator::Neighbors::within_grid(Aabb area) const {
+    const float limit = largest_grid_coordinate * cell;
+    return std::abs(area.min.x) < limit && std::abs(area.min.y) < limit && std::abs(area.max.x) < limit &&
+           std::abs(area.max.y) < limit;
+}
+
 std::vector<std::size_t> PassingCoordinator::Neighbors::query(Aabb area) const {
-    auto found = grid.query(area);
-    // The grid returns sorted positions, and ids is ascending, so the result stays sorted.
-    for (auto &position : found)
-        position = ids[position];
+    const float columns = (area.max.x - area.min.x) / cell + 1, rows = (area.max.y - area.min.y) / cell + 1;
+    std::vector<std::size_t> found;
+    if (use_grid && within_grid(area) && columns * rows <= largest_grid_query) {
+        found = grid.query(area);
+        // The grid returns sorted positions, and ids is ascending, so the result stays sorted.
+        for (auto &position : found)
+            position = ids[position];
+        return found;
+    }
+    for (std::size_t i = 0; i < boxes.size(); ++i)
+        if (boxes[i].overlaps(area))
+            found.push_back(ids[i]);
     return found;
 }
 
@@ -125,6 +165,10 @@ std::vector<PassingEvent> PassingCoordinator::cancel(std::size_t mover) {
         else
             ++i;
     }
+    // A caller cancels when a new occupant takes the index, which must not wait for its
+    // predecessor's retry delay.
+    if (mover < retry_.size())
+        retry_[mover] = step_;
     return events;
 }
 
@@ -132,6 +176,8 @@ std::vector<PassingEvent> PassingCoordinator::clear() {
     std::vector<PassingEvent> events;
     while (!plans_.empty())
         end(0, PassingOutcome::cancelled, 0, events);
+    // The caller renumbers its movers after clear(), so no delay may stay with an index.
+    std::fill(retry_.begin(), retry_.end(), std::uint64_t{0});
     return events;
 }
 
@@ -180,7 +226,7 @@ void PassingCoordinator::advance(std::span<const Body> footprints, std::span<con
         bool arrived = true;
         for (std::size_t side = 0; side < 2 && !outcome; ++side) {
             const auto id = plan.movers[side];
-            if (id >= movers.size() || !movers[id].available || !movers[id].present) {
+            if (id >= movers.size() || movers[id].state != PassingMoverState::free) {
                 outcome = PassingOutcome::unavailable;
                 break;
             }
@@ -244,7 +290,7 @@ std::optional<PassingOutcome> PassingCoordinator::guard(Plan &plan, std::span<co
         for (auto other : index.query(lane_guard.query_bounds(margin))) {
             if (other == plan.movers[0] || other == plan.movers[1])
                 continue;
-            const bool stationary = movers[other].stationary;
+            const bool stationary = movers[other].state == PassingMoverState::standing;
             // A stationary mover is an obstruction regardless of passing priority.
             if (!stationary && !yields_to(plan, other))
                 continue;
@@ -290,8 +336,8 @@ void PassingCoordinator::form(std::span<const Body> footprints, std::span<const 
             {footprints[i].position, footprints[i].half_extents, movers[i].heading, movers[i].destination});
     const auto eligible = [&](std::size_t id) {
         const auto &mover = movers[id];
-        return !claimed[id] && mover.present && mover.available && !mover.stationary &&
-               mover.heading != Vec2{} && retry_[id] <= step_;
+        return !claimed[id] && mover.state == PassingMoverState::free &&
+               length(mover.heading) > heading_tolerance && retry_[id] <= step_;
     };
     for (std::size_t a = 0; a < movers.size(); ++a) {
         if (!eligible(a))
