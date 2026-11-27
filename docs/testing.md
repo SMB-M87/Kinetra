@@ -87,7 +87,7 @@ ctest --preset dev -R 'kinetra_traffic:clear'   # or:
 
 ## Verification levels
 
-Choose the lowest level that covers every file in the diff (`git diff --name-only main...HEAD` plus uncommitted files). One file at a higher level lifts the whole change.
+Choose the lowest level that covers every file in the diff against the actual pull request base (`git diff --name-only <base>...HEAD` plus uncommitted files). For a stacked step, include scenarios affected by changes in its relevant dependencies. One file at a higher level lifts the whole change.
 
 | Level | Trigger |
 | --- | --- |

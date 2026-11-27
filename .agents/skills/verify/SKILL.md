@@ -10,10 +10,10 @@ Implements the [verification levels](../../../docs/testing.md#verification-level
 
 ## 1. Collect the change set
 
-Run this in every repository with changes (Lab and/or `external/Kinetra`):
+Run this in every repository with changes (Lab and/or `external/Kinetra`). Set the base to the target branch of the pull request, which is the previous branch for a stacked step.
 
 ```sh
-git diff --name-only main...HEAD      # committed on this branch
+git diff --name-only <base>...HEAD    # committed changes for this pull request
 git status --short                    # uncommitted and untracked
 ```
 
@@ -46,7 +46,7 @@ cmake --build --preset dev --target <targets>
 ctest --preset dev -R '<regex>'
 ```
 
-Pick targets and tests from the mapping tables: Kinetra in [testing](../../../docs/testing.md#choosing-targeted-tests), Lab in Lab's `AGENTS.md`.
+Pick targets and tests for the affected scenarios, including any whose relevant dependencies changed. Use the mapping tables: Kinetra in [testing](../../../docs/testing.md#choosing-targeted-tests), Lab in Lab's `AGENTS.md`.
 
 **Full.**
 
