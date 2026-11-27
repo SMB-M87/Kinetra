@@ -183,3 +183,4 @@ Not covered here: behavior over long application runs and real crowds. Lab's i4s
 
 - Rotating boxes and polygons are swept without rotation, so they can still tunnel ([limits](../../docs/engine/math-physics.md#limits-and-verification)).
 - `tangent_steer` is experimental. The caller supplies priority and tangent steering tuning for its distance and time scales.
+- The shared footprint of the passing coordinator and the stall detector (`detail/footprint.h`) takes its half extents from `position - bounds.min`, which rounds with the position: in float32 a 0.3 half extent reads 0.297 at x = 100,000. Taking them from the bounds of the body moved to the origin would avoid that, but it changes every passing and stall result by a rounding, so it waits for a change of its own.
