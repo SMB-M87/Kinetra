@@ -113,8 +113,9 @@ input is validated before anything changes, and nothing after that check throws:
 or lane query wider than the spatial grid answers cheaply scans the footprints instead. Times are in
 steps and velocities in world units per step; every value is the caller's tuning, with no
 defaults. The caller steers each participant to its target and plans its route again
-after the plan ends. i4sim keeps its own factory coordinator, with traffic controls and
-an event log. [ADR 0017](../decisions/0017-passing-coordinator.md)
+after the plan ends. Demo, Dotio and i4sim use it; i4sim maps its factory states to
+`PassingMoverState` and keeps its traffic controls and event log around it.
+[ADR 0017](../decisions/0017-passing-coordinator.md), [ADR 0018](../decisions/0018-stall-remedies-in-the-engine.md)
 
 ## Traffic admission
 
