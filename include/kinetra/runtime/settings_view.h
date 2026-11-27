@@ -36,10 +36,21 @@ struct HelpSection {
 /// One application-supplied entry of the settings panel, in display order.
 using SettingsRow = std::variant<ZoomRow, ToggleRow, HelpSection>;
 
+/// The first button of the settings panel's action row: its text and the request a click
+/// on it sets. The default leaves for the launcher's application list; an application with
+/// its own choice of variant names that choice and asks for SessionRequest::configurations.
+struct LeaveAction {
+    /// Button text in capitals; at most 11 characters, to fit the button.
+    std::string label{"LAUNCHER"};
+    /// SessionRequest::menu or SessionRequest::configurations.
+    SessionRequest request{SessionRequest::menu};
+};
+
 /// Modal settings panel that applications fill with their own rows.
 ///
 /// Kinetra owns the title bar, the closed-state toolbar (SETTINGS, and DEBUG while the debug
-/// mode is on), the LAUNCHER / RESUME / EXIT action row, the layout and the two shortcuts:
+/// mode is on), the action row (a LeaveAction, RESUME and EXIT; by default LAUNCHER / RESUME /
+/// EXIT), the layout and the two shortcuts:
 /// Ctrl for this panel and Shift+Ctrl for the debug menu. Applications own the rows. Layout
 /// is in logical panel pixels and is shared by picking and drawing, so what is drawn is
 /// what is clicked. While open, the panel captures all input, including the click that
@@ -48,17 +59,21 @@ class SettingsOverlay {
   public:
     /// Width of the panel in logical panel pixels.
     static constexpr float panel_width = 208;
-    /// Centers of the LAUNCHER, RESUME and EXIT buttons on the action row, in panel pixels.
-    static constexpr float launcher_x = 48, resume_x = 120, exit_x = 176;
+    /// Centers of the leave button (the LeaveAction, LAUNCHER by default), RESUME and EXIT on
+    /// the action row, in panel pixels.
+    static constexpr float leave_x = 48, resume_x = 120, exit_x = 176;
     /// Centers of the `[-]` and `[+]` buttons of a zoom row, in panel pixels.
     static constexpr float zoom_out_x = 171, zoom_in_x = 187;
 
     /// Takes the rows in display order. `debug_mode`, if given, is borrowed and must outlive
     /// the overlay: the DEBUG toolbar button shows while it is true, and update_debug() sets
-    /// it when the debug shortcut is used.
+    /// it when the debug shortcut is used. `leave` is the first button of the action row.
     /// Throws std::invalid_argument when a zoom or toggle row follows a help section, when
-    /// a toggle row has no flag, or when a zoom row has no limits.
-    explicit SettingsOverlay(std::vector<SettingsRow> rows, bool *debug_mode = nullptr);
+    /// a toggle row has no flag, when a zoom row has no limits, or when `leave` has an empty
+    /// label, a label longer than 11 characters, or a request other than `menu` and
+    /// `configurations`.
+    explicit SettingsOverlay(std::vector<SettingsRow> rows, bool *debug_mode = nullptr,
+                             LeaveAction leave = {});
 
     /// Applies one frame of input. The SETTINGS toolbar button or Ctrl opens and closes the
     /// panel; Ctrl acts when it is released, and not at all when Shift was down while it
@@ -84,9 +99,14 @@ class SettingsOverlay {
     /// Whether the panel is open.
     bool visible() const { return visible_; }
 
-    /// `menu` after LAUNCHER, `exit` after EXIT, `none` otherwise. Requests are not reset:
-    /// the host acts on them once (see SessionRequest).
+    /// The LeaveAction's request after its button, `exit` after EXIT, `none` otherwise. The
+    /// leave button also closes the panel. Requests are not reset: the host acts on them
+    /// once (see SessionRequest).
     SessionRequest request() const { return request_; }
+    /// Sets request() back to `none`. Only for a session that serves a request itself
+    /// instead of passing it to its host, as an application whose configuration page is a
+    /// screen of its own does, and whose overlay outlives that action.
+    void clear_request() { request_ = SessionRequest::none; }
 
     /// Screen pixels per panel pixel for a viewport in logical window pixels.
     static float scale(Vec2 viewport);
@@ -96,7 +116,7 @@ class SettingsOverlay {
     /// is clickable across the panel from 5 pixels above to 13 below.
     /// Throws std::out_of_range for an invalid index.
     float row_y(std::size_t index) const;
-    /// Vertical position of the LAUNCHER / RESUME / EXIT row in panel pixels: the top edge
+    /// Vertical position of the action row (leave, RESUME, EXIT) in panel pixels: the top edge
     /// of the button texts.
     float actions_y() const;
     /// Whether the help section at row `index` is expanded; false for other rows.
@@ -105,6 +125,7 @@ class SettingsOverlay {
 
   private:
     std::vector<SettingsRow> rows_;
+    LeaveAction leave_;
     std::vector<bool> expanded_;
     bool *debug_mode_;
     bool visible_{};
