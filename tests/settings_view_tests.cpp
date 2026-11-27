@@ -13,12 +13,14 @@
 #include <initializer_list>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using kinetra::DebugEntry;
 using kinetra::DebugMenu;
 using kinetra::HelpSection;
 using kinetra::Key;
+using kinetra::LeaveAction;
 using kinetra::SessionRequest;
 using kinetra::SettingsOverlay;
 using kinetra::ToggleRow;
@@ -58,13 +60,13 @@ struct Harness {
     kinetra::Camera2D camera;
     SettingsOverlay overlay;
 
-    Harness(std::size_t lines, Vec2 size)
+    Harness(std::size_t lines, Vec2 size, LeaveAction leave = {})
         : sim_lines(lines), viewport(size),
           overlay({ZoomRow{[] { return ZoomLimits{25, 50}; }}, ToggleRow{"STATISTICS", &statistics},
                    ToggleRow{"DEBUG MODE", &debug},
                    HelpSection{"SIM CONTROLS", std::vector<std::string>(lines, "LINE")},
                    HelpSection{"DEBUG CONTROLS", {"WHEEL  ZOOM", "GHOST CLICK  TELEPORT"}}},
-                  &debug) {
+                  &debug, std::move(leave)) {
         camera.viewport = size;
         camera.pixels_per_unit = 25;
     }
@@ -101,12 +103,12 @@ struct Harness {
 };
 
 /// Runs `check` once per layout, with the layout recorded for failure messages.
-void for_each_layout(const std::function<void(Harness &)> &check) {
+void for_each_layout(const std::function<void(Harness &)> &check, const LeaveAction &leave = {}) {
     for (std::size_t lines : {std::size_t{4}, std::size_t{3}})
         for (auto viewport : {Vec2{1280, 800}, Vec2{160, 120}}) {
             CAPTURE(lines);
             CAPTURE(viewport.x);
-            Harness harness(lines, viewport);
+            Harness harness(lines, viewport, leave);
             check(harness);
         }
 }
@@ -290,19 +292,41 @@ TEST_CASE("resume closes the panel and captures the click") {
     });
 }
 
-TEST_CASE("launcher and exit buttons raise their requests") {
+TEST_CASE("the leave and exit buttons raise their requests") {
     for_each_layout([](Harness &h) {
         REQUIRE(h.tap(Key::control));
         INFO("the space between two buttons is not a button");
-        h.click((SettingsOverlay::launcher_x + SettingsOverlay::resume_x) / 2,
-                h.overlay.actions_y() + into_row);
+        h.click((SettingsOverlay::leave_x + SettingsOverlay::resume_x) / 2, h.overlay.actions_y() + into_row);
         CHECK(h.overlay.request() == SessionRequest::none);
         CHECK(h.overlay.visible());
-        h.click(SettingsOverlay::launcher_x, h.overlay.actions_y() + into_row);
-        CHECK(h.overlay.request() == SessionRequest::menu);
         h.click(SettingsOverlay::exit_x, h.overlay.actions_y() + into_row);
         CHECK(h.overlay.request() == SessionRequest::exit);
     });
+    SUBCASE("the default leave button is LAUNCHER and asks for the menu") {
+        for_each_layout([](Harness &h) {
+            REQUIRE(h.tap(Key::control));
+            CHECK(h.click(SettingsOverlay::leave_x, h.overlay.actions_y() + into_row));
+            CHECK(h.overlay.request() == SessionRequest::menu);
+            CHECK_MESSAGE(!h.overlay.visible(), "the leave button closes the panel");
+        });
+    }
+    SUBCASE("an application's leave button asks for its configurations") {
+        for_each_layout(
+            [](Harness &h) {
+                REQUIRE(h.tap(Key::control));
+                CHECK(h.click(SettingsOverlay::leave_x, h.overlay.actions_y() + into_row));
+                CHECK(h.overlay.request() == SessionRequest::configurations);
+                CHECK_FALSE(h.overlay.visible());
+                INFO("a session that serves the request itself clears it, and the panel works on");
+                h.overlay.clear_request();
+                CHECK(h.overlay.request() == SessionRequest::none);
+                REQUIRE(h.tap(Key::control));
+                CHECK(h.overlay.visible());
+                h.click(SettingsOverlay::resume_x, h.overlay.actions_y() + into_row);
+                CHECK(h.overlay.request() == SessionRequest::none);
+            },
+            {"SCENARIOS", SessionRequest::configurations});
+    }
 }
 
 TEST_CASE("the settings button does not overlap the debug menu") {
@@ -525,6 +549,13 @@ TEST_CASE("invalid rows are rejected") {
                     std::invalid_argument);
     CHECK_THROWS_AS(SettingsOverlay({ToggleRow{"FLAG", nullptr}}), std::invalid_argument);
     CHECK_THROWS_AS(SettingsOverlay({ZoomRow{}}), std::invalid_argument);
+    INFO("the leave button needs a label that fits and a request that leaves for a menu");
+    CHECK_THROWS_AS(SettingsOverlay({}, nullptr, {"", SessionRequest::menu}), std::invalid_argument);
+    CHECK_THROWS_AS(SettingsOverlay({}, nullptr, {"TWELVE CHARS", SessionRequest::menu}),
+                    std::invalid_argument);
+    CHECK_THROWS_AS(SettingsOverlay({}, nullptr, {"EXIT", SessionRequest::exit}), std::invalid_argument);
+    CHECK_THROWS_AS(SettingsOverlay({}, nullptr, {"NONE", SessionRequest::none}), std::invalid_argument);
+    CHECK_NOTHROW(SettingsOverlay({}, nullptr, {"ELEVEN CHAR", SessionRequest::configurations}));
     SettingsOverlay overlay({ToggleRow{"FLAG", &flag}});
     CHECK_THROWS_AS(static_cast<void>(overlay.row_y(1)), std::out_of_range);
 }

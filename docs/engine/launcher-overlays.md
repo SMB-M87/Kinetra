@@ -25,13 +25,14 @@ A [Session](../../include/kinetra/runtime/session.h) is the application behind a
 | `configurations` | End the run without rendering, as `menu` | As `menu`, on the configuration page of the application that ran, with its configuration selected; the application list for an application without configurations |
 | `exit` | End the run without rendering | End the loop without rendering |
 
-A request is state, not an event: the host acts on it once, and a `menu` or `configurations` request destroys the session, so sessions never reset it. `configurations` lets a session offer a way back to its own choice of variant, as Kinetra-Lab's Demo does from its debug menu, without knowing the menu. `close_on_escape()` decides whether Escape closes the window while the session runs; sessions with their own exit action return false.
+A request is state, not an event: it stays set until the host acts on it, once, and a `menu` or `configurations` request destroys the session, so a session does not reset a request it passes on. `configurations` lets a session offer a way back to its own choice of variant, as Kinetra-Lab's Demo does from its settings panel, without knowing the menu. A session whose choice of variant is a screen of its own, such as Kinetra-Lab's i4sim, serves the settings panel's `configurations` itself and clears it with `SettingsOverlay::clear_request()` instead of returning it. `close_on_escape()` decides whether Escape closes the window while the session runs; sessions with their own exit action return false.
 
 ## Launcher
 
 [`kinetra/runtime/launcher.h`](../../include/kinetra/runtime/launcher.h) is the `Kinetra::Launcher` target, built with `KINETRA_BUILD_RUNTIME`. It publicly links Runtime. Consumers may use it or call `run_session` directly.
 
-- **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. `show_configurations(selection)` opens that page with a given configuration selected, which `run_launcher` uses for a `configurations` request; a pointer that the session left over another row keeps that selection until it moves. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and status line let applications reuse the menu for their own resource selection.
+- **`LaunchMenu`** draws the centered KINETRA LAUNCHER menu: up to six entries per page, Previous and Next buttons that wrap, arrow keys that reveal the selected page, and pointer hover that preselects without confirming. An application with configurations asks for one before launching. `show_configurations(selection)` opens that page with a given configuration selected, which `run_launcher` uses for a `configurations` request; a pointer that the session left over another row keeps that selection until it moves. The configuration page has a LAUNCHER button that returns to the application list, as the M key does. Exit sets `LaunchMenu::exit_requested()`, which custom loops must consume. An optional heading and status line let applications reuse the menu for their own resource selection; such a nested menu passes `LauncherButton::every_page`, which shows LAUNCHER on every page and only sets `launcher_requested()`, for the owner to leave through its own request.
+- **Footer.** EXIT, LAUNCHER where the menu shows it, and PREVIOUS and NEXT when the list has more than one page. Without LAUNCHER they sit at panel x 50 (PREVIOUS), 150 (EXIT) and 250 (NEXT); with it at 100 (LAUNCHER) and 200 (EXIT), or with paging at 37.5, 112.5, 187.5 and 262.5 in the order PREVIOUS, LAUNCHER, EXIT, NEXT. Each is clickable `MenuLayout::footer_half_width` (36) panel pixels either side of its center. `LaunchMenu::footer_x(button)` gives a button's x on the current page, for `MenuLayout::footer_center()`.
 - **Previews.** Supply an immutable `RgbaImage` in at least one `LaunchChoice::preview` to enable the preview panel on the application list. It shows the highlighted application's image and up to four lines of its description. The panel sits beside the list in landscape windows and below it in portrait windows. Configuration pages use the centered list. Use `LaunchMenu::layout(viewport)` to position scripted clicks on the current page.
 - **`SessionHost`** owns one session and remembers its `selection()`. A factory that throws leaves the current session and camera untouched. The first advance after a transition gets zero elapsed time and empty input, so the selecting click and the construction time never reach the new session.
 - **`run_launcher`** is the standard loop over a `SessionHost` and a `LaunchMenu`:
@@ -67,9 +68,9 @@ The window title names what is on screen, nothing more: `launcher_window_title` 
 Kinetra supplies the rest:
 - the title bar: SETTINGS and the `CTRL` hint;
 - the closed-state toolbar: SETTINGS at screen pixels `x 0–64`, and DEBUG at `64–112` while the borrowed debug flag is true, both at `y 0–24`. DEBUG is lit while the debug menu shows;
-- the LAUNCHER / RESUME / EXIT buttons.
+- the action row: the leave button, RESUME and EXIT.
 
-LAUNCHER sets `request()` to `menu`, EXIT to `exit`, and RESUME closes the panel. A session returns the overlay's request from its own `request()`.
+The leave button is the overlay's `LeaveAction`: LAUNCHER with `menu` by default, or the application's own choice of variant with `configurations`, such as Kinetra-Lab's SCENARIOS, DIFFICULTY and BLUEPRINTS. Its label has at most 11 characters, and the constructor throws `std::invalid_argument` for an empty or longer label and for any other request. A click on it sets `request()` to its request and closes the panel; EXIT sets `exit`, and RESUME closes the panel. A session returns the overlay's request from its own `request()`, or serves a `configurations` request itself and calls `clear_request()`.
 
 **Input.** A session calls `update()` and then `update_debug()` every frame.
 
@@ -92,7 +93,7 @@ LAUNCHER sets `request()` to `menu`, EXIT to `exit`, and RESUME closes the panel
 | Help sections | 4 below where the next row would be; a collapsed section takes 18 |
 | Expanded help lines | every 12, the first 18 below their heading; the next row follows 4 below the last line |
 | Action row | `actions_y()`: 12 below where the next row would be; the panel ends 22 below it |
-| Buttons | LAUNCHER, RESUME and EXIT around `launcher_x`, `resume_x` and `exit_x`; the zoom buttons around `zoom_out_x` and `zoom_in_x` |
+| Buttons | The leave button (72 wide), RESUME and EXIT around `leave_x`, `resume_x` and `exit_x`; the zoom buttons around `zoom_out_x` and `zoom_in_x` |
 | Click band | across the whole panel, from 5 above to 13 below a row's `y` |
 
 Zoom and toggle rows must come before help sections; the constructor throws `std::invalid_argument` otherwise, and for a toggle without a flag or a zoom row without limits. `row_y()`, `actions_y()`, `half_extent()`, `expanded()` and the button centers expose the layout for tests and for callers that click or place things by it.

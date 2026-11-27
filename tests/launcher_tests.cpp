@@ -12,6 +12,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace kinetra;
@@ -142,6 +143,79 @@ TEST_CASE("menu pages wrap and stay pickable at every viewport") {
         CHECK_MESSAGE((layout.origin.x > 0 && layout.origin.y > 0 && layout.footer_center().y < viewport.y),
                       "menu does not fit resized viewport");
     }
+}
+
+TEST_CASE("the configuration page has a LAUNCHER button that returns to the application list") {
+    const Vec2 viewport{800, 600};
+    LaunchMenu menu({{"PLAIN", "NO CONFIGURATIONS", {}, 0}, {"SIZED", "TWO SIZES", {"SMALL", "LARGE"}, 0}});
+    CHECK_FALSE(menu.footer_x(FooterButton::launcher));
+    CHECK(menu.footer_x(FooterButton::exit) == 150);
+    menu.show_configurations({1, 1});
+    REQUIRE(menu.footer_x(FooterButton::launcher));
+    CHECK(*menu.footer_x(FooterButton::launcher) == 100);
+    CHECK(menu.footer_x(FooterButton::exit) == 200);
+    CHECK_FALSE(menu.footer_x(FooterButton::previous));
+    Input click;
+    click.clicked = true;
+    INFO("the old EXIT position between the two buttons is no button");
+    click.mouse = menu.layout(viewport).footer_center(150);
+    CHECK_FALSE(menu.update(click, viewport));
+    CHECK((menu.configuring() && !menu.exit_requested()));
+    click.mouse = menu.layout(viewport).footer_center(*menu.footer_x(FooterButton::launcher));
+    CHECK_FALSE(menu.update(click, viewport));
+    CHECK_MESSAGE((!menu.configuring() && menu.selected() == 1), "LAUNCHER leaves the page for the list");
+    CHECK_FALSE_MESSAGE(menu.launcher_requested(), "the launcher's own menu handles LAUNCHER itself");
+    menu.show_configurations({1, 0});
+    click.mouse = menu.layout(viewport).footer_center(*menu.footer_x(FooterButton::exit));
+    CHECK_FALSE(menu.update(click, viewport));
+    CHECK(menu.exit_requested());
+}
+
+TEST_CASE("a nested menu shows LAUNCHER on every page and reports it") {
+    for (auto viewport : {Vec2{1280, 800}, Vec2{160, 120}}) {
+        CAPTURE(viewport.x);
+        std::vector<LaunchChoice> entries{{"SHOWCASE", "", {"ONE", "TWO"}, 0}};
+        for (int i = 0; i < 8; ++i)
+            entries.push_back({"FLOOR " + std::to_string(i), "", {}, 0});
+        LaunchMenu menu(entries, "CATALOG", LauncherButton::every_page);
+        INFO("with paging, four buttons a quarter of the footer apart");
+        CHECK(menu.footer_x(FooterButton::previous) == 37.5f);
+        CHECK(menu.footer_x(FooterButton::launcher) == 112.5f);
+        CHECK(menu.footer_x(FooterButton::exit) == 187.5f);
+        CHECK(menu.footer_x(FooterButton::next) == 262.5f);
+        const auto layout = menu.layout(viewport);
+        for (const auto &[left, right] : {std::pair{FooterButton::previous, FooterButton::launcher},
+                                          std::pair{FooterButton::launcher, FooterButton::exit},
+                                          std::pair{FooterButton::exit, FooterButton::next}}) {
+            const Vec2 between = layout.footer_center((*menu.footer_x(left) + *menu.footer_x(right)) / 2);
+            CHECK_FALSE(layout.footer_contains(between, *menu.footer_x(left)));
+            CHECK_FALSE(layout.footer_contains(between, *menu.footer_x(right)));
+        }
+        Input click;
+        click.clicked = true;
+        click.mouse = layout.footer_center(*menu.footer_x(FooterButton::next));
+        CHECK_FALSE(menu.update(click, viewport));
+        CHECK_MESSAGE(menu.selected() == 6, "NEXT moved to its new place");
+        click.mouse = layout.footer_center(*menu.footer_x(FooterButton::previous));
+        CHECK_FALSE(menu.update(click, viewport));
+        CHECK(menu.selected() == 0);
+        INFO("on the configuration page, without paging, LAUNCHER and EXIT share the footer");
+        click.mouse = layout.row_center(0);
+        CHECK_FALSE(menu.update(click, viewport));
+        REQUIRE(menu.configuring());
+        CHECK(menu.footer_x(FooterButton::launcher) == 100);
+        click.mouse = menu.layout(viewport).footer_center(100);
+        CHECK_FALSE(menu.update(click, viewport));
+        CHECK_MESSAGE(menu.launcher_requested(), "a nested menu reports LAUNCHER");
+        CHECK_MESSAGE(menu.configuring(), "a nested menu leaves the page to its owner");
+        CHECK_FALSE(menu.exit_requested());
+    }
+    LaunchMenu list({{"ONE", "", {}, 0}}, "CATALOG", LauncherButton::every_page);
+    Input click;
+    click.clicked = true;
+    click.mouse = list.layout({800, 600}).footer_center(*list.footer_x(FooterButton::launcher));
+    CHECK_FALSE(list.update(click, {800, 600}));
+    CHECK_MESSAGE(list.launcher_requested(), "LAUNCHER on the list of a nested menu");
 }
 
 TEST_CASE("session host isolates transitions and releases sessions") {

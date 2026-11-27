@@ -1,6 +1,6 @@
 # 0017: A passing coordinator for applications without factory rules
 
-Status: accepted. Amends [0016](0016-predictive-passing.md): the engine also offers a stateful plan lifecycle on top of the shared geometry. i4sim keeps its own coordinator.
+Status: accepted; amended by [0018](0018-stall-remedies-in-the-engine.md), which moves i4sim onto this coordinator and puts stall detection and remedies beside it. Amends [0016](0016-predictive-passing.md): the engine also offers a stateful plan lifecycle on top of the shared geometry. i4sim keeps its own coordinator.
 
 ## Table of contents
 
