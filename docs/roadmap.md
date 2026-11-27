@@ -27,6 +27,9 @@ Nothing in progress in Kinetra itself.
 - **Stall detection and remedies in the engine** · simulation, with Lab · added 2026-11-27
   `StallDetector`, a `RightOfWay` fallback and a `MakeWay` lifecycle beside `PassingCoordinator` in `Kinetra::Simulation`, each used by i4sim in the same step ([ADR 0018](decisions/0018-stall-remedies-in-the-engine.md)).
   Next step: step 3 of Lab's stack, `feat/stall-detector`. Where: [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md).
+- **Say where the mutation check of a contract branch is recorded** · docs, agent rules · added 2026-11-27
+  The [rules for tests](testing.md#rules-for-tests) ask that the case for each branch a contract names be checked by mutation, but no page says where the result goes. A reviewer runs nothing, so it finds the check only when the author writes it down, as #72's description did. Name the mutation result in the design template's *Test plan* or *Verification*, and in the `pr-review` checklist row "Every changed behavior has a test".
+  Next step: a docs-only pull request on those rule pages, with an agent review. Where: the agent review of [#78](https://github.com/SMB-M87/Kinetra/pull/78).
 
 ## Later
 
