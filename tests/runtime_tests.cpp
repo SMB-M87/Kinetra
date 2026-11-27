@@ -3,6 +3,7 @@
 // exist at a time; each case owns its own and closes it before the next case starts.
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
+#include <kinetra/runtime/bitmap_text.h>
 #include <kinetra/runtime/debug_view.h>
 #include <kinetra/runtime/engine.h>
 #include <kinetra/runtime/inspector_view.h>
@@ -21,6 +22,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -536,6 +538,29 @@ TEST_CASE("the drawn preview and its description follow the highlighted applicat
     CHECK(presented(runtime, caption_start, {0.85f, 0.9f, 1}));
 }
 
+TEST_CASE("the drawn configuration page shows LAUNCHER beside EXIT") {
+    LaunchMenu menu({{"SIZED", "TWO SIZES", {"SMALL", "LARGE"}, 0}});
+    Runtime runtime("Launcher footer", 640, 480);
+    runtime.read_back(true);
+    const auto lit_in_column_zero = [&](std::string_view label, FooterButton button) {
+        // The middle of the first column of the label's first letter (L and E fill it), at the
+        // drawn position: centered on the button, four pixels above its center.
+        const auto layout = menu.layout(runtime.camera.viewport);
+        const float x = *menu.footer_x(button);
+        const Vec2 point = layout.footer_center(x) + Vec2{0.5f - text_width(label) / 2, -0.5f} * layout.scale;
+        return presented(runtime, point, {0.8f, 0.85f, 1});
+    };
+    menu.draw(runtime);
+    menu.draw(runtime);
+    CHECK_MESSAGE(lit_in_column_zero("EXIT", FooterButton::exit), "EXIT on the application list");
+    menu.show_configurations({0, 1});
+    menu.draw(runtime);
+    menu.draw(runtime);
+    CHECK_MESSAGE(lit_in_column_zero("LAUNCHER", FooterButton::launcher),
+                  "LAUNCHER on the configuration page");
+    CHECK_MESSAGE(lit_in_column_zero("EXIT", FooterButton::exit), "EXIT beside it");
+}
+
 TEST_CASE("the inspector scrolls wrapped values while its close button stays in place") {
     Runtime runtime("Kinetra inspector", 640, 480);
     runtime.read_back(true);
@@ -712,6 +737,18 @@ TEST_CASE("the settings panel and its toolbar draw in the shared style") {
                             overlay::button_color),
                   "RESUME button");
     CHECK_MESSAGE(presented(runtime, {6, 6}, {0, 0, 0}), "the toolbar is hidden while the panel is open");
+    // The leave button centers its label: DIFFICULTY starts left of where LAUNCHER does, and
+    // the left column of its D is lit through every row.
+    const Vec2 left_of_launcher = at(19, overlay.actions_y() + 3.5f);
+    CHECK_MESSAGE(presented(runtime, left_of_launcher, overlay::button_color), "LAUNCHER by default");
+    SettingsOverlay difficulty({ToggleRow{"STATISTICS", &statistics}, ToggleRow{"DEBUG MODE", &debug},
+                                HelpSection{"CONTROLS", {"WASD  MOVE"}}},
+                               &debug, {"DIFFICULTY", SessionRequest::configurations});
+    REQUIRE(difficulty.update(open, runtime.camera));
+    runtime.begin({0, 0, 0, 1});
+    difficulty.draw(runtime);
+    runtime.end();
+    CHECK_MESSAGE(presented(runtime, left_of_launcher, overlay::text_color), "the application's label");
     CHECK(glGetError() == GL_NO_ERROR);
 }
 
