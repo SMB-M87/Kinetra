@@ -26,14 +26,20 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Next
 
-Nothing agreed next in Kinetra itself.
+- **Speed up shared simulation paths in long headless runs** · simulation, with Lab · added 2026-11-27
+  Use reproducible Lab runs to find where the engine spends time in steering, collision checks and spatial queries. Reduce per-tick cost and verify that faster runs preserve the expected behavior. The engine already supplies the typed rate controls, frame pacing and tick budget used by windowed labs.
+  Next step: profile a million-tick i4sim run after Lab's surroundings optimization, isolate the busiest engine path and measure before and after with the same layout, seeds and settings. Use Demo or Dotio to check the impact where they use the same path. See [engine timing](engine/runtime.md#sessions-and-timing) and [Lab's performance roadmap](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).
 
 ## Later
 
-Nothing waiting in Kinetra itself.
-
 - **No default footer position in `MenuLayout`** · launcher · added 2026-11-27
   `MenuLayout::footer_center(float x = 150)` defaults to EXIT on a page without LAUNCHER; on a page with LAUNCHER, 150 is the gap between LAUNCHER and EXIT, so a caller that clicks EXIT through the default misses without an error. Drop the default and let callers take the place from `LaunchMenu::footer_x()`, which Kinetra-Lab's tour and tests already do. Found in the review of #70.
+- **Shared steering force diagnostics** · simulation, runtime, with Lab · added 2026-11-27
+  Identify which steering and avoidance solvers can expose the applied acceleration and its components so Lab can display them consistently. Keep optional diagnostics out of ordinary headless runs where possible. Share readable screen-space arrow geometry, including a visible arrowhead, across applications. If the force alone cannot explain a predicted encounter, evaluate whether diagnostics can expose the neighbor that contributed to it.
+  Next step: trace the existing force outputs, starting with `SteeringForces` and reciprocal avoidance, and compare them with the values currently drawn in each lab. See [steering API](../include/kinetra/simulation/steering.h) and [Lab's debug drawing follow-up](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#next).
+- **Measure and improve weighted route search** · navigation, with Lab · added 2026-11-27
+  Separate route-search cost from the Lab's occupancy weights and local clearance policy. Compare expanded nodes, execution time and route availability on identical weighted and unweighted inputs. Consider a work budget if the measurements show it helps. Measure the effect on route validity and on contacts and blockages in Lab runs.
+  Next step: profile i4sim's current route search on a long run and turn a representative costly search into a headless engine fixture. See [weighted grid API](../include/kinetra/simulation/weighted_grid.h) and [Lab's routing comparison](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/roadmap.md#later).
 
 ## Ideas
 
