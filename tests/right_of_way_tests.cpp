@@ -6,6 +6,7 @@
 #include <doctest/doctest.h>
 
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -181,6 +182,31 @@ TEST_CASE("the push test is the stall detector's pushed_back reason") {
         REQUIRE(diagnosis);
         CHECK(diagnosis->reason == StallReason::pushed_back);
         CHECK(diagnosis->blocker == 1u);
+    }
+}
+
+TEST_CASE("a window past the end of the clock lasts to its end") {
+    const Frame frame{{0, 0}, 1};
+    const auto tuning = observation(frame);
+    RightOfWay fallback;
+    const auto movers = pushed_pair(frame, tuning.threshold_steps);
+    const RightOfWaySettings endless{std::numeric_limits<std::uint64_t>::max()};
+    REQUIRE(fallback.step(movers, tuning, endless, 5).size() == 1);
+    CHECK(fallback.step(movers, tuning, endless, 6).empty());
+    CHECK(fallback.granted(0));
+}
+
+TEST_CASE("the push test for every mover agrees with the one for each") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        const auto tuning = observation(frame);
+        auto movers = pushed_pair(frame, 0);
+        movers.push_back(mover(frame, {0, 3}, {5, 3}, {}, 0));
+        const auto all = pushing_neighbors(movers, tuning);
+        REQUIRE(all.size() == movers.size());
+        for (std::size_t i = 0; i < movers.size(); ++i)
+            CHECK(all[i] == pushing_neighbor(movers, i, tuning));
+        CHECK(all[0] == 1u);
     }
 }
 

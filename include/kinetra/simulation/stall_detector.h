@@ -126,6 +126,11 @@ void validate(const StallObservation &settings, std::span<const StallMover> move
 std::optional<std::size_t> pushing_neighbor(std::span<const StallMover> movers, std::size_t index,
                                             const StallObservation &settings);
 
+/// pushing_neighbor() for every mover at once, validating once: entry `i` names the neighbor
+/// pushing `movers[i]` back, if any. Throws as validate() does.
+std::vector<std::optional<std::size_t>> pushing_neighbors(std::span<const StallMover> movers,
+                                                          const StallObservation &settings);
+
 /// Watches movers that follow routes and reports sustained lack of progress as episodes,
 /// each with the evidence at its onset: a stationary blocker or an opposing mover on its
 /// leg, a neighbor pushing it back, oscillation, or nothing found.

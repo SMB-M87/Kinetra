@@ -150,8 +150,8 @@ the box around a body's bounds, as for passing. Every value is the caller's tuni
 defaults, and every input is validated before anything changes. The detector changes no
 motion; the remedies decide what to do with an episode
 ([ADR 0018](../decisions/0018-stall-remedies-in-the-engine.md)).
-`pushing_neighbor()` is the push test on its own, and `validate()` the input check the
-detector and the right of way share.
+`pushing_neighbor()` is the push test on its own (`pushing_neighbors()` for every mover at
+once), and `validate()` the input check the detector and the right of way share.
 
 ## Right of way
 
@@ -167,8 +167,10 @@ caller passes the movers as for the stall detector, with the same tuning and a w
   step.
 
 The fallback changes no motion itself. The caller keeps steering a mover with the right of way
-at its target, and stops counting on it to make room: i4sim passes it to its other movers as a
-body that does not cooperate in reciprocal avoidance, so the pushing neighbor avoids it alone.
+at its target, and stops counting on it to make room. i4sim passes it to its other movers as a
+fixed body: under reciprocal avoidance they take the whole avoidance instead of half, and
+under its seek-and-avoid steering they avoid it as a standing body. The holder still avoids
+them itself.
 The window is the caller's tuning; i4sim's 480 ticks were measured against shorter windows and
 against a return as soon as progress resumes, which did worse than no fallback
 ([design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md)).

@@ -149,6 +149,16 @@ std::optional<std::size_t> pushing_neighbor(std::span<const StallMover> movers, 
     return pushing(legs_of(movers), movers, index, settings);
 }
 
+std::vector<std::optional<std::size_t>> pushing_neighbors(std::span<const StallMover> movers,
+                                                          const StallObservation &settings) {
+    validate(settings, movers);
+    const auto legs = legs_of(movers);
+    std::vector<std::optional<std::size_t>> pushers(movers.size());
+    for (std::size_t i = 0; i < movers.size(); ++i)
+        pushers[i] = pushing(legs, movers, i, settings);
+    return pushers;
+}
+
 void StallDetector::Track::observe_position(Vec2 position, float excursion) {
     const auto delta = position - anchor;
     const float excursion_squared = excursion * excursion;
