@@ -112,17 +112,31 @@ class Runtime {
     /// on, also records the time since the previous end() in frame_times(), or the fixed time
     /// set by fix_frame_times().
     void end();
-    /// What spaces the frames: `vsync` when the platform accepted a swap interval when the
-    /// window was opened; otherwise `limited`, or `uncapped` after limit_frames(false).
+    /// What spaces the frames: `vsync` while the platform accepts a swap interval (from the
+    /// window's opening, until vsync(false)); otherwise `limited`, or `uncapped` after
+    /// limit_frames(false).
     FramePacing pacing() const;
+    /// Asks the platform to wait for the display when presenting (true), or not to (false),
+    /// and returns whether it now waits. Without VSync, the frame limiter or its absence
+    /// spaces the frames as limit_frames() chose. The window opens with VSync where the
+    /// platform has it.
+    bool vsync(bool on);
     /// Chooses between `limited` (true, the default) and `uncapped` on a platform without
     /// VSync; does nothing where presenting already waits for the display. An application
     /// that renders frames for a file rather than for a viewer switches the limit off.
     void limit_frames(bool limited);
-    /// Seconds between frames that the display asks for: one over the refresh rate of the
-    /// window's display when it was opened, 1/60 when that is unknown. The limiter aims for
-    /// this interval.
+    /// Seconds between frames that end() aims for: one over the refresh rate of the window's
+    /// display when it was opened, 1/60 when that is unknown, until frame_limit() sets
+    /// another; under VSync always the display's. Without a limit (`uncapped`) frames come as
+    /// fast as they are drawn, and this is the interval a limit would keep.
     double frame_interval() const;
+    /// Makes the frame limiter aim for `frames_per_second`, from 1 to 1000. It paces frames
+    /// only while pacing() is `limited`: switch VSync off for a limit above or below the
+    /// display's rate. Throws std::invalid_argument outside that range.
+    void frame_limit(double frames_per_second);
+    /// Seconds between refreshes of the window's display when it was opened, 1/60 when that is
+    /// unknown: what VSync spaces frames by, whatever frame_limit() set.
+    double refresh_interval() const;
     /// Wall-clock time between the last presented frames, oldest first. With VSync or the
     /// frame limiter this is the display's refresh interval; a longer entry is a frame that
     /// reached the screen late. After fix_frame_times(seconds), every new entry is `seconds`.

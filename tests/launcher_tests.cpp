@@ -4,6 +4,7 @@
 // need a window are covered by runtime_tests.cpp.
 #include <kinetra/runtime/debug_view.h>
 #include <kinetra/runtime/launcher.h>
+#include <kinetra/view/frame_rate.h>
 
 #include <doctest/doctest.h>
 
@@ -418,6 +419,120 @@ TEST_CASE("a typed number keeps at most seven digits and ignores other character
     menu.frame(1, "12a3456789");
     menu.frame(1, "", {Key::enter});
     CHECK(menu.set == std::vector<std::uint64_t>{1234567});
+}
+
+TEST_CASE("a rate row halves, doubles and takes a typed number within its limits") {
+    std::uint64_t rate = 200;
+    const auto row =
+        debug_rate("UPS", [&] { return rate; }, [&](std::uint64_t value) { rate = value; }, 1, 1000000);
+    CHECK(row.value() == "200");
+    row.set(750);
+    row.decrease();
+    CHECK_MESSAGE(rate == 375, "halving starts from the typed value");
+    row.increase();
+    row.increase();
+    CHECK(rate == 1500);
+    row.set(0);
+    CHECK(rate == 1);
+    row.decrease();
+    CHECK(rate == 1);
+    row.set(5000000);
+    CHECK(rate == 1000000);
+    row.increase();
+    CHECK(rate == 1000000);
+    rate = 600000;
+    row.increase();
+    CHECK_MESSAGE(rate == 1000000, "doubling past the maximum stops at it");
+    CHECK_THROWS_AS(
+        debug_rate("X", [] { return std::uint64_t{1}; }, [](std::uint64_t) {}, 0, 5), std::invalid_argument);
+    CHECK_THROWS_AS(
+        debug_rate("X", [] { return std::uint64_t{1}; }, [](std::uint64_t) {}, 6, 5), std::invalid_argument);
+    CHECK_THROWS_AS(debug_rate("X", {}, [](std::uint64_t) {}, 1, 5), std::invalid_argument);
+}
+
+TEST_CASE("a number typed over a rate row in the menu sets the rate") {
+    std::uint64_t rate = 200;
+    TypingMenu menu;
+    menu.entries[1] =
+        debug_rate("TYPED", [&] { return rate; }, [&](std::uint64_t value) { rate = value; }, 1, 1000000);
+    menu.frame(1, "2500", {Key::enter});
+    CHECK(rate == 2500);
+}
+
+TEST_CASE("the FPS row cycles its modes and sets the limit from a button or a typed number") {
+    FrameRateSetting setting;
+    const auto row = setting.entry();
+    CHECK(row.label == "FPS");
+    CHECK(row.value() == "VSYNC");
+    row.action();
+    CHECK(setting.mode() == FrameRateMode::limit);
+    CHECK(row.value() == "60");
+    row.action();
+    CHECK(row.value() == "UNCAPPED");
+    row.action();
+    CHECK(setting.mode() == FrameRateMode::vsync);
+    row.increase();
+    CHECK_MESSAGE(setting.mode() == FrameRateMode::limit, "a button chooses the limit");
+    CHECK(setting.limit() == 120);
+    row.set(5000);
+    CHECK(setting.limit() == FrameRateSetting::fastest);
+    row.set(0);
+    CHECK(setting.limit() == FrameRateSetting::slowest);
+    CHECK(setting.interval() == doctest::Approx(1 / FrameRateSetting::uncapped_rate));
+}
+
+namespace {
+/// The pacing calls of a Runtime, recorded, for FrameRateSetting::apply without a window.
+struct PacingRuntime {
+    FramePacing current{FramePacing::vsync};
+    bool vsync_available{true};
+    double limit{0}, refresh{1.0 / 144};
+    bool limited{true};
+    FramePacing pacing() const { return current; }
+    double frame_interval() const {
+        return current == FramePacing::vsync ? refresh : limit ? 1 / limit : refresh;
+    }
+    void frame_limit(double frames_per_second) { limit = frames_per_second; }
+    void limit_frames(bool on) {
+        limited = on;
+        if (current != FramePacing::vsync)
+            current = on ? FramePacing::limited : FramePacing::uncapped;
+    }
+    bool vsync(bool on) {
+        current = on && vsync_available ? FramePacing::vsync
+                  : limited             ? FramePacing::limited
+                                        : FramePacing::uncapped;
+        return current == FramePacing::vsync;
+    }
+};
+} // namespace
+
+TEST_CASE("the FPS setting adopts the runtime's pacing, then passes each change on once") {
+    PacingRuntime runtime;
+    FrameRateSetting setting;
+    setting.apply(runtime);
+    CHECK(setting.mode() == FrameRateMode::vsync);
+    CHECK(setting.limit() == 144);
+    CHECK(setting.interval() == doctest::Approx(1.0 / 144));
+    setting.entry().set(30);
+    setting.apply(runtime);
+    CHECK(runtime.pacing() == FramePacing::limited);
+    CHECK(runtime.limit == 30);
+    CHECK(setting.interval() == doctest::Approx(1.0 / 30));
+    setting.entry().action();
+    setting.apply(runtime);
+    CHECK(runtime.pacing() == FramePacing::uncapped);
+    CHECK(setting.interval() == doctest::Approx(1 / FrameRateSetting::uncapped_rate));
+    runtime.vsync_available = false;
+    setting.entry().action();
+    setting.apply(runtime);
+    CHECK_MESSAGE(setting.mode() == FrameRateMode::limit, "without VSync the row shows the limiter");
+
+    PacingRuntime capture;
+    capture.current = FramePacing::uncapped;
+    FrameRateSetting adopted;
+    adopted.apply(capture);
+    CHECK_MESSAGE(adopted.mode() == FrameRateMode::uncapped, "an uncapped host stays uncapped");
 }
 
 TEST_CASE("the debug menu scale shrinks with a low or narrow window and is at most one and a half") {

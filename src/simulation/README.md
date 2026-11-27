@@ -51,7 +51,7 @@ flowchart TD
     Traffic["traffic.h<br/>TrafficGate"]
     Passing["passing.h<br/>passing lanes and guard"]
     Coordinator["passing_coordinator.h<br/>PassingCoordinator"]
-    Clock["clock.h<br/>FixedClock (header-only)"]
+    Clock["clock.h<br/>FixedClock, TickClock, TickBudget (header-only)"]
     Grid --> Math
     Physics --> Grid
     CGrid --> Physics
@@ -79,7 +79,7 @@ flowchart TD
 | [passing.h](../../include/kinetra/simulation/passing.h) | [passing.cpp](passing.cpp) | Head-on conflict timing, lane candidates and obstruction checks | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [passing_coordinator.h](../../include/kinetra/simulation/passing_coordinator.h) | [passing_coordinator.cpp](passing_coordinator.cpp) | Plan lifecycle of head-on passing: formation, waits, outcomes | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [traffic.h](../../include/kinetra/simulation/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
-| [clock.h](../../include/kinetra/simulation/clock.h) | header-only | `FixedClock`: elapsed seconds to whole simulation ticks, with a bounded backlog | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
+| [clock.h](../../include/kinetra/simulation/clock.h) | header-only | `FixedClock`: elapsed seconds to whole simulation ticks, with a bounded backlog; `TickClock`: a rate in ticks per second to the ticks due, at most a limit; `TickBudget`: the ticks that fit in a share of a frame, from their measured cost | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 
 The header summaries (`///`) state each function's units, preconditions and errors; the contract pages explain the behavior in depth.
 
@@ -153,7 +153,7 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 
 | Suite (CTest prefix) | Target | Covers |
 | --- | --- | --- |
-| `kinetra_behavior` | `kinetra_tests` | Geometry, physics, `steer`, grids, fixed clock, camera, invalid input and a 400-body stability run |
+| `kinetra_behavior` | `kinetra_tests` | Geometry, physics, `steer`, grids, fixed clock, tick clock and budget, camera, invalid input and a 400-body stability run |
 | `kinetra_polygons` | `kinetra_polygon_tests` | Convex validation, contacts, inertia, navigation around polygons |
 | `kinetra_sweeps` | `kinetra_sweep_tests` | Circle sweeps: timing, corners, containment, thin walls |
 | `kinetra_translation_sweeps` | `kinetra_translation_sweep_tests` | Every convex translation pair |

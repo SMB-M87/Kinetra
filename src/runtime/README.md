@@ -77,6 +77,7 @@ flowchart LR
 | [input.h](../../include/kinetra/view/input.h) | `Input`, `Key`, `Color` | Header-only; usable headless | [Runtime](../../docs/engine/runtime.md) |
 | [session.h](../../include/kinetra/runtime/session.h) | `Session`, `SessionRequest`, `run_session` | `Kinetra::Runtime` | [Sessions and requests](../../docs/engine/launcher-overlays.md#sessions-and-requests) |
 | [settings_view.h](../../include/kinetra/runtime/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
+| [frame_rate.h](../../include/kinetra/view/frame_rate.h) | `FrameRateSetting`: the FPS row of a debug menu and the pacing it applies | Header-only; usable headless, `apply()` takes the Runtime | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 | [inspector_view.h](../../include/kinetra/runtime/inspector_view.h) | `InspectorView` and its pointer-input result | `Kinetra::Runtime` | [Agent inspector](../../docs/engine/launcher-overlays.md#agent-inspector) |
 | [inspector.h](../../include/kinetra/view/inspector.h) | Snapshot with ordered diagnostic groups and rows | Header-only, usable headless | [Agent inspector](../../docs/engine/launcher-overlays.md#agent-inspector) |
 | [launcher.h](../../include/kinetra/runtime/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
