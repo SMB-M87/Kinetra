@@ -99,7 +99,17 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
         validate(other);
         if (other.shape != Shape::box || other.angle != 0)
             throw std::invalid_argument("Priority steering neighbors must be axis-aligned boxes");
-        if (auto contact = collide(a, other); contact && contact->penetration > 0) {
+        // Both are axis-aligned boxes, so collide() would compute each axis's overlap as
+        // below and find no contact, or one without penetration, unless both are positive.
+        // The same expressions skip it, with its validation of both bodies and its rotation
+        // of their axes, for the many neighbors that do not touch.
+        const float overlap_x =
+            a.half_extents.x + other.half_extents.x - std::abs(other.position.x - a.position.x);
+        const float overlap_y =
+            a.half_extents.y + other.half_extents.y - std::abs(other.position.y - a.position.y);
+        if (overlap_x <= 0 || overlap_y <= 0) {
+            // No penetration: nothing to push apart.
+        } else if (auto contact = collide(a, other); contact && contact->penetration > 0) {
             const Vec2 diff = a.position - other.position;
             result.collision +=
                 length(diff) > 0.01f ? normalized(diff) * std::max(1.f, 10 / length(diff)) : -contact->normal;
@@ -140,8 +150,44 @@ SteeringForces priority_steer(const Body &a, Vec2 target, std::span<const Body> 
             lo = std::max(lo, std::floor(first));
             hi = std::min(hi, std::ceil(last));
         };
+        // The steps i of the mover for which narrow() can leave any step j, as a superset: the
+        // mover's predicted position must lie within the neighbor's whole predicted path,
+        // widened by the extent, the largest `slack` of any i, one step of the neighbor for
+        // the outward rounding to whole steps, and a bound on the rounding of the mover's
+        // float position. Every other i is one the loop below would skip, so starting and
+        // ending the loop at these bounds finds the same first pair; most neighbors that pass
+        // the distance test above need no step at all.
+        double first_i = 0, last_i = steps;
+        auto bound = [&](float mover, float mover_velocity, float position, float velocity, float half) {
+            const double rate = double(velocity) * double(s.prediction_step);
+            const double mover_rate = double(mover_velocity) * double(s.prediction_step);
+            const double travel = std::abs(mover_rate) * steps;
+            const double magnitude = std::abs(double(mover)) + travel;
+            const double slack =
+                1e-5 * (magnitude + std::abs(double(position)) + 2 * std::abs(rate) * steps + double(half)) +
+                double(std::numeric_limits<float>::min());
+            const double reach = double(half) + slack + std::abs(rate) + 1e-5 * magnitude;
+            const double low = double(position) + std::min(0.0, rate * steps) - reach - double(mover);
+            const double high = double(position) + std::max(0.0, rate * steps) + reach - double(mover);
+            if (mover_rate == 0) {
+                if (low > 0 || high < 0)
+                    last_i = -1;
+                return;
+            }
+            double from = low / mover_rate, to = high / mover_rate;
+            if (from > to)
+                std::swap(from, to);
+            // NaN from an overflowed position narrows nothing, as in narrow().
+            first_i = std::max(first_i, std::floor(from));
+            last_i = std::min(last_i, std::ceil(to));
+        };
+        bound(a.position.x, a.velocity.x, other.position.x, other.velocity.x, extent.x);
+        bound(a.position.y, a.velocity.y, other.position.y, other.velocity.y, extent.y);
+        // Converted only when the range is not empty, so that both bounds lie in [0, steps].
+        const bool none = !(first_i <= last_i);
+        const int begin = none ? 1 : int(first_i), end = none ? 0 : int(last_i);
         bool found = false;
-        for (int i = 0; i <= steps && !found; ++i) {
+        for (int i = begin; i <= end && !found; ++i) {
             const Vec2 mover = a.position + a.velocity * (static_cast<float>(i) * s.prediction_step);
             double lo = 0, hi = steps;
             narrow(mover.x, other.position.x, other.velocity.x, extent.x, lo, hi);

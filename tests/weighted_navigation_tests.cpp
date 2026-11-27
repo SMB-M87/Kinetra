@@ -525,6 +525,27 @@ TEST_CASE("priority steering keeps a step that only rounding puts inside the ext
     CHECK(actual == expected);
 }
 
+TEST_CASE("priority steering keeps a mover step that only rounding puts inside the extent") {
+    // The mover creeps along y below the float spacing at y = 10,000, so every predicted y
+    // rounds to 10,000 and every float gap to -2, inside the extent of 2.00001, while the exact
+    // gap leaves it after ten steps. Along x the boxes first overlap at step 21. The loop over
+    // every pair finds (21, 0); the bound on the mover's steps keeps step 21 only through its
+    // slack for rounding.
+    auto settings = steering_settings(70);
+    settings.prediction_steps = 32;
+    settings.safety_multiplier = 1;
+    Body mover = cruiser_at({0, 10000}, {1, -1e-6f});
+    mover.half_extents = {1, 1};
+    Body other = cruiser_at({22, 10002}, {});
+    other.half_extents = {1, 1.00001f};
+    const Body neighbors[]{other};
+    const Vec2 expected = brute_force_predictive(mover, neighbors, settings);
+    const Vec2 actual = priority_steer(mover, mover.position, neighbors, {}, settings).predictive;
+    INFO("actual (", actual.x, ", ", actual.y, "), expected (", expected.x, ", ", expected.y, ")");
+    REQUIRE(expected != Vec2{});
+    CHECK(actual == expected);
+}
+
 TEST_CASE("priority steering predicts the same first overlap as testing every pair of steps") {
     // Random scenes at Lab's scales: unit boxes, and i4sim's millimeters with a horizon of 32
     // steps; whole-number positions and speeds make exact ties between steps more likely.
@@ -591,6 +612,52 @@ TEST_CASE("priority steering predicts the same first overlap as testing every pa
         }
         // Enough scenes predict an overlap for the comparison to mean something.
         CHECK(overlaps >= 5);
+    }
+}
+
+TEST_CASE("priority steering pushes away from the same neighbors as collide() finds penetrating") {
+    // priority_steer tests each axis's overlap before it calls collide(); the reference calls
+    // collide() for every neighbor. Whole-number scenes put many boxes exactly edge to edge,
+    // where the overlap is zero and neither counts the neighbor.
+    std::mt19937 rng(7);
+    for (const bool whole : {false, true}) {
+        std::uniform_real_distribution<float> position(0, 30), extent(1, 6), speed(-2, 2);
+        auto value = [&](std::uniform_real_distribution<float> &d) {
+            const float v = d(rng);
+            return whole ? std::round(v) : v;
+        };
+        auto box = [&] {
+            Body body;
+            body.shape = Shape::box;
+            body.position = {value(position), value(position)};
+            body.half_extents = {value(extent), value(extent)};
+            body.velocity = {value(speed), value(speed)};
+            return body;
+        };
+        int touching = 0, penetrating = 0;
+        for (int scene = 0; scene < 500; ++scene) {
+            const Body mover = box();
+            std::vector<Body> neighbors;
+            for (int k = 0; k < 6; ++k)
+                neighbors.push_back(box());
+            Vec2 expected{};
+            for (const auto &other : neighbors)
+                if (const auto contact = collide(mover, other); contact && contact->penetration > 0) {
+                    const Vec2 diff = mover.position - other.position;
+                    expected += length(diff) > 0.01f ? normalized(diff) * std::max(1.f, 10 / length(diff))
+                                                     : -contact->normal;
+                    ++penetrating;
+                } else if (contact) {
+                    ++touching;
+                }
+            const Vec2 actual =
+                priority_steer(mover, {100, 100}, neighbors, {}, steering_settings()).collision;
+            INFO("actual (", actual.x, ", ", actual.y, "), expected (", expected.x, ", ", expected.y, ")");
+            CHECK(actual == expected);
+        }
+        CHECK(penetrating >= 100);
+        if (whole)
+            CHECK_MESSAGE(touching >= 5, "too few scenes touch edge to edge to test the boundary");
     }
 }
 
