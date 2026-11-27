@@ -1,6 +1,6 @@
 # feature
 
-Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. You get a design document, verified commits and a pull request that goes through independent review; a change to documentation alone gets neither design document nor independent review.
+Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. The implementing session plans the scenarios, provides regression evidence, and reviews its final diff before pushing. Docs-only changes use the pull request description as the record.
 
 ## Table of contents
 
@@ -15,7 +15,7 @@ Use `feature` when you want a change delivered in Kinetra or Kinetra-Lab. You ge
 
 | Situation | Example request | Result |
 | --- | --- | --- |
-| A roadmap item is ready | “Pak het item Skill READMEs op.” | One branch with the seven guides and the corresponding roadmap update; being docs-only, it has no design document, but as a change to `.agents/skills/` it still gets an agent review. |
+| A roadmap item is ready | “Pak het item Skill READMEs op.” | One branch with the guides, the roadmap update and the author’s checks recorded in the pull request. |
 | An engine contract appears broken | “/feature Zoek uit waarom een mislukte Navigation::rebuild de vorige kaart wist.” | A test that reproduces the reported failure before the fix, followed by the verified fix. |
 | A Lab feature needs engine support | “/feature Voeg de agent-inspector toe aan i4sim.” | A design for the engine overlay and the Lab content, with linked pull requests in dependency order. |
 
@@ -26,10 +26,10 @@ Use `roadmap` to save an idea for later. For an existing branch that only needs 
 ## How it works
 
 1. The agent reads the roadmap, review lessons, affected code and tests, then records the scope and test plan. It asks you about choices that affect the design or its contracts.
-2. It implements the design on a topic branch or stack, checks the diff, proves each goal with a check as wide as its wording, and opens the pull requests. An independent reviewer checks the result and the author answers the findings.
-3. The author merges the pull request once review and checks are complete, changes to skills, agent rules, CI and releases included; you check merged work afterwards, and a playtest named for you follows the merge. In a Claude Code cloud session the reviewer attaches every repository it reviews itself. [Merge rule](../../../AGENTS.md#git)
-4. In Kinetra-Lab, the move of the submodule pointer to the Kinetra merge commit follows in a separate pointer-only pull request, without review, which Kinetra's `lab-pointer` workflow opens and GitHub merges once CI passes.
+2. The author adds tests for uncovered scenarios and shows that the critical cases fail with the wrong behavior. It checks the final diff, including docs and verification claims, fixes findings and pushes once the local checks pass.
+3. GitHub runs the required checks. The author merges under the [merge rule](../../../AGENTS.md#git). You can request an independent review or check the result after the merge.
+4. In Kinetra-Lab, Kinetra’s `lab-pointer` workflow opens a separate pull request to move the submodule pointer to the Kinetra merge commit, and GitHub merges that update after CI passes.
 
 ## Related skills
 
-[Roadmap](../roadmap/README.md) supplies agreed work. [Grilling](../grilling/README.md) settles open choices and [adr](../adr/README.md) records lasting decisions. A design can schedule a [refactor](../refactor/README.md) or call for [module documentation](../doc-module/README.md). [Verify](../verify/README.md) checks the diff. [pr-review](../pr-review/README.md) and [pr-feedback](../pr-feedback/README.md) handle the independent review and the author's response.
+[Roadmap](../roadmap/README.md) supplies agreed work. [Grilling](../grilling/README.md) settles open choices and [adr](../adr/README.md) records lasting decisions. [Verify](../verify/README.md) checks the diff. [pr-review](../pr-review/README.md) provides an independent review on request, and [pr-feedback](../pr-feedback/README.md) handles feedback already posted on GitHub.

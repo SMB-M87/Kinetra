@@ -1,6 +1,6 @@
 # pr-review
 
-A second agent reviews every pull request except a pointer-only one and a docs-only one that leaves the agent rules alone, or a whole stack of them. The author starts it once the pull request's CI is green, and you can start it too. It reviews the code and comments; it builds and runs nothing. When it finishes, the pull request has inline comments for its findings and a summary with a conclusion. The author's session has answered each finding, the two agents have settled each point within two rounds, and the author merges the pull request; what is not blocking, and every point where the author's answer stood, is listed in the summary for you to check afterwards.
+Use `pr-review` to request an independent review of an open pull request or stack. The reviewer reads the diff and checks the author’s scenario evidence and verification. It posts findings and a conclusion. The author handles the findings with `pr-feedback`.
 
 ## Table of contents
 
@@ -15,13 +15,13 @@ A second agent reviews every pull request except a pointer-only one and a docs-o
 
 | Situation | Example request | Result |
 | --- | --- | --- |
-| An agent opened a pull request | Started by that agent, in a separate session | Goals, correctness and the checklist reviewed. Findings go to the author, two discussion rounds at most per point, then a merge by the author |
+| You want a second opinion on a pull request | “review deze PR” | An independent check of goals, correctness and the evidence, with findings for the author. |
 | A stack of pull requests waits | "review de stack met pr-review, vanaf de bovenste PR" | Each pull request of the stack reviewed bottom-up, each finding on the pull request it belongs to |
 | You want a deeper look than the levels give | "pr-review op Kinetra#25, diepte high" | The same, with the code review at `high` even if the diff would get `low` or `medium` |
 
 ## When not to use it
 
-- On a docs-only pull request (only Markdown, `docs/` or `.agents/`) that leaves the agent rules alone, or a pointer-only Kinetra-Lab pull request: it needs no review ([rule](../../../AGENTS.md#git)). You can still ask for one. A change to the agent rules always gets one.
+- During ordinary feature delivery, use the author review in [`feature`](../feature/README.md).
 - To process the comments: that is `pr-feedback`, in the session that opened the pull request.
 - On a branch that is not a pull request yet: `feature` reviews its own diff with the agent's code review in its review step.
 
@@ -29,8 +29,7 @@ A second agent reviews every pull request except a pointer-only one and a docs-o
 
 ```mermaid
 flowchart LR
-    A0[Author opens pull request] --> CI[CI green]
-    CI --> R[pr-review, separate session]
+    A0[User requests a review of an open PR] --> R[pr-review]
     R -->|goals, code review, checklist| F[findings + conclusion]
     F --> PR[Pull request]
     PR --> A[Author: pr-feedback]
@@ -56,5 +55,5 @@ flowchart LR
 ## Related skills
 
 - `pr-feedback` answers the findings in the author's session, adds the lessons, and leads to the merge under the merge rule.
-- `feature` starts this review once the pull request's CI is green, and reads the lessons page before building.
+- `feature` tests and reviews the change in the implementing session.
 - The agent's code review (Claude Code's `/code-review`, or a global `code-review` skill, as in Codex) does the correctness pass.

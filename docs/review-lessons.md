@@ -23,10 +23,13 @@ One list item per lesson, under the topic it belongs to:
 
 - A lesson is a pattern: a kind of mistake that can recur. A one-off slip is not a lesson.
 - The author adds it in a commit on the pull request where it was found (`docs(lessons): <lesson>`), so the lesson merges with the fix.
-- A lesson that keeps coming back is proposed to the user as a rule. Once the user agrees, it moves to [AGENTS.md](../AGENTS.md) or the [conventions](conventions.md) and leaves this page.
+- A lesson that keeps coming back is proposed to the user as a rule. Once the user agrees, it moves to [AGENTS.md](../AGENTS.md) or to the rule page it belongs to, such as the [conventions](conventions.md) or the [rules for tests](testing.md#rules-for-tests), and leaves this page.
 - Replace a lesson that turns out wrong instead of adding a correction below it.
 
 ## Docs and links
+
+- **When code moves into another file, add the suites that test it to that file's row of *Choosing targeted tests*** · added 2026-11-27 · source: [#74](https://github.com/SMB-M87/Kinetra/pull/74)
+  The push test moved into `stall_detector.cpp`, but its suite stayed only on the `right_of_way.cpp` row of `docs/testing.md`.
 
 - **Add an exception to a defined term in the same form on every page, never by redefining the term on some of them** · added 2026-11-24 · source: #57
   "Docs-only" got an exception in `AGENTS.md` (a docs-only rule change still gets a review) but a narrower definition in the workflow and `pr-review`, so a pull request that changes only a skill got two answers to whether it needs a design document.
@@ -90,11 +93,13 @@ No lessons yet.
 
 ## Code
 
+- **When an overlay takes the pointer from a widget below, hide it only from that widget's hit tests and highlights, and keep its movement and hover state on the real pointer** · added 2026-11-27 · source: [#73](https://github.com/SMB-M87/Kinetra/pull/73)
+  `LaunchMenu`'s resting-pointer guard read the error panel's `{-1, -1}` stand-in as a move when the panel appeared or went away, so a resting pointer could undo keyboard navigation.
+- **Derive a remedy from the detector's output, or carry every condition that ends that output into the remedy's own contract** · added 2026-11-27 · source: [#74](https://github.com/SMB-M87/Kinetra/pull/74)
+  `RightOfWay` derived "stalled" from the raw progress count instead of the detector's episodes, and lost the end on a goal change, which an episode has and the user's return rule names.
+
 - **Run every check that can throw before the first change of a function that promises to throw before changing anything** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68)
   `PassingCoordinator::step` validated its settings and bodies first, but a grid query could still throw after `advance()` had ended plans, which dropped their events.
-
-- **Give every branch a contract names (a priority, an order) a constructed case that fails when the branch is flipped** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68)
-  The parallel-plans case queried the other plan but never reached the priority branch, so every case passed with `yields_to`'s comparison flipped. It generalizes #51's lesson on rounding margins.
 
 - **Size a spatial grid's cells from the widest query that runs on it, and test the tuning that widens that query most** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68), Kinetra-Lab#138
   The passing coordinator's cell followed the prediction horizon while its formation query grew with `speed / acceleration`, so Demo's lowest acceleration made one query span more cells than `SpatialGrid` allows, and `step` threw.
@@ -110,9 +115,6 @@ No lessons yet.
 
 - **Keep assertion operands printable when replacing scalar checks with value-type comparisons** · added 2026-11-24 · source: #60
   Doctest prints `{?}` for a type it cannot format. Add coordinate context when replacing scalar assertions with a vector comparison so failures still show the values.
-
-- **Give a rounding margin a constructed test that fails without it** · added 2026-11-24 · source: #51
-  `priority_steer`'s slack decided only for gaps within the float error of the extent, which random scenes never reach, so its first test passed with the slack removed. Build the case where only the margin keeps the right answer, and check that it fails without it.
 
 - **When a change adds a second path (a storage, a fast path), check which path each existing test now takes, and keep a test on the old one** · added 2026-11-24 · source: #50
   #50's dense storage took over every grid in the tests, so the hashed buckets that #49 had made reusable lost their only test of boxes that move away and back.

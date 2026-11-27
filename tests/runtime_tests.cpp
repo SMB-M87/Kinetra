@@ -6,8 +6,11 @@
 #include <kinetra/runtime/bitmap_text.h>
 #include <kinetra/runtime/debug_view.h>
 #include <kinetra/runtime/engine.h>
+#include <kinetra/runtime/error_view.h>
+#include <kinetra/runtime/hud_text.h>
 #include <kinetra/runtime/inspector_view.h>
 #include <kinetra/runtime/launcher.h>
+#include <kinetra/runtime/overlay_style.h>
 #include <kinetra/runtime/session.h>
 #include <kinetra/runtime/settings_view.h>
 
@@ -581,6 +584,72 @@ TEST_CASE("the drawn configuration page shows LAUNCHER beside EXIT") {
     CHECK_MESSAGE(lit_in_column_zero("LAUNCHER", FooterButton::launcher),
                   "LAUNCHER on the configuration page");
     CHECK_MESSAGE(lit_in_column_zero("EXIT", FooterButton::exit), "EXIT beside it");
+}
+
+TEST_CASE("the error panel draws its title bar, red lines in order and a lit close button") {
+    LaunchMenu menu({{"ONE", "", {}, 0}, {"TWO", "", {}, 0}});
+    Runtime runtime("Error panel", 640, 480);
+    runtime.read_back(true);
+    const auto viewport = runtime.camera.viewport;
+    // Two lines at 640 pixels (67 columns): sixty E, then 1 and nine E. E lights its top-left
+    // font pixel and 1 only its third column, so swapped lines would show.
+    const std::string error = std::string(60, 'E') + " 1" + std::string(9, 'E');
+    const auto footer = menu.layout(viewport).footer_bounds();
+    REQUIRE(error_panel::lines(error, viewport, footer).size() == 2);
+    const auto panel = error_panel::bounds(error, viewport, footer);
+    const auto close = error_panel::close_bounds(error, viewport, footer);
+    // The top-left font pixel of line `i`, as error_panel::draw places it.
+    const auto line_start = [&](int i) {
+        const float top = 24 + 4 + float(i) * hud::line_height + (hud::line_height - 7 * hud::text_scale) / 2;
+        return overlay::snapped(panel.min + Vec2{8, top}) + Vec2{0.75f, 0.75f};
+    };
+    Input resting;
+    resting.mouse = {1, 1};
+    menu.update(resting, viewport, error);
+    menu.draw(runtime, error);
+    menu.draw(runtime, error);
+    CHECK_MESSAGE(presented(runtime, line_start(0), hud::error_color), "the first line in red");
+    CHECK_MESSAGE(!presented(runtime, line_start(1), hud::error_color), "the second line starts with 1");
+    CHECK_MESSAGE(presented(runtime, line_start(1) + Vec2{2 * hud::text_scale, 0}, hud::error_color),
+                  "the second line below it");
+    CHECK_MESSAGE(presented(runtime, line_start(1) + Vec2{20 * 6 * hud::text_scale, 0}, overlay::panel_color),
+                  "the short second line ends where its text does");
+    CHECK_MESSAGE(
+        presented(runtime, {(panel.min.x + panel.max.x) / 2, panel.min.y + 12}, overlay::title_color),
+        "the title bar");
+    CHECK_MESSAGE(presented(runtime, close.min + Vec2{1.5f, 1.5f}, overlay::button_color),
+                  "the close button");
+
+    Input on_close;
+    on_close.mouse = (close.min + close.max) / 2;
+    menu.update(on_close, viewport, error);
+    menu.draw(runtime, error);
+    menu.draw(runtime, error);
+    CHECK_MESSAGE(presented(runtime, close.min + Vec2{1.5f, 1.5f}, overlay::accent_color),
+                  "the close button lights under the pointer");
+}
+
+TEST_CASE("a HUD error puts its first line on the higher HUD line") {
+    Runtime runtime("HUD error", 640, 480);
+    runtime.read_back(true);
+    const auto viewport = runtime.camera.viewport;
+    // Two lines at 640 pixels (68 columns): one starting with E, which lights its top-left font
+    // pixel, then one starting with 1, which lights only its third column.
+    const std::string message = std::string(65, 'E') + " 1" + std::string(3, 'E');
+    REQUIRE(hud::error_lines(message, hud::columns(viewport.x), 4).size() == 2);
+    const auto start = [&](int line) {
+        return Vec2{hud::margin, hud::line_top(viewport, line)} + Vec2{0.75f, 0.75f};
+    };
+    for (int frame = 0; frame < 2; ++frame) {
+        runtime.begin();
+        CHECK(hud::draw_error(runtime, message, 3, 4) == 2);
+        runtime.end();
+    }
+    CHECK_MESSAGE(presented(runtime, start(4), hud::error_color), "the first line on line 4");
+    CHECK_MESSAGE(!presented(runtime, start(3), hud::error_color), "line 3 starts with the 1");
+    CHECK_MESSAGE(presented(runtime, start(3) + Vec2{2 * hud::text_scale, 0}, hud::error_color),
+                  "the second line on line 3");
+    CHECK_MESSAGE(!presented(runtime, start(5), hud::error_color), "nothing above the message");
 }
 
 TEST_CASE("the inspector scrolls wrapped values while its close button stays in place") {

@@ -8,6 +8,8 @@
 - [Contracts](#contracts)
 - [Reciprocal local avoidance](#reciprocal-local-avoidance)
 - [Predictive passing](#predictive-passing)
+- [Stall detection](#stall-detection)
+- [Right of way](#right-of-way)
 - [Traffic admission](#traffic-admission)
 - [Weighted grids and priority steering](#weighted-grids-and-priority-steering)
 - [Application policies](#application-policies)
@@ -117,6 +119,65 @@ after the plan ends. Demo, Dotio and i4sim use it; i4sim maps its factory states
 `PassingMoverState` and keeps its traffic controls and event log around it.
 [ADR 0017](../decisions/0017-passing-coordinator.md), [ADR 0018](../decisions/0018-stall-remedies-in-the-engine.md)
 
+## Stall detection
+
+[stall_detector.h](../../include/kinetra/simulation/stall_detector.h) provides `StallDetector`
+in `Kinetra::Simulation`, beside the passing coordinator. After each step the caller supplies
+its movers, each with:
+
+- its body;
+- the point it heads for now;
+- its goal;
+- the steps it went without progress, as the caller measures progress;
+- a state: observed, busy, standing or absent.
+
+The detector observes the motion of an observed mover while that count grows. It sets an axis
+once the mover has moved the tuned excursion, counts a reversal when the mover backs up that
+far from its farthest point, and takes a new axis after a sideways excursion. After the
+threshold an episode starts, with the first evidence that applies at that moment:
+
+- a standing mover on its leg within reach is a *stationary blocker*;
+- an observed mover blocks the leg, and the mover blocks its leg in turn, on legs at more
+  than the tuned angle, with neither making headway: an *opposing mover*;
+- the mover backs away from its target while a moving neighbor ahead, within reach, drives at
+  it: *pushed back*;
+- enough reversals: *oscillating*;
+- otherwise *unknown*.
+
+The episode keeps that diagnosis. It ends, with an event, when the observation starts afresh:
+the count stops growing, the goal changes, or the mover is no longer observed. A footprint is
+the box around a body's bounds, as for passing. Every value is the caller's tuning, with no
+defaults, and every input is validated before anything changes. The detector changes no
+motion; the remedies decide what to do with an episode
+([ADR 0018](../decisions/0018-stall-remedies-in-the-engine.md)).
+`pushing_neighbor()` is the push test on its own (`pushing_neighbors()` for every mover at
+once), and `validate()` the input check the detector and the right of way share.
+
+## Right of way
+
+[right_of_way.h](../../include/kinetra/simulation/right_of_way.h) provides `RightOfWay`, a
+temporary motion fallback for a mover that a neighbor pushes away from its goal. Each step the
+caller passes the movers as for the stall detector, with the same tuning and a window in steps.
+
+- An observed mover whose steps without progress reach the detector's threshold, and that
+  `pushing_neighbor()` finds pushed back, gets the right of way until the window has passed.
+- It loses it earlier when its goal changes, or when it is no longer observed: it arrived,
+  stopped, came under another control or is absent, or a shorter span leaves it out.
+- When its window passes while it is still stalled and pushed, it gets a new one in the same
+  step. A holder's pusher never holds a right of way itself: a mover gets none while its
+  pusher holds one, or while a right of way names it as the pusher, so a holder and its pusher
+  never each wait for the other to make room. Two holders that are not each other's pusher can
+  still meet.
+
+The fallback changes no motion itself. The caller keeps steering a mover with the right of way
+at its target, and stops counting on it to make room. i4sim passes it to its other movers as a
+fixed body: under reciprocal avoidance they take the whole avoidance instead of half, and
+under its seek-and-avoid steering they avoid it as a standing body. The holder still avoids
+them itself.
+The window is the caller's tuning; i4sim's 480 ticks were measured against shorter windows and
+against a return as soon as progress resumes, which did worse than no fallback
+([design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md)).
+
 ## Traffic admission
 
 [traffic.h](../../include/kinetra/simulation/traffic.h) provides `TrafficGate` in
@@ -203,4 +264,4 @@ Applications own goal selection, replanning schedules, streamed obstacle residen
 
 [Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
 
-The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification. The [passing coordinator tests](../../tests/passing_coordinator_tests.cpp) run plans through a minimal host at two world scales: completion without contact, the world check between sides, obstruction and the retry delay, waits for crossing traffic and a wait that outlasts the timeout, the priority between plans, participants that turn busy or standing, absent movers, the progress timeout, parallel plans, cancellation and the retry delays it drops, circle, polygon and rotated-box footprints, tuning whose slow braking widens the formation range, and queries far beyond the grid.
+The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification. The [passing coordinator tests](../../tests/passing_coordinator_tests.cpp) run plans through a minimal host at two world scales: completion without contact, the world check between sides, obstruction and the retry delay, waits for crossing traffic and a wait that outlasts the timeout, the priority between plans, participants that turn busy or standing, absent movers, the progress timeout, parallel plans, cancellation and the retry delays it drops, circle, polygon and rotated-box footprints, tuning whose slow braking widens the formation range, and queries far beyond the grid. The [stall detector tests](../../tests/stall_detector_tests.cpp) run at two world scales: the threshold and the end on progress, each reason and its order (a standing blocker before a push), what is no blocker or no push, a round blocker, oscillation, the restarts of an observation, absent movers, and invalid input that changes nothing. The [right-of-way tests](../../tests/right_of_way_tests.cpp) run at two world scales: the grant at the threshold and the window, a new window at once for a mover still pushed, no grant below the threshold, without a push or for a mover not observed, the early end, the end on a new goal, no right of way for a holder's pusher or for a mover whose pusher holds one, a shorter span with its ends in mover order, the push test against the detector's reason and for every mover at once, and, at one scale, a window past the clock's end and invalid input that changes nothing.
