@@ -31,7 +31,7 @@ Every suite is a doctest executable. CTest names each case `<prefix>:<case>`, so
 | [presentation_tests.cpp](presentation_tests.cpp) | `kinetra_presentation_tests` | `kinetra_presentation` | Glyph table, HUD lines and error wrapping, zoom stepping, the rate counter, frame times and angle interpolation; header-only, so headless |
 | [launcher_tests.cpp](launcher_tests.cpp) | `kinetra_launcher_tests` | `kinetra_launcher` | Menu paging and configuration, the error panel over the menu, `SessionHost` transitions, debug actions and stepper buttons; window-free, requires the runtime build |
 | [settings_view_tests.cpp](settings_view_tests.cpp) | `kinetra_settings_view_tests` | `kinetra_settings_view` | Settings overlay layout, rows, capture and actions; window-free, requires the runtime build |
-| [runtime_tests.cpp](runtime_tests.cpp) | `kinetra_engine_runtime_tests` | `kinetra_engine_graphics` (label `graphics`) | Input, rendering and resize with a real OpenGL context, frame timing and the frame-time graph, and the `run_session` and `run_launcher` request and binding rules |
+| [runtime_tests.cpp](runtime_tests.cpp) | `kinetra_engine_runtime_tests` | `kinetra_engine_graphics` (label `graphics`) | Input, rendering and resize with a real OpenGL context, frame timing and the frame-time graph, the drawn error panel and HUD error, and the `run_session` and `run_launcher` request and binding rules |
 | [consumer/](consumer/) | `consumer` (separate project) | none | Public headers and CMake source integration; see [External consumer](#external-consumer) |
 
 ## Execution
