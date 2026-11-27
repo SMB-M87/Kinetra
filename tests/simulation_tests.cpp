@@ -730,7 +730,7 @@ TEST_CASE("invalid tick rates and times are rejected") {
     CHECK_THROWS_AS(budget.ticks(-1), std::invalid_argument);
 }
 
-TEST_CASE("a tick budget divides time by the measured cost of a tick and follows changes") {
+TEST_CASE("a tick budget divides time by the measured cost of a tick, rising at once and falling slowly") {
     TickBudget budget(10);
     CHECK(budget.ticks(0.016) == 10);
     budget.record(0, 1);
@@ -738,9 +738,14 @@ TEST_CASE("a tick budget divides time by the measured cost of a tick and follows
     budget.record(100, 0.001);
     CHECK(budget.cost() == doctest::Approx(0.00001));
     CHECK(budget.ticks(0.016) == 1600);
-    for (int i = 0; i < 30; ++i)
-        budget.record(100, 0.004);
-    CHECK(double(budget.ticks(0.016)) == doctest::Approx(400).epsilon(0.01));
+    budget.record(100, 0.004);
+    CHECK_MESSAGE(budget.ticks(0.016) == 400, "a dearer tick takes effect at once");
+    budget.record(100, 0.001);
+    CHECK_MESSAGE(budget.ticks(0.016) > 400, "a cheaper tick lowers the cost");
+    CHECK_MESSAGE(budget.ticks(0.016) < 1600, "one cheap frame does not undo the cost at once");
+    for (int i = 0; i < 60; ++i)
+        budget.record(100, 0.001);
+    CHECK(double(budget.ticks(0.016)) == doctest::Approx(1600).epsilon(0.01));
     CHECK_MESSAGE(budget.ticks(0) == 1, "the simulation never stops");
 }
 

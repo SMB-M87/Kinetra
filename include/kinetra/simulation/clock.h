@@ -86,8 +86,10 @@ class TickClock {
 /// How many ticks fit in a share of wall-clock time, from what earlier ticks cost.
 ///
 /// The caller times its ticks and record()s them; ticks() divides a budget by the average
-/// cost per tick. The average follows changes in a few frames, so a simulation that grows
-/// busier gets fewer ticks per frame and the frame rate holds. Before the first record it
+/// cost per tick. A dearer tick raises the average at once, so a simulation that grows busier
+/// (a larger blueprint, a crowd) gets fewer ticks from the next frame on and the frame rate
+/// holds; a cheaper one lowers it over a few frames, so one quick frame does not invite a
+/// slow one. Before the first record it
 /// allows `first` ticks, a guess that the first measurement corrects. Headless: the caller
 /// supplies the time.
 class TickBudget {
@@ -105,9 +107,10 @@ class TickBudget {
         if (ticks == 0)
             return;
         const double cost = seconds / double(ticks);
-        // Weighted by a quarter, so one slow frame (a page fault, a replan) moves the
-        // estimate a little and a lasting change moves it within a few frames.
-        cost_ = cost_ > 0 ? cost_ + (cost - cost_) * 0.25 : cost;
+        // Up at once: following a dearer tick slowly would let the next frames run several
+        // times their budget. Down by a quarter, so a frame of cheap ticks does not let the
+        // next one overrun.
+        cost_ = cost_ > 0 && cost < cost_ ? cost_ + (cost - cost_) * 0.25 : cost;
     }
     /// The ticks that fit in `seconds`, at least one, so the simulation never stops. Throws
     /// std::invalid_argument for negative or non-finite time.
