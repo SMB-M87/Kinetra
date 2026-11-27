@@ -37,7 +37,12 @@ std::vector<RightOfWayEvent> RightOfWay::step(std::span<const StallMover> movers
         if (grants_[i] || mover.state != StallMoverState::observed ||
             mover.no_progress < observation.threshold_steps || !pushers[i])
             continue;
-        grants_[i] = Grant{end, mover.destination};
+        // The pusher may itself hold the right of way against this mover: then neither would
+        // make room for the other.
+        const auto &pusher = grants_[*pushers[i]];
+        if (pusher && pusher->pusher == i)
+            continue;
+        grants_[i] = Grant{end, mover.destination, *pushers[i]};
         events.push_back({RightOfWayEvent::Kind::granted, i, pushers[i]});
     }
     return events;

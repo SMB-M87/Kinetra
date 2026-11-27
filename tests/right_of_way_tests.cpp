@@ -211,6 +211,25 @@ TEST_CASE("ends stay in mover order when a shorter span leaves holders out") {
     }
 }
 
+TEST_CASE("a pusher that holds the right of way against the mover gets none in return") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        const auto tuning = observation(frame);
+        RightOfWay fallback;
+        auto movers = pushed_pair(frame, tuning.threshold_steps);
+        REQUIRE(fallback.step(movers, tuning, window, 0).size() == 1);
+        REQUIRE(fallback.granted(0));
+        // Holding the right of way, mover 0 drives east at its goal; mover 1, bound west, now
+        // backs off east before it: pushed back by mover 0 in turn, and stalled too.
+        movers[0].body.velocity = Vec2{0.03f, 0} * frame.scale;
+        movers[1].body.velocity = Vec2{0.03f, 0} * frame.scale;
+        movers[1].no_progress = tuning.threshold_steps;
+        REQUIRE(pushing_neighbor(movers, 1, tuning) == 0u);
+        CHECK(fallback.step(movers, tuning, window, 1).empty());
+        CHECK_FALSE(fallback.granted(1));
+    }
+}
+
 TEST_CASE("a new goal ends the right of way at once") {
     for (const auto &frame : frames) {
         CAPTURE(frame.scale);

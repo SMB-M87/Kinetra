@@ -38,8 +38,8 @@ struct RightOfWayEvent {
 /// finds pushed back gets the right of way until `window_steps` steps later. It loses it
 /// earlier when its goal changes, or when it is no longer observed: it arrived, stopped, changed
 /// to another control or is absent. After the window it can get it again at once if it is still
-/// stalled and pushed back. A pushing neighbor that is itself pushed back by the mover can hold
-/// a right of way at the same time.
+/// stalled and pushed back. A pushing neighbor that holds the right of way against the mover
+/// gets none against it in return, so two movers never each wait for the other to make room.
 /// The fallback measures no progress itself and changes no motion; the caller applies it.
 ///
 /// Mover indices are positions in the span of a step; a span shorter than the last step's ends
@@ -60,10 +60,12 @@ class RightOfWay {
     void clear() { grants_.clear(); }
 
   private:
-    /// A right of way: the step at which it ends, and the goal of the trip it was granted for.
+    /// A right of way: the step at which it ends, the goal of the trip it was granted for, and
+    /// the neighbor that pushed the mover back.
     struct Grant {
         std::uint64_t until;
         Vec2 destination;
+        std::size_t pusher;
     };
     /// Per mover, its right of way, if it has one.
     std::vector<std::optional<Grant>> grants_;
