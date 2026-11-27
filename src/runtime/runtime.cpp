@@ -40,7 +40,7 @@ constexpr int fallback_refresh_rate = 60;
 constexpr auto limiter_poll_margin = std::chrono::microseconds(1500);
 
 /// Seconds between refreshes of the display that shows `window`.
-double refresh_interval(SDL_Window *window) {
+double display_interval(SDL_Window *window) {
     SDL_DisplayMode mode{};
     const int display = SDL_GetWindowDisplayIndex(window);
     const bool known =
@@ -228,6 +228,8 @@ struct Runtime::Impl {
     bool vsync{}, limit_frames{true};
     /// Paces frames at the display's refresh rate; times are seconds since `epoch`.
     FrameLimiter limiter{1.0 / fallback_refresh_rate};
+    /// The display's refresh interval when the window was opened.
+    double refresh{1.0 / fallback_refresh_rate};
     std::chrono::steady_clock::time_point epoch{std::chrono::steady_clock::now()};
 
     void flush_shapes();
@@ -317,7 +319,8 @@ Runtime::Runtime(const std::string &text, int width, int height) : impl_(std::ma
     impl_->gl_ready = true;
     // Adaptive synchronization avoids halving the presentation rate on a missed refresh.
     impl_->vsync = SDL_GL_SetSwapInterval(-1) == 0 || SDL_GL_SetSwapInterval(1) == 0;
-    impl_->limiter = FrameLimiter(refresh_interval(impl_->window));
+    impl_->refresh = display_interval(impl_->window);
+    impl_->limiter = FrameLimiter(impl_->refresh);
     if (!impl_->vsync)
         SDL_Log("VSync unavailable (%s); pacing frames at %.0f per second", SDL_GetError(),
                 1 / impl_->limiter.interval());
@@ -683,7 +686,30 @@ void Runtime::limit_frames(bool limited) {
 }
 
 double Runtime::frame_interval() const {
-    return impl_->limiter.interval();
+    return impl_->vsync ? impl_->refresh : impl_->limiter.interval();
+}
+
+bool Runtime::vsync(bool on) {
+    if (on == impl_->vsync)
+        return impl_->vsync;
+    if (on)
+        impl_->vsync = SDL_GL_SetSwapInterval(-1) == 0 || SDL_GL_SetSwapInterval(1) == 0;
+    else
+        // A platform that refuses to stop waiting keeps VSync: the limiter would add a wait.
+        impl_->vsync = SDL_GL_SetSwapInterval(0) != 0;
+    // The limiter's series was paused while VSync spaced the frames.
+    impl_->limiter.reset();
+    return impl_->vsync;
+}
+
+void Runtime::frame_limit(double frames_per_second) {
+    if (!std::isfinite(frames_per_second) || frames_per_second < 1 || frames_per_second > 1000)
+        throw std::invalid_argument("A frame limit must be 1 to 1000 frames per second");
+    impl_->limiter = FrameLimiter(1 / frames_per_second);
+}
+
+double Runtime::refresh_interval() const {
+    return impl_->refresh;
 }
 
 } // namespace kinetra

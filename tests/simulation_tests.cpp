@@ -683,6 +683,72 @@ TEST_CASE("the fixed clock bounds its catch-up backlog") {
     CHECK(clock.interpolation() < 1);
 }
 
+TEST_CASE("the tick clock runs its rate in ticks per second whatever the frame rate") {
+    TickClock a(120), b(120), fast(1000000);
+    std::uint64_t ticks_a = 0, ticks_b = 0, ticks_fast = 0;
+    for (int i = 0; i < 120; ++i)
+        ticks_a += a.advance(1.0 / 120, 1000);
+    for (int i = 0; i < 600; ++i)
+        ticks_b += b.advance(1.0 / 600, 1000);
+    for (int i = 0; i < 60; ++i)
+        ticks_fast += fast.advance(1.0 / 60, 100000);
+    CHECK(ticks_a == 120);
+    CHECK(ticks_b == 120);
+    CHECK_MESSAGE(ticks_fast >= 999999, "a million ticks per second lost ticks to rounding");
+    CHECK(ticks_fast <= 1000000);
+}
+
+TEST_CASE("the tick clock drops what its limit cuts off and keeps the fraction of a tick") {
+    TickClock clock(1000);
+    CHECK(clock.advance(0.0105, 4) == 4);
+    CHECK(clock.interpolation() == doctest::Approx(0.5));
+    CHECK_MESSAGE(clock.advance(0.0005, 4) == 1, "the dropped ticks came back");
+    CHECK(clock.interpolation() < 1e-6);
+    CHECK(clock.advance(0, 4) == 0);
+}
+
+TEST_CASE("a new tick rate starts from the last tick") {
+    TickClock clock(10);
+    clock.advance(0.05, 10);
+    REQUIRE(clock.interpolation() == doctest::Approx(0.5));
+    clock.rate(20);
+    CHECK(clock.rate() == 20);
+    CHECK(clock.interpolation() == 0);
+    CHECK(clock.advance(0.05, 10) == 1);
+}
+
+TEST_CASE("invalid tick rates and times are rejected") {
+    CHECK_THROWS_AS(TickClock(0), std::invalid_argument);
+    CHECK_THROWS_AS(TickClock(std::numeric_limits<double>::infinity()), std::invalid_argument);
+    TickClock clock(60);
+    CHECK_THROWS_AS(clock.rate(-1), std::invalid_argument);
+    CHECK(clock.rate() == 60);
+    CHECK_THROWS_AS(clock.advance(-0.1, 1), std::invalid_argument);
+    CHECK_THROWS_AS(TickBudget(0), std::invalid_argument);
+    TickBudget budget;
+    CHECK_THROWS_AS(budget.record(1, std::nan("")), std::invalid_argument);
+    CHECK_THROWS_AS(budget.ticks(-1), std::invalid_argument);
+}
+
+TEST_CASE("a tick budget divides time by the measured cost of a tick, rising at once and falling slowly") {
+    TickBudget budget(10);
+    CHECK(budget.ticks(0.016) == 10);
+    budget.record(0, 1);
+    CHECK_MESSAGE(budget.ticks(0.016) == 10, "zero ticks are no measurement");
+    budget.record(100, 0.001);
+    CHECK(budget.cost() == doctest::Approx(0.00001));
+    CHECK(budget.ticks(0.016) == 1600);
+    budget.record(100, 0.004);
+    CHECK_MESSAGE(budget.ticks(0.016) == 400, "a dearer tick takes effect at once");
+    budget.record(100, 0.001);
+    CHECK_MESSAGE(budget.ticks(0.016) > 400, "a cheaper tick lowers the cost");
+    CHECK_MESSAGE(budget.ticks(0.016) < 1600, "one cheap frame does not undo the cost at once");
+    for (int i = 0; i < 60; ++i)
+        budget.record(100, 0.001);
+    CHECK(double(budget.ticks(0.016)) == doctest::Approx(1600).epsilon(0.01));
+    CHECK_MESSAGE(budget.ticks(0) == 1, "the simulation never stops");
+}
+
 TEST_CASE("camera conversions round-trip between world and screen") {
     const auto camera = hd_camera();
     const Vec2 point{-17, 11};

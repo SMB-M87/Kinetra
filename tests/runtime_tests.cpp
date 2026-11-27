@@ -13,6 +13,7 @@
 #include <kinetra/runtime/overlay_style.h>
 #include <kinetra/runtime/session.h>
 #include <kinetra/runtime/settings_view.h>
+#include <kinetra/view/frame_rate.h>
 
 #include <doctest/doctest.h>
 
@@ -870,6 +871,40 @@ TEST_CASE("without vsync the frame limiter spaces frames by the display's refres
     draw_frame_times(runtime, runtime.frame_times());
     runtime.end();
     CHECK(glGetError() == GL_NO_ERROR);
+}
+
+TEST_CASE("the FPS setting starts from the runtime's pacing and passes a change on") {
+    Runtime runtime("Kinetra frame rate", 320, 200);
+    REQUIRE(runtime.poll());
+    FrameRateSetting setting;
+    setting.apply(runtime);
+    const bool had_vsync = runtime.pacing() == FramePacing::vsync;
+    CHECK(setting.mode() == (had_vsync ? FrameRateMode::vsync : FrameRateMode::limit));
+    CHECK(setting.interval() == doctest::Approx(runtime.frame_interval()));
+    setting.entry().set(250);
+    setting.apply(runtime);
+    if (runtime.pacing() == FramePacing::vsync) {
+        CHECK_MESSAGE(setting.mode() == FrameRateMode::vsync,
+                      "a platform that keeps VSync keeps the row on it");
+    } else {
+        CHECK(runtime.pacing() == FramePacing::limited);
+        CHECK(runtime.frame_interval() == doctest::Approx(1.0 / 250));
+        CHECK(setting.interval() == doctest::Approx(1.0 / 250));
+    }
+    auto row = setting.entry();
+    row.action();
+    setting.apply(runtime);
+    if (setting.mode() == FrameRateMode::uncapped) {
+        CHECK(runtime.pacing() == FramePacing::uncapped);
+        CHECK(setting.interval() == doctest::Approx(1 / FrameRateSetting::uncapped_rate));
+    }
+    row.action();
+    setting.apply(runtime);
+    CHECK_MESSAGE(runtime.pacing() == (had_vsync ? FramePacing::vsync : FramePacing::limited),
+                  "VSync comes back where the platform has it, otherwise the limiter");
+    CHECK_THROWS_AS(runtime.frame_limit(0), std::invalid_argument);
+    CHECK_THROWS_AS(runtime.frame_limit(1001), std::invalid_argument);
+    CHECK(runtime.refresh_interval() > 0);
 }
 
 TEST_CASE("a runtime reopens after destruction") {

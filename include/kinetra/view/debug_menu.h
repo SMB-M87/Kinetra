@@ -172,4 +172,26 @@ inline DebugEntry debug_count(std::string label, int &value, int minimum, int ma
             .increase = [&value, minimum, maximum] { value = std::clamp(value + 1, minimum, maximum); },
             .depth = depth};
 }
+/// A number row over a whole-number rate, such as ticks or frames per second: it shows
+/// `get()`, its `[-]` and `[+]` buttons halve and double the rate, and a number typed over it
+/// (see DebugMenu) sets it. Every new value is clamped to [`minimum`, `maximum`] before `set`
+/// receives it, so the buttons halve and double from a typed value and stop at the limits.
+/// The functions are borrowed like a DebugEntry's. Throws std::invalid_argument for a zero
+/// minimum, limits that are not ordered, or a missing function.
+inline DebugEntry debug_rate(std::string label, std::function<std::uint64_t()> get,
+                             std::function<void(std::uint64_t)> set, std::uint64_t minimum,
+                             std::uint64_t maximum, int depth = 1) {
+    if (minimum == 0 || minimum > maximum || !get || !set)
+        throw std::invalid_argument("Invalid debug rate");
+    const auto apply = [set, minimum, maximum](std::uint64_t value) {
+        set(std::clamp(value, minimum, maximum));
+    };
+    return {.label = std::move(label),
+            .value = [get] { return std::to_string(get()); },
+            .decrease = [get, apply] { apply(get() / 2); },
+            // Doubling above the maximum stops at it, without overflowing first.
+            .increase = [get, apply, maximum] { apply(get() > maximum / 2 ? maximum : get() * 2); },
+            .set = apply,
+            .depth = depth};
+}
 } // namespace kinetra
