@@ -1,12 +1,12 @@
 ---
 name: pr-review
-description: Review an open pull request in Kinetra or Kinetra-Lab, or every pull request of a stack. Started by the pull request's author in a separate session once the pull request's CI is green, for every pull request except a pointer-only one and a docs-only one that leaves the agent rules alone, or by the user. Checks every goal of the roadmap item and design document, runs the agent's code review and the repository checklist (tests, verification, docs, every copy of a changed rule, roadmap, CI, merge order, review lessons) on the code, builds and runs nothing, and posts inline comments plus a summary review with a conclusion. Discusses the author's answers for at most two rounds per point, after which the author's answer stands, resolves the threads it accepts or that reached that limit, and proposes lessons for docs/review-lessons.md. Never approves, requests changes, pushes or merges. Use for "/pr-review", "review deze PR", "kijk de stack na", and once a pull request's CI is green.
+description: Independently review an open pull request or stack in Kinetra or Kinetra-Lab on the user’s request. Check the goals, code, scenario evidence and repository checklist. Post findings and a summary, then follow the discussion rules. Use for "/pr-review", "review deze PR" or "kijk de stack na".
 argument-hint: "<repo>#<number> | PR URL (the top of a stack reviews the whole stack) [code-review depth: low|medium|high, or higher on request]"
 ---
 
 # PR review: an agent reviews a pull request
 
-The agent review of the [workflow](../../../docs/workflow.md#6-review) (in Kinetra-Lab: `external/Kinetra/docs/workflow.md`). Every pull request waits for it, except a docs-only one (only Markdown, `docs/` or `.agents/`) that leaves the agent rules alone, and a pointer-only Lab pull request ([rule](../../../AGENTS.md#git)): the author starts it in a separate session once the pull request's CI is green, and the user can start it too. The reviewer only reads the code and comments on it: CI runs the builds and tests, and the author runs what CI cannot (a screenshot of a changed scene). The author answers with `pr-feedback`; when nothing is open, the author merges under the [merge rule](../../../AGENTS.md#git).
+Use this skill when the user requests an independent review. The implementing session owns the [author review](../../../docs/workflow.md#6-review), local verification and follow-through on CI. Check its evidence using the steps below. The author handles findings with `pr-feedback` and follows the [merge rule](../../../AGENTS.md#git).
 
 Everything on GitHub is in English: the inline comments, the summary and its conclusion. Only the hand-over in the chat (step 10) is in Dutch.
 
@@ -71,7 +71,7 @@ Run the agent's code review on the pull request (for example Claude Code's `/cod
 | Check | Where to look |
 | --- | --- |
 | A design document exists (one per stack is enough, and one per change across Kinetra and Lab, which may live in the other repository; none for a docs-only pull request), its status is `implemented`, and Decisions, Test plan and Verification match the diff | `docs/design/`, the description's *Design* |
-| Every changed behavior has a test; no test was weakened, skipped or deleted without a reason | The diff of `tests/`, the design document's test plan |
+| Every affected scenario has credible coverage, the new critical cases have recorded failure and passing results, and existing tests still protect their contracts | The test diff, *Test plan* and *Verification*, including any contract-branch mutation results |
 | The verification level fits the diff by the table in AGENTS.md, and the description reports the commands; CI is green on the head | AGENTS.md *Verification*, the check runs |
 | A change to what a scene shows comes with the author's screenshot and refreshes the captures that the media guides' tables name for it, and no others ([rule](../../../AGENTS.md#repository-documentation)); a change that depends on desktop feel or performance names the user's playtest | The description, the design document, the diff of `docs/media/` |
 | Docs follow the code: module README, contract pages, `///` summaries, diagrams; links resolve | The diff; CI's *Documentation links* step |

@@ -22,8 +22,8 @@ Choose a skill below to see example requests and expected results. Each guide li
 | [doc-module](doc-module/README.md) | Write a module README and `///` header summaries | On request, or from `feature` |
 | [refactor](refactor/README.md) | Behavior-preserving restructuring in tested steps | On request, or scheduled by a design document |
 | [adr](adr/README.md) | Record an architecture decision | When a decision qualifies |
-| [pr-feedback](pr-feedback/README.md) | Process review feedback: commits on the same branch, push, merged up the stack, a reply or argument per comment, lessons added, merge under the merge rule | In the author's session for every agent review; otherwise on request (`/pr-feedback`) |
-| [pr-review](pr-review/README.md) | A second agent reviews a pull request or a stack: goals, the agent's code review and the repository checklist on the code, without running anything, inline comments and a conclusion, two discussion rounds, proposed lessons | By the author once a pull request's CI is green, for every pull request except a pointer-only one and a docs-only one that leaves the agent rules alone, in a separate session; or by the user |
+| [pr-feedback](pr-feedback/README.md) | Process feedback already posted on GitHub | In the author’s session once there is feedback to handle |
+| [pr-review](pr-review/README.md) | Check an open pull request or stack independently | On the user’s request |
 | [roadmap](roadmap/README.md) | Keep the backlog in `docs/roadmap.md`: ideas from a brainstorm, items to pick up, items closed on merge | On request (`/roadmap`, a brainstorm), or from `feature` and `grilling` |
 
 The user's global skill set (book references such as refactoring, clean architecture and a philosophy of software design, plus `teach`, `grill-me` and `code-review`) is installed per machine and is not copied here.
@@ -39,9 +39,9 @@ flowchart LR
     F --> D[doc-module]
     R --> V
     D --> V
-    F --> P[pr-feedback]
+    F -->|GitHub feedback| P[pr-feedback]
     P --> V
-    F -->|once CI is green| PR[pr-review]
+    U[User requests an independent review] --> PR[pr-review]
     PR -->|findings| P
     P -->|answers| PR
     F --> RM[roadmap]
@@ -49,7 +49,7 @@ flowchart LR
     RM -->|item picked up| F
 ```
 
-`feature` drives the [workflow](../../docs/workflow.md); the other skills are steps it calls, but each can also be used on its own. `roadmap` sits on both sides of it: items are picked up from the backlog, and follow-ups go back into it. `feature` starts `pr-review` in a separate session once the pull request's CI is green, except for a pointer-only pull request and a docs-only one that leaves the agent rules alone; the author's session answers its findings with `pr-feedback`, and merges under the merge rule when nothing is open.
+`feature` drives the [workflow](../../docs/workflow.md), including test design, verification and the author’s final review. `roadmap` supplies agreed work and records follow-ups. Use `pr-review` on request and `pr-feedback` for feedback on GitHub.
 
 ## Maintenance
 
