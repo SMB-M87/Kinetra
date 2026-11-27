@@ -31,9 +31,6 @@ Nothing agreed next in Kinetra itself.
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
   Evaluate whether the i4sim stall remedies call for shared maneuver state or additional motion primitives. The geometry and explicit steering tuning are described in [Shared predictive passing](design/2026-11-26-shared-passing.md).
   Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.
-- **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
-  The Ubuntu test jobs install packages and the pinned formatter on each run. A prebuilt Ubuntu image could shorten setup and reduce dependence on the package mirrors.
-  Next step: measure setup time and decide how the image would pick up Ubuntu security updates and formatter version changes.
 ## Ideas
 
 Wishes of the user, not yet agreed or shaped. Each needs a design session (`grilling`) before it moves up.

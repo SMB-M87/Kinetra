@@ -81,6 +81,9 @@ One list item per lesson, under the topic it belongs to:
 - **When a script reuses an option from CI, check that the conditions CI relies on also hold where the script runs** · added 2026-11-23 · source: #47
   #47's cloud setup took `APT::Update::Error-Mode=any` from CI's Ubuntu step, whose container lists only Ubuntu's sources and falls back to the image's. The cloud image also lists `download.docker.com`, and the script had no fallback, so one index that did not download would have stopped every install.
 
+- **When a test plan row checks a CI outcome that a green check does not show, record the run and what it showed in *Verification* once CI has run** · added 2026-11-27 · source: #65
+  #65's plan expected the mirror to serve the `linux` run with no *Ubuntu mirror not used* warning, and its design left the result to the descriptions, which did not record it. A green job does not say whether the mirror or the fallback served it; only the log does.
+
 ## Git and stacks
 
 No lessons yet.
