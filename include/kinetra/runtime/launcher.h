@@ -52,26 +52,50 @@ struct MenuLayout {
     std::size_t visible_rows;
     /// Top-left of the optional preview panel in logical window pixels.
     std::optional<Vec2> preview_origin;
-    /// Center of the footer button at panel x-coordinate `x` (EXIT 150, PREVIOUS 50,
-    /// NEXT 250), in window pixels.
+    /// Center of the footer button at panel x-coordinate `x`, in window pixels. The default
+    /// is EXIT on a page without LAUNCHER; LaunchMenu::footer_x() gives every button's x on
+    /// the current page.
     Vec2 footer_center(float x = 150) const;
-    /// Whether `point` (window pixels) hits the footer button at panel x-coordinate `x`.
+    /// Whether `point` (window pixels) hits the footer button at panel x-coordinate `x`:
+    /// within footer_half_width of its center across, 14 panel pixels up or down.
     bool footer_contains(Vec2 point, float x) const;
+    /// Half the clickable width of a footer button in panel pixels. Four buttons, 75 apart,
+    /// leave a gap between their zones.
+    static constexpr float footer_half_width = 36;
 
   private:
     friend class LaunchMenu;
     MenuLayout(Vec2 viewport, std::size_t rows, bool with_preview);
 };
+/// Which pages of a LaunchMenu show a LAUNCHER button in the footer, and what it does.
+enum class LauncherButton {
+    /// Only the configuration page, where a click returns to the application list as M
+    /// does. The launcher's own menu.
+    configuration_page,
+    /// Every page, where a click only sets LaunchMenu::launcher_requested(). For a menu that
+    /// a session shows inside itself and leaves through its own request, such as a catalog
+    /// of resources.
+    every_page,
+};
+/// A button of a LaunchMenu's footer.
+enum class FooterButton { previous, launcher, exit, next };
 /// Value-owned registration metadata; configuration names have no engine semantics.
 ///
 /// Two pages: the application list and, for an application with configurations, its
-/// configuration list. Up/Down, the pointer and Enter/Space or a click select; M returns
-/// from the configuration page. Each application remembers its last configuration.
+/// configuration list. Up/Down, the pointer and Enter/Space or a click select; M or the
+/// LAUNCHER button returns from the configuration page. Each application remembers its
+/// last configuration.
+///
+/// The footer holds EXIT, LAUNCHER where the LauncherButton puts it, and PREVIOUS and NEXT
+/// when the list has more than one page. Without LAUNCHER they sit at panel x 50 (PREVIOUS),
+/// 150 (EXIT) and 250 (NEXT); with it at 100 (LAUNCHER) and 200 (EXIT), or with paging at
+/// 37.5, 112.5, 187.5 and 262.5 in the order PREVIOUS, LAUNCHER, EXIT, NEXT.
 class LaunchMenu {
   public:
     /// Throws std::invalid_argument for an empty list, an empty name or a default
     /// configuration out of range.
-    explicit LaunchMenu(std::vector<LaunchChoice> choices, std::string heading = "KINETRA LAUNCHER");
+    explicit LaunchMenu(std::vector<LaunchChoice> choices, std::string heading = "KINETRA LAUNCHER",
+                        LauncherButton launcher = LauncherButton::configuration_page);
     /// Applies one frame of input; `viewport` in logical window pixels. Returns the
     /// selection when the user confirms a final row, std::nullopt otherwise.
     std::optional<LaunchSelection> update(const Input &input, Vec2 viewport);
@@ -79,6 +103,12 @@ class LaunchMenu {
     std::size_t selected() const;
     /// True once EXIT was clicked; never reset.
     bool exit_requested() const { return exit_requested_; }
+    /// True once LAUNCHER was clicked in a LauncherButton::every_page menu; never reset. The
+    /// owner leaves the menu for the launcher, as it does for exit_requested().
+    bool launcher_requested() const { return launcher_requested_; }
+    /// Panel x-coordinate of `button` on the current page, for MenuLayout::footer_center();
+    /// std::nullopt when the page does not show it.
+    std::optional<float> footer_x(FooterButton button) const;
     /// Whether the configuration page is showing.
     bool configuring() const { return configuring_; }
     /// Shows the configuration page of `selection.application` with
@@ -108,8 +138,9 @@ class LaunchMenu {
     std::vector<LaunchChoice> choices_;
     std::string heading_;
     std::vector<std::size_t> configurations_;
+    LauncherButton launcher_;
     std::size_t application_{};
-    bool configuring_{}, exit_requested_{};
+    bool configuring_{}, exit_requested_{}, launcher_requested_{};
     bool has_previews_{};
     Vec2 pointer_{-1, -1};
     /// Set by show_configurations: the next update() records the pointer without hovering.
