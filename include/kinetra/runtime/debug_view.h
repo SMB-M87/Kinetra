@@ -7,6 +7,7 @@
 #include <kinetra/runtime/bitmap_text.h>
 #include <kinetra/runtime/overlay_style.h>
 #include <kinetra/view/debug_menu.h>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -24,6 +25,13 @@ inline bool debug_chord(const Input &input) {
 /// Shared screen-space debug controls: a panel that draws DebugEntry rows and maps clicks to
 /// them. Layout is identical for drawing and picking; all pointer input inside the panel is
 /// consumed, including held fire.
+///
+/// A row with a `set` function takes a typed number: digits typed while the pointer is on
+/// the row start it, and the row shows them with a cursor in place of its value. Backspace
+/// removes the last digit, Enter passes the number to `set`, and Escape, moving the pointer
+/// off the row, or hiding the menu discards it, so a half-typed number never applies. While
+/// a number is typed the menu takes the keyboard: keys_captured() tells the caller to
+/// ignore this frame's keys.
 ///
 /// Positions are logical window pixels. The layout constants below are panel pixels, which
 /// scale() converts to screen pixels. The panel is not opened by a key of its own:
@@ -56,6 +64,8 @@ struct DebugMenu {
     static constexpr float swatch_size = 7;
     /// Space below the last row, in panel pixels.
     static constexpr float bottom_padding = 4;
+    /// Most digits a typed number holds; further digits are ignored. Seven reach a million.
+    static constexpr std::size_t max_typed_digits = 7;
 
     /// Whether the panel shows.
     bool visible{};
@@ -86,16 +96,22 @@ struct DebugMenu {
         return text_margin + static_cast<float>(std::max(depth, 0)) * indent + mark_width;
     }
 
-    /// Applies one frame of input: a click on a row runs its `[-]` or `[+]` function or its
-    /// action. Returns true when the pointer is over the visible panel, so the caller must
-    /// ignore that pointer input.
+    /// Applies one frame of input: typing over a row with a `set` function, and a click on a
+    /// row, which runs its `[-]` or `[+]` function or its action. Returns true when the
+    /// pointer is over the visible panel, so the caller must ignore that pointer input; see
+    /// keys_captured() for the keys.
     bool update(const Input &input, Vec2 viewport, std::span<const DebugEntry> entries) {
         pointer = input.mouse;
         const Vec2 point = (input.mouse - origin(viewport)) / scale(viewport);
         const bool captured = visible && point.x >= 0 && point.x <= panel_width && point.y >= 0 &&
                               point.y < height(entries.size());
-        if (captured && input.clicked && point.y >= heading_height && point.y < row_top(entries.size())) {
-            const auto &entry = entries[static_cast<std::size_t>((point.y - heading_height) / row_height)];
+        const auto row =
+            captured && point.y >= heading_height && point.y < row_top(entries.size())
+                ? std::optional(static_cast<std::size_t>((point.y - heading_height) / row_height))
+                : std::nullopt;
+        keys_captured_ = type(input, row, entries);
+        if (input.clicked && row) {
+            const auto &entry = entries[*row];
             switch (part_at(entry, point.x)) {
             case RowPart::decrease:
                 entry.decrease();
@@ -110,6 +126,19 @@ struct DebugMenu {
             }
         }
         return captured;
+    }
+
+    /// Whether the last update() used the keyboard, because a number was being typed at its
+    /// start or at its end, or a digit started one: the caller must ignore that frame's keys
+    /// and text, so a digit, Enter or Escape does not also reach the application.
+    bool keys_captured() const { return keys_captured_; }
+    /// Whether a typed number waits for Enter.
+    bool typing() const { return !typed_.empty(); }
+    /// Discards a typed number. Call it when the menu stops being updated while it is hidden,
+    /// so the number does not reappear when it shows again.
+    void discard_typing() {
+        typed_.clear();
+        keys_captured_ = false;
     }
 
     /// Draws the panel in screen space when visible; pass the same entries as to update().
@@ -142,12 +171,14 @@ struct DebugMenu {
             const float label = label_left(entry.depth);
             const bool active = entry.active && entry.active();
             draw_mark(runtime, entry.kind, active, at(label - mark_width, top + text_top), size);
-            // Dim text is for a row that only shows something; a row with buttons is live.
+            // Dim text is for a row that only shows something; a row with buttons or one that
+            // takes a typed number is live.
             const bool adjustable = entry.increase || entry.decrease;
+            const bool typed_here = typing() && row == typed_row_ && entry.label == typed_label_;
             draw_text(runtime, entry.label, at(label, top + text_top), size,
-                      lit || heading               ? overlay::bright_color
-                      : entry.action || adjustable ? overlay::text_color
-                                                   : overlay::dim_color);
+                      lit || heading                            ? overlay::bright_color
+                      : entry.action || adjustable || entry.set ? overlay::text_color
+                                                                : overlay::dim_color);
             float right = panel_width - text_margin;
             if (adjustable) {
                 const Vec2 button{stepper_width * size, (row_height - 4) * size};
@@ -165,7 +196,12 @@ struct DebugMenu {
                                         Vec2{swatch_size, swatch_size} * size, *entry.swatch);
                 right -= text_margin;
             }
-            if (entry.value) {
+            if (typed_here) {
+                // The cursor marks the digits as not yet applied.
+                const std::string value = typed_ + "_";
+                draw_text(runtime, value, at(right - text_width(value), top + text_top), size,
+                          overlay::bright_color);
+            } else if (entry.value) {
                 const std::string value = entry.value();
                 draw_text(runtime, value, at(right - text_width(value), top + text_top), size,
                           overlay::value_color);
@@ -174,6 +210,48 @@ struct DebugMenu {
     }
 
   private:
+    /// Digits typed over row `typed_row_`, not yet applied; empty while nothing is typed. The
+    /// row's label is kept as well, because the rows are built anew every frame and an
+    /// opened section can move another row to the same index.
+    std::string typed_, typed_label_;
+    std::size_t typed_row_{};
+    /// What keys_captured() returns.
+    bool keys_captured_{};
+
+    /// The typing part of update(): `row` is the row under the pointer, if any. Returns
+    /// whether the keyboard belonged to the menu this frame.
+    bool type(const Input &input, std::optional<std::size_t> row, std::span<const DebugEntry> entries) {
+        bool used = typing();
+        const bool on_typed_row = row && *row == typed_row_ && entries[*row].label == typed_label_;
+        if (typing() && (!on_typed_row || !entries[*row].set || input.hit(Key::escape))) {
+            typed_.clear();
+            return used;
+        }
+        if (!row || !entries[*row].set)
+            return used;
+        for (const char c : input.text) {
+            if (c < '0' || c > '9')
+                continue;
+            if (!typing()) {
+                typed_row_ = *row;
+                typed_label_ = entries[*row].label;
+            }
+            if (typed_.size() < max_typed_digits)
+                typed_ += c;
+            used = true;
+        }
+        if (!typing())
+            return used;
+        if (input.hit(Key::backspace)) {
+            typed_.pop_back();
+        } else if (input.hit(Key::enter)) {
+            const auto value = std::stoull(typed_);
+            typed_.clear();
+            entries[*row].set(value);
+        }
+        return used;
+    }
+
     /// The part of a row a click or the pointer is on.
     enum class RowPart { label, decrease, increase };
     /// The part of `entry`'s row at panel x coordinate `x`. The gap between the two buttons

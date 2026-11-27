@@ -118,18 +118,29 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
     send(event);
     runtime.poll();
     REQUIRE_MESSAGE(!runtime.input().down(Key::w), "Key release lost");
-    for (const auto &[code, key] :
-         {std::pair{SDLK_f, Key::f},           std::pair{SDLK_p, Key::p},
-          std::pair{SDLK_h, Key::h},           std::pair{SDLK_t, Key::t},
-          std::pair{SDLK_c, Key::c},           std::pair{SDLK_RETURN, Key::enter},
-          std::pair{SDLK_m, Key::m},           std::pair{SDLK_LSHIFT, Key::shift},
-          std::pair{SDLK_LCTRL, Key::control}, std::pair{SDLK_RCTRL, Key::control},
-          std::pair{SDLK_v, Key::v},           std::pair{SDLK_BACKQUOTE, Key::backquote},
-          std::pair{SDLK_1, Key::one},         std::pair{SDLK_2, Key::two},
-          std::pair{SDLK_3, Key::three},       std::pair{SDLK_4, Key::four},
-          std::pair{SDLK_5, Key::five},        std::pair{SDLK_6, Key::six},
-          std::pair{SDLK_UP, Key::up},         std::pair{SDLK_DOWN, Key::down},
-          std::pair{SDLK_LEFT, Key::left},     std::pair{SDLK_RIGHT, Key::right}}) {
+    for (const auto &[code, key] : {std::pair{SDLK_f, Key::f},
+                                    std::pair{SDLK_p, Key::p},
+                                    std::pair{SDLK_h, Key::h},
+                                    std::pair{SDLK_t, Key::t},
+                                    std::pair{SDLK_c, Key::c},
+                                    std::pair{SDLK_RETURN, Key::enter},
+                                    std::pair{SDLK_m, Key::m},
+                                    std::pair{SDLK_LSHIFT, Key::shift},
+                                    std::pair{SDLK_LCTRL, Key::control},
+                                    std::pair{SDLK_RCTRL, Key::control},
+                                    std::pair{SDLK_v, Key::v},
+                                    std::pair{SDLK_BACKQUOTE, Key::backquote},
+                                    std::pair{SDLK_1, Key::one},
+                                    std::pair{SDLK_2, Key::two},
+                                    std::pair{SDLK_3, Key::three},
+                                    std::pair{SDLK_4, Key::four},
+                                    std::pair{SDLK_5, Key::five},
+                                    std::pair{SDLK_6, Key::six},
+                                    std::pair{SDLK_UP, Key::up},
+                                    std::pair{SDLK_DOWN, Key::down},
+                                    std::pair{SDLK_LEFT, Key::left},
+                                    std::pair{SDLK_RIGHT, Key::right},
+                                    std::pair{SDLK_BACKSPACE, Key::backspace}}) {
         event.type = SDL_KEYDOWN;
         event.key.keysym.sym = code;
         send(event);
@@ -140,6 +151,17 @@ TEST_CASE("input drawing and resizing reach SDL and OpenGL") {
         runtime.poll();
         REQUIRE_MESSAGE(!runtime.input().down(key), "Sandbox key release lost");
     }
+    // Text events add up within a frame, and the next poll starts empty.
+    for (const char *typed : {"7", "50"}) {
+        SDL_Event text{};
+        text.type = SDL_TEXTINPUT;
+        SDL_strlcpy(text.text.text, typed, sizeof text.text.text);
+        send(text);
+    }
+    runtime.poll();
+    REQUIRE_MESSAGE(runtime.input().text == "750", "Typed text lost");
+    runtime.poll();
+    REQUIRE_MESSAGE(runtime.input().text.empty(), "Typed text repeated");
     event.type = SDL_KEYDOWN;
     event.key.keysym.sym = SDLK_a;
     send(event);

@@ -193,6 +193,7 @@ bool SettingsOverlay::update_debug(const Input &input, Vec2 viewport, DebugMenu 
     debug_open_ = false;
     if (modal_ || !debug_mode_) {
         menu.visible = false;
+        menu.discard_typing();
         return false;
     }
     if (debug_chord(input)) {
@@ -202,6 +203,7 @@ bool SettingsOverlay::update_debug(const Input &input, Vec2 viewport, DebugMenu 
     }
     if (!*debug_mode_) {
         menu.visible = false;
+        menu.discard_typing();
         return false;
     }
     bool captured = menu.update(input, viewport, entries);

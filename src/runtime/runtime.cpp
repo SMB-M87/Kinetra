@@ -122,6 +122,8 @@ std::optional<Key> key(SDL_Keycode code) {
         return Key::five;
     case SDLK_6:
         return Key::six;
+    case SDLK_BACKSPACE:
+        return Key::backspace;
     case SDLK_ESCAPE:
         return Key::escape;
     default:
@@ -304,6 +306,9 @@ Runtime::Runtime(const std::string &text, int width, int height) : impl_(std::ma
     if (!impl_->window)
         throw std::runtime_error(SDL_GetError());
     set_window_icon(impl_->window);
+    // Input::text needs text events. SDL2 sends them from the start on a desktop, but not
+    // every backend does (SDL3 under sdl2-compat starts with them off), so ask explicitly.
+    SDL_StartTextInput();
     impl_->context = SDL_GL_CreateContext(impl_->window);
     if (!impl_->context)
         throw std::runtime_error(SDL_GetError());
@@ -360,6 +365,7 @@ bool Runtime::poll(bool close_on_escape) {
     in.clicked = false;
     in.right_clicked = false;
     in.focus_lost = false;
+    in.text.clear();
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT)
@@ -378,6 +384,8 @@ bool Runtime::poll(bool close_on_escape) {
                     in.pressed[index] = true;
             }
         }
+        if (event.type == SDL_TEXTINPUT)
+            in.text += event.text.text;
         if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
             in.clicked = true;
             in.mouse_down = true;
