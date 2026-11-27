@@ -41,7 +41,8 @@ flowchart LR
         SE["session.cpp<br/>run_session"]
         SV["settings_view.cpp<br/>SettingsOverlay"]
         IV["inspector_view.cpp<br/>InspectorView"]
-        HDR["header-only:<br/>bitmap_text, overlay_style,<br/>debug_view, help_view"]
+        EV["error_view.cpp<br/>error_panel"]
+        HDR["header-only:<br/>bitmap_text, hud_text, overlay_style,<br/>debug_view, help_view"]
     end
     subgraph View["include/kinetra/view (header-only, headless)"]
         VW["camera, input,<br/>debug_menu, inspector"]
@@ -54,6 +55,8 @@ flowchart LR
     SV --> RT
     IV --> HDR
     IV --> VW
+    EV --> HDR
+    LA --> EV
     LA --> SE
     LA --> HDR
     HDR --> VW
@@ -68,6 +71,7 @@ flowchart LR
 | [session.cpp](session.cpp) | `run_session`: the loop for one directly launched session | `Kinetra::Runtime` |
 | [settings_view.cpp](settings_view.cpp) | `SettingsOverlay`: rows, layout, picking and drawing | `Kinetra::Runtime` |
 | [inspector_view.cpp](inspector_view.cpp) | `InspectorView`: wrapped rows, scrolling, capture and close | `Kinetra::Runtime` |
+| [error_view.cpp](error_view.cpp) | `error_panel`: an error message in a panel at the bottom, with capture and close | `Kinetra::Runtime` |
 | [launcher.cpp](launcher.cpp) | `LaunchMenu`, `MenuLayout`, `SessionHost` and `run_launcher` | `Kinetra::Launcher` |
 | [glad.c](../glad.c) | Generated OpenGL 3.3 loader; keep its generated contents ([provenance](../../include/glad/README.md)) | `Kinetra::Runtime` |
 
@@ -79,6 +83,7 @@ flowchart LR
 | [settings_view.h](../../include/kinetra/runtime/settings_view.h) | `SettingsOverlay` and its rows | `Kinetra::Runtime` | [Settings overlay](../../docs/engine/launcher-overlays.md#settings-overlay) |
 | [frame_rate.h](../../include/kinetra/view/frame_rate.h) | `FrameRateSetting`: the FPS row of a debug menu and the pacing it applies | Header-only; usable headless, `apply()` takes the Runtime | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 | [inspector_view.h](../../include/kinetra/runtime/inspector_view.h) | `InspectorView` and its pointer-input result | `Kinetra::Runtime` | [Agent inspector](../../docs/engine/launcher-overlays.md#agent-inspector) |
+| [hud_text.h](../../include/kinetra/runtime/hud_text.h), [error_view.h](../../include/kinetra/runtime/error_view.h) | The HUD style: lines, statistics and error text, wrapping; the error panel | `hud_text.h` header-only, drawing calls need `Kinetra::Runtime`; `error_view.h` `Kinetra::Runtime` | [HUD text and errors](../../docs/engine/launcher-overlays.md#hud-text-and-errors) |
 | [inspector.h](../../include/kinetra/view/inspector.h) | Snapshot with ordered diagnostic groups and rows | Header-only, usable headless | [Agent inspector](../../docs/engine/launcher-overlays.md#agent-inspector) |
 | [launcher.h](../../include/kinetra/runtime/launcher.h) | `LaunchMenu`, `SessionHost`, `run_launcher` | `Kinetra::Launcher` | [Launcher](../../docs/engine/launcher-overlays.md#launcher) |
 | [bitmap_text.h](../../include/kinetra/runtime/bitmap_text.h), [overlay_style.h](../../include/kinetra/runtime/overlay_style.h), [debug_view.h](../../include/kinetra/runtime/debug_view.h), [help_view.h](../../include/kinetra/runtime/help_view.h) | Glyphs and text, the panels' shared style, debug menu, help panel | Header-only; drawing calls need `Kinetra::Runtime` | [Debug menu, help and text](../../docs/engine/launcher-overlays.md#debug-menu-help-and-text) |
@@ -125,12 +130,14 @@ After a transition the clock restarts, so building a world does not count as sim
 - Overlay positions are in logical panel pixels, scaled by a factor that depends only on the viewport.
 - Borrowed pointers (overlay flags, and whatever the functions of a debug entry refer to) must outlive the overlay's `update` and `draw` calls.
 - The debug menu and the settings panel draw with [overlay_style.h](../../include/kinetra/runtime/overlay_style.h) only; a color or mark that both use is defined there once.
+- HUD text and error messages use [hud_text.h](../../include/kinetra/runtime/hud_text.h) only: an application never picks its own scale or red for an error.
 
 ## Changing this module
 
 - **A new overlay row kind:** add an alternative to `SettingsRow`, give it a height in `SettingsOverlay::layout()` and a click and draw branch, then add a layout case to `settings_view_tests.cpp`. Lab finds rows through `row_y()` and the public button centers, so a changed layout only needs its captures rendered again.
 - **A new kind of debug row:** add a `DebugEntryKind`, its mark in `overlay_style.h` and its branch in `DebugMenu::draw_mark`; add a click case to `launcher_tests.cpp` and a pixel to the draw case in `runtime_tests.cpp`.
 - **A new glyph:** add it to `glyph()` in `bitmap_text.h` and a case to `presentation_tests.cpp`.
+- **The HUD or error style:** change the constants in `hud_text.h`, which every application and the error panel read; wrapping and line cases are in `presentation_tests.cpp`, the panel's layout and capture in `launcher_tests.cpp`. A new scale or line height moves Lab's statistics, so its captures are rendered again.
 - **A new host rule** (for example another request): change both `run_session` and `run_launcher`, the table in the [launcher contract](../../docs/engine/launcher-overlays.md#sessions-and-requests), and add graphics cases to `runtime_tests.cpp`. A change to `Session` breaks every application; record it in an ADR.
 - **A new key:** add it to `Key` in `view/input.h` and to the SDL mapping in `runtime.cpp`, and to the key loop in `runtime_tests.cpp`.
 

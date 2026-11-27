@@ -20,13 +20,13 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 ## Now
 
-Nothing in progress in Kinetra itself.
+- **Stall detection and remedies in the engine** · simulation, with Lab · added 2026-11-27
+  `StallDetector`, a `RightOfWay` fallback and a `MakeWay` lifecycle beside `PassingCoordinator` in `Kinetra::Simulation`, each used by i4sim in the same step ([ADR 0018](decisions/0018-stall-remedies-in-the-engine.md)).
+  Where: `StallDetector` merged in [#72](https://github.com/SMB-M87/Kinetra/pull/72); branch `feat/right-of-way` (step 4 of Lab's stack, `RightOfWay`, [#74](https://github.com/SMB-M87/Kinetra/pull/74)), [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md).
 
 ## Next
 
-- **Stall detection and remedies in the engine** · simulation, with Lab · added 2026-11-27
-  `StallDetector`, a `RightOfWay` fallback and a `MakeWay` lifecycle beside `PassingCoordinator` in `Kinetra::Simulation`, each used by i4sim in the same step ([ADR 0018](decisions/0018-stall-remedies-in-the-engine.md)).
-  Next step: step 3 of Lab's stack, `feat/stall-detector`. Where: [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md).
+Nothing agreed next in Kinetra itself.
 
 ## Later
 

@@ -24,12 +24,12 @@ Use `verify` to find out which checks a change needs and what actually passed. T
 
 ## When not to use it
 
-For a judgement about whether an implementation meets its goals, use `pr-review` on the open pull request. For a bug that needs a fix, start with `feature`.
+On a stack, verification uses the pull request’s actual base and includes any affected scenarios from changed dependencies. Use `feature` for a bug fix or for the author’s review of an implementation. For a requested independent review of an open pull request, use `pr-review`.
 
 ## How it works
 
 1. The agent examines committed, uncommitted and untracked changes in each affected repository. The highest-impact file determines the level. Final verification of a code branch uses Full.
-2. At every level it runs `tools/check_copies.py` to find old names and wording. Then it runs the checks for that level. For Full it checks the Ubuntu pull request CI, plus native Windows for Lab, and reports any checks still pending. A visual change also gets a screenshot and refreshed captures as required by the media guides. [Verification levels](../../../docs/testing.md#verification-levels) · [Media rules](../../../AGENTS.md#repository-documentation)
+2. At every level it runs `tools/check_copies.py` to find old names and wording, and `git grep` for each key word the change makes stale, which also finds code comments. Then it runs the checks for that level. For Full it checks the Ubuntu pull request CI, plus native Windows for Lab, and reports any checks still pending. A visual change also gets a screenshot and refreshed captures as required by the media guides. [Verification levels](../../../docs/testing.md#verification-levels) · [Media rules](../../../AGENTS.md#repository-documentation)
 3. You get a result per command, with the failing test or blocker where applicable.
 
 ## Related skills

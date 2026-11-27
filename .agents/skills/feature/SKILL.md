@@ -30,7 +30,7 @@ This skill carries out [docs/workflow.md](../../../docs/workflow.md). (In Kinetr
 
 ## 4. Test plan
 
-Write the **Test plan** section before coding: each new or changed behavior, the test that proves it, and the verification level. For a bug, write the failing reproduction test first and run it to see it fail. For a refactor, confirm that tests pin the behavior; add characterization tests first if they don't.
+Before coding, map each goal to its affected scenarios and the checks that prove them. Include ordinary use, relevant edges and failures, state transitions and existing behavior at risk. Choose existing coverage and add focused regressions for gaps. Follow the [test rules](../../../docs/testing.md#rules-for-tests) and record the failure and passing result for new critical cases.
 
 ## 5. Implement in commits
 
@@ -45,14 +45,14 @@ Run the `verify` skill on the whole branch diff. A branch with code changes ends
 
 ## 7. Review
 
-Review `git diff main...HEAD` with `/code-review` (Claude Code) or the global `code-review` skill (Codex), and check the list in the [workflow](../../../docs/workflow.md#6-review). For every rule, procedure or term the branch changes, search for the old wording, its key words and the names of its parts (`python3 tools/check_copies.py --term '<old wording>' --term '<key word>' --term '<part>'`, in Kinetra-Lab `python3 external/Kinetra/tools/check_copies.py`, which also covers `external/Kinetra`; it searches case-insensitively, and lists the CI jobs, CMake options, presets, flags and inline names the diff removes and where they are still named), read every hit, and change every copy in the same commit, or in the fix commit when this review finds a missed copy ([rule](../../../AGENTS.md#repository-documentation), which says what the parts are). Fix the findings in new commits, re-verify, and record findings and resolutions in **Review**.
+Challenge the implementation and its tests as you work. Look for missing scenarios and assertions that would pass with the wrong behavior. Fix findings in this session, rerun affected checks and record the evidence in **Verification** and **Review**.
 
 ## 8. Document
 
 - Update the module README (with the `doc-module` skill if it is thin), contract pages, diagrams and indexes.
-- Set the design document's status to `implemented`, and fill **Pull request** with the title and description. A docs-only change has no design document; write its title and description in step 9.3.
+- Set the design document's status to `implemented`, and fill **Pull request** with the title and description. For a docs-only change, draft the title and description in the session scratchpad now.
 - Update the roadmap with the `roadmap` skill: remove the item this branch finishes, and add the open points someone intends to act on as items.
-- Run the docs check, then make the final commit.
+- Run the docs check. Review the complete diff against the actual pull request base and check the draft description using the [workflow checklist](../../../docs/workflow.md#6-review). Fix findings and rerun checks for the affected parts before making the final commit.
 
 ## 9. Push and open pull requests
 
@@ -62,10 +62,10 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 2. Push each branch: Kinetra before Lab. Run `git push -u origin <branch>`; if SSH is unavailable, use the HTTPS fallback from `AGENTS.md`.
 3. Write the description from the design document's **Pull request** section, or for a docs-only change directly, to a file in the session scratchpad. It covers Summary, Changes, Design, Verification, Review notes, Dependencies and merge order, and Follow-up.
 4. Run `gh pr create --repo <owner>/<repo> --base main --head <branch> --title "<type(scope): summary>" --body-file <file>`; for a step of a stack, use the branch below as `--base`, open the pull requests bottom-up, and start each description with the step's place in the stack and "merge after #<n>". For a Lab pull request with a pointer change, link the Kinetra pull request and state that it merges first, with a merge commit. While the Kinetra pull request is in review and its branch moves, follow it with a pointer commit on the Lab branch. Once both have merged, Kinetra's `lab-pointer` workflow opens the pointer-only pull request to the Kinetra merge commit, within the hour, and GitHub merges it when its CI passes. Check that it did; open and merge one by hand only when the workflow failed.
-5. Run `gh pr view <number> --json url,mergeable` and report conflicts. Do not merge yet: step 9.8 merges every pull request, a docs-only one included.
-6. Wait for the pull request's checks (`gh pr checks <number>`): they are the Full level. Fix a red check on the branch before handing over; report checks that are still running as pending.
-7. Once every check is green, start the agent review, except for a pointer-only pull request and a docs-only one that leaves the agent rules alone, which go straight to step 9.8. Run it on the most capable model the agent offers, at the effort and code-review depth that the [pr-review levels](../pr-review/SKILL.md#levels) give for this diff. Start it where it does not share your context: a new session or task, if the agent can create one; else a fresh sub-agent that gets only the link and the depth; else ask the user to start the `pr-review` skill in a new session. Give that session write access to the repository of every pull request it reviews, both repositories for a change across Kinetra and Lab: posting a review writes through the GitHub API, and read access covers only `git clone` and `git fetch`. In a Claude Code cloud session, start it with `create_session` from the pull request's repository (Kinetra-Lab for a change across both), with a prompt that names every pull request and asks it to attach each other repository with push access before it reviews; both repositories' `.claude/settings.json` allow that without a prompt ([review access](../../../docs/workflow.md#review-access)). Then check its first events (`list_events`) for the attach; only when it failed, ask the user once for access to the repository it names. The prompt asks for write access to each repository, never for read access. The pull request waits for its conclusion.
-8. Follow the pull request: subscribe to its activity where the agent can, so CI results and review comments arrive in this session; otherwise check it when the user asks. Answer the agent review's findings, and other review comments, with `pr-feedback` as they come. When nothing is open and the [merge rule](../../../AGENTS.md#git) allows it, merge, whatever the pull request changes; otherwise fix what keeps it open.
+5. Check mergeability with `gh pr view <number> --json url,mergeable`.
+6. Follow the configured checks for the current head (`gh pr checks <number>`). Fix failures in this session and group related fixes before pushing again. A code change reaches Full verification when the required checks are green.
+7. Process actual review feedback with `pr-feedback`. An independent `pr-review` is available when the user requests it.
+8. Merge when the [merge rule](../../../AGENTS.md#git) allows it.
 
 ## 10. Hand over (in Dutch)
 
@@ -74,4 +74,4 @@ Follow [workflow step 8](../../../docs/workflow.md#8-commit-push-and-open-a-pull
 - Verification commands and results, and anything not run, with the reason.
 - Remaining risks and open points, and the roadmap items added or removed.
 - The merge order: Kinetra before Lab, and each stack bottom-up.
-- The agent review's conclusion, the points its summary lists for the user to check, and whether you merged, or what still keeps the pull request open.
+- The author’s review result, remaining limits and the merge status.
