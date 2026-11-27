@@ -41,7 +41,7 @@ Write the **Test plan** section before coding: each new or changed behavior, the
 
 ## 6. Verify
 
-Run the `verify` skill on the whole branch diff. A branch with code changes ends at the **Full** level. Record commands and results in the **Verification** section.
+Run the `verify` skill on the whole branch diff. A branch with code changes ends at the **Full** level. Check each goal of the design document against a check or run as wide as its wording, and narrow the wording where no such check ran ([rule](../../../AGENTS.md#verification-by-impact)). Record commands and results in the **Verification** section.
 
 ## 7. Review
 

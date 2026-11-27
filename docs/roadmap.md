@@ -34,9 +34,6 @@ Nothing agreed next in Kinetra itself.
 - **CI image with the toolchain built in** · CI, with Lab · added 2026-11-22
   The Ubuntu test jobs install packages and the pinned formatter on each run. A prebuilt Ubuntu image could shorten setup and reduce dependence on the package mirrors.
   Next step: measure setup time and decide how the image would pick up Ubuntu security updates and formatter version changes.
-- **Frame read-back on `Runtime`** · runtime · added 2026-11-21
-  A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
-  Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).
 ## Ideas
 
 Wishes of the user, not yet agreed or shaped. Each needs a design session (`grilling`) before it moves up.

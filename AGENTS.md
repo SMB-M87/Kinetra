@@ -71,8 +71,9 @@ Choose the lowest level that covers the change. Commands are listed in [testing]
 
 - Report the exact commands, results and blockers. Never call a check passed that did not run.
 - A failed configure or build means verification is incomplete.
+- Prove each goal with a check or run as wide as its wording, or narrow the wording. A goal that names a set (every header, every platform, in a window) needs a check over that whole set, not over the one member the change touched. This was a review lesson from #66, Kinetra-Lab#133 and #67; the user made it a rule on 2026-11-27.
 
-*Why:* a full build takes minutes and proves nothing for a README edit. Skipping compilation after a code change hides errors until much later. CI runs the graphics cases on the same software backend as a local run, so the local machine adds nothing to the Full level but a playtest on a desktop.
+*Why:* a full build takes minutes and proves nothing for a README edit. Skipping compilation after a code change hides errors until much later. CI runs the graphics cases on the same software backend as a local run, so the local machine adds nothing to the Full level but a playtest on a desktop. A goal proven by a narrower check than its wording is not proven: #66 searched for one moved header where its goal named all of `runtime/`, and #67 promised a read-back that works in a window while CI runs only offscreen.
 
 ## Git
 

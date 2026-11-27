@@ -1,4 +1,6 @@
 #include <SDL2/SDL.h>
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <glad/glad.h>
@@ -202,6 +204,13 @@ struct Runtime::Impl {
     Input input;
     std::string title;
     float drawable_scale{1};
+    /// The viewport size that begin() set, in drawable pixels: what end() reads back.
+    int frame_width{}, frame_height{};
+    /// Whether end() reads frames back, and whether `frame` holds one since that was switched on.
+    bool read_back{}, has_frame{};
+    FramePixels frame;
+    /// OpenGL's rows of the last read, bottom-up; kept so that each read reuses its memory.
+    std::vector<std::uint8_t> read_rows;
     bool running{true}, owns_sdl{}, gl_ready{};
     struct Vertex {
         float x, y, r, g, b, a;
@@ -220,6 +229,7 @@ struct Runtime::Impl {
     std::chrono::steady_clock::time_point epoch{std::chrono::steady_clock::now()};
 
     void flush_shapes();
+    void read_frame();
     void bind_image_texture(const std::shared_ptr<const RgbaImage> &image,
                             std::span<const std::uint8_t> pixels);
 
@@ -402,6 +412,8 @@ void Runtime::begin(Color background) {
     impl_->drawable_scale =
         std::min(float(std::max(w, 1)) / camera.viewport.x, float(std::max(h, 1)) / camera.viewport.y);
     glViewport(0, 0, w, h);
+    impl_->frame_width = w;
+    impl_->frame_height = h;
     glClearColor(background.r, background.g, background.b, background.a);
     glClear(GL_COLOR_BUFFER_BIT);
     impl_->vertices.clear();
@@ -520,8 +532,81 @@ void main() { pixel = texture(picture, uv); }
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
+namespace {
+/// The state glReadPixels reads through: which framebuffer and buffer it reads, where it
+/// writes, and how it packs rows. Sets OpenGL's defaults, with the window's draw buffer as
+/// the read buffer, and restores what the caller had on destruction, so a read neither
+/// depends on nor changes the caller's state. Assumes the window is the draw framebuffer,
+/// as it is for every Runtime drawing call: `GL_DRAW_BUFFER` names the window's buffer only then.
+class DefaultReadState {
+  public:
+    DefaultReadState() {
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &framebuffer_);
+        glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pack_buffer_);
+        for (std::size_t i = 0; i < pack_names.size(); ++i)
+            glGetIntegerv(pack_names[i], &pack_values_[i]);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        // The read buffer belongs to the bound read framebuffer: save the window's own, after
+        // the unbind, so the destructor restores it onto the window and not a caller's object.
+        glGetIntegerv(GL_READ_BUFFER, &read_buffer_);
+        // Read the buffer that was drawn: after a swap OpenGL leaves the back buffer
+        // undefined, and the front buffer of a composited window need not hold the frame.
+        GLint draw_buffer{};
+        glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+        glReadBuffer(static_cast<GLenum>(draw_buffer));
+        // With a pack buffer bound, glReadPixels would write into it instead of into memory.
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        // Rows without padding or offsets: an alignment of 8 at an odd width, a row length
+        // above the width, or a skip would overrun the destination.
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+        glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+    }
+    ~DefaultReadState() {
+        for (std::size_t i = 0; i < pack_names.size(); ++i)
+            glPixelStorei(pack_names[i], pack_values_[i]);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, static_cast<GLuint>(pack_buffer_));
+        glReadBuffer(static_cast<GLenum>(read_buffer_));
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(framebuffer_));
+    }
+    DefaultReadState(const DefaultReadState &) = delete;
+    DefaultReadState &operator=(const DefaultReadState &) = delete;
+
+  private:
+    static constexpr std::array<GLenum, 4> pack_names{GL_PACK_ALIGNMENT, GL_PACK_ROW_LENGTH,
+                                                      GL_PACK_SKIP_ROWS, GL_PACK_SKIP_PIXELS};
+    GLint framebuffer_{}, read_buffer_{}, pack_buffer_{};
+    std::array<GLint, 4> pack_values_{};
+};
+} // namespace
+
+void Runtime::Impl::read_frame() {
+    const auto width = static_cast<std::size_t>(std::max(frame_width, 0)),
+               height = static_cast<std::size_t>(std::max(frame_height, 0));
+    const std::size_t stride = width * 4;
+    read_rows.resize(stride * height);
+    {
+        const DefaultReadState state;
+        glReadPixels(0, 0, frame_width, frame_height, GL_RGBA, GL_UNSIGNED_BYTE, read_rows.data());
+    }
+    frame.width = frame_width;
+    frame.height = frame_height;
+    frame.rgba.resize(read_rows.size());
+    // OpenGL's rows run bottom-up; FramePixels' top-down, as window coordinates do.
+    for (std::size_t y = 0; y < height; ++y)
+        std::copy_n(read_rows.data() + (height - 1 - y) * stride, stride, frame.rgba.data() + y * stride);
+    // The framebuffer's alpha depends on whether the platform gave it an alpha channel and on
+    // blending; the window shows the frame opaque.
+    for (std::size_t i = 3; i < frame.rgba.size(); i += 4)
+        frame.rgba[i] = 255;
+    has_frame = true;
+}
+
 void Runtime::end() {
     impl_->flush_shapes();
+    if (impl_->read_back)
+        impl_->read_frame();
     SDL_GL_SwapWindow(impl_->window);
     if (pacing() == FramePacing::limited) {
         const auto seconds = [&](std::chrono::steady_clock::time_point time) {
@@ -538,6 +623,32 @@ void Runtime::end() {
         impl_->frame_times.record(
             impl_->fixed_frame_time.value_or(std::chrono::duration<double>(now - *impl_->presented).count()));
     impl_->presented = now;
+}
+
+void Runtime::read_back(bool enabled) {
+    impl_->read_back = enabled;
+    if (!enabled) {
+        impl_->has_frame = false;
+        impl_->frame = {};
+        impl_->read_rows = {};
+    }
+}
+
+const FramePixels &Runtime::frame() const {
+    if (!impl_->has_frame)
+        throw std::logic_error("No frame was read back; call read_back(true) and end() first");
+    return impl_->frame;
+}
+
+std::array<std::uint8_t, 4> FramePixels::pixel(int x, int y) const {
+    if (x < 0 || y < 0 || x >= width || y >= height)
+        throw std::out_of_range("Pixel outside the frame");
+    if (rgba.size() < static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4)
+        throw std::out_of_range("Frame holds fewer bytes than its size needs");
+    const auto *p =
+        rgba.data() +
+        (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) + static_cast<std::size_t>(x)) * 4;
+    return {p[0], p[1], p[2], p[3]};
 }
 
 const FrameTimes &Runtime::frame_times() const {
