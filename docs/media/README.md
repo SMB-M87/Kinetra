@@ -17,7 +17,7 @@ The GIFs behind the README's [shared UI](../../README.md#shared-ui) section: the
 | --- | --- |
 | [ui-launcher.gif](ui-launcher.gif) | `LaunchMenu`: hovering changes the selected lab's image and description, DEMO opens its configuration page, DOORWAY starts that scenario through the `SessionHost`, and the SCENARIOS row of Demo's debug menu asks for `SessionRequest::configurations`, which returns to the configuration page with DOORWAY selected |
 | [ui-settings.gif](ui-settings.gif) | `SettingsOverlay` in Demo's Doorway: Ctrl opens it and Demo pauses, STATISTICS goes off and on, SIM CONTROLS and DEBUG CONTROLS open their help lines and close them, and RESUME closes the panel |
-| [ui-debug-menu.gif](ui-debug-menu.gif) | `DebugMenu` in Doorway: Shift+Ctrl opens it, the `[+]` stepper of SPEED and of MOTION's MAX SPEED, AVOIDANCE choosing LEGACY and then RECIPROCAL again, the LAYERS section with its swatches, and Shift+Ctrl closing it |
+| [ui-debug-menu.gif](ui-debug-menu.gif) | `DebugMenu` in Doorway: Shift+Ctrl opens it, the `[+]` stepper of UPS and of MOTION's MAX SPEED, AVOIDANCE choosing LEGACY and then RECIPROCAL again, the LAYERS section with its swatches, and Shift+Ctrl closing it |
 | [ui-inspector.gif](ui-inspector.gif) | `InspectorView` in Doorway: a click on an agent opens it at the top right, FRAME TIMES in the settings panel puts the frame-time graph (`draw_frame_times`) below it, a click on another agent switches it, and its X closes it |
 | [ui-debug-layers.gif](ui-debug-layers.gif) | Demo's debug layers in Terrain, with agents that wander by planned routes: VECTORS, STEERING PROBES, PATHS, COLLISION SHAPES and ACTIVE AGENTS off and on again, HOME RANGE on, and the wheel zooming out over the streamed terrain |
 
