@@ -36,8 +36,10 @@ struct RightOfWayEvent {
 /// Each step the caller passes the movers as for StallDetector. An observed mover whose steps
 /// without progress reach `StallObservation::threshold_steps` and that pushing_neighbor()
 /// finds pushed back gets the right of way until `window_steps` steps later. It loses it
-/// earlier when it is no longer observed: it arrived, stopped, changed to another control or is
-/// absent. After the window it can get it again at once if it is still stalled and pushed back.
+/// earlier when its goal changes, or when it is no longer observed: it arrived, stopped, changed
+/// to another control or is absent. After the window it can get it again at once if it is still
+/// stalled and pushed back. A pushing neighbor that is itself pushed back by the mover can hold
+/// a right of way at the same time.
 /// The fallback measures no progress itself and changes no motion; the caller applies it.
 ///
 /// Mover indices are positions in the span of a step; a span shorter than the last step's ends
@@ -45,20 +47,25 @@ struct RightOfWayEvent {
 /// Not thread-safe.
 class RightOfWay {
   public:
-    /// Ends the rights of way whose window passed or whose mover is no longer observed, then
-    /// grants new ones, at the caller's clock value `now`; returns the events in that order,
-    /// each part in mover order. Throws std::invalid_argument before changing anything for a
-    /// zero window or for what validate() rejects.
+    /// Ends the rights of way whose window passed, whose mover's goal changed or whose mover is
+    /// no longer observed, then grants new ones, at the caller's clock value `now`; returns the
+    /// events in that order, each part in mover order. Throws std::invalid_argument before changing anything
+    /// for a zero window or for what validate() rejects.
     std::vector<RightOfWayEvent> step(std::span<const StallMover> movers, const StallObservation &observation,
                                       const RightOfWaySettings &settings, std::uint64_t now);
     /// Whether `mover` has the right of way after the last step.
-    bool granted(std::size_t mover) const { return mover < until_.size() && until_[mover].has_value(); }
+    bool granted(std::size_t mover) const { return mover < grants_.size() && grants_[mover].has_value(); }
     /// Ends every right of way without events, so a caller that renumbers its movers starts
     /// afresh.
-    void clear() { until_.clear(); }
+    void clear() { grants_.clear(); }
 
   private:
-    /// Per mover, the step at which its right of way ends.
-    std::vector<std::optional<std::uint64_t>> until_;
+    /// A right of way: the step at which it ends, and the goal of the trip it was granted for.
+    struct Grant {
+        std::uint64_t until;
+        Vec2 destination;
+    };
+    /// Per mover, its right of way, if it has one.
+    std::vector<std::optional<Grant>> grants_;
 };
 } // namespace kinetra

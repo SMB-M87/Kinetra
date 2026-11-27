@@ -1,13 +1,15 @@
 // Contract tests for the right-of-way fallback and the push test it shares with the stall
-// detector. Every case but the invalid-input one runs at two world scales, the second away
-// from the origin.
+// detector. Every case but the invalid-input and clock-end ones runs at two world scales, the
+// second away from the origin.
 #include <kinetra/simulation/right_of_way.h>
 
 #include <doctest/doctest.h>
 
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using namespace kinetra;
@@ -185,6 +187,51 @@ TEST_CASE("the push test is the stall detector's pushed_back reason") {
     }
 }
 
+TEST_CASE("ends stay in mover order when a shorter span leaves holders out") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        const auto tuning = observation(frame);
+        RightOfWay fallback;
+        // Two pushed pairs, far apart: movers 0 and 2 get the right of way.
+        auto movers = pushed_pair(frame, tuning.threshold_steps);
+        auto second = pushed_pair(frame, tuning.threshold_steps);
+        for (auto &m : second) {
+            m.body.position += Vec2{0, 10} * frame.scale;
+            m.target += Vec2{0, 10} * frame.scale;
+            m.destination += Vec2{0, 10} * frame.scale;
+        }
+        movers.insert(movers.end(), second.begin(), second.end());
+        REQUIRE(fallback.step(movers, tuning, window, 0).size() == 2);
+        movers.resize(2);
+        movers[0].state = StallMoverState::busy;
+        const auto events = fallback.step(movers, tuning, window, 1);
+        REQUIRE(events.size() == 2);
+        CHECK(events[0].mover == 0);
+        CHECK(events[1].mover == 2);
+    }
+}
+
+TEST_CASE("a new goal ends the right of way at once") {
+    for (const auto &frame : frames) {
+        CAPTURE(frame.scale);
+        const auto tuning = observation(frame);
+        RightOfWay fallback;
+        auto movers = pushed_pair(frame, tuning.threshold_steps);
+        REQUIRE(fallback.step(movers, tuning, window, 0).size() == 1);
+        // The mover stays observed and pushed; only its trip changes.
+        movers[0].destination = frame.at({0, 5});
+        const auto events = fallback.step(movers, tuning, window, 1);
+        REQUIRE(events.size() == 2);
+        CHECK(events[0].kind == RightOfWayEvent::Kind::ended);
+        // Still stalled and pushed back on the new trip, it gets a new right of way for it.
+        CHECK(events[1].kind == RightOfWayEvent::Kind::granted);
+        movers[0].no_progress = 0;
+        movers[0].destination = frame.at({0, -5});
+        REQUIRE(fallback.step(movers, tuning, window, 2).size() == 1);
+        CHECK_FALSE(fallback.granted(0));
+    }
+}
+
 TEST_CASE("a window past the end of the clock lasts to its end") {
     const Frame frame{{0, 0}, 1};
     const auto tuning = observation(frame);
@@ -215,6 +262,8 @@ TEST_CASE("invalid input throws before anything changes") {
     const auto tuning = observation(frame);
     RightOfWay fallback;
     const auto movers = pushed_pair(frame, tuning.threshold_steps);
+    // A right of way exists before the invalid calls, so that one changing anything shows.
+    REQUIRE(fallback.step(movers, tuning, window, 0).size() == 1);
     CHECK_THROWS_AS(fallback.step(movers, tuning, {0}, 0), std::invalid_argument);
     auto bad = tuning;
     bad.stop_speed = 0;
@@ -222,7 +271,11 @@ TEST_CASE("invalid input throws before anything changes") {
     auto bad_movers = movers;
     bad_movers[1].destination = {std::nanf(""), 0};
     CHECK_THROWS_AS(fallback.step(bad_movers, tuning, window, 0), std::invalid_argument);
-    CHECK_FALSE(fallback.granted(0));
     CHECK_THROWS_AS(pushing_neighbor(movers, 2, tuning), std::out_of_range);
-    CHECK(fallback.step(movers, tuning, window, 0).size() == 1);
+    // Nothing changed: the right of way holds, and ends at the end of its window.
+    CHECK(fallback.granted(0));
+    CHECK(fallback.step(movers, tuning, window, 1).empty());
+    const auto events = fallback.step(movers, tuning, window, window.window_steps);
+    REQUIRE_FALSE(events.empty());
+    CHECK(events[0].kind == RightOfWayEvent::Kind::ended);
 }
