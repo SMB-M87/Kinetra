@@ -1,3 +1,4 @@
+#include <kinetra/simulation/detail/footprint.h>
 #include <kinetra/simulation/stall_detector.h>
 
 #include <algorithm>
@@ -26,19 +27,6 @@ void validate_settings(const StallObservation &settings) {
             "Stall observation requires a positive threshold, excursion, reversal count, "
             "stop speed and pushing reach, a nonnegative lookahead and clearance, an "
             "opposing cosine in (-1, 0) and an ahead cosine in [0, 1)");
-}
-
-/// An axis-aligned box centered on the body's position that covers its bounds.
-Body footprint(const Body &body) {
-    const auto area = bounds(body);
-    Body box;
-    box.shape = Shape::box;
-    box.motion = Motion::controlled;
-    box.position = body.position;
-    box.velocity = body.velocity;
-    box.half_extents = {std::max(body.position.x - area.min.x, area.max.x - body.position.x),
-                        std::max(body.position.y - area.min.y, area.max.y - body.position.y)};
-    return box;
 }
 
 /// A mover's footprint with its leg and heading, for the diagnosis.
@@ -91,7 +79,7 @@ std::vector<Leg> legs_of(std::span<const StallMover> movers) {
     std::vector<Leg> legs;
     legs.reserve(movers.size());
     for (const auto &mover : movers) {
-        const auto body = footprint(mover.body);
+        const auto body = detail::footprint(mover.body);
         legs.push_back({body, mover.target, normalized(mover.target - body.position)});
     }
     return legs;
