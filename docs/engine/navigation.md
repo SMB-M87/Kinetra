@@ -211,7 +211,14 @@ the next step's travel; lookahead provides additional damping. Only penetration
 requests a smooth bounded outward recovery, so a stationary body touching a wall
 is not repelled. Beside the end of a segment, the face the body would reach last at
 its current velocity applies, as in a swept-box test, so a body sliding flush along
-one wall passes the convex corner where another wall begins. `border_distance` and `border_strength` tune penetration recovery;
+one wall passes the convex corner where another wall begins. A face counts as
+reached only within `max_speed / max_acceleration + border_lookahead`, the time to
+brake from full speed plus the lookahead; when neither face is, the larger gap
+decides, so a residual drift toward a far face cannot brake a move along the other
+(a body at rest 3 units beside a wall's end stayed braked by it). "Far" means farther
+than the horizon times the drift: a body resting closer to the face, about 1.6e-4
+for a drift of 3e-5 at i4sim's settings, still gets the old choice, and at large
+coordinates, where a float cannot absorb the drift, it stays braked. `border_distance` and `border_strength` tune penetration recovery;
 `border_lookahead` tunes inward approach speed. Conflicting constraints in overlaps
 receive bounded recovery, not a collision-free guarantee. `SteeringForces::border`
 reports the applied acceleration correction (at most twice the acceleration cap),

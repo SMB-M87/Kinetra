@@ -66,7 +66,10 @@ struct SteeringForces {
 /// bounded recovery; borders have no passive repulsion at rest outside their surface.
 /// Beside the end of a segment, the face the agent would reach last at its current
 /// velocity constrains it, so an agent sliding flush along one wall passes the end of
-/// another that meets it at a convex corner.
+/// another that meets it at a convex corner. A face counts as reached only within
+/// `max_speed / max_acceleration + border_lookahead` time units; when neither face is,
+/// the one with the larger gap constrains the agent, so a residual drift toward a face far
+/// away cannot brake a move along the other.
 ///
 /// `agent` must be an unrotated box. Throws std::invalid_argument for another body, a
 /// nonfinite acceleration, a border that is not horizontal or vertical, or settings

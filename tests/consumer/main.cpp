@@ -44,15 +44,17 @@ int main() {
         return 10;
 #ifdef CONSUMER_GRAPHICS
     // Public session and input types remain independent of Lab.
-    kinetra::LaunchMenu menu({{"CONSUMER", "External application", {}, 0}});
-    if (menu.row_count() != 1)
+    kinetra::LaunchMenu menu({{"CONSUMER", "External application", {}, 0}}, "CONSUMER",
+                             kinetra::LauncherButton::every_page);
+    if (menu.row_count() != 1 || !menu.footer_x(kinetra::FooterButton::launcher))
         return 3;
     kinetra::Input input;
     if (input.held[std::size_t(kinetra::Key::enter)])
         return 2;
     // The settings overlay and session requests link without a window.
     bool statistics = false;
-    kinetra::SettingsOverlay overlay({kinetra::ToggleRow{"STATISTICS", &statistics}});
+    kinetra::SettingsOverlay overlay({kinetra::ToggleRow{"STATISTICS", &statistics}}, nullptr,
+                                     {"VARIANTS", kinetra::SessionRequest::configurations});
     kinetra::Camera2D camera;
     if (overlay.update(input, camera) || overlay.request() != kinetra::SessionRequest::none)
         return 8;
