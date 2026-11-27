@@ -3,24 +3,31 @@
 #include <kinetra/runtime/hud_text.h>
 #include <kinetra/runtime/overlay_style.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <optional>
 
 namespace kinetra::error_panel {
 namespace {
-// The title bar and close button match the inspector's, so the two panels read as one kind.
+// The title bar, close button and scroll bar match the inspector's, so the two panels read
+// as one kind.
 constexpr float title_height = 24;
 constexpr float padding = 8;
 constexpr float close_size = 18;
 constexpr std::string_view title = "ERROR";
 // Screen pixels per character of the message, which uses the HUD text scale.
 constexpr float character_width = 6 * hud::text_scale;
+// One wheel notch moves one line: an error has few lines, each worth reading.
+constexpr double lines_per_notch = 1;
 
 struct Layout {
     Aabb bounds{};
+    // Every line of the message; the panel shows `visible` of them at a time.
     std::vector<std::string> lines;
+    std::size_t visible{};
 
+    std::size_t last_first() const { return lines.size() - visible; }
     Vec2 close_origin() const { return {bounds.max.x - close_size - 3, bounds.min.y + 3}; }
     Aabb close_bounds() const {
         if (lines.empty())
@@ -48,7 +55,7 @@ Layout layout(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_
     if (message.empty() || width < 2 * padding + character_width || most_lines < 1)
         return result;
     const auto columns = static_cast<std::size_t>((width - 2 * padding) / character_width);
-    const auto needed = hud::wrap(message, columns).size();
+    const auto wrapped = hud::wrap(message, columns);
     const auto height_of = [](std::size_t lines) {
         return title_height + padding + static_cast<float>(lines) * hud::line_height;
     };
@@ -59,13 +66,15 @@ Layout layout(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_
     // The panel leaves `keep_clear` free when it can: at the window's bottom if it misses the
     // region there, else directly above it if the whole message fits; only a longer message
     // covers it, since the panel then needs the window's height.
-    if (keep_clear && overlaps(box(window_bottom, needed), *keep_clear)) {
+    if (keep_clear && overlaps(box(window_bottom, wrapped.size()), *keep_clear)) {
         const float above = std::floor(keep_clear->min.y - hud::margin);
-        if (lines_between(hud::margin, above) >= static_cast<float>(needed))
+        if (lines_between(hud::margin, above) >= static_cast<float>(wrapped.size()))
             bottom = above;
     }
-    result.lines = hud::error_lines(message, columns, static_cast<int>(lines_between(hud::margin, bottom)));
-    result.bounds = box(bottom, result.lines.size());
+    result.lines.assign(wrapped.begin(), wrapped.end());
+    result.visible =
+        std::min(result.lines.size(), static_cast<std::size_t>(lines_between(hud::margin, bottom)));
+    result.bounds = box(bottom, result.visible);
     return result;
 }
 
@@ -86,14 +95,24 @@ std::vector<std::string> lines(std::string_view message, Vec2 viewport, std::opt
     return layout(message, viewport, keep_clear).lines;
 }
 
-ErrorPanelInput update(const Input &input, std::string_view message, Vec2 viewport,
-                       std::optional<Aabb> keep_clear) {
-    const auto panel = layout(message, viewport, keep_clear);
-    const bool captured = !panel.lines.empty() && contains(panel.bounds, input.mouse);
-    return {captured, captured && input.clicked && contains(panel.close_bounds(), input.mouse)};
+std::size_t visible_lines(std::string_view message, Vec2 viewport, std::optional<Aabb> keep_clear) {
+    return layout(message, viewport, keep_clear).visible;
 }
 
-void draw(Runtime &runtime, std::string_view message, Vec2 pointer, std::optional<Aabb> keep_clear) {
+ErrorPanelInput update(const Input &input, std::string_view message, Vec2 viewport,
+                       std::optional<Aabb> keep_clear, std::size_t first_line) {
+    const auto panel = layout(message, viewport, keep_clear);
+    const bool captured = !panel.lines.empty() && contains(panel.bounds, input.mouse);
+    const double wheel = captured && std::isfinite(input.wheel) ? input.wheel : 0;
+    // A positive wheel scrolls away from the user, toward the message's start.
+    const double first = std::clamp(static_cast<double>(first_line) - std::round(wheel * lines_per_notch),
+                                    0.0, static_cast<double>(panel.last_first()));
+    return {captured, captured && input.clicked && contains(panel.close_bounds(), input.mouse),
+            panel.lines.empty() ? 0 : static_cast<std::size_t>(first)};
+}
+
+void draw(Runtime &runtime, std::string_view message, Vec2 pointer, std::optional<Aabb> keep_clear,
+          std::size_t first_line) {
     const auto panel = layout(message, runtime.camera.viewport, keep_clear);
     if (panel.lines.empty())
         return;
@@ -102,12 +121,24 @@ void draw(Runtime &runtime, std::string_view message, Vec2 pointer, std::optiona
     overlay::draw_panel(runtime, corner, size, title_height, title, {}, 1);
     overlay::draw_sign_button(runtime, panel.close_origin(), {close_size, close_size}, 'X', 1,
                               contains(panel.close_bounds(), pointer));
+    const auto first = std::min(first_line, panel.last_first());
     // Each line is centered in its HUD line height, as on the HUD.
     const float inset = (hud::line_height - 7 * hud::text_scale) / 2;
-    for (std::size_t i = 0; i < panel.lines.size(); ++i) {
+    for (std::size_t i = 0; i < panel.visible; ++i) {
         const float top = title_height + padding / 2 + static_cast<float>(i) * hud::line_height + inset;
-        draw_text(runtime, panel.lines[i], overlay::snapped(corner + Vec2{padding, top}), hud::text_scale,
-                  hud::error_color);
+        draw_text(runtime, panel.lines[first + i], overlay::snapped(corner + Vec2{padding, top}),
+                  hud::text_scale, hud::error_color);
+    }
+    if (panel.visible < panel.lines.size()) {
+        // The inspector's scroll bar: a thin thumb whose length and place show the window.
+        const float track = size.y - title_height - padding;
+        const float thumb =
+            std::max(3.f, track * static_cast<float>(panel.visible) / static_cast<float>(panel.lines.size()));
+        const float offset =
+            (track - thumb) * static_cast<float>(first) / static_cast<float>(panel.last_first());
+        overlay::draw_rectangle(runtime,
+                                {panel.bounds.max.x - 4, corner.y + title_height + padding / 2 + offset},
+                                {2, thumb}, overlay::dim_color);
     }
 }
 } // namespace kinetra::error_panel

@@ -104,8 +104,9 @@ class LaunchMenu {
     /// selection when the user confirms a final row, std::nullopt otherwise. A non-empty
     /// `error` is the one draw() shows, so pass the same one to both: its panel takes the
     /// pointer first, so the menu below it neither highlights nor clicks, and a click on its
-    /// close button sets error_closed(). Keys still reach the menu, and the panel appearing or
-    /// going away does not count as a pointer move.
+    /// close button sets error_closed(). The wheel over the panel scrolls a message that does
+    /// not fit; a new message starts at its first line. Keys still reach the menu, and the panel
+    /// appearing or going away does not count as a pointer move.
     std::optional<LaunchSelection> update(const Input &input, Vec2 viewport, std::string_view error = {});
     /// Highlighted row index within the current page's list.
     std::size_t selected() const;
@@ -114,6 +115,9 @@ class LaunchMenu {
     /// True when the last update() clicked the close button of the error panel; the caller
     /// then removes its message.
     bool error_closed() const { return error_closed_; }
+    /// The first line of the error that the panel shows, which the wheel moves; zero for a new
+    /// message.
+    std::size_t error_first_line() const { return error_first_line_; }
     /// True once LAUNCHER was clicked in a LauncherButton::every_page menu; never reset. The
     /// owner leaves the menu for the launcher, as it does for exit_requested().
     bool launcher_requested() const { return launcher_requested_; }
@@ -142,10 +146,11 @@ class LaunchMenu {
     /// Layout of the current page in logical window pixels, shared by drawing and picking.
     MenuLayout layout(Vec2 viewport) const;
     /// Draws a whole frame (begin() to end()) showing the menu, and over it a non-empty
-    /// `error` in an error panel (error_panel::draw()) at the bottom, above the footer when the
-    /// message fits there: the HUD error style, as high as the message needs up to the whole
-    /// window, with a close button. Pass the same `error` to update(), which gives the panel
-    /// the pointer and its close button; without it the panel lets clicks through.
+    /// `error` in an error panel (error_panel::draw()) at the bottom, keeping clear of the
+    /// footer when the message fits above it: the HUD error style, as high as the message needs
+    /// up to the whole window and scrolled beyond that, with a close button. Pass the same `error` to
+    /// update(), which gives the panel the pointer and its close button; without it the panel lets clicks
+    /// through.
     void draw(Runtime &runtime, std::string_view error = {}) const;
 
   private:
@@ -160,6 +165,9 @@ class LaunchMenu {
     /// The pointer as the window reports it. pointer_ is the menu's view of it, off the window
     /// while the error panel holds it, so only this one tells whether the pointer moved.
     Vec2 real_pointer_{-1, -1};
+    /// The error update() last saw, and the first of its lines the panel shows.
+    std::string error_text_;
+    std::size_t error_first_line_{};
     /// Set by show_configurations: the next update() records the pointer without hovering.
     bool settle_pointer_{};
 };

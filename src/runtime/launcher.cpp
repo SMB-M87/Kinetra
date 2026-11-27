@@ -150,8 +150,15 @@ MenuLayout LaunchMenu::layout(Vec2 viewport) const {
     return MenuLayout(viewport, row_count(), has_previews_ && !configuring_);
 }
 std::optional<LaunchSelection> LaunchMenu::update(const Input &frame, Vec2 viewport, std::string_view error) {
-    const auto panel = error_panel::update(frame, error, viewport, layout(viewport).footer_bounds());
+    // A new message starts at its first line; the wheel scrolls one that does not fit.
+    if (error != error_text_) {
+        error_text_ = error;
+        error_first_line_ = 0;
+    }
+    const auto panel =
+        error_panel::update(frame, error, viewport, layout(viewport).footer_bounds(), error_first_line_);
     error_closed_ = panel.close;
+    error_first_line_ = panel.first_line;
     // After show_configurations the pointer is wherever the session left it; it counts as
     // resting there, so it does not hover away the configuration that ran. Movement is the
     // real pointer's: the panel coming or going moves nothing.
@@ -259,7 +266,8 @@ void LaunchMenu::draw(Runtime &runtime, std::string_view error) const {
     if (layout.preview_origin)
         draw_preview(runtime, choices_[application_], *layout.preview_origin, layout.scale);
     // Last, so the panel covers what it overlaps, as update() gives it the pointer there.
-    error_panel::draw(runtime, error, real_pointer_, layout.footer_bounds());
+    error_panel::draw(runtime, error, real_pointer_, layout.footer_bounds(),
+                      error == error_text_ ? error_first_line_ : 0);
     runtime.end();
 }
 SessionHost::SessionHost(std::vector<ApplicationRegistration> applications)

@@ -137,9 +137,11 @@ TEST_CASE("the error panel grows with its message up to the whole window") {
     std::string huge;
     for (int i = 0; i < 400; ++i)
         huge += "/A-RATHER-LONG-DIRECTORY ";
-    const auto cut = error_panel::lines(huge, viewport);
-    REQUIRE_FALSE(cut.empty());
-    CHECK_MESSAGE(cut.back().ends_with(hud::cut_mark), "a message longer than the window is cut");
+    const auto all = error_panel::lines(huge, viewport);
+    REQUIRE_FALSE(all.empty());
+    CHECK_MESSAGE(error_panel::visible_lines(huge, viewport) < all.size(),
+                  "a message longer than the window shows part of its lines");
+    CHECK(error_panel::visible_lines(longer, viewport) == lines.size());
     const auto whole = error_panel::bounds(huge, viewport);
     CHECK_MESSAGE((whole.min.y >= hud::margin && whole.min.y < hud::margin + hud::line_height),
                   "the panel may use the whole window, less its margins");
@@ -147,6 +149,43 @@ TEST_CASE("the error panel grows with its message up to the whole window") {
     CHECK_MESSAGE(error_panel::lines("TEXT", {20, 720}).empty(),
                   "a window narrower than a character has no panel");
     CHECK_MESSAGE(error_panel::lines("TEXT", {1280, 50}).empty(), "a window lower than a line has no panel");
+}
+
+TEST_CASE("the wheel scrolls an error longer than a small window to its end") {
+    const Vec2 viewport{320, 240};
+    // A long path before the reason, as the blueprint loader writes it.
+    std::string message;
+    for (int i = 0; i < 12; ++i)
+        message += "/A-RATHER-LONG-DIRECTORY";
+    message += "/BROKEN.JSON: PARSE ERROR AT LINE 1, COLUMN 11";
+    const auto all = error_panel::lines(message, viewport);
+    const auto visible = error_panel::visible_lines(message, viewport);
+    REQUIRE(visible < all.size());
+    REQUIRE(all.back().find("COLUMN 11") != std::string::npos);
+    const auto panel = error_panel::bounds(message, viewport);
+    Input wheel;
+    wheel.mouse = (panel.min + panel.max) / 2;
+    wheel.wheel = -100;
+    const auto end = error_panel::update(wheel, message, viewport, {}, 0);
+    CHECK_MESSAGE(end.first_line == all.size() - visible, "scrolling stops at the last line");
+    wheel.wheel = 1;
+    CHECK(error_panel::update(wheel, message, viewport, {}, end.first_line).first_line == end.first_line - 1);
+    wheel.wheel = 100;
+    CHECK_MESSAGE(error_panel::update(wheel, message, viewport, {}, 3).first_line == 0, "nor past the first");
+    wheel.mouse = {-5, -5};
+    wheel.wheel = -1;
+    CHECK_MESSAGE(error_panel::update(wheel, message, viewport, {}, 0).first_line == 0,
+                  "the wheel off the panel scrolls nothing");
+
+    LaunchMenu menu({{"ONE", "", {}, 0}});
+    Input on_panel;
+    on_panel.mouse = (panel.min + panel.max) / 2;
+    on_panel.wheel = -2;
+    menu.update(on_panel, viewport, message);
+    CHECK(menu.error_first_line() == 2);
+    on_panel.wheel = 0;
+    menu.update(on_panel, viewport, "ANOTHER ERROR");
+    CHECK_MESSAGE(menu.error_first_line() == 0, "a new message starts at its first line");
 }
 
 TEST_CASE("the error panel moves above a region it would cover when its message fits there") {
@@ -176,11 +215,20 @@ TEST_CASE("an error panel over the menu takes the pointer and its close button r
     const auto layout = menu.layout(viewport);
     const auto exit = layout.footer_center(*menu.footer_x(FooterButton::exit));
 
-    // A short error ends above the footer, so EXIT stays clickable.
+    // At 640 x 480 a short error's panel at the bottom would cover EXIT; it ends above the
+    // footer instead, so EXIT stays clickable.
+    const Vec2 small{640, 480};
+    const std::string_view short_error = "BROKEN.JSON: UNEXPECTED END";
+    // The lowest row of EXIT's clickable area, which a panel at the bottom would cover.
+    const auto small_layout = menu.layout(small);
+    const Vec2 small_exit{small_layout.footer_center(*menu.footer_x(FooterButton::exit)).x,
+                          small_layout.footer_bounds().max.y - 1};
+    REQUIRE(small_layout.footer_contains(small_exit, *menu.footer_x(FooterButton::exit)));
+    REQUIRE(error_panel::bounds(short_error, small).min.y <= small_exit.y);
     Input click;
     click.clicked = true;
-    click.mouse = exit;
-    menu.update(click, viewport, "BROKEN.JSON: UNEXPECTED END");
+    click.mouse = small_exit;
+    menu.update(click, small, short_error);
     CHECK_MESSAGE(menu.exit_requested(), "a short error leaves EXIT free");
 
     LaunchMenu covered({{"ONE", "", {}, 0}, {"TWO", "", {}, 0}});
