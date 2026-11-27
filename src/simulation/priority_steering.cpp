@@ -36,8 +36,18 @@ Vec2 constrain_borders(const Body &a, Vec2 acceleration, std::span<const Segment
             const float infinity = std::numeric_limits<float>::infinity();
             const float approach_x = offset.x >= 0 ? -a.velocity.x : a.velocity.x;
             const float approach_y = offset.y >= 0 ? -a.velocity.y : a.velocity.y;
-            const float reach_x = approach_x > 0 ? gap.x / approach_x : infinity;
-            const float reach_y = approach_y > 0 ? gap.y / approach_y : infinity;
+            // A face reached only after the body could brake from full speed, plus the
+            // lookahead, needs no braking now and decides nothing. Without this horizon a
+            // residual drift picked a face far away: at rest beside the end of a floor, a
+            // 3e-5 drift toward the side 3 units off chose the floor and braked the move
+            // up along the side for good, since the drift itself was too small to move.
+            const float horizon = s.max_speed / s.max_acceleration + s.border_lookahead;
+            auto reach = [&](float clearance_left, float approach) {
+                const float time = approach > 0 ? clearance_left / approach : infinity;
+                return time <= horizon ? time : infinity;
+            };
+            const float reach_x = reach(gap.x, approach_x);
+            const float reach_y = reach(gap.y, approach_y);
             if (reach_x != reach_y)
                 x_axis = reach_x > reach_y;
         }
