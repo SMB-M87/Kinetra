@@ -2,7 +2,7 @@
 
 Status: implemented · Branch: `build/ci-mirror-budget`, and in Kinetra-Lab `ccr-55c5e0d8-yz2ai8` · Related: [CI mirror time budget](2026-11-23-ci-mirror-time-budget.md), [testing, continuous integration](../testing.md#continuous-integration)
 
-The roadmap item *CI image with the toolchain built in*, in Kinetra and in Kinetra-Lab, asked whether a prebuilt Ubuntu image would shorten the CI's setup and make it less dependent on the package mirrors. The measurement of 2026-11-26 shows that an image would save only a few seconds per run. The one slow case is a stalled Azure mirror, which the install step now waits out for five minutes. The user chose on 2026-11-26 to build no image. Instead the mirror's budget goes from five minutes to 90 seconds, in both `ci.yml` files and in Kinetra-Lab's `release.yml`, and both roadmap items close.
+The roadmap item *CI image with the toolchain built in*, in Kinetra and in Kinetra-Lab, asked whether a prebuilt Ubuntu image would shorten the CI's setup and make it less dependent on the package mirrors. The measurement of 2026-11-26 shows that an image would save only a few seconds per run. The one slow case was a stalled Azure mirror, which the install step waited out for five minutes. The user chose on 2026-11-26 to build no image. Instead the mirror's budget goes from five minutes to 90 seconds, in both `ci.yml` files and in Kinetra-Lab's `release.yml`, and both roadmap items close.
 
 ## Table of contents
 
@@ -30,7 +30,7 @@ The measurement covers the step timings of every Ubuntu run since the Ubuntu CI 
 | Kinetra-Lab `windows`, in parallel with `linux` | MSYS2 39–76 s | | 2:45–4:51 |
 | Kinetra-Lab release `package` (run 80) | 16 s | | 1:28 |
 
-- **The mirror's part is short.** The apt lines show that the index update and the download of the archives take about 10 s: in Kinetra's run 198, 189 MB arrived from `azure.archive.ubuntu.com` in 4 s. In Kinetra-Lab's slowest normal run, 283, the update started at 12:54:41 and the downloads ended at 12:54:52, 190 MB in 7 s. The rest of the step is dpkg unpacking and configuring about 250 packages, 724 MB installed.
+- **The mirror's part is short.** The apt lines, read in the logs of three of the nine runs, show the index update (about 34 MB) and the download of the archives (about 190 MB) taking about 10 s: in Kinetra's run 198, 189 MB of archives arrived from `azure.archive.ubuntu.com` in 4 s. In Kinetra-Lab's slowest normal run, 283, the update started at 12:54:41 and the downloads ended at 12:54:52, 11 s in all, the archives in 7 s. The two CI runs of this change took 8 s and 7 s ([Verification](#verification)). For the other runs the logs were not read; their install steps of 17 to 40 s bound the mirror's part from above. The rest of the step is dpkg unpacking and configuring about 250 packages, 724 MB installed.
 - **An image would save little.** It would hold the same 724 MB on top of `ubuntu:24.04`, and the runner would have to pull and unpack it on each run, since GitHub's hosted runners keep no image between jobs. Unpacking takes the place of dpkg's unpacking. The estimated net gain is 5 to 15 s per run. In Kinetra-Lab, the `windows` job runs at the same time as `linux` and takes about as long, so the time until `checks` reports would change by less than that. The release `package` job runs only after a merge, and nobody waits for it; its install took 16 s of 88.
 - **The slow case is the mirror's budget.** In Kinetra-Lab's run 280 (job 139901309169, 2026-11-26), the mirror delivered the indexes in 1 s. The download of `libc6`, the first package, then stalled at 12:13:28. `timeout -k 10 300` ended the attempt at 12:18:24 with the *Ubuntu mirror not used* warning, and the fallback to `archive.ubuntu.com` fetched the same 187 MB in 7 s; the step took 5:24 in all. That is one of the nine runs measured. The [2026-11-23 design](2026-11-23-ci-mirror-time-budget.md#decisions) chose five minutes to leave the fallback ten of the step's 15, because the fallback took two to three minutes before the mirror existed. It took 24 s in run 280.
 - An image would remove the mirror from the pull request's path. It would replace it with a build workflow per repository, a registry, permissions to publish packages, a schedule for Ubuntu's security updates and for the pinned formatter, and a way for a pull request that changes the package list to test its own image.
@@ -49,7 +49,7 @@ The measurement covers the step timings of every Ubuntu run since the Ubuntu CI 
 | Decision | Choice | Why |
 | --- | --- | --- |
 | Image or not | No image and no apt cache; the mirror's budget is shortened instead | The measurement above: 5 to 15 s per run against a build workflow, a registry and an update schedule in two repositories; the slow case is the budget, not the download. The user's choice of 2026-11-26, from four options: no image with a shorter budget, a prebuilt GHCR image, an apt cache, or only recording the measurement |
-| The mirror's budget | `timeout -k 10 90`, around the mirror's `apt-get update` and `apt-get install --download-only` as before | The mirror's part took about 10 s in every run measured, 11 s at most, so 90 s leaves eight times that. A slow but working mirror at 3 MB/s would still deliver 190 MB in about 65 s. The worst case becomes 90 s plus the fallback's 25 s, and the fallback keeps more than 13 of the step's 15 minutes |
+| The mirror's budget | `timeout -k 10 90`, around the mirror's `apt-get update` and `apt-get install --download-only` as before | The mirror's part took 7 to 11 s in the normal runs whose apt lines were read (Kinetra-Lab's run 283 and the two CI runs of this change; in Kinetra's run 198 the archives alone took 4 s), so 90 s leaves eight times the longest. The budget covers the indexes and the archives, about 225 MB, so a working mirror must deliver about 2.5 MB/s; below that the run goes to the fallback. The worst case becomes 90 s plus the fallback's 25 s, and the fallback keeps more than 13 of the step's 15 minutes |
 | Where | Kinetra's `ci.yml`, Kinetra-Lab's `ci.yml` and `release.yml`, with their warnings and comments, and [testing](../testing.md#continuous-integration) | The three install steps share one shape and one budget; the release workflow's says "the same Azure mirror and fallback as the pull request build" |
 | The roadmap items | Removed from both roadmaps; this document is the record | The item's question, measure and decide, is answered. Kinetra-Lab's item also asked about the Windows packaging job: its install took 16 s of a job nobody waits for |
 
@@ -79,13 +79,25 @@ A workflow has no test suite; its checks are local runs of the step and the pull
 | Mirror reachable: everything from the Azure mirror, well within 90 s | Run Kinetra-Lab's step from the committed `ci.yml` as root in a `chroot` of `ubuntu:24.04`, as the 2026-11-23 design did: exit 0, no warning, the time until the downloads end recorded | Local |
 | Mirror stalls a download: the fallback starts after 90 s | The same, with the mirror's host sent to a local server that passes `/ubuntu/dists/` to the real mirror and never answers `/ubuntu/pool/`: the warning after about 90 s, the fallback, exit 0 | Local |
 | The three steps carry the same budget | `grep` for `timeout -k 10` in the three workflows; Python's YAML parser loads them | Local |
-| The Ubuntu run still uses the mirror on GitHub's runners | `linux` in both pull requests: no warning, green | Full (CI) |
+| The Ubuntu run still uses the mirror on GitHub's runners | `linux` in both pull requests: green, every `Get:` from the mirror and no *Ubuntu mirror not used* annotation in the job's log, recorded below with the run and the install step's time | Full (CI) |
+| Kinetra-Lab's release workflow | Not run: Lab's verification table asks, for `release.yml`, for the local cross build and `package_windows.sh` of the release tool, but those use the developer's own cross compiler and never run this install step, so they prove nothing about it. The release runs only after a merge; Python's YAML parser loads it, and its step equals the other two | Not run |
 | Docs | `check_docs.py` and `check_copies.py` with the changed terms, in both repositories | Docs |
 
 ## Review
 
-- Own review of both diffs: only the number, the warning's words and the comment change; the three steps' `run:` blocks still differ only in their package lists and comments (compared with Python's YAML parser and `difflib`). A slow but working mirror, under 2 MB/s, now goes to the fallback, which is faster then anyway.
+- Own review of both diffs: only the number, the warning's words and the comment change; the three steps' `run:` blocks still differ only in their package lists and comments (compared with Python's YAML parser and `difflib`). A slow but working mirror, under about 2.5 MB/s (225 MB of indexes and archives in 90 s), now goes to the fallback. That costs little: the archives the mirror already delivered stay in apt's cache, and the fallback's install downloads only the rest.
 - Copies: `check_copies.py` in Kinetra-Lab, with this branch in `external/Kinetra`, for `five minutes`, `five of the`, `mirror's five`, `timeout -k 10 300`, `CI image`, `toolchain built in` and `prebuilt`. The hits that remain are the design index's rows, which are history, and `tools/README.md` on `cloud_setup.sh`'s own budgets, a non-goal above. The [2026-11-23 design](2026-11-23-ci-mirror-time-budget.md) got a line that points here.
+- Agent review, round 1 (Kinetra #65 and Kinetra-Lab #132 at `de6ec3c` and `3867a65`, conclusion *Fix first*):
+
+  | Finding | Resolution |
+  | --- | --- |
+  | Should fix: the CI result was recorded nowhere; *Verification* pointed to the descriptions, which did not record it | Both `linux` logs read in full: every `Get:` from the mirror, no warning annotation; the runs, install times and the mirror's part are in [Verification](#verification) and in both descriptions |
+  | Should fix (Kinetra-Lab #132): Lab's table names the local cross build and `package_windows.sh` for `release.yml`, and their absence was not stated | Not run, with the reason, in [Test plan](#test-plan), [Verification](#verification) and Kinetra-Lab #132's description: they never run the install step this change touches |
+  | Nit: the throughput figures left out the indexes, and "about 10 s in every run" rested on three runs' apt lines | One figure in *Decisions* and *Review*: about 225 MB in 90 s, a cut-off near 2.5 MB/s; *Problem* says which runs' apt lines were read and what bounds the others; *Review* gives the reason the fallback then costs little |
+  | Nit: "now waits out" read as current behavior | "waited out" |
+  | Nit: the workflow comment had no unit and a dangling short line, in both repositories | "about ten seconds in the runs measured on 2026-11-26", paragraph rewrapped |
+  | Nit: *Pull request* held only a title and a summary | All seven parts of the description, below |
+  | Lesson proposed: record a CI outcome that a green check does not show | Added to [review lessons](../review-lessons.md#ci-and-tooling) |
 
 ## Verification
 
@@ -98,13 +110,25 @@ The step's `run:` came from Kinetra-Lab's committed `ci.yml`, read with Python's
 
 - The three workflows load with Python's YAML parser, and each install step holds `timeout -k 10 90`.
 - `python3 tools/check_docs.py` in Kinetra and `python3 external/Kinetra/tools/check_docs.py` in Kinetra-Lab: all links resolve.
-- Full level: the pull requests' CI, recorded in their descriptions.
+- Not run: Kinetra-Lab's local cross build and `package_windows.sh`, which its verification table names for `release.yml`. They use the developer's own MinGW-w64 and never run the install step this change touches ([release tool](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/release/README.md#build-the-zip-locally)); the release workflow runs only after a merge.
+- Full level: CI green on both heads, and in both `linux` logs, read in full, every `Get:` came from `azure.archive.ubuntu.com` and there is no *Ubuntu mirror not used* annotation, nor any other warning annotation:
+
+  | Run | Install step | Mirror's part |
+  | --- | --- | --- |
+  | Kinetra #65 at `de6ec3c`, run 45912642046 | 21 s | 8 s: 34.2 MB of indexes in 1 s, 189 MB of archives in 4 s |
+  | Kinetra-Lab #132 at `3867a65`, run 45912678931 (`windows` green too) | 27 s | 7 s: 34.2 MB in 2 s, 190 MB in 3 s |
 
 ## Pull request
 
 Title: `build(ci): measure the CI setup and shorten the mirror's budget to 90 seconds`
 
-Summary: the roadmap item *CI image with the toolchain built in* asked whether a prebuilt image would shorten the CI's setup. It would save about 5 to 15 s per run (see [Problem](#problem)), so the user chose on 2026-11-26 to build none. The one slow case measured, a stalled Azure mirror that cost run 280 five and a half minutes, is fixed instead: the mirror's index update and downloads get 90 seconds instead of five minutes, in Kinetra's `ci.yml` and in Kinetra-Lab's `ci.yml` and `release.yml`. [testing](../testing.md#continuous-integration) follows, and the roadmap item is removed from both roadmaps. Merge order: this pull request first, with a merge commit, then the Kinetra-Lab pull request, which moves the pointer to this branch.
+- **Summary:** the roadmap item *CI image with the toolchain built in* asked whether a prebuilt image would shorten the CI's setup. It would save about 5 to 15 s per run (see [Problem](#problem)), so the user chose on 2026-11-26 to build none. The one slow case measured, a stalled Azure mirror that cost run 280 five and a half minutes, is fixed instead.
+- **Changes:** `.github/workflows/ci.yml` gives the mirror's index update and downloads `timeout -k 10 90` instead of 300, with its warning and comment; [testing](../testing.md#continuous-integration) follows; the roadmap item is removed; this document, its index row and a line in the 2026-11-23 design. Kinetra-Lab's `ci.yml` and `release.yml` get the same change.
+- **Design:** see [Decisions](#decisions) and [Design](#design); not done: an image, an apt cache, apt's own timeouts and `cloud_setup.sh`'s budgets.
+- **Verification:** as in [Verification](#verification): the local `chroot` runs, the docs checks, and CI on both heads with the mirror used and no warning; the Lab release's local cross build not run, with the reason.
+- **Review notes:** the diff is one number, one warning and one comment per workflow, plus docs; the agent review's rounds are in [Review](#review).
+- **Dependencies and merge order:** this pull request first, with a merge commit, then Kinetra-Lab #132, whose pointer records this branch.
+- **Follow-up:** none.
 
 ## Open points
 
