@@ -22,7 +22,7 @@ Within each section the first item comes first. The order was proposed on 2026-1
 
 - **Stall detection and remedies in the engine** · simulation, with Lab · added 2026-11-27
   `StallDetector`, a `RightOfWay` fallback and a `MakeWay` lifecycle beside `PassingCoordinator` in `Kinetra::Simulation`, each used by i4sim in the same step ([ADR 0018](decisions/0018-stall-remedies-in-the-engine.md)).
-  Where: branch `feat/stall-detector` (step 3 of Lab's stack, `StallDetector`), [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md).
+  Where: `StallDetector` merged in [#72](https://github.com/SMB-M87/Kinetra/pull/72); branch `feat/right-of-way` (step 4 of Lab's stack, `RightOfWay`, [#74](https://github.com/SMB-M87/Kinetra/pull/74)), [Lab design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md).
 
 ## Next
 
@@ -34,9 +34,6 @@ Nothing waiting in Kinetra itself.
 
 - **No default footer position in `MenuLayout`** · launcher · added 2026-11-27
   `MenuLayout::footer_center(float x = 150)` defaults to EXIT on a page without LAUNCHER; on a page with LAUNCHER, 150 is the gap between LAUNCHER and EXIT, so a caller that clicks EXIT through the default misses without an error. Drop the default and let callers take the place from `LaunchMenu::footer_x()`, which Kinetra-Lab's tour and tests already do. Found in the review of #70.
-- **Say where the mutation check of a contract branch is recorded** · docs, agent rules · added 2026-11-27
-  The [rules for tests](testing.md#rules-for-tests) ask that the case for each branch a contract names be checked by mutation, but no page says where the result goes. A reviewer runs nothing, so it finds the check only when the author writes it down, as #72's description did. Name the mutation result in the design template's *Test plan* or *Verification*, and in the `pr-review` checklist row "Every changed behavior has a test".
-  Next step: a docs-only pull request on those rule pages, with an agent review. Where: the agent review of [#78](https://github.com/SMB-M87/Kinetra/pull/78).
 
 ## Ideas
 

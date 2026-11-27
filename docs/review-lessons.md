@@ -28,6 +28,9 @@ One list item per lesson, under the topic it belongs to:
 
 ## Docs and links
 
+- **When code moves into another file, add the suites that test it to that file's row of *Choosing targeted tests*** · added 2026-11-27 · source: [#74](https://github.com/SMB-M87/Kinetra/pull/74)
+  The push test moved into `stall_detector.cpp`, but its suite stayed only on the `right_of_way.cpp` row of `docs/testing.md`.
+
 - **Add an exception to a defined term in the same form on every page, never by redefining the term on some of them** · added 2026-11-24 · source: #57
   "Docs-only" got an exception in `AGENTS.md` (a docs-only rule change still gets a review) but a narrower definition in the workflow and `pr-review`, so a pull request that changes only a skill got two answers to whether it needs a design document.
 
@@ -92,6 +95,8 @@ No lessons yet.
 
 - **When an overlay takes the pointer from a widget below, hide it only from that widget's hit tests and highlights, and keep its movement and hover state on the real pointer** · added 2026-11-27 · source: [#73](https://github.com/SMB-M87/Kinetra/pull/73)
   `LaunchMenu`'s resting-pointer guard read the error panel's `{-1, -1}` stand-in as a move when the panel appeared or went away, so a resting pointer could undo keyboard navigation.
+- **Derive a remedy from the detector's output, or carry every condition that ends that output into the remedy's own contract** · added 2026-11-27 · source: [#74](https://github.com/SMB-M87/Kinetra/pull/74)
+  `RightOfWay` derived "stalled" from the raw progress count instead of the detector's episodes, and lost the end on a goal change, which an episode has and the user's return rule names.
 
 - **Run every check that can throw before the first change of a function that promises to throw before changing anything** · added 2026-11-27 · source: [#68](https://github.com/SMB-M87/Kinetra/pull/68)
   `PassingCoordinator::step` validated its settings and bodies first, but a grid query could still throw after `advance()` had ended plans, which dropped their events.
