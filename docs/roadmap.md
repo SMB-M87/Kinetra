@@ -31,9 +31,6 @@ Nothing agreed next in Kinetra itself.
 - **Shared passing mechanism** · navigation, with Lab · added 2026-11-21
   Evaluate whether the i4sim stall remedies call for shared maneuver state or additional motion primitives. The geometry and explicit steering tuning are described in [Shared predictive passing](design/2026-11-26-shared-passing.md).
   Depends on: Lab's *Stall detection and remedies in i4sim*, which settles whether making way and a temporary motion fallback belong in the shared part.
-- **Frame read-back on `Runtime`** · runtime · added 2026-11-21
-  A helper that returns the current frame's pixels, so Lab's capture tool and the graphics tests stop calling `glReadPixels` themselves.
-  Where: [capture tool open points](https://github.com/SMB-M87/Kinetra-Lab/blob/main/tools/capture/README.md#open-points).
 ## Ideas
 
 Wishes of the user, not yet agreed or shaped. Each needs a design session (`grilling`) before it moves up.

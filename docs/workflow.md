@@ -83,7 +83,7 @@ Rules and test kinds are in [testing](testing.md).
 
 ## 5. Verify
 
-Choose the level from [verification levels](testing.md#verification-levels) based on what the diff touches. The `verify` skill does this. The last commit of a branch that changed code always gets the full level.
+Choose the level from [verification levels](testing.md#verification-levels) based on what the diff touches. The `verify` skill does this. The last commit of a branch that changed code always gets the full level. Each goal of the design document needs a check or run as wide as its wording, or narrower wording ([rule](../AGENTS.md#verification-by-impact)).
 
 ## 6. Review
 

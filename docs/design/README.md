@@ -77,6 +77,7 @@ Verification, Review notes, Dependencies and merge order, Follow-up.
 | Date | Document | Status |
 | --- | --- | --- |
 | 2026-11-26 | [CI image measured: a shorter mirror budget instead](2026-11-26-ci-image-measurement.md): a prebuilt CI image would save seconds; the Azure mirror's budget goes from five minutes to 90 seconds, here and in Kinetra-Lab | implemented |
+| 2026-11-26 | [Frame read-back on Runtime](2026-11-26-frame-read-back.md): `read_back(true)` makes `end()` copy each frame before the swap, and `frame()` returns it; Kinetra's and Kinetra-Lab's graphics tests and Lab's capture tool use it | implemented |
 | 2026-11-26 | [Headless timing outside `runtime/`](2026-11-26-headless-timing.md): `FixedClock` moves to `simulation/clock.h`, the frame helpers to `view/timing.h` | implemented |
 | 2026-11-26 | [Shared predictive passing](2026-11-26-shared-passing.md) | implemented |
 | 2026-11-24 | [Raster route target](2026-11-24-raster-route-target.md) | implemented |

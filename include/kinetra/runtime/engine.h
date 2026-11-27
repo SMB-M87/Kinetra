@@ -44,6 +44,22 @@ class RgbaImage {
     std::vector<std::uint8_t> pixels_;
 };
 
+/// The pixels of one frame that Runtime::end() presented, read back before the buffer swap
+/// (see Runtime::read_back()). A plain value: copying it copies the pixels.
+struct FramePixels {
+    /// Size in drawable pixels: the viewport that the frame's begin() set. With display
+    /// scaling this is larger than the window's logical size in `Camera2D::viewport`.
+    int width{}, height{};
+    /// Rows from the top left, four bytes per pixel (red, green, blue, alpha) and no row
+    /// padding: `width * height * 4` bytes, the layout RgbaImage takes. Alpha is always 255,
+    /// because the window is opaque.
+    std::vector<std::uint8_t> rgba;
+    /// Red, green, blue and alpha of the drawable pixel at column `x` and row `y`, counted
+    /// from the top left. Throws std::out_of_range outside the frame, or when `rgba` holds
+    /// fewer than `width * height * 4` bytes.
+    std::array<std::uint8_t, 4> pixel(int x, int y) const;
+};
+
 /// SDL2/OpenGL 3.3 window, input and 2D drawing. Own on the main
 /// thread; only one Runtime may exist at a time. Throws runtime_error on setup,
 /// shader or rendering initialization failures. No simulation dependency.
@@ -90,7 +106,8 @@ class Runtime {
     /// or dimensions exceeding the context's texture limit, and std::runtime_error
     /// if the image shader or texture cannot be prepared.
     void image(const std::shared_ptr<const RgbaImage> &image, Vec2 top_left, Vec2 size);
-    /// Uploads and draws the batch, then presents the frame. Without VSync it then waits for
+    /// Uploads and draws the batch, then presents the frame; with read_back(true) it first waits
+    /// for the GPU and copies the frame into frame(). Without VSync it then waits for
     /// the frame limiter, unless that was switched off (see pacing()). From the second frame
     /// on, also records the time since the previous end() in frame_times(), or the fixed time
     /// set by fix_frame_times().
@@ -116,6 +133,18 @@ class Runtime {
     /// to draw, and a measured graph would differ on every run. Pacing does not change; entries
     /// already recorded stay. Throws std::invalid_argument for a negative or non-finite time.
     void fix_frame_times(std::optional<double> seconds);
+    /// Makes every following end() copy the frame into frame() after drawing it and before
+    /// presenting it, or stops that and releases the copy for false, the default. The copy is
+    /// taken before the buffer swap, when the drawn buffer is defined on every platform; after
+    /// the swap it is not. For tests and programs that render frames into files: each frame
+    /// then waits for the GPU and copies the whole drawable. Switching it on while it is on
+    /// changes nothing.
+    void read_back(bool enabled);
+    /// The frame that the last end() read back. The reference stays valid for the Runtime's
+    /// lifetime; the next end() overwrites what it refers to, and read_back(false) empties it.
+    /// Throws std::logic_error while read-back is off, and while no end() has read a frame since
+    /// it was switched on.
+    const FramePixels &frame() const;
     /// The view used by all drawing calls. poll() sets its viewport; the application owns
     /// position and zoom.
     Camera2D camera;
