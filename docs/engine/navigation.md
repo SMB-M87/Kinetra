@@ -10,6 +10,7 @@
 - [Predictive passing](#predictive-passing)
 - [Stall detection](#stall-detection)
 - [Right of way](#right-of-way)
+- [Making way](#making-way)
 - [Traffic admission](#traffic-admission)
 - [Weighted grids and priority steering](#weighted-grids-and-priority-steering)
 - [Application policies](#application-policies)
@@ -178,6 +179,26 @@ The window is the caller's tuning; i4sim's 480 ticks were measured against short
 against a return as soon as progress resumes, which did worse than no fallback
 ([design](https://github.com/SMB-M87/Kinetra-Lab/blob/main/docs/design/2026-11-27-stall-remedies-in-the-engine.md)).
 
+## Making way
+
+[make_way.h](../../include/kinetra/simulation/make_way.h) provides `MakeWay` for applications
+that can temporarily move a blocking neighbor. On each step it advances existing trips first,
+then considers current stall episodes in mover order. It tries a checked alternate route for
+the beneficiary before asking the neighbor to move. If the neighbor can yield, it chooses the
+nearest checked refuge that also opens a checked route for the beneficiary. The candidate
+order breaks ties. Limits on unsuccessful searches apply to the current stall episode.
+
+The yielding neighbor drives to the refuge, waits for the beneficiary to clear its home, then
+returns by a checked route. A changed goal, hold or disabled policy can cancel a request. A
+deadline releases a request even when the beneficiary still needs the space. An obstruction
+can stop the yielding mover while the engine keeps checking for a return. Each request reports
+its outcome once, which can be earlier than the actual return.
+
+The application supplies indices that stay stable across steps, live observations, refuge
+positions, route checks and the commands that apply a route or stop. It decides which neighbors
+can yield and which traffic reservations each route must respect. i4sim keeps products, queue
+positions and parking reservations in the factory ([ADR 0018](../decisions/0018-stall-remedies-in-the-engine.md)).
+
 ## Traffic admission
 
 [traffic.h](../../include/kinetra/simulation/traffic.h) provides `TrafficGate` in
@@ -265,3 +286,5 @@ Applications own goal selection, replanning schedules, streamed obstacle residen
 [Engine navigation tests](../../tests/navigation_tests.cpp) exercise configurable geometry, exact endpoints, projection, invalid settings and NaN goals. Implementation: [navigation.cpp](../../src/simulation/navigation.cpp), [steering.cpp](../../src/simulation/steering.cpp).
 
 The [weighted navigation tests](../../tests/weighted_navigation_tests.cpp) also check passing candidate order and guard classification. The [passing coordinator tests](../../tests/passing_coordinator_tests.cpp) run plans through a minimal host at two world scales: completion without contact, the world check between sides, obstruction and the retry delay, waits for crossing traffic and a wait that outlasts the timeout, the priority between plans, participants that turn busy or standing, absent movers, the progress timeout, parallel plans, cancellation and the retry delays it drops, circle, polygon and rotated-box footprints, tuning whose slow braking widens the formation range, and queries far beyond the grid. The [stall detector tests](../../tests/stall_detector_tests.cpp) run at two world scales: the threshold and the end on progress, each reason and its order (a standing blocker before a push), what is no blocker or no push, a round blocker, oscillation, the restarts of an observation, absent movers, and invalid input that changes nothing. The [right-of-way tests](../../tests/right_of_way_tests.cpp) run at two world scales: the grant at the threshold and the window, a new window at once for a mover still pushed, no grant below the threshold, without a push or for a mover not observed, the early end, the end on a new goal, no right of way for a holder's pusher or for a mover whose pusher holds one, a shorter span with its ends in mover order, the push test against the detector's reason and for every mover at once, and, at one scale, a window past the clock's end and invalid input that changes nothing.
+
+The [make-way tests](../../tests/make_way_tests.cpp) cover alternate routes, refuge choice, the retry limit, the deadline and an obstructed or cancelled trip returning on a checked route.

@@ -1,5 +1,6 @@
 #include <kinetra/simulation/avoidance.h>
 #include <kinetra/simulation/clock.h>
+#include <kinetra/simulation/make_way.h>
 #include <kinetra/simulation/navigation.h>
 #include <kinetra/simulation/passing.h>
 #include <kinetra/simulation/passing_coordinator.h>
@@ -24,6 +25,8 @@ auto consumer_run_session = &kinetra::run_session;
 #endif
 
 int main() {
+    kinetra::MakeWay make_way;
+    make_way.clear();
     kinetra::TrafficGate crossing;
     const std::uint64_t requester = 4;
     if (crossing.update({&requester, 1}, {}).agent != requester)

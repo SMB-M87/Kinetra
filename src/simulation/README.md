@@ -53,6 +53,7 @@ flowchart TD
     Coordinator["passing_coordinator.h<br/>PassingCoordinator"]
     Stall["stall_detector.h<br/>StallDetector"]
     Right["right_of_way.h<br/>RightOfWay"]
+    MakeWay["make_way.h<br/>MakeWay"]
     Clock["clock.h<br/>FixedClock, TickClock, TickBudget (header-only)"]
     Grid --> Math
     Physics --> Grid
@@ -66,6 +67,7 @@ flowchart TD
     Coordinator --> Grid
     Stall --> Physics
     Right --> Stall
+    MakeWay --> Math
 ```
 
 *Takeaway:* physics, planning and steering build on one geometry header; the weighted grid, avoidance, traffic admission and the fixed clock stand alone, so a consumer can use one without the others.
@@ -84,6 +86,7 @@ flowchart TD
 | [passing_coordinator.h](../../include/kinetra/simulation/passing_coordinator.h) | [passing_coordinator.cpp](passing_coordinator.cpp) | Plan lifecycle of head-on passing: formation, waits, outcomes | [Navigation](../../docs/engine/navigation.md#predictive-passing) |
 | [stall_detector.h](../../include/kinetra/simulation/stall_detector.h) | [stall_detector.cpp](stall_detector.cpp) | Episodes of sustained lack of progress and the evidence at their onset; the push test and input check the right of way shares | [Navigation](../../docs/engine/navigation.md#stall-detection) |
 | [right_of_way.h](../../include/kinetra/simulation/right_of_way.h) | [right_of_way.cpp](right_of_way.cpp) | A temporary right of way for a stalled mover that a neighbor pushes back | [Navigation](../../docs/engine/navigation.md#right-of-way) |
+| [make_way.h](../../include/kinetra/simulation/make_way.h) | [make_way.cpp](make_way.cpp) | Temporary yielding trips, checked refuges and return | [Navigation](../../docs/engine/navigation.md#making-way) |
 | [traffic.h](../../include/kinetra/simulation/traffic.h) | [traffic.cpp](traffic.cpp) | Occupancy-aware FIFO admission to one conflict zone | [Navigation](../../docs/engine/navigation.md#traffic-admission) |
 | [clock.h](../../include/kinetra/simulation/clock.h) | header-only | `FixedClock`: elapsed seconds to whole simulation ticks, with a bounded backlog; `TickClock`: a rate in ticks per second to the ticks due, at most a limit; `TickBudget`: the ticks that fit in a share of a frame, from their measured cost | [Sessions and timing](../../docs/engine/runtime.md#sessions-and-timing) |
 
@@ -167,6 +170,7 @@ The four models overlap and take different inputs; the Lab roadmap schedules a d
 | `kinetra_navigation` | `kinetra_navigation_tests` | Settings validation, swept clearance, exact and projected goals, corner lookahead |
 | `kinetra_weighted_navigation` | `kinetra_weighted_navigation_tests` | Weighted grid planning, raster route targets, footprints, borders and priority steering |
 | `kinetra_passing_coordinator` | `kinetra_passing_coordinator_tests` | Passing plans at two world scales: completion, side choice, obstruction, waits, priority between plans, mover states, both timeouts, cancellation and retry delays, footprints of every shape, slow braking, queries beyond the grid |
+| `kinetra_make_way` | `kinetra_make_way_tests` | Alternate routes, nearest checked refuge, bounded searches, deadlines, cancellation, obstruction and checked return |
 | `kinetra_right_of_way` | `kinetra_right_of_way_tests` | The right of way at two world scales: grant and window, a new window at once, no grant, early end, the end on a new goal, none for a holder's pusher or for a mover whose pusher holds one, a shorter span in mover order, the shared push test for one mover and every mover; at one scale a window past the clock's end and invalid input |
 | `kinetra_stall_detector` | `kinetra_stall_detector_tests` | Stall episodes at two world scales: threshold and end, every reason and its order, restarts, absent movers, invalid input |
 | `kinetra_avoidance` | `kinetra_avoidance_tests` | Limits, infeasibility, rectangles and crowds of 2 to 16 agents |
