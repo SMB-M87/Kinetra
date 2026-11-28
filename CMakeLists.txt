@@ -23,6 +23,7 @@ add_library(kinetra_simulation
     src/simulation/traffic.cpp
     src/simulation/avoidance.cpp
     src/simulation/collision_grid.cpp
+    src/simulation/make_way.cpp
     src/simulation/navigation.cpp
     src/simulation/passing.cpp
     src/simulation/passing_coordinator.cpp
@@ -92,6 +93,8 @@ if(BUILD_TESTING)
         SOURCES tests/weighted_navigation_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_passing_coordinator_tests PREFIX kinetra_passing_coordinator
         SOURCES tests/passing_coordinator_tests.cpp LIBRARIES Kinetra::Simulation)
+    kinetra_add_doctest(kinetra_make_way_tests PREFIX kinetra_make_way
+        SOURCES tests/make_way_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_right_of_way_tests PREFIX kinetra_right_of_way
         SOURCES tests/right_of_way_tests.cpp LIBRARIES Kinetra::Simulation)
     kinetra_add_doctest(kinetra_stall_detector_tests PREFIX kinetra_stall_detector
